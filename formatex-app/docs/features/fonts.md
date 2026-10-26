@@ -8,7 +8,8 @@ The compiler needs the fonts a document names (`[font]` in `config.toml`; the en
 
 1. **Imported fonts**: `.ttf`, `.otf`, `.ttc` files the user adds in **Settings → Fonts**, stored in `$APPDATA/fonts`.
 2. **System fonts**: scanned on **Windows, macOS and Linux** (fontdb, plus Adobe fonts on Windows and macOS). On Android the system folder `/system/fonts` is scanned as a fallback.
-3. **Built-in fonts**: the few Typst embeds (Libertinus Serif, New Computer Modern, DejaVu Sans Mono).
+3. **Bundled fonts**: `formatex-app/fonts/`, compiled into the app (`include_dir!`), so a document looks right with nothing installed, Android included: Vazirmatn, Lexend, Pelak, IRANSansX, XB Niloofar, Anonymous Pro and the Font Awesome 7 Pro (solid, regular) and Brands icon fonts, in the weights the engine uses (about 9 MB). Add a file there to bundle another; mind its licence (Font Awesome Pro and the Persian fonts are not all free to redistribute).
+4. **Built-in fonts**: the few Typst embeds (Libertinus Serif, New Computer Modern, DejaVu Sans Mono).
 
 An imported font wins over a system font of the same name, so a user can override it.
 

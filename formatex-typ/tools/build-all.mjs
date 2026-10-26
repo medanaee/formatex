@@ -27,6 +27,8 @@ const outDir = path.resolve(root, option("out-dir", "out"))
 const noCover = process.argv.includes("--no-cover")
 
 genRegistry(root)
+// Fonts: the engine's own folder, and the app's bundled ones when the app sits next to the engine (so a clean checkout has them)
+const fontPaths = [path.join(root, "fonts"), path.join(root, "..", "formatex-app", "fonts")].filter((dir) => fs.existsSync(dir))
 fs.mkdirSync(outDir, { recursive: true })
 
 let source = option("source", "")
@@ -42,6 +44,7 @@ for (const theme of themes) {
     const out = path.join(outDir, `${name}-${theme}-${feel}.pdf`)
     const args = ["compile", "main.typ", out, "--input", `theme=${theme}`, "--input", `feel=${feel}`, "--input", `source=${source}`]
     if (noCover) args.push("--input", "cover=false")
+    for (const dir of fontPaths) args.push("--font-path", dir)
     process.stdout.write(`building ${path.relative(process.cwd(), out)} ... `)
     const result = spawnSync("typst", args, { cwd: root, encoding: "utf8" })
     if (result.error) {

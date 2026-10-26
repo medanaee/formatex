@@ -8,8 +8,15 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
+use include_dir::{Dir, include_dir};
 use serde::Serialize;
+use typst::foundations::Bytes;
+use typst::text::{Font, FontInfo};
 use typst_kit::fonts::{self, FontPath, FontStore};
+
+/// The fonts that ship with the app (`formatex-app/fonts`): the families the engine's feels, code blocks and icons use, so a
+/// document looks the same on a machine, or an Android phone, that has none of them installed.
+static BUNDLED: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../fonts");
 
 pub struct FontService {
     fonts_dir: PathBuf,
@@ -76,6 +83,18 @@ fn origin(store: &FontStore, index: usize, fonts_dir: &Path) -> &'static str {
     }
 }
 
+/// The bundled fonts, as entries of the font store.
+fn bundled() -> impl Iterator<Item = (Font, FontInfo)> {
+    BUNDLED
+        .files()
+        .filter(|file| file.path().extension().is_some_and(|e| e == "ttf" || e == "otf"))
+        .flat_map(|file| Font::iter(Bytes::new(file.contents())))
+        .map(|font| {
+            let info = font.info().clone();
+            (font, info)
+        })
+}
+
 fn build(fonts_dir: &Path) -> FontStore {
     let mut store = FontStore::new();
     if fonts_dir.exists() {
@@ -84,6 +103,23 @@ fn build(fonts_dir: &Path) -> FontStore {
     store.extend(fonts::system());
     #[cfg(target_os = "android")]
     store.extend(fonts::scan(Path::new("/system/fonts")));
+    // The app's own fonts come after the user's and the system's (those win), before the few Typst embeds
+    store.extend(bundled());
     store.extend(fonts::embedded());
     store
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The families the engine asks for are all in the app.
+    #[test]
+    fn the_bundled_fonts_cover_the_engine() {
+        let families: std::collections::BTreeSet<String> = bundled().map(|(_, info)| info.family).collect();
+        for wanted in ["Vazirmatn", "Lexend", "Pelak", "IRANSansX", "Anonymous Pro", "XB Niloofar", "Font Awesome 7 Brands"] {
+            assert!(families.iter().any(|family| family.starts_with(wanted)), "{wanted} is not bundled: {families:?}");
+        }
+        assert!(families.iter().any(|family| family.starts_with("Font Awesome 7 Pro")), "{families:?}");
+    }
 }
