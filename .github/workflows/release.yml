@@ -165,7 +165,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      # The action would also run `sdkmanager tools`, a package that no longer exists, and fail; the NDK is installed below
       - uses: android-actions/setup-android@v3
+        with:
+          packages: ""
       - name: Install the NDK
         run: |
           sdkmanager "ndk;${NDK_VERSION}" "platform-tools"
