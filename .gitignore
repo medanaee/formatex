@@ -1,0 +1,6 @@
+.agents/
+.claude/
+out/
+dist/
+node_modules/
+formatex-typ/fonts/

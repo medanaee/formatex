@@ -1,0 +1,107 @@
+[package]
+name = "formatex"
+version = "0.1.0"
+description = "Formatex: write Markdown, get a typeset PDF"
+authors = ["Formatex"]
+license = ""
+repository = ""
+edition = "2024"
+rust-version = "1.92"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# `staticlib` + `cdylib` are what the Android / iOS builds link; `rlib` is for `cargo test`
+name = "formatex_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.2", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.3", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+
+# The native Typst engine (ADR 0005). typst-kit 0.15 is a set of building blocks: files, fonts, packages.
+typst = "0.15.1"
+typst-pdf = "0.15.1"
+typst-svg = "0.15.1"
+typst-layout = "0.15.1"
+typst-kit = { version = "0.15.1", features = ["embedded-fonts", "scan-fonts", "system-packages", "datetime"] }
+# The engine files (main.typ, src/, components/, ...) are compiled into the binary: see build.rs and engine/
+include_dir = "0.7"
+# Package downloads from Typst Universe: rustls, so Android needs no OpenSSL
+ureq = { version = "2", default-features = false, features = ["tls", "gzip"] }
+# Reading the component sources (tags, schema, rules) to generate the registry
+regex = "1"
+tauri-plugin-opener = "2.7.2"
+
+# `tauri dev` builds without optimization, which makes Typst about ten times slower. Optimize Typst and the crates it spends its time in
+# (layout, text shaping, fonts, plugins) even in dev builds; everything else, and the app itself, stays quick to build.
+[profile.dev.package.typst]
+opt-level = 3
+[profile.dev.package.typst-layout]
+opt-level = 3
+[profile.dev.package.typst-library]
+opt-level = 3
+[profile.dev.package.typst-eval]
+opt-level = 3
+[profile.dev.package.typst-realize]
+opt-level = 3
+[profile.dev.package.typst-syntax]
+opt-level = 3
+[profile.dev.package.typst-utils]
+opt-level = 3
+[profile.dev.package.typst-svg]
+opt-level = 3
+[profile.dev.package.typst-pdf]
+opt-level = 3
+[profile.dev.package.typst-kit]
+opt-level = 3
+[profile.dev.package.typst-html]
+opt-level = 3
+[profile.dev.package.typst-timing]
+opt-level = 3
+[profile.dev.package.comemo]
+opt-level = 3
+[profile.dev.package.krilla]
+opt-level = 3
+[profile.dev.package.krilla-svg]
+opt-level = 3
+[profile.dev.package.rustybuzz]
+opt-level = 3
+[profile.dev.package.ttf-parser]
+opt-level = 3
+[profile.dev.package.fontdb]
+opt-level = 3
+[profile.dev.package.wasmi]
+opt-level = 3
+[profile.dev.package.wasmi_core]
+opt-level = 3
+[profile.dev.package.wasmi_collections]
+opt-level = 3
+[profile.dev.package.unicode-bidi]
+opt-level = 3
+[profile.dev.package.unicode-segmentation]
+opt-level = 3
+[profile.dev.package.hypher]
+opt-level = 3
+[profile.dev.package.kurbo]
+opt-level = 3
+[profile.dev.package.pdf-writer]
+opt-level = 3
+[profile.dev.package.subsetter]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.flate2]
+opt-level = 3
+[profile.dev.package.zune-jpeg]
+opt-level = 3
+

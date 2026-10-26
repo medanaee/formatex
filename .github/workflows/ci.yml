@@ -1,0 +1,84 @@
+name: CI
+
+# One repository: the Typst engine is `formatex-typ/`, the app is `formatex-app/` (`npm run engine:sync` copies the engine into it).
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TYPST_VERSION: v0.15.1
+
+defaults:
+  run:
+    working-directory: formatex-app
+
+jobs:
+  engine:
+    name: Typst engine (registry, schema, one PDF)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: formatex-typ
+    steps:
+      - uses: actions/checkout@v4
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: ${{ env.TYPST_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: node tools/export-schema.mjs
+      - run: node tools/bundle.mjs
+      - run: node tools/build-all.mjs --themes paper --feels formal --source docs/doc_en.md
+  web:
+    name: Frontend (type-check, lint, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # `engine:sync` regenerates the tag schema with the Typst CLI
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: ${{ env.TYPST_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: formatex-app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  rust:
+    name: Rust (tests)
+    needs: web
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: ${{ env.TYPST_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: formatex-app/package-lock.json
+      - name: Install Linux prerequisites (Tauri v2)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config
+      - run: npm ci
+      - run: npm run build
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: formatex-app/src-tauri
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --lib

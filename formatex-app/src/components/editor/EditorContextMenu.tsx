@@ -1,0 +1,95 @@
+import type { ReactNode } from "react"
+import { startCompletion } from "@codemirror/autocomplete"
+import { redo, selectAll, undo } from "@codemirror/commands"
+import { Bold, Clipboard, Code, Copy, Italic, Link2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { insertLink, insertText, toggleWrap } from "@/lib/editor/format"
+import { desktopOs } from "@/lib/platform"
+import { useEditorViewStore } from "@/stores/useEditorViewStore"
+
+/** The right-click menu of the text editor: history, clipboard, selection, and for Markdown the formatting tools. */
+export function EditorContextMenu({ markdown, children }: { markdown: boolean; children: ReactNode }) {
+  const { t } = useTranslation()
+  const view = useEditorViewStore((state) => state.view)
+  const canUndo = useEditorViewStore((state) => state.canUndo)
+  const canRedo = useEditorViewStore((state) => state.canRedo)
+  const mod = desktopOs() === "macos" ? "⌘" : "Ctrl+"
+
+  const selection = () => (view ? view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to) : "")
+  const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
+
+  const cut = async () => {
+    if (!view || !selection()) return
+    await navigator.clipboard.writeText(selection())
+    view.dispatch(view.state.replaceSelection(""))
+    view.focus()
+  }
+  const copy = async () => {
+    if (selection()) await navigator.clipboard.writeText(selection())
+  }
+  const paste = async () => {
+    if (!view) return
+    view.dispatch({ ...view.state.replaceSelection(await navigator.clipboard.readText()), userEvent: "input.paste" })
+    view.focus()
+  }
+  const run = (command: (target: NonNullable<typeof view>) => unknown) => () => {
+    if (!view) return
+    command(view)
+    view.focus()
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="h-full">{children}</div>
+      </ContextMenuTrigger>
+      <ContextMenuContent {...keepFocus}>
+        <ContextMenuItem disabled={!canUndo} onSelect={run(undo)}>
+          <Undo2 /> {t("format.undo")} <ContextMenuShortcut>{mod}Z</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem disabled={!canRedo} onSelect={run(redo)}>
+          <Redo2 /> {t("format.redo")} <ContextMenuShortcut>{mod}Y</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => void cut()}>
+          <Scissors /> {t("menu.cut")} <ContextMenuShortcut>{mod}X</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => void copy()}>
+          <Copy /> {t("menu.copy")} <ContextMenuShortcut>{mod}C</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => void paste()}>
+          <Clipboard /> {t("menu.paste")} <ContextMenuShortcut>{mod}V</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={run(selectAll)}>
+          <TextSelect /> {t("menu.selectAll")} <ContextMenuShortcut>{mod}A</ContextMenuShortcut>
+        </ContextMenuItem>
+        {markdown && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={run((v) => toggleWrap(v, "**"))}>
+              <Bold /> {t("format.bold")} <ContextMenuShortcut>{mod}B</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={run((v) => toggleWrap(v, "*"))}>
+              <Italic /> {t("format.italic")} <ContextMenuShortcut>{mod}I</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={run((v) => toggleWrap(v, "`"))}>
+              <Code /> {t("format.code")}
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={run((v) => insertLink(v))}>
+              <Link2 /> {t("format.link")}
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={run((v) => {
+                insertText(v, "<")
+                startCompletion(v)
+              })}
+            >
+              <Tags /> {t("format.tag")}
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}

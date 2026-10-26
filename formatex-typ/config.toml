@@ -1,0 +1,154 @@
+# Project-wide settings.
+
+# Markdown file that main.typ compiles (path relative to main.typ). Default: "doc_en.md"
+# `--input source=other.md` on the command line overrides it.
+source = "docs/doc_en.md"
+
+# Color theme
+#   light: "paper", "sepia", "ocean", "sage"
+#   dark:  "midnight", "nord", "zinc", "dracula"
+theme = "paper"
+
+# Overall feel: corner rounding of code, alerts, boxes, theorem blocks, images, cover frame,
+# plus the default fonts (used when [font] doesn't set them)
+#   "formal"   square corners, official       — New Computer Modern + XB Niloofar (header: plain rule below)
+#   "standard" slightly rounded               — Inter + IRANSans
+#   "friendly" very rounded, modern, casual   — Lexend + Pelak
+feel = "formal"
+
+# Page size: "a4" (print) or "mobile" (110 × 245 mm page with small margins for phones; header center item hidden)
+page = "a4"
+
+# Page margins on A4: "narrow" (15 mm sides), "normal" (about 25 mm), "wide" (35 mm sides).
+# Ignored on the mobile page size. Default: "normal"
+margin = "normal"
+
+# Size of everything on the page, in percent: text, headings, code, tables, paddings, corners
+# and rules grow or shrink together; the page size and margins stay the same. Default: 100
+#   e.g. 90 = more fits on a page, 115 = larger print. `--input scale=110` overrides it.
+scale = 100
+
+# Text direction: "auto" = each paragraph, heading, list, table cell, ... follows its own first
+# letter (Persian → right-to-left, English → left-to-right); "rtl" / "ltr" force that direction on
+# everything (code blocks stay left-to-right). Usually set per document in front matter: `dir: rtl`.
+# A <dir to="rtl|ltr|auto"> block changes it for one part of a document. `--input dir=ltr` overrides it.
+dir = "rtl"
+
+# Text columns: 1 or 2 (or more). The cover stays one column, <docheader> spans all columns,
+# and the mobile page size always uses one. Usually set per document in front matter: `columns: 2`
+columns = 1
+# Which column is filled first: "rtl" = right column first, "ltr" = left first, "auto" = Typst decides
+column-dir = "rtl"
+
+# Draft notes: "show" (default) or "hide" — "hide" removes every <todo> and the <todos> list
+# for the final version. `--input todo=hide` overrides it.
+todo = "show"
+
+# Answers of <exercise>: "show" (default; under each question, correct options highlighted),
+# "hide" (question sheet) or "end" (collected under <answers>). `--input answers=hide` overrides it.
+answers = "show"
+
+# Fonts (any installed font; see `typst fonts`). Override the feel's fonts; leave commented to use them.
+[font]
+# # English text. Default: the feel's font
+# latin = "Lexend"
+# # Persian text. Default: the feel's font
+# persian = "vazirmatn"
+# # Code blocks and inline code. Default: "Anonymous Pro"
+# code = "Anonymous Pro"
+
+# Body text spacing and alignment. Code blocks keep their own spacing.
+[paragraph]
+# Both edges of every line flush with the margins (true) or ragged on the end side (false). Default: false
+justify = false
+# Extra space between letters, in percent of the font size: 0 = normal, 2 = a little looser,
+# -2 = tighter. Default: 0
+letter-spacing = 0
+# Gap between the lines of a paragraph, in percent of the normal gap: 100 = normal,
+# 150 = airier, 80 = tighter. Default: 100
+line-spacing = 115
+# Space between words, in percent of the font's normal space. Default: 100
+word-spacing = 100
+
+# The page header, footer, cover page and bibliography belong to each document: set them in the
+# YAML front matter at the top of the Markdown file (see doc_en.md / doc_fa.md / demo.md).
+# Any setting in this file can also be overridden there for one document.
+
+# Look of the headings. Every key can be overridden per document in front matter, e.g.
+#   heading:
+#     fill: false
+#     max-level: 1
+[heading]
+# Automatic heading numbering: true = on, false = off
+numbering = true
+# Text right before the number: "(" with number-suffix ")" → «(۱) مقدمه». Default: ""
+# number-prefix = "("
+# Text right after the number: "" → «۱ مقدمه», "." → «۱. مقدمه», " -" → «۱ - مقدمه». Default: ""
+number-suffix = "-"
+# Rule below the heading: true / false. Default: false
+underline = true
+# Tinted background behind the heading: true / false. Default: false
+fill = false
+# Deepest level that gets this look (1 = only #, 2 = # and ##, ...). Default: 2
+max-level = 1
+# Base color of the text, rule and background: a preset ("purple", "blue", "teal", "green",
+# "yellow", "red", "pink"), a hex color ("#1d4ed8"), or "" for the theme's heading color.
+# Corner rounding follows the feel; with underline on, the bottom corners stay square.
+color = ""
+
+# Default options for every table. A `{width=auto align=left}` line right above a table overrides them.
+[table]
+# "full" = full text width, "auto" = as wide as the content
+width = "full"
+# Where an auto-width table sits: "center", "left" or "right"
+align = "center"
+# With columns > 1: "column" = stays in its column, "all" = floats across all columns.
+# Usually set per table instead: {span=all ...}
+span = "column"
+
+# Default look of lists. A `{numbers=abjad prefix="(" suffix=")" #id}` line right above a list overrides it
+# for that list; front matter `list:` overrides it for one document.
+[list]
+# Numbers of numbered lists ("1." in Markdown; "۱." works too):
+#   "auto" = Persian digits in a Persian list, Latin in an English one (from its first letter)
+#   "fa" ۱ ۲ ۳ · "en" 1 2 3 · "fatxt" یک دو سه · "rome" I II III · "abc" a b c
+#   "abjad" الف ب ج د · "alefba" الف ب پ ت
+numbers = "auto"
+# Text right before the number: "(" with suffix ")" → «(۱)». Default: none
+# prefix = "("
+# Text right after the number: "." → «۱.», ")" → «۱)», "-" → «۱-», "" → «۱». Default: "."
+suffix = "."
+# Bullet of unnumbered lists: a character ("•", "–", "★") or a name (disc, circle, square,
+# dash, triangle, arrow, check, star, none); one per nesting level: "disc,circle,dash".
+# Leave commented for Typst's default (• ‣ –).
+# marker = "★,circle,dash"
+
+# Extra indent of every list, e.g. "1.5em" or "5mm". Default: none
+# indent = "1em"
+
+# AI chat transcripts: <chat> with <user> and <ai> messages. Every key can be overridden in
+# front matter (`chat:`) or on one <chat> tag (`<chat style="bubbles" ai-name="ChatGPT">`).
+[chat]
+# Look: "auto" = from the feel (formal → "transcript", standard → "assistant", friendly → "bubbles")
+#   "transcript" named turns with a colored bar on the start side
+#   "assistant"  ChatGPT-like: your messages in a bubble at the end side, answers full width with an avatar
+#   "bubbles"    messenger: both sides in bubbles, each with an avatar
+style = "auto"
+# Names over the messages; "" = «شما» / "You" and «هوش مصنوعی» / "AI" by the chat's language
+user-name = ""
+ai-name = ""
+# Avatar icons (Font Awesome names)
+user-icon = "user"
+ai-icon = "robot"
+# Colors: a preset ("blue", "teal", ...) or a hex color; "" = the theme's accent / secondary color
+user-color = ""
+ai-color = ""
+# Frame around the whole chat: true / false
+frame = true
+# Widest a bubble gets, in percent of the line or as a length ("12cm")
+width = "80%"
+
+# Display equations ($$ ... $$)
+[equation]
+# "labelled" = only equations followed by {#id} get a number, "all" = every one, "none" = never
+numbering = "labelled"

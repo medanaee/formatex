@@ -1,0 +1,232 @@
+name: Release
+
+# Runs on every push to main, and builds only in two cases:
+#   1. The version in src-tauri/tauri.conf.json went up: a new release `v<version>` is published with every build.
+#   2. A commit of the push has `[build]` in its message: everything is built again and the files of the LATEST release are
+#      replaced (no new release, the tag stays where it is).
+# Anything else is skipped. "Run workflow" by hand builds and keeps the files as workflow artifacts only.
+#
+# Builds: Windows, macOS (Apple silicon and Intel), Linux, and Android with one APK per ABI.
+# Optional secrets (Android): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+# Without them the APKs are signed with a throw-away key: they install, but cannot update an app signed with another key.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TYPST_VERSION: v0.15.1
+
+defaults:
+  run:
+    working-directory: formatex-app
+
+jobs:
+  plan:
+    name: Decide what to build
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.decide.outputs.mode }}
+      tag: ${{ steps.decide.outputs.tag }}
+      release_id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          mode=none; tag=""
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            mode=manual
+          else
+            old=""
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              old=$(git show "$BEFORE:formatex-app/src-tauri/tauri.conf.json" 2>/dev/null | jq -r .version || true)
+            fi
+            if [ "$old" != "$version" ]; then
+              mode=new; tag="v$version"
+            else
+              range="${BEFORE:-HEAD~1}..HEAD"
+              if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then range="HEAD -1"; fi
+              if git log --format=%B $range | grep -qF "[build]"; then
+                mode=override
+                tag=$(gh release list --repo "${{ github.repository }}" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // ""')
+                if [ -z "$tag" ]; then mode=new; tag="v$version"; fi
+              fi
+            fi
+          fi
+          echo "version $version, mode $mode, tag $tag"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      # A new version gets its release here (published, tag at this commit); an override finds the latest one
+      - id: release
+        if: steps.decide.outputs.mode == 'new' || steps.decide.outputs.mode == 'override'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.decide.outputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Formatex $TAG" --generate-notes
+          id=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  desktop:
+    name: Desktop (${{ matrix.name }})
+    needs: plan
+    if: needs.plan.outputs.mode != 'none'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            args: ""
+          - name: macOS (Apple silicon)
+            os: macos-latest
+            args: "--target aarch64-apple-darwin"
+            rust-targets: aarch64-apple-darwin
+          - name: macOS (Intel)
+            os: macos-latest
+            args: "--target x86_64-apple-darwin"
+            rust-targets: x86_64-apple-darwin
+          - name: Linux
+            os: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: ${{ env.TYPST_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: formatex-app/package-lock.json
+      - name: Install Linux prerequisites (Tauri v2)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: formatex-app/src-tauri
+          key: ${{ matrix.args }}
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: formatex-app
+          args: ${{ matrix.args }}
+          releaseId: ${{ needs.plan.outputs.release_id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatex-${{ runner.os }}-${{ strategy.job-index }}
+          path: |
+            formatex-app/src-tauri/target/**/release/bundle/**/*.msi
+            formatex-app/src-tauri/target/**/release/bundle/**/*.exe
+            formatex-app/src-tauri/target/**/release/bundle/**/*.dmg
+            formatex-app/src-tauri/target/**/release/bundle/**/*.deb
+            formatex-app/src-tauri/target/**/release/bundle/**/*.rpm
+            formatex-app/src-tauri/target/**/release/bundle/**/*.AppImage
+          if-no-files-found: error
+
+  android:
+    name: Android (one APK per ABI)
+    needs: plan
+    if: needs.plan.outputs.mode != 'none'
+    runs-on: ubuntu-22.04
+    env:
+      NDK_VERSION: 27.0.12077973
+    steps:
+      - uses: actions/checkout@v4
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: ${{ env.TYPST_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: formatex-app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Install the NDK
+        run: |
+          sdkmanager "ndk;${NDK_VERSION}" "platform-tools"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: formatex-app/src-tauri
+          key: android
+      - run: npm ci
+
+      # The Android project is generated from tauri.conf.json (identifier com.formatex.org); it is not kept in git
+      - run: npx tauri android init --ci
+
+      - name: Prepare the signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          keystore="$RUNNER_TEMP/release.jks"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+            alias="$KEY_ALIAS"; storepass="$KEYSTORE_PASSWORD"; keypass="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret: the APKs are signed with a throw-away key"
+            alias=formatex; storepass=$(openssl rand -hex 16); keypass="$storepass"
+            keytool -genkeypair -keystore "$keystore" -alias "$alias" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$storepass" -keypass "$keypass" -dname "CN=Formatex, O=Formatex, C=IR"
+          fi
+          {
+            echo "ANDROID_KEYSTORE_PATH=$keystore"
+            echo "ANDROID_KEYSTORE_PASSWORD=$storepass"
+            echo "ANDROID_KEY_ALIAS=$alias"
+            echo "ANDROID_KEY_PASSWORD=$keypass"
+          } >> "$GITHUB_ENV"
+      - run: node scripts/android-signing.mjs
+      - run: node scripts/android-immersive.mjs
+
+      # One APK per ABI: arm64-v8a, armeabi-v7a, x86 and x86_64
+      - run: npx tauri android build --apk --split-per-abi
+
+      - name: Name the APKs by ABI
+        run: |
+          mkdir -p "$RUNNER_TEMP/apks"
+          find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | while read -r apk; do
+            abi=$(basename "$(dirname "$(dirname "$apk")")")
+            cp "$apk" "$RUNNER_TEMP/apks/formatex-${abi}.apk"
+          done
+          ls -l "$RUNNER_TEMP/apks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatex-android-apks
+          path: ${{ runner.temp }}/apks/*.apk
+          if-no-files-found: error
+      - name: Attach the APKs to the release
+        if: needs.plan.outputs.mode != 'manual'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.plan.outputs.tag }}" "$RUNNER_TEMP"/apks/*.apk --clobber --repo "${{ github.repository }}"
