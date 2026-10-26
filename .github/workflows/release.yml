@@ -160,11 +160,13 @@ jobs:
           node-version: lts/*
           cache: npm
           cache-dependency-path: formatex-app/package-lock.json
+      # The .deb files are cached, so after the first run nothing is downloaded and `apt update` is not run
       - name: Install Linux prerequisites (Tauri v2)
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          version: 1.0
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust-targets }}
@@ -173,13 +175,11 @@ jobs:
           workspaces: formatex-app/src-tauri
           key: ${{ matrix.args }}
       - run: npm ci
+      # Builds only; the files are published by the `publish` job, so two jobs never touch the same release asset
       - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: formatex-app
           args: ${{ matrix.args }}
-          releaseId: ${{ needs.plan.outputs.release_id }}
       - uses: actions/upload-artifact@v4
         with:
           name: formatex-${{ runner.os }}-${{ strategy.job-index }}
@@ -276,8 +276,25 @@ jobs:
           name: formatex-android-apks
           path: ${{ runner.temp }}/apks/*.apk
           if-no-files-found: error
-      - name: Attach the APKs to the release
-        if: needs.plan.outputs.mode != 'manual'
+
+  # Every build that succeeded is put on the release (a new one, or the latest one for `[build ...]`), replacing files of the same name
+  publish:
+    name: Publish to the release
+    needs: [plan, desktop, android]
+    if: ${{ !cancelled() && (needs.plan.outputs.mode == 'new' || needs.plan.outputs.mode == 'override') }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: formatex-*
+          path: files
+      - name: Upload the files
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ needs.plan.outputs.tag }}" "$RUNNER_TEMP"/apks/*.apk --clobber --repo "${{ github.repository }}"
+        run: |
+          find files -type f \( -name '*.msi' -o -name '*.exe' -o -name '*.dmg' -o -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' -o -name '*.apk' \) -print0 \
+            | xargs -0 -r gh release upload "${{ needs.plan.outputs.tag }}" --clobber --repo "${{ github.repository }}"
+          find files -type f | sed 's/^/  /'
