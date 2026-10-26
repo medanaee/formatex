@@ -2,9 +2,11 @@ name: Release
 
 # Runs on every push to main, and builds only in two cases:
 #   1. The version in src-tauri/tauri.conf.json went up: a new release `v<version>` is published with every build.
-#   2. A commit of the push has `[build]` in its message: everything is built again and the files of the LATEST release are
-#      replaced (no new release, the tag stays where it is).
-# Anything else is skipped. "Run workflow" by hand builds and keeps the files as workflow artifacts only.
+#   2. A commit of the push has `[build]` in its message: the files of the LATEST release are built again and replaced (no new
+#      release, the tag stays where it is). Say which platforms after `build`, or none for all of them:
+#        [build]  [build all]  [build android]  [build windows linux]  [build desktop]
+#      Words: windows, macos, linux, android, desktop (= windows + macos + linux), all. A new version always builds everything.
+# Anything else is skipped. "Run workflow" by hand builds the platforms you tick and keeps the files as workflow artifacts only.
 #
 # Builds: Windows, macOS (Apple silicon and Intel), Linux, and Android with one APK per ABI.
 # Optional secrets (Android): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
@@ -14,6 +16,23 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      windows:
+        description: Windows
+        type: boolean
+        default: true
+      macos:
+        description: macOS (Apple silicon and Intel)
+        type: boolean
+        default: true
+      linux:
+        description: Linux
+        type: boolean
+        default: true
+      android:
+        description: Android (one APK per ABI)
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -33,6 +52,8 @@ jobs:
       mode: ${{ steps.decide.outputs.mode }}
       tag: ${{ steps.decide.outputs.tag }}
       release_id: ${{ steps.release.outputs.id }}
+      desktop_matrix: ${{ steps.decide.outputs.desktop_matrix }}
+      android: ${{ steps.decide.outputs.android }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,9 +63,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BEFORE: ${{ github.event.before }}
           EVENT: ${{ github.event_name }}
+          IN_WINDOWS: ${{ inputs.windows }}
+          IN_MACOS: ${{ inputs.macos }}
+          IN_LINUX: ${{ inputs.linux }}
+          IN_ANDROID: ${{ inputs.android }}
         run: |
           version=$(jq -r .version src-tauri/tauri.conf.json)
-          mode=none; tag=""
+          mode=none; tag=""; words=""
           if [ "$EVENT" = "workflow_dispatch" ]; then
             mode=manual
           else
@@ -57,16 +82,53 @@ jobs:
             else
               range="${BEFORE:-HEAD~1}..HEAD"
               if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then range="HEAD -1"; fi
-              if git log --format=%B $range | grep -qF "[build]"; then
+              # `[build]`, `[build android]`, `[build windows linux]`: what follows "build" says which platforms
+              tags=$(git log --format=%B $range | grep -oiE '\[build[^]]*\]' || true)
+              if [ -n "$tags" ]; then
+                words=$(echo "$tags" | tr 'A-Z' 'a-z' | sed -E 's/\[build//; s/\]//')
                 mode=override
                 tag=$(gh release list --repo "${{ github.repository }}" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // ""')
                 if [ -z "$tag" ]; then mode=new; tag="v$version"; fi
               fi
             fi
           fi
-          echo "version $version, mode $mode, tag $tag"
+
+          # Which platforms: all for a new version and for a bare `[build]`; otherwise the ones named
+          win=false; mac=false; lin=false; and=false
+          if [ "$mode" = manual ]; then
+            [ "$IN_WINDOWS" = true ] && win=true
+            [ "$IN_MACOS" = true ] && mac=true
+            [ "$IN_LINUX" = true ] && lin=true
+            [ "$IN_ANDROID" = true ] && and=true
+          elif [ "$mode" = override ]; then
+            for w in $words; do
+              case "$w" in
+                all) win=true; mac=true; lin=true; and=true ;;
+                desktop) win=true; mac=true; lin=true ;;
+                windows) win=true ;;
+                macos) mac=true ;;
+                linux) lin=true ;;
+                android) and=true ;;
+                *) echo "::warning::unknown platform '$w' in [build ...]" ;;
+              esac
+            done
+            # Nothing (valid) named: everything
+            if [ "$win$mac$lin$and" = falsefalsefalsefalse ]; then win=true; mac=true; lin=true; and=true; fi
+          elif [ "$mode" = new ]; then
+            win=true; mac=true; lin=true; and=true
+          fi
+          matrix='[]'
+          add() { matrix=$(echo "$matrix" | jq -c ". + [$1]"); }
+          [ "$win" = true ] && add '{"name":"Windows","os":"windows-latest","args":"","rust-targets":""}'
+          [ "$mac" = true ] && add '{"name":"macOS (Apple silicon)","os":"macos-latest","args":"--target aarch64-apple-darwin","rust-targets":"aarch64-apple-darwin"}'
+          [ "$mac" = true ] && add '{"name":"macOS (Intel)","os":"macos-latest","args":"--target x86_64-apple-darwin","rust-targets":"x86_64-apple-darwin"}'
+          [ "$lin" = true ] && add '{"name":"Linux","os":"ubuntu-22.04","args":"","rust-targets":""}'
+
+          echo "version $version, mode $mode, tag $tag, windows $win, macos $mac, linux $lin, android $and"
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "desktop_matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "android=$and" >> "$GITHUB_OUTPUT"
       # A new version gets its release here (published, tag at this commit); an override finds the latest one
       - id: release
         if: steps.decide.outputs.mode == 'new' || steps.decide.outputs.mode == 'override'
@@ -82,25 +144,11 @@ jobs:
   desktop:
     name: Desktop (${{ matrix.name }})
     needs: plan
-    if: needs.plan.outputs.mode != 'none'
+    if: needs.plan.outputs.mode != 'none' && needs.plan.outputs.desktop_matrix != '[]'
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Windows
-            os: windows-latest
-            args: ""
-          - name: macOS (Apple silicon)
-            os: macos-latest
-            args: "--target aarch64-apple-darwin"
-            rust-targets: aarch64-apple-darwin
-          - name: macOS (Intel)
-            os: macos-latest
-            args: "--target x86_64-apple-darwin"
-            rust-targets: x86_64-apple-darwin
-          - name: Linux
-            os: ubuntu-22.04
-            args: ""
+        include: ${{ fromJSON(needs.plan.outputs.desktop_matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -147,7 +195,7 @@ jobs:
   android:
     name: Android (one APK per ABI)
     needs: plan
-    if: needs.plan.outputs.mode != 'none'
+    if: needs.plan.outputs.mode != 'none' && needs.plan.outputs.android == 'true'
     runs-on: ubuntu-22.04
     env:
       NDK_VERSION: 27.0.12077973
