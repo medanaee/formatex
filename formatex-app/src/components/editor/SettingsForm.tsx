@@ -134,6 +134,8 @@ interface SettingsFormProps {
   defaultClosed?: string[]
   /** The control under its name instead of beside it (a narrow place, like the editor). */
   stacked?: boolean
+  /** Sections as plain rows with a line between them, edge to edge, instead of rounded cards. */
+  flat?: boolean
   className?: string
 }
 
@@ -150,7 +152,7 @@ function shown(format: SettingsFormat, text: string, table: string, key: string)
  * A change rewrites that one line of the file, keeping the comments; a key that is not set shows the default, and a reset button
  * removes the key again. Keys the schema does not know stay in the source. `config.toml` and the front matter of a document both use it.
  */
-export function SettingsForm({ text, onChange, config, format, extraThemes, search = true, defaultClosed, stacked = false, className }: SettingsFormProps) {
+export function SettingsForm({ text, onChange, config, format, extraThemes, search = true, defaultClosed, stacked = false, flat = false, className }: SettingsFormProps) {
   const { t, i18n } = useTranslation()
   const entries = useEditorStore((state) => state.files)
   const [query, setQuery] = useState("")
@@ -176,7 +178,7 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, sear
         if (keys.length === 0) return null
         const open = needle !== "" || !closed.has(id)
         return (
-          <section key={id || "general"} className="mb-3 rounded-xl border border-border bg-card text-card-foreground">
+          <section key={id || "general"} className={flat ? "border-b border-border last:border-b-0" : "mb-3 rounded-xl border border-border bg-card text-card-foreground"}>
             <button
               type="button"
               onClick={() =>
@@ -187,14 +189,14 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, sear
                 })
               }
               aria-expanded={open}
-              className="flex h-9 w-full items-center gap-2 px-3 text-start text-[13px] font-semibold outline-none focus-visible:bg-muted"
+              className={cn("flex h-9 w-full items-center gap-2 px-3 text-start text-[13px] font-semibold outline-none focus-visible:bg-muted", flat && "hover:bg-muted/50")}
             >
               <ChevronDown className={cn("size-3.5 text-muted-foreground transition-transform", !open && "-rotate-90 rtl:rotate-90")} />
               <span dir="ltr">{id || t("config.general")}</span>
               {doc && <span className="min-w-0 flex-1 truncate text-xs font-normal text-muted-foreground">{doc}</span>}
             </button>
             {open && (
-              <div className="divide-y divide-border border-t border-border">
+              <div className={cn("divide-y divide-border border-t border-border", flat && "bg-muted/20")}>
                 {keys.map(([name, spec]) => {
                   const { value, plain } = shown(format, text, id, name)
                   return (

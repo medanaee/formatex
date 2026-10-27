@@ -596,7 +596,7 @@ export function livePreview(getSchema: () => Schema, onConfigure: (request: Conf
 const liveTheme = EditorView.theme({
   ".cm-lp-front": { opacity: "0.55", fontSize: "0.9em" },
   // `contain: inline-size`: the panel never makes the text area wider than the editor, whatever its controls would like
-  ".cm-lp-frontpanel": { padding: "6px 8px", cursor: "default", contain: "inline-size" },
+  ".cm-lp-frontpanel": { padding: "0", cursor: "default", contain: "inline-size" },
   ".cm-lp-h": { fontWeight: "700", lineHeight: "1.4" },
   ".cm-lp-h1": { fontSize: "1.7em" },
   ".cm-lp-h2": { fontSize: "1.45em" },

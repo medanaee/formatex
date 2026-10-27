@@ -282,6 +282,7 @@
   },
   "frontMatter": {
     "title": "Document settings",
-    "source": "Edit the source"
+    "source": "Edit the source",
+    "copyFromConfig": "Copy the settings of config.toml here"
   }
 }
