@@ -63,6 +63,8 @@
 #let links-schema = (
   "a": (
     kind: "inline",
+    // Checked where the tag is read from the text, so the problem has its line (src/preprocess/check.typ)
+    needs: (keys: ("href", "id", "name"), message: "<a> needs href=\"https://...\" or href=\"#id\""),
     description: (en: "Link to a URL (href=\"https://...\") or a place in the document (href=\"#id\"); with id/name it is an anchor", fa: "پیوند به نشانی وب (href=\"https://...\") یا جایی از سند (href=\"#id\")؛ با id/name یک لنگر است"),
     attrs: (
       "href": (type: "string", doc: (en: "`https://...` for a web link or `#id` for a place in the document", fa: "`https://...` برای پیوند وب یا `#id` برای جایی از سند")),

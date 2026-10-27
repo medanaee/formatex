@@ -89,9 +89,12 @@
   }
   parts.join("/")
 }
+// Returns the expanded text and, for the checks that report a line of the user's own file, every file read on the way as
+// `(path, text)` (an included file with its front matter, as it is on disk).
 #let expand-includes(text, chain) = {
   let fence = none
   let out = ()
+  let files = ()
   // Comments go first, so a commented-out `<include>` line is not followed.
   for line in strip-comments(text).split("\n") {
     let f = line.match(regex("^\s{0,3}(`{3,}|~{3,})"))
@@ -109,20 +112,26 @@
     let path = resolve-include(m.captures.first(), chain.last())
     assert(path not in chain, message: "<include> loop: " + (chain + (path,)).join(" -> "))
     let included = read(rooted(path))
+    files.push((path, included))
     let fm = included.match(front-matter-regex)
     if fm != none { included = included.slice(fm.end) }
     // Blank lines keep the included blocks from merging with the surrounding paragraphs.
+    let inner = expand-includes(included, chain + (path,))
+    files += inner.files
     out.push("")
-    out.push(expand-includes(included, chain + (path,)))
+    out.push(inner.text)
     out.push("")
   }
-  out.join("\n")
+  (text: out.join("\n"), files: files)
 }
 
-#let source-body = expand-includes(
+#let expanded-source = expand-includes(
   if front-matter-match == none { source-text } else { source-text.slice(front-matter-match.end) },
   (source-path,),
 )
+#let source-body = expanded-source.text
+// The main file and the files it includes, each as `(path, text)`: what the checks of `src/preprocess/check.typ` read.
+#let source-files = ((source-path, source-text),) + expanded-source.files
 
 #let merge-config(base, over) = {
   let out = base

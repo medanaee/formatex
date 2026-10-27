@@ -103,9 +103,6 @@ export async function compileProject(
   return { pages: raw.pages, diagnostics: raw.diagnostics, ok: raw.ok, elapsedMs: raw.elapsed_ms }
 }
 
-/** The first and the last line of the block of Markdown a problem comes from, found by typesetting the text again block by block; `null` when it is not in the body. */
-export const locateProblem = (projectId: string, main: string, message: string, overrides?: Record<string, string>): Promise<[number, number] | null> => invoke<[number, number] | null>("locate_problem", { projectId, main, message, overrides })
-
 /** The first page of a project as SVG text (a card of the library); `null` when it does not compile. */
 export const projectPreview = (projectId: string, main: string, overrides?: Record<string, string>): Promise<string | null> => invoke<string | null>("project_preview", { projectId, main, overrides })
 
