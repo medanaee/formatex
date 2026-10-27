@@ -54,13 +54,18 @@ function stickyPanel(view: EditorView): Panel {
     )
   }
 
-  const render = () => {
-    // How far the document is scrolled under the top edge of the text area, in the document's own units
-    const above = view.scrollDOM.getBoundingClientRect().top - view.documentTop
-    if (above <= 0) return set([])
-    const block = view.lineBlockAtHeight(above)
-    set(enclosingHeadings(headings, view.state.doc.lineAt(block.from).number))
-  }
+  // The layout is read in the editor's own measure phase: reading it inside an update throws
+  const render = () =>
+    view.requestMeasure({
+      key: "sticky-headings",
+      read: () => {
+        // How far the document is scrolled under the top edge of the text area, in the document's own units
+        const above = view.scrollDOM.getBoundingClientRect().top - view.documentTop
+        if (above <= 0) return []
+        return enclosingHeadings(headings, view.state.doc.lineAt(view.lineBlockAtHeight(above).from).number)
+      },
+      write: set,
+    })
 
   const onScroll = () => render()
   return {
