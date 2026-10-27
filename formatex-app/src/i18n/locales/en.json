@@ -277,6 +277,11 @@
     "cut": "Cut",
     "copy": "Copy",
     "paste": "Paste",
-    "selectAll": "Select all"
+    "selectAll": "Select all",
+    "select": "Select text"
+  },
+  "frontMatter": {
+    "title": "Document settings",
+    "source": "Edit the source"
   }
 }

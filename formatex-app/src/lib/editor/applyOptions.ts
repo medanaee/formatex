@@ -23,10 +23,9 @@ export function editFor(request: ConfigureRequest, attrs: Attrs, docLength: numb
     const open = serializeOpenTag({ name: request.name, attrs, selfClosing: false })
     return {
       edit: [
-        { from, to: from, insert: `${open}
-` },
-        { from: to, to, insert: `
-</${request.name}>` },
+        // Blank lines inside the tag: the fenced block is Markdown, and a tag line followed at once by text is an HTML block
+        { from, to: from, insert: `${open}\n\n` },
+        { from: to, to, insert: `\n\n</${request.name}>` },
       ],
       next: { ...request, wrap: undefined, attrs, from, to: from + open.length },
     }

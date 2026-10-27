@@ -59,7 +59,6 @@ export function TagPalette({ onInsert }: { /** Called after a tag was inserted b
                 draggable
                 disabled={!markdown && !view}
                 onDragStart={(event) => dragStart(event, name)}
-                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   const current = useEditorViewStore.getState().view
                   if (current && insertTag(current, name, schema)) onInsert?.()

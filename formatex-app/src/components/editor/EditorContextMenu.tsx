@@ -1,11 +1,11 @@
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
 import { startCompletion } from "@codemirror/autocomplete"
 import { redo, selectAll, undo } from "@codemirror/commands"
-import { Bold, Clipboard, Code, Copy, Italic, Link2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
+import { Bold, Clipboard, Code, Copy, Italic, Link2, MousePointer2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { insertLink, insertText, toggleWrap } from "@/lib/editor/format"
-import { desktopOs } from "@/lib/platform"
+import { desktopOs, hasFinePointer } from "@/lib/platform"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
 
 /** The right-click menu of the text editor: history, clipboard, selection, and for Markdown the formatting tools. */
@@ -15,6 +15,19 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
   const canUndo = useEditorViewStore((state) => state.canUndo)
   const canRedo = useEditorViewStore((state) => state.canRedo)
   const mod = desktopOs() === "macos" ? "⌘" : "Ctrl+"
+  // Where the finger or the mouse last went down: "Select" works from there
+  const point = useRef<{ x: number; y: number } | null>(null)
+  const touch = !hasFinePointer()
+
+  /** Selects the word (or, on a blank, the line) under the last press: the start of selecting by touch, which a long press cannot do here. */
+  const selectHere = () => {
+    if (!view || !point.current) return
+    const position = view.posAtCoords(point.current) ?? view.state.selection.main.head
+    const word = view.state.wordAt(position)
+    const line = view.state.doc.lineAt(position)
+    view.dispatch({ selection: word ? { anchor: word.from, head: word.to } : { anchor: line.from, head: line.to }, scrollIntoView: true })
+    view.focus()
+  }
 
   const selection = () => (view ? view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to) : "")
   const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
@@ -42,9 +55,19 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="h-full">{children}</div>
+        <div className="h-full" onPointerDownCapture={(event) => (point.current = { x: event.clientX, y: event.clientY })}>
+          {children}
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent {...keepFocus}>
+        {touch && (
+          <>
+            <ContextMenuItem onSelect={selectHere}>
+              <MousePointer2 /> {t("menu.select")}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        )}
         <ContextMenuItem disabled={!canUndo} onSelect={run(undo)}>
           <Undo2 /> {t("format.undo")} <ContextMenuShortcut>{mod}Z</ContextMenuShortcut>
         </ContextMenuItem>

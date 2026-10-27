@@ -5,7 +5,9 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { DocumentItem } from "@/lib/db/types"
 import { cachedThumbnail, requestThumbnail } from "@/lib/projectThumbnails"
+import { hasFinePointer } from "@/lib/platform"
 import { cn } from "@/lib/utils"
+import { DROP_ROOT, useTouchDrag } from "./useTouchDrag"
 
 /** The type a dragged card carries: the ids of the projects and folders being moved. */
 export const LIBRARY_DRAG = "application/x-formatex-library"
@@ -77,27 +79,44 @@ interface CardShellProps {
   payload: DragPayload
   /** Dropping on the card (a folder takes what is dropped). */
   onDropItems?: (payload: DragPayload) => void
+  /** The name shown under a finger that drags the card. */
+  label: string
+  /** A finger dropped this card on a folder (`null`: the top level). */
+  onTouchDrop: (payload: DragPayload, folder: string | null) => void
+  /** Set on a folder: the id a finger drop is looked up by. */
+  dropFolderId?: string
   className?: string
   children: ReactNode
 }
 
 /** A card of the library: draggable, with a right-click menu and a three-dot button that show the same actions. */
-function CardShell({ actions, menuLabel, payload, onDropItems, className, children }: CardShellProps) {
+function CardShell({ actions, menuLabel, payload, onDropItems, label, onTouchDrop, dropFolderId, className, children }: CardShellProps) {
   const drop = useDropTarget(onDropItems ?? (() => {}))
+  const card = useRef<HTMLLIElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  // A finger: a long press then a move drags the card, a long press alone shows the menu (the browser's own long-press drag and the
+  // context menu's would both fight for the gesture, so the card handles it itself)
+  useTouchDrag(card, { label, onDrop: (folder) => onTouchDrop(payload, folder), onMenu: () => setMenuOpen(true) })
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <li
-          draggable
+          ref={card}
+          data-drop-folder={dropFolderId}
+          onPointerDownCapture={(event) => {
+            // The context menu opens by itself after a long press of a finger; here that is the card's own long press
+            if (event.pointerType !== "mouse" && !(event.target as HTMLElement).closest("[data-slot=dropdown-menu-trigger]")) event.stopPropagation()
+          }}
+          draggable={hasFinePointer()}
           onDragStart={(event) => {
             event.dataTransfer.setData(LIBRARY_DRAG, JSON.stringify(payload))
             event.dataTransfer.effectAllowed = "move"
           }}
           {...(onDropItems ? drop.props : {})}
-          className={cn("group relative rounded-xl border border-border bg-card text-card-foreground transition-colors", drop.over && "border-primary bg-primary/5 ring-2 ring-primary/40", className)}
+          className={cn("group relative touch-pan-y rounded-xl border border-border bg-card text-card-foreground transition-colors select-none data-[armed]:scale-[0.97] data-[armed]:ring-2 data-[armed]:ring-primary/40 data-[drop-over]:border-primary data-[drop-over]:bg-primary/5 data-[drop-over]:ring-2 data-[drop-over]:ring-primary/40", drop.over && "border-primary bg-primary/5 ring-2 ring-primary/40", className)}
         >
           {children}
-          <DropdownMenu>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm" className="absolute end-1 top-1 bg-card/80 text-muted-foreground opacity-100 backdrop-blur-sm sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 data-[state=open]:opacity-100" title={menuLabel} aria-label={menuLabel}>
                 <MoreVertical />
@@ -159,9 +178,9 @@ function Thumbnail({ doc }: { doc: DocumentItem }) {
   )
 }
 
-export function ProjectCard({ doc, subtitle, actions, menuLabel, href }: { doc: DocumentItem; subtitle: string; actions: MenuAction[]; menuLabel: string; href: ReactNode }) {
+export function ProjectCard({ doc, subtitle, actions, menuLabel, href, onTouchDrop }: { doc: DocumentItem; subtitle: string; actions: MenuAction[]; menuLabel: string; href: ReactNode; onTouchDrop: (payload: DragPayload, folder: string | null) => void }) {
   return (
-    <CardShell actions={actions} menuLabel={menuLabel} payload={{ docs: [doc.id], folders: [] }}>
+    <CardShell actions={actions} menuLabel={menuLabel} payload={{ docs: [doc.id], folders: [] }} label={doc.title} onTouchDrop={onTouchDrop}>
       {href}
       <Thumbnail doc={doc} />
       <div className="min-w-0 px-3 py-2">
@@ -247,9 +266,9 @@ function FolderGlyph({ docs, className }: { docs: DocumentItem[]; className?: st
   )
 }
 
-export function FolderCard({ id, name, subtitle, previews, actions, menuLabel, onOpen, onDropItems }: { id: string; name: string; subtitle: string; /** The projects inside, newest first; the first three show their first page. */ previews: DocumentItem[]; actions: MenuAction[]; menuLabel: string; onOpen: () => void; onDropItems: (payload: DragPayload) => void }) {
+export function FolderCard({ id, name, subtitle, previews, actions, menuLabel, onOpen, onDropItems, onTouchDrop }: { id: string; name: string; subtitle: string; /** The projects inside, newest first; the first three show their first page. */ previews: DocumentItem[]; actions: MenuAction[]; menuLabel: string; onOpen: () => void; onDropItems: (payload: DragPayload) => void; onTouchDrop: (payload: DragPayload, folder: string | null) => void }) {
   return (
-    <CardShell actions={actions} menuLabel={menuLabel} payload={{ docs: [], folders: [id] }} onDropItems={onDropItems} className="self-start">
+    <CardShell actions={actions} menuLabel={menuLabel} payload={{ docs: [], folders: [id] }} onDropItems={onDropItems} label={name} onTouchDrop={onTouchDrop} dropFolderId={id} className="self-start">
       <button type="button" onClick={onOpen} className="block w-full rounded-xl text-start outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <div className="flex aspect-[4/3] items-center justify-center rounded-t-xl bg-muted/50">
           <FolderGlyph docs={previews} className="w-1/2 min-w-20 max-w-32 text-[var(--syntax-link)] drop-shadow-sm transition-transform group-hover:scale-105" />
@@ -264,3 +283,5 @@ export function FolderCard({ id, name, subtitle, previews, actions, menuLabel, o
     </CardShell>
   )
 }
+
+export { DROP_ROOT }

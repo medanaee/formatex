@@ -18,6 +18,8 @@ interface SettingsState {
   visualEditor: boolean
   /** config.toml is shown as a settings screen instead of source. */
   configVisual: boolean
+  /** The front matter's settings panel in the visual editor is open. */
+  frontMatterOpen: boolean
   /** Base direction of the text editor: each line by its own letters, or everything right-to-left / left-to-right. */
   editorDirection: "auto" | "rtl" | "ltr"
   /** The editor's side panel: the project's files, its headings, or the tag palette. */
@@ -32,6 +34,7 @@ interface SettingsState {
   settingsSection: SettingsSection
   setSettingsSection: (section: SettingsSection) => void
   setConfigVisual: (visual: boolean) => void
+  setFrontMatterOpen: (open: boolean) => void
   setVisualEditor: (visual: boolean) => void
   setEditorDirection: (direction: "auto" | "rtl" | "ltr") => void
   setSidebarTab: (tab: SidebarTab) => void
@@ -59,6 +62,8 @@ export const useSettingsStore = create<SettingsState>()(
       setSettingsSection: (settingsSection) => set({ settingsSection }),
       configVisual: true,
       setConfigVisual: (configVisual) => set({ configVisual }),
+      frontMatterOpen: false,
+      setFrontMatterOpen: (frontMatterOpen) => set({ frontMatterOpen }),
       setVisualEditor: (visualEditor) => set({ visualEditor }),
       setEditorDirection: (editorDirection) => set({ editorDirection }),
       setSidebarTab: (sidebarTab) => set({ sidebarTab }),

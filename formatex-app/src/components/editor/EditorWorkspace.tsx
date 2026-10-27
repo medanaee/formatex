@@ -11,6 +11,7 @@ import { useSettingsStore } from "@/stores/useSettingsStore"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import type { DocumentItem } from "@/lib/db/types"
+import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 
 /**
@@ -91,9 +92,18 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
             </section>
           </>
         ) : (
-          <main className="flex min-w-0 flex-1 flex-col">
-            {tab === "edit" && <FormatBar />}
-            <div className="min-h-0 flex-1">{tab === "edit" ? <FileView /> : <PreviewPane onJumpToSource={() => setTab("edit")} />}</div>
+          // Both stay mounted and laid out, one on top of the other: switching hides one (visibility, not display, so a scroll position
+          // survives) instead of building the other from scratch, and each keeps its place, cursor and undo history
+          <main className="relative min-w-0 flex-1">
+            <div className={cn("absolute inset-0 flex flex-col", tab !== "edit" && "pointer-events-none invisible")} aria-hidden={tab !== "edit"}>
+              <FormatBar />
+              <div className="min-h-0 flex-1">
+                <FileView />
+              </div>
+            </div>
+            <div className={cn("absolute inset-0", tab !== "preview" && "pointer-events-none invisible")} aria-hidden={tab !== "preview"}>
+              <PreviewPane onJumpToSource={() => setTab("edit")} />
+            </div>
           </main>
         )}
       </div>

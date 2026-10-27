@@ -69,9 +69,9 @@ describe("a fenced code block", () => {
     const request: ConfigureRequest = { kind: "tag", name: "code", from: 0, to: 0, attrs: [], selfClosing: false, wrap: { from: 0, to: doc.length }, anchor }
     const first = editFor(request, [["highlight", "2"]], doc.length)
     const next = apply(doc, first.edit)
-    expect(next).toBe('<code highlight="2">\n```js\nlet a\n```\n</code>')
+    expect(next).toBe('<code highlight="2">\n\n```js\nlet a\n```\n\n</code>')
     const second = editFor(first.next, [["highlight", "2"], ["caption", "Demo"]], next.length)
-    expect(apply(next, second.edit)).toBe('<code highlight="2" caption="Demo">\n```js\nlet a\n```\n</code>')
+    expect(apply(next, second.edit)).toBe('<code highlight="2" caption="Demo">\n\n```js\nlet a\n```\n\n</code>')
   })
 })
 

@@ -4,7 +4,7 @@ import { Archive, ChevronRight, ClipboardPaste, Copy, CopyPlus, ExternalLink, Fi
 import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
-import { ActionItems, FolderCard, ProjectCard, useDropTarget, type DragPayload, type MenuAction } from "@/components/library/LibraryCards"
+import { ActionItems, DROP_ROOT, FolderCard, ProjectCard, useDropTarget, type DragPayload, type MenuAction } from "@/components/library/LibraryCards"
 import { Button } from "@/components/ui/button"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { Input } from "@/components/ui/input"
@@ -19,10 +19,10 @@ import { useLibraryStore } from "@/stores/useLibraryStore"
 type NameDialog = { kind: "folder"; folder?: FolderItem } | { kind: "document" } | { kind: "rename"; doc: DocumentItem }
 
 /** A crumb of the folder path; a project or folder dropped on it is moved there. */
-function Crumb({ label, current, onOpen, onDropItems }: { label: string; current: boolean; onOpen: () => void; onDropItems: (payload: DragPayload) => void }) {
+function Crumb({ label, folder, current, onOpen, onDropItems }: { label: string; /** The folder this crumb stands for, for a finger drop: its id, or DROP_ROOT. */ folder: string; current: boolean; onOpen: () => void; onDropItems: (payload: DragPayload) => void }) {
   const drop = useDropTarget(onDropItems)
   return (
-    <button type="button" onClick={onOpen} {...drop.props} className={cn("max-w-40 truncate rounded-md px-1.5 py-1 text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", current ? "font-semibold text-foreground" : "text-muted-foreground", drop.over && "bg-primary/10 ring-2 ring-primary/40")}>
+    <button type="button" data-drop-folder={folder} onClick={onOpen} {...drop.props} className={cn("max-w-40 truncate rounded-md px-1.5 py-1 text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", current ? "font-semibold text-foreground" : "text-muted-foreground", drop.over && "bg-primary/10 ring-2 ring-primary/40", "data-[drop-over]:bg-primary/10 data-[drop-over]:ring-2 data-[drop-over]:ring-primary/40")}>
       {label}
     </button>
   )
@@ -192,11 +192,11 @@ export function LibraryPage() {
 
       {path.length > 0 && (
         <nav aria-label={t("library.path")} className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border px-3 py-1" dir="auto">
-          <Crumb label={t("library.title")} current={false} onOpen={() => store.openFolder(null)} onDropItems={drop(null)} />
+          <Crumb label={t("library.title")} folder={DROP_ROOT} current={false} onOpen={() => store.openFolder(null)} onDropItems={drop(null)} />
           {path.map((folder, index) => (
             <span key={folder.id} className="flex items-center gap-0.5">
               <ChevronRight className="size-3 text-muted-foreground rtl:rotate-180" />
-              <Crumb label={folder.name} current={index === path.length - 1} onOpen={() => store.openFolder(folder.id)} onDropItems={drop(folder.id)} />
+              <Crumb label={folder.name} folder={folder.id} current={index === path.length - 1} onOpen={() => store.openFolder(folder.id)} onDropItems={drop(folder.id)} />
             </span>
           ))}
         </nav>
@@ -224,6 +224,7 @@ export function LibraryPage() {
                     actions={folderActions(folder)}
                     onOpen={() => store.openFolder(folder.id)}
                     onDropItems={drop(folder.id)}
+                    onTouchDrop={(payload, target) => store.move(payload.docs, payload.folders, target)}
                   />
                 ))}
                 {shownDocs.map((doc) => (
@@ -233,6 +234,7 @@ export function LibraryPage() {
                     subtitle={t("library.updatedAt", { date: formatDate.format(doc.updatedAt) })}
                     menuLabel={t("library.actions")}
                     actions={docActions(doc)}
+                    onTouchDrop={(payload, target) => store.move(payload.docs, payload.folders, target)}
                     href={<Link to="/editor/$documentId" params={{ documentId: doc.id }} aria-label={doc.title} draggable={false} className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring" />}
                   />
                 ))}

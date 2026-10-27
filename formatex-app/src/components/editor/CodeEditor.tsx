@@ -10,6 +10,7 @@ import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, pl
 import { useTranslation } from "react-i18next"
 import { toggleWrap } from "@/lib/editor/format"
 import { insertTag, TAG_DRAG_TYPE } from "@/lib/editor/insertTag"
+import { frontMatterMount } from "@/components/editor/frontMatterMount"
 import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
@@ -96,7 +97,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   // The live preview is switched on and off without rebuilding the editor
   const [live] = useState(() => new Compartment())
   const liveExtension = (fileKind: FileKind, on: boolean): Extension =>
-    on && fileKind === "markdown" ? livePreview(() => latest.current.schema, (request) => latest.current.onConfigure?.(request)) : []
+    on && fileKind === "markdown" ? livePreview(() => latest.current.schema, (request) => latest.current.onConfigure?.(request), frontMatterMount) : []
 
   const createState = (doc: string, fileKind: FileKind) =>
     EditorState.create({

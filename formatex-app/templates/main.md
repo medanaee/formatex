@@ -1,6 +1,4 @@
 ---
-dir: auto
-
 header:
   style: line
   start: "عنوان سند"

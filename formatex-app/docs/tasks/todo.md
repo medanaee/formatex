@@ -131,6 +131,17 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] Android full screen (status and navigation bars hidden, swipe shows them): `scripts/android-immersive.mjs`, run by `npm run android:patch` and by the release workflow
 - [ ] Android file access (picker, save dialog, content:// URIs) still needs a real-device test
 
+## Editor fixes round (done, needs a check on a phone)
+
+- [x] Edit / Preview on a narrow screen: both stay mounted, so each keeps its scroll, cursor and undo history
+- [x] `<code>` followed at once by a fence works (engine step `code-tag-spacing.typ`); the wrap gear writes blank lines
+- [x] New projects no longer start with `dir: auto` in the front matter (it overrode `dir` of config.toml)
+- [x] The tag palette drags again (a `preventDefault` on mousedown stopped it)
+- [x] Touch: "Select text" item in the editor menu (a long press opens the menu, the item selects the word); library cards: a long press then a move drags, a long press alone opens the menu (`useTouchDrag.ts`)
+- [x] Sticky headings are a real panel (text starts below it), with level icons, compact
+- [x] The front matter is a settings panel in the visual editor (`SettingsForm`, `yamlEdit.ts`, `FrontMatterPanel`), the same form as config.toml
+- [ ] Not tried on a real phone: touch selection, touch drag in the library
+
 ## CI / release
 
 - [x] `.github/workflows/ci.yml` and `release.yml`: a release is built when the version in `tauri.conf.json` goes up, or the latest release is rebuilt when a commit message has `[build]`

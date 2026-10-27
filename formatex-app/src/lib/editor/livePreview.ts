@@ -40,6 +40,41 @@ export type ConfigureRequest =
 
 /** The schema of the tags, read when the decorations are built (so a new component's tags are recognized). */
 export const liveSchema = Facet.define<() => Schema, () => Schema>({ combine: (values) => values[0] ?? (() => ({ tags: {}, options: {} }) as unknown as Schema) })
+/** What the front matter's settings panel is given. */
+export interface FrontMatterProps {
+  /** The front matter without its `---` lines. */
+  text: string
+  onChange: (next: string) => void
+  /** Show the front matter's source: the panel gives way to the text. */
+  onSource: () => void
+}
+
+/**
+ * Draws the settings panel of the front matter into an element. The editor's library knows nothing about React: the application gives
+ * it this (see `frontMatterMount.tsx`). `update` is called when the text changed, with the same element. `mount` leaves a function
+ * `element.__unmount` that takes the panel away again.
+ */
+export interface FrontMatterMount {
+  mount: (element: HTMLElement, props: FrontMatterProps) => void
+  update: (element: HTMLElement, props: FrontMatterProps) => void
+}
+
+export const liveFrontMatter = Facet.define<FrontMatterMount, FrontMatterMount | null>({ combine: (values) => values[0] ?? null })
+
+/** Where the front matter's text lies: between its `---` lines, without the line breaks next to them; `null` when there is none. */
+export function frontMatterRange(text: string): { from: number; to: number; end: number } | null {
+  const front = /^---[ \t]*\r?\n/.exec(text)
+  if (!front) return null
+  const rest = text.slice(front[0].length)
+  const close = /^---[ \t]*(?=\r?\n|$)/m.exec(rest)
+  if (!close) return null
+  const from = front[0].length
+  const closeStart = from + close.index
+  let to = closeStart > from ? closeStart - 1 : from
+  if (to > from && text[to - 1] === "\r") to--
+  return { from, to, end: closeStart + close[0].length }
+}
+
 /** Called when a gear is clicked. */
 export const liveConfigure = Facet.define<(request: ConfigureRequest) => void, (request: ConfigureRequest) => void>({ combine: (values) => values[0] ?? (() => {}) })
 
@@ -290,6 +325,55 @@ class BulletWidget extends WidgetType {
   }
 }
 
+/** The front matter as a settings panel (a React component mounted through `liveFrontMatter`). */
+class FrontMatterWidget extends WidgetType {
+  readonly inner: string
+  constructor(inner: string) {
+    super()
+    this.inner = inner
+  }
+  eq(other: FrontMatterWidget) {
+    return other.inner === this.inner
+  }
+  props(view: EditorView): FrontMatterProps {
+    return {
+      text: this.inner,
+      // The range is read again at the time of the change: the text may have moved since the widget was drawn
+      onChange: (next) => {
+        const range = frontMatterRange(view.state.doc.toString())
+        if (range) view.dispatch({ changes: { from: range.from, to: range.to, insert: next } })
+      },
+      onSource: () => {
+        view.dispatch({ selection: { anchor: Math.min(4, view.state.doc.length) } })
+        view.focus()
+      },
+    }
+  }
+  toDOM(view: EditorView) {
+    const element = document.createElement("div")
+    element.className = "cm-lp-frontpanel"
+    view.state.facet(liveFrontMatter)?.mount(element, this.props(view))
+    return element
+  }
+  updateDOM(dom: HTMLElement, view: EditorView) {
+    view.state.facet(liveFrontMatter)?.update(dom, this.props(view))
+    return true
+  }
+  destroy(dom: HTMLElement) {
+    // Unmounted after the update that removed it has finished
+    queueMicrotask(() => {
+      try {
+        ;(dom as HTMLElement & { __unmount?: () => void }).__unmount?.()
+      } catch {
+        // Already gone
+      }
+    })
+  }
+  ignoreEvent() {
+    return true
+  }
+}
+
 // ----- building the decorations -----
 
 const hide = Decoration.replace({})
@@ -319,11 +403,17 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
   for (const range of state.selection.ranges) for (let n = doc.lineAt(range.from).number; n <= doc.lineAt(range.to).number; n++) touchedLines.add(n)
   const lineTouched = (pos: number) => touchedLines.has(doc.lineAt(pos).number)
 
-  // Front matter: muted source, never interpreted
-  const front = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?=\r?\n|$)/.exec(text)
-  const frontEnd = front ? front[0].length : 0
+  // Front matter: the settings panel; its source (muted, never interpreted) while the cursor is in it. A cursor at the very start of the
+  // file does not count, or the source would show every time a file is opened.
+  const front = frontMatterRange(text)
+  const frontEnd = front ? front.end : 0
   if (front) {
-    for (let n = 1; n <= doc.lineAt(frontEnd).number; n++) out.push(Decoration.line({ class: "cm-lp-front" }).range(doc.line(n).from))
+    const inside = state.selection.ranges.some((range) => range.to > 0 && range.from <= frontEnd)
+    if (state.facet(liveFrontMatter) && !inside) {
+      out.push(Decoration.replace({ widget: new FrontMatterWidget(text.slice(front.from, front.to)), block: true }).range(0, frontEnd))
+    } else {
+      for (let n = 1; n <= doc.lineAt(frontEnd).number; n++) out.push(Decoration.line({ class: "cm-lp-front" }).range(doc.line(n).from))
+    }
     take(0, frontEnd)
   }
 
@@ -494,17 +584,19 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
 }
 
 /** The live preview as a CodeMirror extension; `getSchema` and `onConfigure` are read whenever they are needed. */
-export function livePreview(getSchema: () => Schema, onConfigure: (request: ConfigureRequest) => void) {
+export function livePreview(getSchema: () => Schema, onConfigure: (request: ConfigureRequest) => void, frontMatter?: FrontMatterMount) {
   const field = StateField.define<DecorationSet>({
     create: (state) => build(state, getSchema),
     update: (value, transaction) => (transaction.docChanged || transaction.selection || transaction.reconfigured ? build(transaction.state, getSchema) : value),
     provide: (f) => EditorView.decorations.from(f),
   })
-  return [liveSchema.of(getSchema), liveConfigure.of(onConfigure), field, liveTheme]
+  return [liveSchema.of(getSchema), liveConfigure.of(onConfigure), frontMatter ? liveFrontMatter.of(frontMatter) : [], field, liveTheme]
 }
 
 const liveTheme = EditorView.theme({
   ".cm-lp-front": { opacity: "0.55", fontSize: "0.9em" },
+  // `contain: inline-size`: the panel never makes the text area wider than the editor, whatever its controls would like
+  ".cm-lp-frontpanel": { padding: "6px 8px", cursor: "default", contain: "inline-size" },
   ".cm-lp-h": { fontWeight: "700", lineHeight: "1.4" },
   ".cm-lp-h1": { fontSize: "1.7em" },
   ".cm-lp-h2": { fontSize: "1.45em" },
