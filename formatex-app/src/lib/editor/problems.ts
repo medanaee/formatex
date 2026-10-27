@@ -1,5 +1,5 @@
 import { StateEffect, StateField, type EditorState } from "@codemirror/state"
-import { Decoration, EditorView, type DecorationSet } from "@codemirror/view"
+import { Decoration, EditorView, hoverTooltip, type DecorationSet, type Tooltip } from "@codemirror/view"
 
 export interface Problem {
   /** 1-based. */
@@ -11,7 +11,8 @@ export interface Problem {
 /** Replaces the problems the editor marks (those of the file it shows). */
 export const setProblems = StateEffect.define<readonly Problem[]>()
 
-const mark = (problem: Problem) => Decoration.line({ class: `cm-problem cm-problem-${problem.severity}`, attributes: { title: problem.message } })
+// The problem stays in the decoration's spec, for the tooltip: a `title` would be the browser's own box
+const mark = (problem: Problem) => Decoration.line({ class: `cm-problem cm-problem-${problem.severity}`, problem })
 
 /** The marked lines, as line decorations: they move with the text while it is edited, until the next compilation replaces them. */
 export const problemField = StateField.define<DecorationSet>({
@@ -55,4 +56,69 @@ export const problemTheme = EditorView.baseTheme({
   },
 })
 
-export const problemExtension = [problemField, problemTheme]
+const ICONS = {
+  error: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  warning: '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4M12 17h.01"/>',
+}
+
+/** A tooltip over a marked line (the whole line, also past its last letter): the problem's message, in the look of the app's menus. */
+const problemTooltip = hoverTooltip(
+  (view, pos): Tooltip | null => {
+    const line = view.state.doc.lineAt(pos)
+    let problem: Problem | null = null
+    view.state.field(problemField, false)?.between(line.from, line.from, (_from, _to, value) => {
+      problem = (value.spec as { problem?: Problem }).problem ?? null
+    })
+    const found: Problem | null = problem
+    if (!found) return null
+    return {
+      pos: line.from,
+      end: line.to,
+      above: true,
+      create() {
+        const dom = document.createElement("div")
+        dom.className = `cm-problem-tip cm-problem-tip-${found.severity}`
+        const icon = document.createElement("span")
+        icon.className = "cm-problem-tip-icon"
+        icon.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[found.severity]}</svg>`
+        const text = document.createElement("span")
+        text.className = "cm-problem-tip-text"
+        text.dir = "auto"
+        text.textContent = found.message
+        dom.append(icon, text)
+        return { dom }
+      },
+    }
+  },
+  { hoverTime: 150 }
+)
+
+const tooltipTheme = EditorView.baseTheme({
+  ".cm-tooltip.cm-tooltip-hover": {
+    border: "none",
+    background: "transparent",
+    // Over the minimap and the panels of the editor
+    zIndex: "400",
+  },
+  ".cm-problem-tip": {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "6px",
+    maxWidth: "min(420px, 70vw)",
+    padding: "6px 10px",
+    borderRadius: "10px",
+    boxShadow: "0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent), 0 6px 20px rgba(0, 0, 0, 0.18)",
+    backgroundColor: "color-mix(in oklab, var(--popover) 72%, transparent)",
+    backdropFilter: "blur(16px) saturate(1.5)",
+    color: "var(--popover-foreground)",
+    fontFamily: "Inter, Vazirmatn, system-ui, sans-serif",
+    fontSize: "12px",
+    lineHeight: "1.5",
+  },
+  ".cm-problem-tip-icon": { display: "inline-flex", flexShrink: "0", marginTop: "2px" },
+  ".cm-problem-tip-error .cm-problem-tip-icon": { color: "var(--destructive)" },
+  ".cm-problem-tip-warning .cm-problem-tip-icon": { color: "var(--muted-foreground)" },
+  ".cm-problem-tip-text": { minWidth: "0", overflowWrap: "anywhere" },
+})
+
+export const problemExtension = [problemField, problemTheme, problemTooltip, tooltipTheme]
