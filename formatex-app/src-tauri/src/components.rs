@@ -248,19 +248,19 @@ impl ComponentLibrary {
         }
 
         let registry = generate_registry(&included);
-        let themes_typ = themes::generate(&builtin_themes(), &self.themes.read().unwrap());
-        *self.state.write().unwrap() = LibState { user, registry, themes_typ, infos };
-        *self.schema.lock().unwrap() = None;
+        let themes_typ = themes::generate(&builtin_themes(), &self.themes.read().unwrap_or_else(|e| e.into_inner()));
+        *self.state.write().unwrap_or_else(|e| e.into_inner()) = LibState { user, registry, themes_typ, infos };
+        *self.schema.lock().unwrap_or_else(|e| e.into_inner()) = None;
         self.generation.fetch_add(1, Ordering::SeqCst);
     }
 
     /// The bytes of the engine's `src/themes.typ`, with the user's themes added.
     pub fn themes_source(&self) -> Vec<u8> {
-        self.state.read().unwrap().themes_typ.clone().into_bytes()
+        self.state.read().unwrap_or_else(|e| e.into_inner()).themes_typ.clone().into_bytes()
     }
 
     pub fn custom_themes(&self) -> Vec<String> {
-        self.themes.read().unwrap().keys().cloned().collect()
+        self.themes.read().unwrap_or_else(|e| e.into_inner()).keys().cloned().collect()
     }
 
     /// Replaces the user's themes: they are kept in `themes.json`, and the engine sees them from the next compilation.
@@ -270,7 +270,7 @@ impl ComponentLibrary {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
         fs::write(&self.themes_path, serde_json::to_string_pretty(&clean).unwrap()).map_err(|e| e.to_string())?;
-        *self.themes.write().unwrap() = clean;
+        *self.themes.write().unwrap_or_else(|e| e.into_inner()) = clean;
         self.reload();
         Ok(())
     }
@@ -282,7 +282,7 @@ impl ComponentLibrary {
     /// The bytes of a `components/...` path of the engine: the generated registry, a user's component, or the built-in one.
     pub fn source_for(&self, path: &str) -> Option<Cow<'static, [u8]>> {
         let file = path.strip_prefix("components/")?;
-        let state = self.state.read().unwrap();
+        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
         if file == "_registry.typ" {
             return Some(Cow::Owned(state.registry.clone().into_bytes()));
         }
@@ -294,11 +294,11 @@ impl ComponentLibrary {
     }
 
     pub fn list(&self) -> Vec<ComponentInfo> {
-        self.state.read().unwrap().infos.clone()
+        self.state.read().unwrap_or_else(|e| e.into_inner()).infos.clone()
     }
 
     pub fn source(&self, name: &str) -> Option<String> {
-        let state = self.state.read().unwrap();
+        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
         state.user.get(name).cloned().or_else(|| builtin_source(name))
     }
 
@@ -369,7 +369,7 @@ fn builtin_source(name: &str) -> Option<String> {
 /// JSON. This both **validates** the library (a component that does not load shows up as a diagnostic) and gives autocomplete
 /// the schema of every tag, the user's included.
 pub fn compute_schema(engine: &Engine) -> (Option<serde_json::Value>, Vec<Diagnostic>) {
-    let _guard = engine.components.check.lock().unwrap();
+    let _guard = engine.components.check.lock().unwrap_or_else(|e| e.into_inner());
     let extra: HashMap<String, Vec<u8>> = HashMap::from([
         ("config.toml".to_string(), DEFAULT_CONFIG.as_bytes().to_vec()),
         ("main.md".to_string(), b"# probe\n".to_vec()),
@@ -401,14 +401,14 @@ pub fn compute_schema(engine: &Engine) -> (Option<serde_json::Value>, Vec<Diagno
 
 /// The schema, cached until the library changes.
 fn schema(engine: &Engine) -> Result<Arc<serde_json::Value>, String> {
-    if let Some(cached) = engine.components.schema.lock().unwrap().as_ref() {
+    if let Some(cached) = engine.components.schema.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
         return Ok(cached.clone());
     }
     let (value, diagnostics) = compute_schema(engine);
     match value {
         Some(value) => {
             let value = Arc::new(value);
-            *engine.components.schema.lock().unwrap() = Some(value.clone());
+            *engine.components.schema.lock().unwrap_or_else(|e| e.into_inner()) = Some(value.clone());
             Ok(value)
         }
         None => Err(diagnostics.iter().find(|d| d.is_error()).map(|d| d.message().to_string()).unwrap_or_else(|| "the schema could not be read".into())),
@@ -438,7 +438,7 @@ fn check(engine: &Engine) -> CheckOutput {
     let (value, diagnostics) = compute_schema(engine);
     let ok = value.is_some();
     if let Some(value) = value {
-        *engine.components.schema.lock().unwrap() = Some(Arc::new(value));
+        *engine.components.schema.lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(value));
     }
     CheckOutput { ok, diagnostics }
 }

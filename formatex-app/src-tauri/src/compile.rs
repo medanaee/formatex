@@ -147,7 +147,7 @@ fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, ov
     let sorted: BTreeMap<_, _> = inputs.iter().collect();
     let key = format!("{sorted:?}|{}|{:p}", engine.components.generation(), Arc::as_ptr(&fonts));
     let world = {
-        let mut worlds = engine.worlds.lock().unwrap();
+        let mut worlds = engine.worlds.lock().unwrap_or_else(|e| e.into_inner());
         match worlds.get(project_id) {
             Some((existing, world)) if *existing == key => world.clone(),
             _ => {
@@ -157,7 +157,7 @@ fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, ov
             }
         }
     };
-    let mut world = world.lock().unwrap();
+    let mut world = world.lock().unwrap_or_else(|e| e.into_inner());
     world.refresh(extra);
 
     let warned = typst::compile::<PagedDocument>(&*world);

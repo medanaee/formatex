@@ -38,10 +38,10 @@ impl FontService {
 
     /// The font store; scans the fonts on first use (a second or two with many system fonts).
     pub fn get(&self) -> Arc<FontStore> {
-        if let Some(store) = self.store.read().unwrap().as_ref() {
+        if let Some(store) = self.store.read().unwrap_or_else(|e| e.into_inner()).as_ref() {
             return store.clone();
         }
-        let mut slot = self.store.write().unwrap();
+        let mut slot = self.store.write().unwrap_or_else(|e| e.into_inner());
         // Another thread may have finished while this one waited for the lock
         if let Some(store) = slot.as_ref() {
             return store.clone();
@@ -53,7 +53,7 @@ impl FontService {
 
     /// Forgets the scanned fonts; the next `get()` scans again (after the user imported or removed a font).
     pub fn reload(&self) {
-        *self.store.write().unwrap() = None;
+        *self.store.write().unwrap_or_else(|e| e.into_inner()) = None;
     }
 
     /// Every font family, once, with where it comes from.

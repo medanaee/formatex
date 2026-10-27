@@ -37,7 +37,7 @@ impl FileLoader for Loader {
         match id.root() {
             VirtualRoot::Project => {
                 let path = id.vpath().get_without_slash();
-                if let Some(bytes) = self.extra.lock().unwrap().get(path) {
+                if let Some(bytes) = self.extra.lock().unwrap_or_else(|e| e.into_inner()).get(path) {
                     return Ok(Bytes::new(bytes.clone()));
                 }
                 if path.starts_with("components/") {
@@ -108,7 +108,7 @@ impl ProjectWorld {
     /// Prepares the next compilation of a world kept between compilations: files are read again (a changed source is edited in
     /// place, which keeps Typst's incremental work valid) and `extra` (the editor's unsaved text) is replaced.
     pub fn refresh(&mut self, extra: HashMap<String, Vec<u8>>) {
-        *self.extra.lock().unwrap() = extra;
+        *self.extra.lock().unwrap_or_else(|e| e.into_inner()) = extra;
         self.files.reset();
         self.time.reset();
     }
