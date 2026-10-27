@@ -65,11 +65,12 @@ const ICONS = {
 const problemTooltip = hoverTooltip(
   (view, pos): Tooltip | null => {
     const line = view.state.doc.lineAt(pos)
-    let problem: Problem | null = null
+    const here: Problem[] = []
     view.state.field(problemField, false)?.between(line.from, line.from, (_from, _to, value) => {
-      problem = (value.spec as { problem?: Problem }).problem ?? null
+      const problem = (value.spec as { problem?: Problem }).problem
+      if (problem) here.push(problem)
     })
-    const found: Problem | null = problem
+    const found = here[0]
     if (!found) return null
     return {
       pos: line.from,
