@@ -123,7 +123,9 @@
     "selected_one": "{{count}} selected",
     "selected_other": "{{count}} selected",
     "deleteMany_one": "Delete {{count}} item?",
-    "deleteMany_other": "Delete {{count}} items?"
+    "deleteMany_other": "Delete {{count}} items?",
+    "dropInto": "Drop here to add to â€œ{{folder}}â€‌",
+    "root": "the project"
   },
   "projectSettings": {
     "title": "Project settings",

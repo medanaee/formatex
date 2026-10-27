@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react"
 import {
   ChevronRight,
   ClipboardPaste,
   Copy,
+  Download,
   File as FileIcon,
   FilePlus,
   FileText,
@@ -71,6 +72,19 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   const anchor = useRef<string | null>(null)
   /** The folder a drag is over (`""` is the root). */
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+
+  // Holding a drag over a closed folder opens it, so a file can be dropped deeper
+  useEffect(() => {
+    if (!dropTarget || !collapsed.has(dropTarget)) return
+    const timer = window.setTimeout(() => {
+      setCollapsed((previous) => {
+        const next = new Set(previous)
+        next.delete(dropTarget)
+        return next
+      })
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [dropTarget, collapsed])
 
   const visible = useMemo(
     () => files.filter((entry) => !entry.path.split("/").slice(0, -1).some((_, index, parts) => collapsed.has(parts.slice(0, index + 1).join("/")))),
@@ -200,7 +214,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   const rowFolder = (entry: FsEntry) => (entry.kind === "dir" ? entry.path : parentOf(entry.path))
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground select-none outline-none" tabIndex={0} onKeyDown={onKeyDown}>
+    <div className="relative flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground select-none outline-none" tabIndex={0} onKeyDown={onKeyDown}>
       <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-sidebar-border ps-3 pe-1">
         <span className="flex-1 truncate text-xs font-medium text-muted-foreground">
           {chosen.length > 1 ? t("files.selected", { count: chosen.length }) : t("editor.files")}
@@ -221,7 +235,8 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
         role="tree"
         aria-multiselectable="true"
         onDragOver={(event) => dragOver(event, "")}
-        onDragLeave={() => setDropTarget(null)}
+        // Only when the drag leaves the whole list: moving from row to row also fires it
+        onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node | null) && setDropTarget(null)}
         onDrop={(event) => void drop(event, "")}
         onClick={(event) => event.target === event.currentTarget && setSelected(new Set())}
       >
@@ -249,7 +264,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                   "group flex h-9 items-center gap-1 pe-1 text-[13px] hover:bg-sidebar-accent/60",
                   isSelected && "bg-sidebar-accent text-sidebar-accent-foreground",
                   entry.path === activePath && !isSelected && "bg-sidebar-accent/70",
-                  isDir && dropTarget === entry.path && "ring-1 ring-inset ring-ring",
+                  isDir && dropTarget === entry.path && "bg-primary/10 ring-2 ring-inset ring-ring",
                   cut && "opacity-50"
                 )}
                 style={{ paddingInlineStart: `${depth * 12 + 8}px` }}
@@ -322,6 +337,17 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
           )
         })}
       </ul>
+
+      {dropTarget !== null && (
+        <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-ring/60" aria-hidden>
+          <div className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1.5 rounded-lg border border-border bg-popover px-3 py-2 text-xs font-medium text-popover-foreground shadow-md">
+            <Download className="size-3.5 shrink-0" />
+            <span dir="auto" className="truncate">
+              {t("files.dropInto", { folder: dropTarget === "" ? t("files.root") : baseName(dropTarget) })}
+            </span>
+          </div>
+        </div>
+      )}
 
       <NameDialog dialog={dialog} onClose={() => setDialog(null)} onOpen={onOpen} />
       <DeleteDialog dialog={dialog} onClose={() => setDialog(null)} />
