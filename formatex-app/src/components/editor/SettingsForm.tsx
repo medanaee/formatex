@@ -134,6 +134,8 @@ interface SettingsFormProps {
   defaultClosed?: string[]
   /** The control under its name instead of beside it (a narrow place, like the editor). */
   stacked?: boolean
+  /** The control beside its name at any width (a narrow place that still wants the table look: a smaller control column). */
+  side?: boolean
   /** Sections as plain rows with a line between them, edge to edge, instead of rounded cards. */
   flat?: boolean
   className?: string
@@ -152,7 +154,7 @@ function shown(format: SettingsFormat, text: string, table: string, key: string)
  * A change rewrites that one line of the file, keeping the comments; a key that is not set shows the default, and a reset button
  * removes the key again. Keys the schema does not know stay in the source. `config.toml` and the front matter of a document both use it.
  */
-export function SettingsForm({ text, onChange, config, format, extraThemes, search = true, defaultClosed, stacked = false, flat = false, className }: SettingsFormProps) {
+export function SettingsForm({ text, onChange, config, format, extraThemes, search = true, defaultClosed, stacked = false, side = false, flat = false, className }: SettingsFormProps) {
   const { t, i18n } = useTranslation()
   const entries = useEditorStore((state) => state.files)
   const [query, setQuery] = useState("")
@@ -200,7 +202,7 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, sear
                 {keys.map(([name, spec]) => {
                   const { value, plain } = shown(format, text, id, name)
                   return (
-                    <div key={name} className={cn("grid gap-1.5 px-3 py-2", !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-3")}>
+                    <div key={name} className={cn("grid gap-1.5 px-3 py-2", side ? "grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] items-center gap-3" : !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-3")}>
                       <div className="min-w-0">
                         <div dir="ltr" className="flex items-center gap-1 font-mono text-xs font-medium">
                           <span className={cn(value === undefined && "text-muted-foreground")}>{name}</span>

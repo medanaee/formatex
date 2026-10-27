@@ -51,7 +51,7 @@ export function FrontMatterPanel({ text, onChange, onSource }: FrontMatterProps)
           <Code2 />
         </Button>
       </div>
-      {open && <SettingsForm className="border-t border-border" text={text} onChange={onChange} config={config} format={YAML_FORMAT} search={false} stacked flat defaultClosed={Object.keys(config.tables)} />}
+      {open && <SettingsForm className="border-t border-border" text={text} onChange={onChange} config={config} format={YAML_FORMAT} search={false} side flat defaultClosed={Object.keys(config.tables)} />}
     </div>
   )
 }
