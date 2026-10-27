@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { CompilerUnavailableError, compileProject, exportPdf, type Diagnostic, type PageMap } from "@/lib/compiler"
+import { CompilerUnavailableError, compileProject, exportPdf, locateProblem, type Diagnostic, type PageMap } from "@/lib/compiler"
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { saveBytes } from "@/lib/files/saveFile"
 import {
@@ -15,7 +15,7 @@ import {
   type FsEntry,
   type ProjectFs,
 } from "@/lib/projects"
-import { locateDiagnostics } from "@/lib/editor/diagnosticSource"
+import { isEngineFile, lineWithin, locateDiagnostics } from "@/lib/editor/diagnosticSource"
 import { useLibraryStore } from "@/stores/useLibraryStore"
 
 /** Typing is saved after a pause. The preview does not wait for the save: it is rebuilt from the editor's text after a short pause. */
@@ -120,6 +120,31 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     await Promise.all(paths.map(save))
   }
 
+  let locateTimer: ReturnType<typeof setTimeout> | undefined
+
+  /**
+   * The first problem raised inside the engine gets the exact block of the text it comes from: the compiler typesets the text again
+   * block by block (a few compilations), so this waits until the typing pauses. The text match of `locateDiagnostics` stands in
+   * until then and where this finds nothing.
+   */
+  function refineProblem(diagnostics: Diagnostic[], overrides: Record<string, string>, mainFile: string, projectId: string): void {
+    clearTimeout(locateTimer)
+    const target = diagnostics.find((d) => d.severity === "error" && (isEngineFile(d.path) || d.path === mainFile))
+    if (!target) return
+    const current = session
+    locateTimer = setTimeout(async () => {
+      try {
+        const range = await locateProblem(projectId, mainFile, target.message, overrides)
+        const text = overrides[mainFile]
+        if (!range || current !== session || text === undefined) return
+        const line = lineWithin(target, text, range[0], range[1])
+        set((state) => ({ diagnostics: state.diagnostics.map((d) => (d.message === target.message && d.severity === "error" && (isEngineFile(d.path) || d.path === mainFile) ? { ...d, path: mainFile, line, column: 1 } : d)) }))
+      } catch (error) {
+        console.warn("[formatex] could not locate the problem", error)
+      }
+    }, 700)
+  }
+
   async function runCompile(): Promise<void> {
     const { projectId, mainFile } = get()
     if (!projectId) return
@@ -144,6 +169,8 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         ok: output.ok,
         elapsedMs: output.elapsedMs,
       }))
+      if (!output.ok) refineProblem(get().diagnostics, overrides, mainFile, projectId)
+      else clearTimeout(locateTimer)
     } catch (error) {
       if (current !== session) return
       if (error instanceof CompilerUnavailableError) set({ compileStatus: "unavailable" })

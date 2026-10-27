@@ -1,7 +1,7 @@
 import type { Diagnostic } from "@/lib/compiler"
 
 /** Files of the engine and of its packages: a problem there is a message about the user's text, not about that file. */
-const isEngineFile = (path: string | null): boolean => path === null || path === "main.typ" || /^(src|tools|engine)\//.test(path) || path.startsWith("@")
+export const isEngineFile = (path: string | null): boolean => path === null || path === "main.typ" || /^(src|tools|engine)\//.test(path) || path.startsWith("@")
 
 const escapeRegex = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
@@ -16,6 +16,14 @@ function mentions(diagnostic: Diagnostic): { values: string[]; tags: string[] } 
   const tags = new Set<string>()
   for (const match of text.matchAll(/<([A-Za-z][\w-]*)>/g)) tags.add(match[1])
   return { values: [...values], tags: [...tags] }
+}
+
+/** The line within lines `first`..`last` (1-based) that the words of the message point at, else the first line of the range. */
+export function lineWithin(diagnostic: Diagnostic, text: string, first: number, last: number): number {
+  const { values, tags } = mentions(diagnostic)
+  const block = text.split("\n").slice(first - 1, last).join("\n")
+  const { line, score } = bestLine(block, values, tags)
+  return score > 0 ? first + line - 1 : first
 }
 
 /** The line of `text` that the words of the message point at most, with how sure that is (0 = no line). */

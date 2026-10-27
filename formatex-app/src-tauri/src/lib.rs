@@ -16,6 +16,7 @@ pub fn run() {
     .plugin(tauri_plugin_sql::Builder::default().build())
     .invoke_handler(tauri::generate_handler![
       compile::compile_project,
+      compile::locate_problem,
       compile::export_pdf,
       compile::project_preview,
       compile::fonts_list,

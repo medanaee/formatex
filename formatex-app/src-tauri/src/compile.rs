@@ -135,7 +135,12 @@ fn overrides_to_bytes(overrides: HashMap<String, String>) -> Result<HashMap<Stri
     Ok(out)
 }
 
-fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, overrides: HashMap<String, String>) -> Result<Compiled, String> {
+fn compile(engine: &Engine, project_id: &str, main: &str, inputs: Inputs, overrides: HashMap<String, String>) -> Result<Compiled, String> {
+    compile_in(engine, project_id, "", main, inputs, overrides)
+}
+
+/// `slot` names a world of its own for a project, so a side job (finding where a problem comes from) does not wait for the preview's world.
+fn compile_in(engine: &Engine, project_id: &str, slot: &str, main: &str, mut inputs: Inputs, overrides: HashMap<String, String>) -> Result<Compiled, String> {
     check_relative(main)?;
     let dir = project_dir(engine, project_id)?;
     // The engine reads the Markdown file to typeset from `sys.inputs.source`
@@ -146,13 +151,14 @@ fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, ov
     // The kept world is rebuilt when what it was built from changed: another main file or inputs, a new component library, new fonts
     let sorted: BTreeMap<_, _> = inputs.iter().collect();
     let key = format!("{sorted:?}|{}|{:p}", engine.components.generation(), Arc::as_ptr(&fonts));
+    let world_id = format!("{project_id}{slot}");
     let world = {
         let mut worlds = engine.worlds.lock().unwrap_or_else(|e| e.into_inner());
-        match worlds.get(project_id) {
+        match worlds.get(&world_id) {
             Some((existing, world)) if *existing == key => world.clone(),
             _ => {
                 let world = Arc::new(Mutex::new(ProjectWorld::new(Some(dir), engine::ENTRY, engine.packages.clone(), fonts, engine.components.clone(), &inputs, HashMap::new())));
-                worlds.insert(project_id.to_string(), (key, world.clone()));
+                worlds.insert(world_id.clone(), (key, world.clone()));
                 world
             }
         }
@@ -219,6 +225,80 @@ pub async fn compile_project(
 }
 
 /// The first page of a project as SVG, for the library's cards; `None` when the project does not compile.
+/// The lines of the Markdown block a problem comes from, `(first, last)` 1-based, or `None` when it does not come from the body
+/// (the front matter, config.toml) or cannot be reproduced. The text is typeset again with fewer and fewer blocks: the problem
+/// appears with the block that causes it, and a search over the blocks finds that one in a few compilations.
+#[tauri::command]
+pub async fn locate_problem(
+    engine: State<'_, Arc<Engine>>,
+    project_id: String,
+    main: String,
+    overrides: Option<HashMap<String, String>>,
+    message: String,
+) -> Result<Option<(usize, usize)>, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let overrides = overrides.unwrap_or_default();
+        let text = match overrides.get(&main) {
+            Some(text) => text.clone(),
+            None => std::fs::read_to_string(project_dir(&engine, &project_id)?.join(&main)).map_err(|error| error.to_string())?,
+        };
+        let lines: Vec<&str> = text.split('\n').collect();
+
+        // The front matter stays in every attempt; the blocks start after it, after a blank line, outside code fences
+        let front = if lines.first().map(|l| l.trim_end()) == Some("---") {
+            lines.iter().skip(1).position(|l| l.trim_end() == "---").map(|at| at + 2).unwrap_or(0)
+        } else {
+            0
+        };
+        let mut starts = Vec::new();
+        let mut fenced = false;
+        for (index, line) in lines.iter().enumerate().skip(front) {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+                if !fenced && (index == front || lines[index - 1].trim().is_empty()) {
+                    starts.push(index);
+                }
+                fenced = !fenced;
+                continue;
+            }
+            if !fenced && !line.trim().is_empty() && (index == front || lines[index - 1].trim().is_empty()) {
+                starts.push(index);
+            }
+        }
+        if starts.is_empty() {
+            return Ok(None);
+        }
+
+        let slot = "#locate";
+        let has_problem = |count: usize| -> Result<bool, String> {
+            let mut attempt = overrides.clone();
+            attempt.insert(main.clone(), lines[..count].join("\n"));
+            let compiled = compile_in(&engine, &project_id, slot, &main, Inputs::new(), attempt)?;
+            Ok(compiled.diagnostics.iter().any(|d| d.is_error() && d.message() == message))
+        };
+        let end_of = |block: usize| starts.get(block + 1).copied().unwrap_or(lines.len());
+
+        // Without the body, or with all of it: the problem has to be absent and then present
+        if has_problem(front)? || !has_problem(lines.len())? {
+            return Ok(None);
+        }
+        let (mut low, mut high) = (0, starts.len() - 1);
+        while low < high {
+            let middle = (low + high) / 2;
+            if has_problem(end_of(middle))? { high = middle } else { low = middle + 1 }
+        }
+        // Blank lines at the end of the block are not part of it
+        let mut last = end_of(low);
+        while last > starts[low] + 1 && lines[last - 1].trim().is_empty() {
+            last -= 1;
+        }
+        Ok(Some((starts[low] + 1, last)))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 pub async fn project_preview(
     engine: State<'_, Arc<Engine>>,
