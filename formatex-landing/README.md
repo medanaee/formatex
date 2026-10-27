@@ -33,3 +33,7 @@ A custom domain is added under the Worker's Settings, Domains & Routes (or as `r
 - `src/lib/preferences.ts`: language (and the page's direction) and theme, kept in `localStorage`; `index.html` applies them before the first paint.
 - `src/components/ui/`: shadcn components (`npx shadcn@latest add <name>`; `components.json` is the app's, RTL on).
 - `public/`: the icon, favicon and Apple touch icon, copied from the app (`npm run icons` there makes them).
+
+## Auto deploy
+
+Cloudflare Workers Builds is connected to the repository: a push to `main` that changes `formatex-landing/` builds (`npm run build`) and deploys (`npx wrangler deploy`) it. Root directory: `formatex-landing`.
