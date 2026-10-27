@@ -18,7 +18,7 @@
         let d = if type(body) in (content, str) { text-dir(body) }
         cetz.draw.content(..pos.slice(0, -1), if d == none { body } else { text(dir: d, body) }, ..args.named())
       }
-      let canvas = cetz.canvas(length: parse-length(attrs.at("unit", default: "1cm")), {
+      let canvas = cetz.canvas(length: parse-length(attrs.at("unit", default: "1cm"), attrs: attrs), {
         // Default strokes follow the theme so drawings stay visible on dark pages.
         cetz.draw.set-style(stroke: theme.fg)
         eval(latex-in-code(code), mode: "code", scope: (

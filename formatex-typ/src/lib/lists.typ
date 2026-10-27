@@ -58,7 +58,7 @@
   let setting(key) = opts.at(key, default: list-config.at(key, default: none))
   let kind = setting("numbers")
   let kind = if kind == none { "auto" } else { kind }
-  assert(kind in list-number-kinds, message: at-prefix(opts.at("md-at", default: none)) + "List numbers must be one of " + list-number-kinds.join(", ") + ", got " + repr(kind))
+  assert(kind in list-number-kinds, message: (if "numbers" in opts { at-prefix(opts.at("md-at", default: none)) } else { setting-prefix("list", "numbers") }) + "List numbers must be one of " + list-number-kinds.join(", ") + ", got " + repr(kind))
   let suffix = setting("suffix")
   let suffix = if suffix == none { "." } else { str(suffix) }
   let prefix = setting("prefix")
@@ -67,8 +67,8 @@
   let indent = setting("indent")
   set enum(numbering: list-numbering(kind, suffix, prefix: prefix))
   set list(marker: str(marker).split(",").map(m => [#marker-names.at(m.trim(), default: m.trim())])) if marker != none
-  set enum(indent: parse-length(str(indent))) if indent != none
-  set list(indent: parse-length(str(indent))) if indent != none
+  set enum(indent: parse-length(str(indent), attrs: opts)) if indent != none
+  set list(indent: parse-length(str(indent), attrs: opts)) if indent != none
   body
 }
 

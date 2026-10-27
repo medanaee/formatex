@@ -13,7 +13,7 @@
     set text(dir: d)
     let column(s) = {
       let pro = s.attrs.side == "pros"
-      let hue = pick-hue(s.attrs.at("color", default: none), s.attrs.side, if pro { color-presets.green } else { color-presets.red })
+      let hue = pick-hue(s.attrs.at("color", default: none), s.attrs.side, if pro { color-presets.green } else { color-presets.red }, attrs: s.attrs)
       let tint = tinted(hue)
       let title = s.attrs.at("title", default: if pro { if r { "مزایا" } else { "Pros" } } else { if r { "معایب" } else { "Cons" } })
       let mark = text(fill: tint.icon, fa-icon(if feel-name == "friendly" { if pro { "circle-check" } else { "circle-xmark" } } else { if pro { "check" } else { "xmark" } }))

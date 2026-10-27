@@ -23,13 +23,13 @@
 }
 
 // "۱٬۲۵۰٫۵", "1,250.5", "35%" -> float; an empty cell is a missing value.
-#let chart-number(s, where) = {
+#let chart-number(s, where, attrs: none) = {
   let t = s.trim()
   for (i, d) in "۰۱۲۳۴۵۶۷۸۹".clusters().enumerate() { t = t.replace(d, str(i)) }
   for (i, d) in "٠١٢٣٤٥٦٧٨٩".clusters().enumerate() { t = t.replace(d, str(i)) }
   t = t.replace("٫", ".").replace("−", "-").replace(regex("[,٬\s%٪]"), "")
   if t == "" { return none }
-  assert(t.match(regex("^-?[0-9]*\.?[0-9]+$")) != none, message: "<chart>: " + repr(s.trim()) + " in " + where + " is not a number")
+  assert(t.match(regex("^-?[0-9]*\.?[0-9]+$")) != none, message: at-of(attrs) + "<chart>: " + repr(s.trim()) + " in " + where + " is not a number")
   float(t)
 }
 
@@ -61,11 +61,11 @@
 }
 
 // A preset name, "accent" or a hex colour -> a hue; `fallback` when not given.
-#let pick-hue(given, tag-name, fallback) = {
+#let pick-hue(given, tag-name, fallback, attrs: none) = {
   if given == none or given == "" { return fallback }
   if given == "accent" { return theme.accent }
   if given in color-presets { return color-presets.at(given) }
-  assert(given.starts-with("#"), message: "<" + tag-name + "> color: unknown color " + repr(given) + "; use accent, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+  assert(given.starts-with("#"), message: at-of(attrs) + "<" + tag-name + "> color: unknown color " + repr(given) + "; use accent, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
   rgb(given)
 }
 

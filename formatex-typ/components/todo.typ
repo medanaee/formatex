@@ -6,12 +6,12 @@
 
 // <todo>: draft notes. `todo = "hide"` (config / --input) removes them and <todos> for the final version.
 #let todo-mode = sys.inputs.at("todo", default: str(config.at("todo", default: "show")))
-#assert(todo-mode in ("show", "hide"), message: "todo must be show or hide, got " + repr(todo-mode))
+#assert(todo-mode in ("show", "hide"), message: setting-prefix("todo") + "todo must be show or hide, got " + repr(todo-mode))
 
 #let todo-block(attrs, body) = {
   if todo-mode == "hide" { return [] }
   let kind = flag-attr(attrs, "type", "note", ("note", "figure"), "todo")
-  let tint = tinted(pick-hue(attrs.at("color", default: none), "todo", color-presets.yellow))
+  let tint = tinted(pick-hue(attrs.at("color", default: none), "todo", color-presets.yellow, attrs: attrs))
   let ink = if theme.dark { tint.icon } else { color.mix((tint.icon, 60%), (theme.fg, 40%)) }
   let author = attrs.at("author", default: none)
   let note = plain-text(body).trim()
@@ -19,8 +19,8 @@
   let is-block = kind == "figure" or (type(body) == content and body.has("children") and body.children.any(c => c.func() in (parbreak, par)))
   let who = if author != none { text(weight: "bold", author + ":") + h(0.35em) }
   if kind == "figure" {
-    let box-w = parse-length(attrs.at("width", default: "100%"))
-    let box-h = parse-length(attrs.at("height", default: "120"))
+    let box-w = parse-length(attrs.at("width", default: "100%"), attrs: attrs)
+    let box-h = parse-length(attrs.at("height", default: "120"), attrs: attrs)
     marker
     align(center, block(
       width: box-w, height: box-h, fill: tint.fill, radius: feel.image, breakable: false,

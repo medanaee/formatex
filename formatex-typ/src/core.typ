@@ -93,9 +93,62 @@
 // option line (`md-at="..."`) when a file is read, and a problem found later says it with `@path:line message`. The app reads that
 // mark and puts the problem on that line of that file.
 #let at-prefix(at) = if at == none { "" } else { "@" + at + " " }
-#let at-of(attrs) = at-prefix(attrs.at("_at", default: none))
-// A `[text](#id)` in the text: the id has to name something in the document. Typst says it too, but without the line.
-#let check-label(id, at) = context { assert(query(label(id)).len() > 0, message: at-prefix(at) + "no element with id " + repr(id)) }
+// Where a setting is written, so a wrong value is reported with its line: `path` is the keys down to it (`"heading", "color"`).
+// The front matter wins over config.toml, as it does in `config`. Returns `"path:line"`, or none when neither file has the key.
+#let config-text = read("/config.toml")
+#let yaml-line(lines, path) = {
+  let from = 0
+  let indent = 0
+  let found = none
+  for (depth, key) in path.enumerate() {
+    found = none
+    for i in range(from, lines.len()) {
+      let line = lines.at(i)
+      let trimmed = line.trim(at: start)
+      let ind = line.len() - trimmed.len()
+      if trimmed == "" or trimmed.starts-with("#") { continue }
+      if depth > 0 and ind <= indent { break }
+      if trimmed.match(regex("^[\"']?" + key + "[\"']?\s*:")) != none and (depth > 0 or ind == 0) {
+        found = i
+        indent = ind
+        break
+      }
+    }
+    if found == none { return none }
+    from = found + 1
+  }
+  found
+}
+#let toml-line(lines, path) = {
+  let table = path.slice(0, -1).join(".", default: "")
+  let in-table = table == ""
+  for (i, line) in lines.enumerate() {
+    let t = line.trim()
+    if t.starts-with("[") and not t.starts-with("[[") {
+      in-table = t.trim(regex("[\[\]\s]")) == table
+    } else if in-table and t.match(regex("^" + path.last() + "\s*=")) != none {
+      return i + 1
+    }
+  }
+  none
+}
+#let setting-at(..path) = {
+  let path = path.pos()
+  let in-front = if front-matter-match == none { none } else { yaml-line(front-matter-match.captures.first().split("\n"), path) }
+  // The first line of the file is the `---`
+  if in-front != none { return source-path + ":" + str(in-front + 2) }
+  let in-config = toml-line(config-text.split("\n"), path)
+  if in-config != none { "config.toml:" + str(in-config) }
+}
+#let setting-prefix(..path) = at-prefix(setting-at(..path))
+
+#let at-of(attrs) = if attrs == none { "" } else { at-prefix(attrs.at("_at", default: attrs.at("md-at", default: none))) }
+// A `[text](#id)` in the text: the id has to name one thing in the document. Typst says it too, but without the line.
+#let check-label(id, at) = context {
+  let found = query(label(id)).len()
+  assert(found > 0, message: at-prefix(at) + "no element with id " + repr(id))
+  assert(found == 1, message: at-prefix(at) + "id " + repr(id) + " is defined " + str(found) + " times, so [text](#" + id + ") cannot pick one; write <a href=\"#" + id + "\">text</a> or give one of them another id")
+}
 
 // `mark` is applied to the text of every included file as it is read (the main file is marked by the caller).
 #let expand-includes(text, chain, mark: (text, path) => text) = {
@@ -158,7 +211,7 @@
 }
 #let all-themes = themes + custom-themes
 #let theme-name = sys.inputs.at("theme", default: config.at("theme", default: "paper"))
-#assert(theme-name in all-themes, message: "Unknown theme \"" + theme-name + "\"; available: " + all-themes.keys().join(", "))
+#assert(theme-name in all-themes, message: setting-prefix("theme") + "Unknown theme \"" + theme-name + "\"; available: " + all-themes.keys().join(", "))
 #let theme = all-themes.at(theme-name)
 
 // `scale` (percent) enlarges or shrinks everything on the page (text, code, paddings, corners,
@@ -166,7 +219,7 @@
 #let zoom = {
   let s = sys.inputs.at("scale", default: config.at("scale", default: 100))
   let v = if type(s) == str { float(s.trim().trim("%")) } else { float(s) }
-  assert(v > 0, message: "scale must be a positive percentage, got " + repr(s))
+  assert(v > 0, message: setting-prefix("scale") + "scale must be a positive percentage, got " + repr(s))
   v / 100
 }
 
@@ -240,7 +293,7 @@
 }
 
 #let feel-name = sys.inputs.at("feel", default: config.at("feel", default: "formal"))
-#assert(feel-name in feels, message: "Unknown feel " + repr(feel-name) + "; available: " + feels.keys().join(", "))
+#assert(feel-name in feels, message: setting-prefix("feel") + "Unknown feel " + repr(feel-name) + "; available: " + feels.keys().join(", "))
 #let feel = feels.at(feel-name)
 
 // [heading]: rule below and / or tinted background for headings up to `max-level`.
@@ -249,7 +302,7 @@
 #let heading-config = {
   let h = config.at("heading", default: none)
   if h == none { (:) } else {
-    assert(type(h) == dictionary, message: "`heading` must be a table of settings (numbering, underline, fill, ...), got " + repr(h))
+    assert(type(h) == dictionary, message: setting-prefix("heading") + "`heading` must be a table of settings (numbering, underline, fill, ...), got " + repr(h))
     h
   }
 }
@@ -259,7 +312,7 @@
 }
 #let heading-flag(key, default) = {
   let v = heading-key(key, default)
-  assert(type(v) == bool, message: "heading " + key + " must be true or false, got " + repr(v))
+  assert(type(v) == bool, message: setting-prefix("heading", key) + "heading " + key + " must be true or false, got " + repr(v))
   v
 }
 #let heading-underline = heading-flag("underline", false)
@@ -277,7 +330,7 @@
     let hue = color-presets.at(c)
     if theme.dark { hue.lighten(30%) } else { hue.darken(15%) }
   } else {
-    assert(c.starts-with("#"), message: "heading color must be a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)" + ", got " + repr(c))
+    assert(c.starts-with("#"), message: setting-prefix("heading", "color") + "heading color must be a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)" + ", got " + repr(c))
     rgb(c)
   }
 }
@@ -301,7 +354,7 @@
 #let paragraph-number(key, default) = {
   let v = paragraph-config.at(key, default: none)
   if v == none { return default }
-  assert(type(v) in (int, float), message: "[paragraph] " + key + " must be a number, got " + repr(v))
+  assert(type(v) in (int, float), message: setting-prefix("paragraph", key) + "[paragraph] " + key + " must be a number, got " + repr(v))
   v
 }
 // Percent of the font's normal space: 100 = unchanged.
@@ -311,13 +364,13 @@
 // Gap between lines, percent of Typst's normal gap (0.65em): 100 = unchanged.
 #let line-spacing = {
   let v = paragraph-number("line-spacing", 100)
-  assert(v >= 0, message: "[paragraph] line-spacing must be 0 or more, got " + repr(v))
+  assert(v >= 0, message: setting-prefix("paragraph", "line-spacing") + "[paragraph] line-spacing must be 0 or more, got " + repr(v))
   v / 100 * 0.65em
 }
 #let justify = {
   let v = paragraph-config.at("justify", default: none)
   if v == none { false } else {
-    assert(type(v) == bool, message: "[paragraph] justify must be true or false, got " + repr(v))
+    assert(type(v) == bool, message: setting-prefix("paragraph", "justify") + "[paragraph] justify must be true or false, got " + repr(v))
     v
   }
 }
@@ -353,7 +406,7 @@
 
 // Text direction: "auto" = every block from its first letter; "rtl" / "ltr" force it on everything.
 #let doc-dir = sys.inputs.at("dir", default: config.at("dir", default: "auto"))
-#assert(doc-dir in ("auto", "rtl", "ltr"), message: "dir must be auto, rtl or ltr, got " + repr(doc-dir))
+#assert(doc-dir in ("auto", "rtl", "ltr"), message: setting-prefix("dir") + "dir must be auto, rtl or ltr, got " + repr(doc-dir))
 #let named-dir(d) = if d == "rtl" { rtl } else if d == "ltr" { ltr } else { none }
 // Nested <dir to="..."> blocks; the innermost one wins over doc-dir.
 #let dir-stack = state("dir-stack", ())

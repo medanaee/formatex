@@ -3,6 +3,8 @@
 // The first thing that happens to a file when it is read: every piece of the user's text that can be wrong is told where it is.
 //   <alert type="tip">      ->  <alert _at="main.md:5" type="tip">
 //   [text](#id)             ->  <!--raw-typst #check-label("id", "main.md:5") -->[text](#id)
+//   [text]{#id}             ->  [text]{#id md-at="main.md:5"}
+//   ```mermaid width=80%    ->  ```mermaid width=80% md-at="main.md:5"
 //   {width=full}            ->  {width=full md-at="main.md:12"}     (above a table or a list, or at the end of a heading)
 // The mark sits inside the tag or the braces, so the later steps (the preprocessors, cmarker) cut, add and move lines around it
 // without losing it, and whoever finds the value wrong says `@main.md:5 ...` (`at-prefix` in src/core.typ). The app reads that
@@ -12,6 +14,8 @@
 #let heading-option-re = regex("^\\s{0,3}#{1,6}[ \\t].*?[ \\t]+\\{([^{}]*)\\}[ \\t]*\\r?$")
 #let option-line-re = regex("^\\s{0,3}\\{([^{}]*)\\}[ \\t]*\\r?$")
 #let link-re = regex("\[[^\[\]\n]*\]\(#([^)\s]+)\)")
+#let span-option-re = regex("\[[^\]\n]+\]\{([^{}\n]*)\}")
+#let mermaid-fence-re = regex("(?m)^[ \\t]{0,3}(?:`{3,}|~{3,})[ \\t]*mermaid(?:[ \\t][^\\r\\n]*)?$")
 #let list-item-re = regex("^\\s{0,3}([-*+]|[0-9]{1,9}[.)])(\\s|$)")
 
 // Same bytes, same lines: only the characters change.
@@ -59,6 +63,15 @@
     inserts.push((m.start + 1 + name.len(), " _at=\"" + at(line) + "\""))
   }
 
+  // The fence line of a mermaid block carries its options (width, height): the mark goes after them
+  let fence-line = 1
+  let fence-last = 0
+  for m in src.matches(mermaid-fence-re) {
+    fence-line += src.slice(fence-last, m.start).matches("\n").len()
+    fence-last = m.start
+    inserts.push((m.end, " md-at=\"" + at(fence-line) + "\""))
+  }
+
   let offset = 0
   let lines = clean.split("\n")
   for (index, text) in lines.enumerate() {
@@ -68,6 +81,11 @@
     for m in text.matches(link-re) {
       if m.start > 0 and text.slice(m.start - 1, m.start) == "!" { continue }
       inserts.push((start + m.start, "<!--raw-typst #check-label(" + repr(m.captures.first()) + ", " + repr(at(index + 1)) + ") -->"))
+    }
+    // `[text]{#id highlight=green}`: the options of a span (it becomes a `<span>`, which takes the mark as `_at`)
+    for m in text.matches(span-option-re) {
+      if (m.start > 0 and text.slice(m.start - 1, m.start) == "!") or not only-options(m.captures.first()) { continue }
+      inserts.push((start + m.end - 1, " md-at=\"" + at(index + 1) + "\""))
     }
     if not text.contains("}") { continue }
     let options = none

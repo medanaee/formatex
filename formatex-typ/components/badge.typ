@@ -6,12 +6,12 @@
     // <badge color="green" icon="check">stable</badge>
     badge: (attrs, body) => context {
       let given = attrs.at("color", default: none)
-      let colors = if given != none { resolve-color(given) } else { tinted(theme.muted) }
+      let colors = if given != none { resolve-color(given, attrs: attrs) } else { tinted(theme.muted) }
       let icon-name = attrs.at("icon", default: none)
       let d = content-dir(body)
       // The icon font and the Persian font have their own (taller) metrics; fixed edges at the
       // Latin cap height give every badge the same height, with or without an icon.
-      let size = parse-length(attrs.at("size", default: "1em"))
+      let size = parse-length(attrs.at("size", default: "1em"), attrs: attrs)
       let cap = measure(text(size: size, weight: "bold", "H")).height
       box(
         fill: colors.fill,

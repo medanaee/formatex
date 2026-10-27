@@ -33,7 +33,7 @@
   let hues = (user: hue("user-color", theme.accent), ai: hue("ai-color", theme.secondary))
   let frame = repr(setting("frame", true)) in ("true", "\"true\"")
   let title = setting("title", none)
-  let max-width = parse-length(str(setting("width", "80%")))
+  let max-width = parse-length(str(setting("width", "80%")), attrs: attrs)
   let messages = untag(body, "chat-msg").tagged
   assert(messages.len() > 0, message: at-of(attrs) + "<chat> needs <user> and <ai> messages inside it")
 

@@ -7,7 +7,7 @@
   mobile: (width: 110mm, height: 245mm, margin: (x: 7mm, top: 15mm, bottom: 13mm)),
 )
 #let page-name = sys.inputs.at("page", default: config.at("page", default: "a4"))
-#assert(page-name in page-sizes, message: "Unknown page size " + repr(page-name) + "; available: " + page-sizes.keys().join(", "))
+#assert(page-name in page-sizes, message: setting-prefix("page") + "Unknown page size " + repr(page-name) + "; available: " + page-sizes.keys().join(", "))
 
 // A4 margins; "normal" is Typst's default (about 25 mm). The mobile page keeps its own.
 #let margin-sizes = (
@@ -16,7 +16,7 @@
   wide: (x: 35mm, y: 30mm),
 )
 #let margin-name = sys.inputs.at("margin", default: config.at("margin", default: "normal"))
-#assert(margin-name in margin-sizes, message: "Unknown margin " + repr(margin-name) + "; available: " + margin-sizes.keys().join(", "))
+#assert(margin-name in margin-sizes, message: setting-prefix("margin") + "Unknown margin " + repr(margin-name) + "; available: " + margin-sizes.keys().join(", "))
 
 // Page margins as lengths (x, top), for components that bleed to the page edge (<picHeader>).
 #let page-margins = {
@@ -29,10 +29,10 @@
 #let column-count = if page-name == "mobile" { 1 } else {
   int(sys.inputs.at("columns", default: str(config.at("columns", default: 1))))
 }
-#assert(column-count >= 1, message: "columns must be 1 or more")
+#assert(column-count >= 1, message: setting-prefix("columns") + "columns must be 1 or more")
 // Which column is filled first: "rtl" = right, "ltr" = left, "auto" = Typst's default.
 #let column-dir = sys.inputs.at("column-dir", default: config.at("column-dir", default: "auto"))
-#assert(column-dir in ("rtl", "ltr", "auto"), message: "column-dir must be rtl, ltr or auto, got " + repr(column-dir))
+#assert(column-dir in ("rtl", "ltr", "auto"), message: setting-prefix("column-dir") + "column-dir must be rtl, ltr or auto, got " + repr(column-dir))
 
 #let header-config = config.at("header", default: (:))
 #let header-styles = ("minimal", "line", "band", "double")

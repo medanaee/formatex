@@ -73,10 +73,10 @@
 }
 
 // "200" (pt), "5cm", "40mm", "2in", "3em", "50%"
-#let parse-length(s) = {
+#let parse-length(s, attrs: none) = {
   if s == none { return none }
   let m = s.trim().match(regex("^([0-9]*\.?[0-9]+)\s*(pt|mm|cm|in|em|%)?$"))
-  assert(m != none, message: "Invalid length " + repr(s))
+  assert(m != none, message: at-of(attrs) + "Invalid length " + repr(s))
   let v = float(m.captures.at(0))
   let unit = m.captures.at(1)
   if unit == "%" { v * 1% }

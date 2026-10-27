@@ -20,11 +20,11 @@
 }
 
 #let docheader-image(attrs) = {
-  let w = parse-length(attrs.at("width", default: none))
-  let h = parse-length(attrs.at("height", default: none))
+  let w = parse-length(attrs.at("width", default: none), attrs: attrs)
+  let h = parse-length(attrs.at("height", default: none), attrs: attrs)
   box(
     clip: true,
-    radius: if "radius" in attrs { parse-length(attrs.radius) } else { feel.image },
+    radius: if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.image },
     image(root-path(attrs.src), width: if w != none { w } else { auto }, height: if h != none { h } else if w == none { 4em } else { auto }),
   )
 }
@@ -108,8 +108,8 @@
       let both = attrs.at("color", default: none)
       let border-given = attrs.at("border-color", default: both)
       let fill-given = attrs.at("fill-color", default: both)
-      let border-colors = if border-given != none { resolve-color(border-given) }
-      let fill-colors = if fill-given != none { resolve-color(fill-given) }
+      let border-colors = if border-given != none { resolve-color(border-given, attrs: attrs) }
+      let fill-colors = if fill-given != none { resolve-color(fill-given, attrs: attrs) }
       // border = the sides that get a line, as letters of "lrtb" (left, right, top, bottom).
       let sides = attrs.at("border", default: "")
       if sides == "true" { sides = "lrtb" } else if sides == "false" { sides = "" }
@@ -120,7 +120,7 @@
       let all-sides = sides.clusters().dedup().len() == 4
       let line = 0.8pt * zoom + if border-colors != none { border-colors.border } else { theme.rule }
       let side(k) = if k in sides { line }
-      let pad-attr = parse-length(attrs.at("padding", default: "1em"))
+      let pad-attr = parse-length(attrs.at("padding", default: "1em"), attrs: attrs)
 
       let content = {
         docheader-main(titles, pick("l-img"), pick("r-img"))
@@ -134,7 +134,7 @@
         stroke: if all-sides { line } else if framed-border { (left: side("l"), right: side("r"), top: side("t"), bottom: side("b")) },
         // A corner is rounded where two drawn sides meet; the open ends of a line stay square.
         radius: {
-          let r = if "radius" in attrs { parse-length(attrs.radius) } else { feel.box }
+          let r = if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.box }
           if framed-border {
             let corner(a, b) = if a in sides and b in sides { r } else { 0pt }
             (top-left: corner("t", "l"), top-right: corner("t", "r"), bottom-left: corner("b", "l"), bottom-right: corner("b", "r"))

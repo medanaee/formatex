@@ -4,7 +4,7 @@
 #let space-tags = (
     // <v size="1.5em" />: vertical space.
     v: ("void", attrs => v(
-      parse-length(attrs.at("size", default: "1em")),
+      parse-length(attrs.at("size", default: "1em"), attrs: attrs),
       weak: attrs.at("weak", default: "false") == "true",
     )),
     // <pagebreak /> starts a new page.

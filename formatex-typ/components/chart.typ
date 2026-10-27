@@ -79,7 +79,7 @@
     labels: data-rows.map(row => row.first()),
     series: range(1, header.len()).map(k => (
       name: header.at(k),
-      values: data-rows.map(row => chart-number(plain-text(row.at(k, default: "")), "column " + repr(plain-text(header.at(k))))),
+      values: data-rows.map(row => chart-number(plain-text(row.at(k, default: "")), "column " + repr(plain-text(header.at(k))), attrs: attrs)),
     )),
   )
 }
@@ -111,8 +111,8 @@
   let legend = flag("legend", "auto", ("auto", "true", "false"))
   let show-legend = if legend == "auto" { round or data.series.len() > 1 } else { legend == "true" }
   let unit = attrs.at("unit", default: none)
-  let width = parse-length(attrs.at("width", default: "100%"))
-  let height = parse-length(attrs.at("height", default: if round { "150" } else { "170" }))
+  let width = parse-length(attrs.at("width", default: "100%"), attrs: attrs)
+  let height = parse-length(attrs.at("height", default: if round { "150" } else { "170" }), attrs: attrs)
   let x-title = attrs.at("x-title", default: none)
   let y-title = attrs.at("y-title", default: none)
   let caption = attrs.at("caption", default: none)
@@ -206,8 +206,8 @@
       } else {
         let all = data.series.map(s => s.values).flatten().filter(v => v != none)
         assert(all.len() > 0, message: at-of(attrs) + "<chart> has no values")
-        let lo = if "min" in attrs { chart-number(attrs.min, "min") } else if kind == "bar" { calc.min(0, ..all) } else { calc.min(..all) }
-        let hi = if "max" in attrs { chart-number(attrs.max, "max") } else if kind == "bar" { calc.max(0, ..all) } else { calc.max(..all) }
+        let lo = if "min" in attrs { chart-number(attrs.min, "min", attrs: attrs) } else if kind == "bar" { calc.min(0, ..all) } else { calc.min(..all) }
+        let hi = if "max" in attrs { chart-number(attrs.max, "max", attrs: attrs) } else if kind == "bar" { calc.max(0, ..all) } else { calc.max(..all) }
         // Labels under the lowest line points need room above the category labels.
         let axis = chart-scale(if kind == "line" and show-values and "min" not in attrs { lo - (hi - lo) * 0.12 } else { lo }, hi)
         let axis-min = if "min" in attrs { lo } else { axis.bottom }

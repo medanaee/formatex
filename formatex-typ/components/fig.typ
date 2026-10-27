@@ -141,12 +141,16 @@
   if r == none or type(r.lang) != str or r.lang.match(regex("^mermaid(\s|$)")) == none { return none }
   let token = regex("([a-z-]+)=(?:\"([^\"]*)\"|(\S+))")
   let rest = r.lang.slice("mermaid".len())
-  assert(rest.replace(token, "").trim() == "", message: "```mermaid only takes key=value options, got " + repr(rest.trim()))
+  // `md-at` is where the fence line is (src/preprocess/mark-lines.typ): not an option, but every problem here says it
+  let at-found = rest.match(regex("md-at=\"([^\"]*)\""))
+  let at = if at-found == none { none } else { at-found.captures.first() }
+  let rest = rest.replace(regex("\\s*md-at=\"[^\"]*\""), "")
+  assert(rest.replace(token, "").trim() == "", message: at-prefix(at) + "```mermaid only takes key=value options, got " + repr(rest.trim()))
   let opts = (:)
   for t in rest.matches(token) {
     let (key, quoted, bare) = t.captures
-    assert(key in ("width", "height"), message: "```mermaid options are width and height, got " + repr(key))
-    opts.insert(key, parse-length(if quoted != none { quoted } else { bare }))
+    assert(key in ("width", "height"), message: at-prefix(at) + "```mermaid options are width and height, got " + repr(key))
+    opts.insert(key, parse-length(if quoted != none { quoted } else { bare }, attrs: (_at: at)))
   }
   opts
 }
@@ -169,8 +173,8 @@
       let found = find-image(rest)
       assert(found != none or drawings.len() > 0 or mermaid != none, message: at-of(attrs) + "<fig> needs an <img>, <cetz>, <lilaq> or ```mermaid block inside it")
 
-      let h = parse-length(attrs.at("height", default: none))
-      let w = parse-length(attrs.at("width", default: none))
+      let h = parse-length(attrs.at("height", default: none), attrs: attrs)
+      let w = parse-length(attrs.at("width", default: none), attrs: attrs)
       let aspect = parse-ratio(attrs.at("ratio", default: none))
       let a = attrs.at("align", default: none)
       assert(a == none or a in align-names, message: at-of(attrs) + "<fig> align must be one of " + align-names.keys().join(", "))

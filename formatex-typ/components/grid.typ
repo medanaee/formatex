@@ -42,8 +42,8 @@
     grid: (attrs, body) => {
       let items = untag(body, "item").tagged
       let cols = int(attrs.at("cols", default: "2"))
-      let gap-x = parse-length(attrs.at("gap-x", default: "1em"))
-      let gap-y = parse-length(attrs.at("gap-y", default: "1em"))
+      let gap-x = parse-length(attrs.at("gap-x", default: "1em"), attrs: attrs)
+      let gap-y = parse-length(attrs.at("gap-y", default: "1em"), attrs: attrs)
       let d = attrs.at("dir", default: "auto")
 
       // Typst errors on a colspan that overflows the row, so items are placed manually

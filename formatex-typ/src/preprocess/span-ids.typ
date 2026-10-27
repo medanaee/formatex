@@ -33,10 +33,15 @@
       let (prefix, txt, opts) = m.captures
       if opts.trim() == "" or opts.replace(token, "").trim() != "" { return m.text }
       let attrs = ""
+      // `md-at` is where the line is (src/preprocess/mark-lines.typ): the span tag carries it as `_at`
+      let at-found = opts.match(regex("md-at=\"([^\"]*)\""))
+      let where = if at-found == none { "" } else { at-prefix(at-found.captures.first()) }
+      if at-found != none { attrs += " _at=\"" + at-found.captures.first() + "\"" }
       for t in opts.matches(token) {
         let (id, key, quoted, bare) = t.captures
         if id != none { attrs += " id=\"" + id + "\""; continue }
-        assert(key in option-keys("span", without: ("id",)), message: "Unknown span option " + repr(key) + "; available: " + option-keys("span", without: ("id",)).join(", "))
+        if key == "md-at" { continue }
+        assert(key in option-keys("span", without: ("id",)), message: where + "Unknown span option " + repr(key) + "; available: " + option-keys("span", without: ("id",)).join(", "))
         attrs += " " + key + "=\"" + if quoted != none { quoted } else { bare } + "\""
       }
       prefix + "<span" + attrs + ">" + txt + "</span>"

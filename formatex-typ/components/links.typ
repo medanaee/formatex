@@ -4,10 +4,10 @@
 
 // The highlighter color: a preset's hue (or a hex) at marker strength, stronger than the pale tint of <alert>.
 // `true` means the default, yellow.
-#let highlight-fill(name) = {
+#let highlight-fill(name, attrs: none) = {
   let name = if name == "true" { "yellow" } else { name }
   let hue = if name in color-presets { color-presets.at(name) } else {
-    assert(name.starts-with("#"), message: "Unknown highlight color " + repr(name) + "; use true, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+    assert(name.starts-with("#"), message: at-of(attrs) + "Unknown highlight color " + repr(name) + "; use true, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
     rgb(name)
   }
   if theme.dark { color.mix((hue, 38%), (theme.bg, 62%)) } else { color.mix((hue, 42%), (theme.bg, 58%)) }
@@ -19,7 +19,7 @@
   let id = attrs.at("id", default: attrs.at("name", default: none))
   let marked = attrs.at("highlight", default: none)
   let shown = if marked == none or marked == "false" { body } else {
-    highlight(fill: highlight-fill(marked), extent: 1.5pt * zoom, radius: 0pt, body)
+    highlight(fill: highlight-fill(marked, attrs: attrs), extent: 1.5pt * zoom, radius: 0pt, body)
   }
   if id != none {
     let has-text = plain-text(body).trim() != ""

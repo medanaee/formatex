@@ -15,7 +15,7 @@
       // Settings come from the document's front matter (`bibliography:`); the tag's attributes win.
       let cfg = front-matter.at("bibliography", default: none)
       if cfg == none { cfg = (:) }
-      assert(type(cfg) == dictionary, message: "`bibliography` in the front matter must be a table (file, style, title, dir), got " + repr(cfg))
+      assert(type(cfg) == dictionary, message: setting-prefix("bibliography") + "`bibliography` in the front matter must be a table (file, style, title, dir), got " + repr(cfg))
       let setting(key, default) = {
         let v = attrs.at(key, default: cfg.at(key, default: none))
         if v == none { default } else { v }

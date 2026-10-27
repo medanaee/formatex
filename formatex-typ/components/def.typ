@@ -5,7 +5,7 @@
 #import "/src/lib/refs.typ": *
 
 // Colors for <def>: title and icon color, plus tinted background and border for inline badge mode.
-#let resolve-def-colors(c) = {
+#let resolve-def-colors(c, attrs: none) = {
   let c-str = if c == none { "" } else { str(c) }
   if c-str in ("", "accent") {
     let t = tinted(theme.accent)
@@ -26,7 +26,7 @@
     let t = tinted(hue)
     (text: if theme.dark { hue.lighten(30%) } else { hue.darken(10%) }, bg: t.fill, border: t.border)
   } else {
-    assert(c-str.starts-with("#"), message: "<def> color must be a hex color (#...) or one of: accent, secondary, heading, muted, " + color-names.join(", ") + " (optionally with a shade, like blue-200)" + ", got " + repr(c))
+    assert(c-str.starts-with("#"), message: at-of(attrs) + "<def> color must be a hex color (#...) or one of: accent, secondary, heading, muted, " + color-names.join(", ") + " (optionally with a shade, like blue-200)" + ", got " + repr(c))
     let hue = rgb(c-str)
     let t = if theme.dark {
       (bg: color.mix((hue, 20%), (theme.bg, 80%)), border: hue.transparentize(50%), text: hue.lighten(25%))
@@ -47,7 +47,7 @@
       let mode = attrs.at("mode", default: "inline")
       assert(mode in ("inline", "block"), message: at-of(attrs) + "<def> mode must be 'inline' or 'block', got " + repr(mode))
       let color-attr = attrs.at("color", default: "accent")
-      let colors = resolve-def-colors(color-attr)
+      let colors = resolve-def-colors(color-attr, attrs: attrs)
       let icon-name = attrs.at("icon", default: "circle-question")
 
       let slug = lower(id.trim()).replace(regex("[^\p{L}\p{M}\p{N}_\- ]"), "").replace(" ", "-")

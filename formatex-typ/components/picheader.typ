@@ -14,7 +14,7 @@
       assert(brk in ("false", "before"), message: at-of(attrs) + "<picHeader> break must be false or before, got " + repr(brk))
       let mx = flag("margin-x", "true")
       let my = flag("margin-y", "true")
-      let h = parse-length(attrs.at("height", default: "60mm"))
+      let h = parse-length(attrs.at("height", default: "60mm"), attrs: attrs)
       let multi = column-count > 1
       let bleed-x = not mx and not multi
       let bleed-top = brk == "before" and not my

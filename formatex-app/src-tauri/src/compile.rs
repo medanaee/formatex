@@ -111,16 +111,17 @@ fn located(message: &str) -> Option<(String, usize, String)> {
     (!path.is_empty() && line > 0).then(|| (path.to_string(), line, format!("{head}{text}")))
 }
 
-/// Typst reports a missing label on its own, without a line; when the engine has already said the same thing with the line
-/// of the text (`no element with id "x"`), the plain one is dropped.
+/// Typst reports a missing or repeated label on its own, without a line; when the engine has already said the same thing with the
+/// line of the text (`... id "x" ...`), the plain one is dropped.
 fn drop_unplaced_labels(diagnostics: &mut Vec<Diagnostic>) {
     let said: Vec<String> = diagnostics
         .iter()
         .filter(|d| d.path.is_some())
-        .filter_map(|d| d.message.split("no element with id \"").nth(1).and_then(|rest| rest.split('"').next()).map(str::to_owned))
+        .filter_map(|d| d.message.split("id \"").nth(1).and_then(|rest| rest.split('"').next()).map(str::to_owned))
         .collect();
     diagnostics.retain(|d| {
-        !(d.path.is_none() && said.iter().any(|id| d.message == format!("label `<{id}>` does not exist in the document")))
+        !(d.path.is_none()
+            && said.iter().any(|id| d.message == format!("label `<{id}>` does not exist in the document") || d.message == format!("label `<{id}>` occurs multiple times in the document")))
     });
 }
 
@@ -578,8 +579,10 @@ mod label_tests {
     #[test]
     fn drops_the_plain_message_when_the_placed_one_says_the_same() {
         let mut all = vec![problem("assertion failed: no element with id \"x\"", Some("main.md")), problem("label `<x>` does not exist in the document", None), problem("label `<y>` does not exist in the document", None)];
+        all.push(problem("assertion failed: id \"z\" is defined 2 times", Some("main.md")));
+        all.push(problem("label `<z>` occurs multiple times in the document", None));
         drop_unplaced_labels(&mut all);
-        assert_eq!(all.len(), 2);
+        assert_eq!(all.len(), 3);
         assert!(all[1].message.contains("<y>"));
     }
 }

@@ -8,7 +8,7 @@
 
 #let progress-block(attrs, body) = {
   let style = flag-attr(attrs, "style", "bar", progress-styles, "progress")
-  let max-value = chart-number(attrs.at("max", default: if style == "bar" { "100" } else { "5" }), "max")
+  let max-value = chart-number(attrs.at("max", default: if style == "bar" { "100" } else { "5" }), "max", attrs: attrs)
   assert(max-value != none and max-value > 0, message: at-of(attrs) + "<progress> max must be a number above zero")
   let show-values = flag-attr(attrs, "values", "true", ("true", "false"), "progress") == "true"
   let found = find-first(body, list)
@@ -17,17 +17,17 @@
       let s = plain-text(item.body).trim()
       let m = s.match(regex("^(.*)[:：]\s*([^:：]+)$"))
       assert(m != none, message: at-of(attrs) + "<progress> list items must look like \"label: value\", got " + repr(s))
-      (label: m.captures.first().trim(), value: chart-number(m.captures.last(), repr(s)))
+      (label: m.captures.first().trim(), value: chart-number(m.captures.last(), repr(s), attrs: attrs))
     })
   } else {
     assert("value" in attrs, message: at-of(attrs) + "<progress> needs value=\"...\" or a list of \"label: value\" lines")
     let label-text = plain-text(body).trim()
-    ((label: if label-text == "" { none } else { body }, value: chart-number(attrs.value, "value")),)
+    ((label: if label-text == "" { none } else { body }, value: chart-number(attrs.value, "value", attrs: attrs)),)
   }
   for row in rows {
     assert(row.value != none and row.value >= 0, message: at-of(attrs) + "<progress> values must be numbers of zero or more")
   }
-  let hue = pick-hue(attrs.at("color", default: none), "progress", if feel-name == "formal" { theme.heading } else { theme.accent })
+  let hue = pick-hue(attrs.at("color", default: none), "progress", if feel-name == "formal" { theme.heading } else { theme.accent }, attrs: attrs)
   let tint = tinted(hue)
   let strong = if theme.dark { hue.lighten(15%) } else { hue }
 

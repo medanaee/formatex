@@ -45,33 +45,33 @@
   grow: 0, shrink: 1, basis: auto, self-align: "auto", order: 0,
 )
 
-#let div-fail(cls, why) = assert(false, message: "<div> tailwind class " + repr(cls) + ": " + why)
+#let div-fail(cls, why, at: none) = assert(false, message: at-prefix(at) + "<div> tailwind class " + repr(cls) + ": " + why)
 
 // Lengths are made absolute here, while the text size is still the container's parent's: `p-4` is 1em of
 // the surrounding text (like rem), not of this container's own `text-xl`. Needs `context`.
 #let div-abs(x) = if type(x) == length { x.to-absolute() } else { x }
 
 // "4" (0.25em per step), "px", "[12pt]"
-#let div-length(v, cls) = {
+#let div-length(v, cls, at: none) = {
   if v == "px" { return 0.75pt * zoom }
-  if v.starts-with("[") and v.ends-with("]") { return div-abs(parse-length(v.slice(1, -1))) }
-  if v.match(regex("^[0-9]*\.?[0-9]+$")) == none { div-fail(cls, "expected a number (0.25em per step), px or [length], got " + repr(v)) }
+  if v.starts-with("[") and v.ends-with("]") { return div-abs(parse-length(v.slice(1, -1), attrs: (_at: at))) }
+  if v.match(regex("^[0-9]*\.?[0-9]+$")) == none { div-fail(cls, "expected a number (0.25em per step), px or [length], got " + repr(v), at: at) }
   div-abs(float(v) * 0.25em)
 }
 
 // Width, height, flex-basis: a length, a fraction (1/2), full, auto, fit.
-#let div-size(v, cls) = {
+#let div-size(v, cls, at: none) = {
   if v == "full" { 100% } else if v == "auto" { auto } else if v in ("fit", "min", "max") { "fit" }
   else if v.match(regex("^[0-9]+/[0-9]+$")) != none {
     let parts = v.split("/")
     float(parts.at(0)) / float(parts.at(1)) * 100%
-  } else { div-length(v, cls) }
+  } else { div-length(v, cls, at: at) }
 }
 
 // Color for the role "fill", "text" or "border". `blue` is the soft theme-aware tint <box color> uses;
 // `blue-200` is exactly Tailwind's blue-200 (on a dark theme its mirror, blue-800, so light shades stay
 // readable); `blue/20` mixes that percent of blue into the page color.
-#let div-color(v, role, cls) = {
+#let div-color(v, role, cls, at: none) = {
   if v in ("transparent", "none") { return none }
   if v.starts-with("[") and v.ends-with("]") { return rgb(v.slice(1, -1)) }
   let name = v
@@ -85,7 +85,7 @@
   if shade != none and shade.captures.at(0) in color-presets {
     let n = int(shade.captures.at(1))
     let key = shade.captures.at(0) + "-" + str(if theme.dark { if n == 50 { 950 } else if n == 950 { 50 } else { 1000 - n } } else { n })
-    if key not in color-presets { div-fail(cls, "unknown shade " + str(n) + "; use " + tailwind-shades.map(str).join(", ")) }
+    if key not in color-presets { div-fail(cls, "unknown shade " + str(n) + "; use " + tailwind-shades.map(str).join(", "), at: at) }
     name = key
   }
   let base = if role == "text" { theme.fg } else { theme.bg }
@@ -101,18 +101,18 @@
     if amount == none { return c }
     return color.mix((c, amount * 1%), (theme.bg, (100 - amount) * 1%))
   }
-  div-fail(cls, "unknown color " + repr(name) + "; use a Tailwind color (" + color-names.join(", ") + ") with an optional shade (blue-300) or /percent, a theme color (" + div-theme-colors.keys().join(", ") + "), transparent or [#hex]")
+  div-fail(cls, "unknown color " + repr(name) + "; use a Tailwind color (" + color-names.join(", ") + ") with an optional shade (blue-300) or /percent, a theme color (" + div-theme-colors.keys().join(", ") + "), transparent or [#hex]", at: at)
 }
 
-#let div-variant-ok(name, is-rtl, token) = {
+#let div-variant-ok(name, is-rtl, token, at: none) = {
   if name == "dark" { theme.dark } else if name == "light" { not theme.dark }
   else if name == "rtl" { is-rtl } else if name == "ltr" { not is-rtl }
   else if name in feels { feel-name == name }
-  else { div-fail(token, "unknown variant " + repr(name) + "; use dark, light, rtl, ltr, " + feels.keys().join(", ")); false }
+  else { div-fail(token, "unknown variant " + repr(name) + "; use dark, light, rtl, ltr, " + feels.keys().join(", "), at: at); false }
 }
 
 // The class string -> a dictionary of resolved settings. Later classes win. Needs `context`.
-#let div-parse(classes, is-rtl) = {
+#let div-parse(classes, is-rtl, at: none) = {
   let s = div-spec0
   let side-keys(k) = {
     if k == "" { ("l", "r", "t", "b") } else if k == "x" { ("l", "r") } else if k == "y" { ("t", "b") }
@@ -133,7 +133,7 @@
 
   for token in classes.split(regex("\s+")).filter(t => t != "") {
     let parts = token.split(":")
-    if not parts.slice(0, -1).all(v => div-variant-ok(v, is-rtl, token)) { continue }
+    if not parts.slice(0, -1).all(v => div-variant-ok(v, is-rtl, token, at: at)) { continue }
     let cls = parts.last()
     let neg = cls.starts-with("-")
     let c = if neg { cls.slice(1) } else { cls }
@@ -153,7 +153,7 @@
     let m-flex-align = rx("(justify|items|content|self)-(.+)")
     let m-order = rx("order-(.+)")
 
-    if neg and m-mar == none and m-order == none { div-fail(cls, "a leading - is only allowed on margins and order") }
+    if neg and m-mar == none and m-order == none { div-fail(cls, "a leading - is only allowed on margins and order", at: at) }
 
     if c == "flex" or c == "block" or c == "inline-flex" or c == "inline-block" or c == "hidden" {
       s.display = c
@@ -174,46 +174,46 @@
     } else if m-flex-align != none {
       let (kind, v) = m-flex-align.captures
       if kind == "justify" {
-        if v not in div-justify-values { div-fail(cls, "justify must be one of " + div-justify-values.join(", ")) }
+        if v not in div-justify-values { div-fail(cls, "justify must be one of " + div-justify-values.join(", "), at: at) }
         s.justify = v
       } else if kind == "items" {
-        if v not in div-items-values { div-fail(cls, "items must be one of " + div-items-values.join(", ")) }
+        if v not in div-items-values { div-fail(cls, "items must be one of " + div-items-values.join(", "), at: at) }
         s.items = v
       } else if kind == "content" {
-        if v not in div-justify-values { div-fail(cls, "content must be one of " + div-justify-values.join(", ")) }
+        if v not in div-justify-values { div-fail(cls, "content must be one of " + div-justify-values.join(", "), at: at) }
         s.content = v
       } else {
-        if v not in ("auto",) + div-items-values { div-fail(cls, "self must be one of auto, " + div-items-values.join(", ")) }
+        if v not in ("auto",) + div-items-values { div-fail(cls, "self must be one of auto, " + div-items-values.join(", "), at: at) }
         s.self-align = v
       }
     } else if m-order != none {
       let v = m-order.captures.at(0)
       let n = if v == "first" { -9999 } else if v == "last" { 9999 } else if v == "none" { 0 } else {
-        if v.match(regex("^[0-9]+$")) == none { div-fail(cls, "order must be a number, first, last or none") }
+        if v.match(regex("^[0-9]+$")) == none { div-fail(cls, "order must be a number, first, last or none", at: at) }
         int(v)
       }
       s.order = if neg { -n } else { n }
     } else if m-gap != none {
       let (axis, v) = m-gap.captures
-      let len = div-length(v, cls)
+      let len = div-length(v, cls, at: at)
       if axis != "y" { s.gap-x = len }
       if axis != "x" { s.gap-y = len }
       if c.starts-with("space-") and s.display == "block" { s.display = "flex"; s.col = axis == "y" }
     } else if m-pad != none {
-      let len = div-length(m-pad.captures.at(1), cls)
+      let len = div-length(m-pad.captures.at(1), cls, at: at)
       for k in side-keys(m-pad.captures.at(0)) { s.insert("pad-" + k, len) }
     } else if m-mar != none {
       let v = m-mar.captures.at(1)
-      let len = if v == "auto" { "auto" } else { let l = div-length(v, cls); if neg { -l } else { l } }
+      let len = if v == "auto" { "auto" } else { let l = div-length(v, cls, at: at); if neg { -l } else { l } }
       for k in side-keys(m-mar.captures.at(0)) { s.insert("mar-" + k, len) }
     } else if m-w != none {
       let (kind, v) = m-w.captures
-      let size = if kind == "max-w" { none } else { div-size(v, cls) }
+      let size = if kind == "max-w" { none } else { div-size(v, cls, at: at) }
       if kind == "w" { s.w = size }
       else if kind == "h" { s.h = size }
       else if kind == "basis" { s.basis = if size == "fit" { auto } else { size } }
       else {
-        s.max-w = if v in div-max-widths { div-abs(div-max-widths.at(v)) } else if v == "full" { none } else { div-length(v, cls) }
+        s.max-w = if v in div-max-widths { div-abs(div-max-widths.at(v)) } else if v == "full" { none } else { div-length(v, cls, at: at) }
       }
     } else if c == "overflow-hidden" { s.clip = true }
     else if c == "overflow-visible" { s.clip = false }
@@ -226,45 +226,45 @@
       let v = m-font.captures.at(0)
       if v == "mono" { s.mono = true } else if v == "sans" { s.mono = false }
       else if v in div-weights { s.weight = div-weights.at(v) }
-      else { div-fail(cls, "font must be mono, sans or a weight: " + div-weights.keys().join(", ")) }
+      else { div-fail(cls, "font must be mono, sans or a weight: " + div-weights.keys().join(", "), at: at) }
     } else if c.starts-with("leading-") {
       let v = c.slice(8)
-      s.leading = if v in div-leadings { div-leadings.at(v) } else if v.starts-with("[") { div-length(v, cls) } else {
-        div-fail(cls, "leading must be one of " + div-leadings.keys().join(", ") + " or [length]")
+      s.leading = if v in div-leadings { div-leadings.at(v) } else if v.starts-with("[") { div-length(v, cls, at: at) } else {
+        div-fail(cls, "leading must be one of " + div-leadings.keys().join(", ") + " or [length]", at: at)
       }
     } else if c.starts-with("tracking-") {
       let v = c.slice(9)
-      s.tracking = if v in div-trackings { div-trackings.at(v) } else if v.starts-with("[") { div-length(v, cls) } else {
-        div-fail(cls, "tracking must be one of " + div-trackings.keys().join(", ") + " or [length]")
+      s.tracking = if v in div-trackings { div-trackings.at(v) } else if v.starts-with("[") { div-length(v, cls, at: at) } else {
+        div-fail(cls, "tracking must be one of " + div-trackings.keys().join(", ") + " or [length]", at: at)
       }
     } else if m-text != none {
       let v = m-text.captures.at(0)
       if v in div-text-sizes { s.size = div-text-sizes.at(v) }
       else if v in align-names { s.text-align = align-names.at(v) }
       else if v == "justify" { s.justify-text = true }
-      else if v.starts-with("[") and not v.starts-with("[#") { s.size = div-length(v, cls) }
-      else { s.text-color = div-color(v, "text", cls) }
+      else if v.starts-with("[") and not v.starts-with("[#") { s.size = div-length(v, cls, at: at) }
+      else { s.text-color = div-color(v, "text", cls, at: at) }
     } else if m-bg != none {
-      s.fill = div-color(m-bg.captures.at(0), "fill", cls)
+      s.fill = div-color(m-bg.captures.at(0), "fill", cls, at: at)
     } else if c in ("border-solid", "border-dashed", "border-dotted") {
       s.bstyle = c.slice(7)
     } else if c == "border-none" {
       for k in ("l", "r", "t", "b") { s.insert("bw-" + k, 0pt) }
     } else if m-border != none {
       let (side, v) = m-border.captures
-      let width = if v == none { 0.6pt * zoom } else if v.starts-with("[") { div-length(v, cls) } else { int(v) * 0.6pt * zoom }
+      let width = if v == none { 0.6pt * zoom } else if v.starts-with("[") { div-length(v, cls, at: at) } else { int(v) * 0.6pt * zoom }
       for k in side-keys(if side == none { "" } else { side }) { s.insert("bw-" + k, width) }
     } else if m-border-color != none {
-      s.bcolor = div-color(m-border-color.captures.at(1), "border", cls)
+      s.bcolor = div-color(m-border-color.captures.at(1), "border", cls, at: at)
     } else if m-rounded != none {
       let (side, size) = m-rounded.captures
       let r = if size == none { div-radii.at("") * div-radius-step * zoom }
         else if size == "full" { 50% }
-        else if size.starts-with("[") { div-length(size, cls) }
+        else if size.starts-with("[") { div-length(size, cls, at: at) }
         else { div-radii.at(size) * div-radius-step * zoom }
       for k in corner-keys(if side == none { "" } else { side }) { s.insert("rad-" + k, r) }
     } else {
-      div-fail(cls, "not supported. See the <div> section of the guide for the class list")
+      div-fail(cls, "not supported. See the <div> section of the guide for the class list", at: at)
     }
   }
   s
@@ -550,7 +550,7 @@
 // Needs `context`.
 #let div-build(attrs, body) = {
   let text-direction = resolve-dir(attrs.at("dir", default: "auto"), body)
-  let spec = div-parse(attrs.at("tailwind", default: ""), text-direction == rtl)
+  let spec = div-parse(attrs.at("tailwind", default: ""), text-direction == rtl, at: attrs.at("_at", default: none))
   let flexy = spec.display in ("flex", "inline-flex")
   let items = if flexy { div-items(body, div-build) }
   let own-h = if spec.h == none or spec.h == "fit" { auto } else { spec.h }

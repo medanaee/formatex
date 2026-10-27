@@ -8,9 +8,9 @@
 )
 
 // A preset name gets theme-aware tints; a hex color is used as given (toned down on dark pages).
-#let resolve-color(name) = {
+#let resolve-color(name, attrs: none) = {
   if name in color-presets { return tinted(color-presets.at(name)) }
-  assert(name.starts-with("#"), message: "Unknown color " + repr(name) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+  assert(name.starts-with("#"), message: at-of(attrs) + "Unknown color " + repr(name) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
   let c = rgb(name)
   if theme.dark {
     (fill: color.mix((c, 22%), (theme.bg, 78%)), border: c.transparentize(50%), icon: theme.fg)

@@ -18,7 +18,7 @@
       let preset = if kind != none { box-types.at(kind) } else { (color: none, icon: none) }
 
       let given = attrs.at("color", default: preset.color)
-      let colors = if given != none { resolve-color(given) } else { tinted(theme.muted) }
+      let colors = if given != none { resolve-color(given, attrs: attrs) } else { tinted(theme.muted) }
       let r = if "radius" in attrs { float(attrs.radius) * 1pt * zoom } else { feel.alert }
       let icon-name = attrs.at("icon", default: preset.icon)
 

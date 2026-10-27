@@ -7,7 +7,7 @@
 // <exercise>: numbered question; <choices> lays out a list as lettered options; <answer> is
 // shown, hidden or collected under <answers> by `answers` (config / --input).
 #let answers-mode = sys.inputs.at("answers", default: str(config.at("answers", default: "show")))
-#assert(answers-mode in ("show", "hide", "end"), message: "answers must be show, hide or end, got " + repr(answers-mode))
+#assert(answers-mode in ("show", "hide", "end"), message: setting-prefix("answers") + "answers must be show, hide or end, got " + repr(answers-mode))
 
 #let exercise-answers = state("exercise-answers", ())
 
@@ -42,7 +42,7 @@
     let word = attrs.at("name", default: if r { "تمرین" } else { "Exercise" })
     let points = attrs.at("points", default: none)
     let points-text = if points != none {
-      let p = chart-number(points, "points")
+      let p = chart-number(points, "points", attrs: attrs)
       text(size: 0.85em, fill: theme.muted, if r [#chart-label(p, none, r) نمره] else [#chart-label(p, none, r) #if p == 1 [point] else [points]])
     }
     let number = digits(n, r)
@@ -80,7 +80,7 @@
   let items = found.children.map(it => it.body)
   let style = flag-attr(attrs, "numbers", "letters", ("letters", "numbers"), "choices")
   let correct = if "correct" in attrs {
-    attrs.correct.split(",").map(s => int(chart-number(s, "correct")))
+    attrs.correct.split(",").map(s => int(chart-number(s, "correct", attrs: attrs)))
   } else { () }
   let given-cols = if "cols" in attrs { int(attrs.cols) }
   context {
