@@ -318,6 +318,9 @@
     "zoomFit": "Fit to width",
     "prevPage": "Previous page",
     "nextPage": "Next page",
-    "page": "Page number"
+    "page": "Page number",
+    "fitWidth": "Fit width",
+    "fitPage": "Fit page",
+    "zoom": "Zoom"
   }
 }

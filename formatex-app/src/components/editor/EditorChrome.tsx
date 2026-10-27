@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
+import { stepZoom } from "@/lib/previewZoom"
 import { desktopOs } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
@@ -28,7 +29,7 @@ export function EditorMenus() {
   const setPanel = useSettingsStore((state) => state.setPanel)
   const visualEditor = useSettingsStore((state) => state.visualEditor)
   const setVisualEditor = useSettingsStore((state) => state.setVisualEditor)
-  const zoom = useSettingsStore((state) => state.previewZoom)
+  const shown = useWorkspaceStore((state) => state.previewShown)
   const setZoom = useSettingsStore((state) => state.setPreviewZoom)
   const mod = desktopOs() === "macos" ? "⌘" : "Ctrl+"
   const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
@@ -98,11 +99,11 @@ export function EditorMenus() {
             {t("appMenu.visual")}
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setZoom(zoom + 10)}>
-            {t("preview.zoomIn")} <DropdownMenuShortcut>{zoom}%</DropdownMenuShortcut>
+          <DropdownMenuItem onSelect={() => stepZoom(1)}>
+            {t("preview.zoomIn")} <DropdownMenuShortcut>{Math.round(shown)}%</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setZoom(zoom - 10)}>{t("preview.zoomOut")}</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setZoom(100)}>{t("preview.zoomFit")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => stepZoom(-1)}>{t("preview.zoomOut")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setZoom("width")}>{t("preview.fitWidth")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

@@ -7,6 +7,9 @@ import { createSafeJsonStorage } from "@/lib/safeStorage"
 import type { CustomTheme } from "@/lib/editor/themes"
 import { applyTheme, isThemePreference, watchSystemTheme, type ThemePreference } from "@/lib/theme"
 
+/** A percent (100 is the pane's width up to a readable limit), or the width / the whole page of the pane. */
+export type PreviewZoom = number | "width" | "page"
+
 export type SidebarTab = "files" | "outline" | "tags"
 
 /** The three panels of the editor screen the title bar switches on and off. */
@@ -38,8 +41,8 @@ interface SettingsState {
   panels: EditorPanels
   setPanel: (panel: keyof EditorPanels, on: boolean) => void
   /** Zoom of the preview pages in percent; 100 fits the width of the pane. */
-  previewZoom: number
-  setPreviewZoom: (zoom: number) => void
+  previewZoom: PreviewZoom
+  setPreviewZoom: (zoom: PreviewZoom) => void
   /** The document themes the user made: available in every project. */
   customThemes: Record<string, CustomTheme>
   setCustomThemes: (themes: Record<string, CustomTheme>) => void
@@ -77,7 +80,7 @@ export const useSettingsStore = create<SettingsState>()(
           return next.editor || next.preview ? { panels: next } : state
         }),
       previewZoom: 100,
-      setPreviewZoom: (zoom) => set({ previewZoom: Math.round(Math.min(Math.max(zoom, 30), 400)) }),
+      setPreviewZoom: (zoom) => set({ previewZoom: typeof zoom === "number" ? Math.round(Math.min(Math.max(zoom, 30), 400)) : zoom }),
       customThemes: {},
       setCustomThemes: (customThemes) => set({ customThemes }),
       settingsSection: "appearance",
@@ -112,6 +115,7 @@ export const useSettingsStore = create<SettingsState>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return
         // A stored value from an older / newer version may not be valid any more
+        if (typeof state.previewZoom !== "number" && state.previewZoom !== "width" && state.previewZoom !== "page") state.previewZoom = 100
         if (!isThemePreference(state.theme)) state.theme = "system"
         if (!isSupportedLanguage(state.language)) state.language = DEFAULT_LANGUAGE
         applyTheme(state.theme)

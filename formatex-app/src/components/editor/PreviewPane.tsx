@@ -3,6 +3,9 @@ import { useNavigate } from "@tanstack/react-router"
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { stepZoom, ZOOM_PRESETS } from "@/lib/previewZoom"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import type { Diagnostic, PageLink, PageMap } from "@/lib/compiler"
 import { sourceLineAt } from "@/lib/editor/sourceLookup"
@@ -104,6 +107,27 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
   const setZoom = useSettingsStore((state) => state.setPreviewZoom)
   const [current, setCurrent] = useState(1)
 
+  // The size of the pane, for the two fit modes
+  const [size, setSize] = useState({ w: 0, h: 0 })
+  useEffect(() => {
+    const box = scroller.current
+    if (!box) return
+    const measure = () => setSize({ w: box.clientWidth, h: box.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(box)
+    return () => observer.disconnect()
+  }, [])
+  // The width of a page in px: a percent of the readable width (the pane's, up to 48rem), the pane's width, or what fits its height
+  const room = Math.max(size.w - 24, 0)
+  const base = Math.min(room, 768)
+  const ratio = images[0]?.ratio ?? 0.7
+  const pageWidth = typeof zoom === "number" ? (base * zoom) / 100 : zoom === "width" ? room : Math.min(room, Math.max(size.h - 24, 0) * ratio)
+  const percent = base > 0 ? (pageWidth / base) * 100 : 100
+  useEffect(() => {
+    if (base > 0) useWorkspaceStore.getState().set({ previewShown: percent })
+  }, [percent, base])
+
   // The page at the top of the pane is the current one
   const markPage = () => {
     const box = scroller.current
@@ -130,8 +154,7 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return
       event.preventDefault()
-      const { previewZoom, setPreviewZoom } = useSettingsStore.getState()
-      setPreviewZoom(previewZoom + (event.deltaY < 0 ? 10 : -10))
+      stepZoom(event.deltaY < 0 ? 1 : -1)
     }
     box.addEventListener("wheel", onWheel, { passive: false })
     return () => box.removeEventListener("wheel", onWheel)
@@ -178,13 +201,27 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
           <ChevronDown />
         </Button>
         <span className="flex-1" />
-        <Button variant="ghost" size="icon-xs" disabled={zoom <= 30} onClick={() => setZoom(zoom - 10)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
+        <Button variant="ghost" size="icon-xs" disabled={percent <= 30} onClick={() => stepZoom(-1)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
           <Minus />
         </Button>
-        <button type="button" onClick={() => setZoom(100)} title={t("preview.zoomFit")} className="h-5 min-w-10 rounded px-1 text-center text-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
-          {zoom}%
-        </button>
-        <Button variant="ghost" size="icon-xs" disabled={zoom >= 400} onClick={() => setZoom(zoom + 10)} title={t("preview.zoomIn")} aria-label={t("preview.zoomIn")}>
+        <DropdownMenu>
+          <DropdownMenuTrigger title={t("preview.zoom")} className="h-5 min-w-12 rounded px-1 text-center text-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted">
+            {zoom === "width" ? t("preview.fitWidth") : zoom === "page" ? t("preview.fitPage") : `${zoom}%`}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="w-auto min-w-36">
+            <DropdownMenuRadioGroup value={String(zoom)} onValueChange={(value) => setZoom(value === "width" || value === "page" ? value : Number(value))}>
+              <DropdownMenuRadioItem value="width">{t("preview.fitWidth")}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="page">{t("preview.fitPage")}</DropdownMenuRadioItem>
+              <DropdownMenuSeparator />
+              {ZOOM_PRESETS.map((value) => (
+                <DropdownMenuRadioItem key={value} value={String(value)}>
+                  {value}%
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant="ghost" size="icon-xs" disabled={percent >= 400} onClick={() => stepZoom(1)} title={t("preview.zoomIn")} aria-label={t("preview.zoomIn")}>
           <Plus />
         </Button>
       </div>
@@ -194,7 +231,7 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
         ) : images.length === 0 ? (
           <p className="p-6 text-center text-xs text-muted-foreground">{status === "compiling" ? t("editor.compiling") : t("editor.noPages")}</p>
         ) : (
-          <div style={{ width: `calc(min(100%, 48rem) * ${zoom / 100})` }} className={cn("mx-auto box-content flex flex-col gap-3 p-3", !ok && "opacity-60")}>
+          <div style={{ width: size.w > 0 ? pageWidth + 24 : "100%" }} className={cn("mx-auto box-border flex flex-col gap-3 p-3", !ok && "opacity-60")}>
             {images.map((image, index) => {
               const map = pages[index]?.map
               return (

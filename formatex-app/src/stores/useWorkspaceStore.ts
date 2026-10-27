@@ -6,6 +6,8 @@ interface WorkspaceState {
   /** A narrow screen shows the editor or the preview; the files open as a panel above them. */
   tab: "edit" | "preview"
   filesSheet: boolean
+  /** The zoom of the preview pages in percent as drawn now, whatever the mode (a fit mode is a percent too). */
+  previewShown: number
   settingsOpen: boolean
   set: (patch: Partial<Omit<WorkspaceState, "set">>) => void
 }
@@ -15,6 +17,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   active: false,
   tab: "edit",
   filesSheet: false,
+  previewShown: 100,
   settingsOpen: false,
   set: (patch) => set(patch),
 }))
