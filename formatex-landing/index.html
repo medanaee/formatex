@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>فرمتکس: مارک‌داون به PDF دوزبانه</title>
+    <meta name="description" content="Formatex turns Markdown into exact bilingual (Persian / English) PDFs with the Typst engine. فرمتکس مارک‌داون را به PDF دوزبانه تبدیل می‌کند." />
+    <meta property="og:title" content="Formatex" />
+    <meta property="og:description" content="Markdown to exact bilingual PDFs: an editor, a live preview and PDF export in one light app." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon.png" />
+    <meta name="theme-color" content="#1b1c1f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script>
+      // The theme and the direction are set before the first paint, so the page does not flash
+      try {
+        var theme = localStorage.getItem("formatex-landing-theme")
+        if (theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark")
+        var lang = localStorage.getItem("formatex-landing-lang")
+        if (lang === "en" || (lang !== "fa" && navigator.language.toLowerCase().indexOf("en") === 0)) {
+          document.documentElement.lang = "en"
+          document.documentElement.dir = "ltr"
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
