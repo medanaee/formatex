@@ -142,6 +142,11 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] The front matter is a settings panel in the visual editor (`SettingsForm`, `yamlEdit.ts`, `FrontMatterPanel`), the same form as config.toml
 - [ ] Not tried on a real phone: touch selection, touch drag in the library
 
+## Editable tables (done)
+
+- [x] Tables of the visual editor are edited in place (`tableEditor.ts`): type in a cell, Tab / Enter move, Tab in the last cell adds a row, a bar adds / removes rows and columns at the cell, plus strips after the last row and column; every change is written back as an aligned GFM table (`markdownTable.ts`)
+- [ ] Not tried by touch; `contenteditable="plaintext-only"` needs a current WebView (Chrome 105+)
+
 ## CI / release
 
 - [x] `.github/workflows/ci.yml` and `release.yml`: a release is built when the version in `tauri.conf.json` goes up, or the latest release is rebuilt when a commit message has `[build]`

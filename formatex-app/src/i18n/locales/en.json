@@ -286,5 +286,16 @@
     "title": "Document settings",
     "source": "Edit the source",
     "copyFromConfig": "Copy the settings of config.toml here"
+  },
+  "table": {
+    "addRow": "Add a row",
+    "addColumn": "Add a column",
+    "rowAbove": "Insert a row above",
+    "rowBelow": "Insert a row below",
+    "columnBefore": "Insert a column before",
+    "columnAfter": "Insert a column after",
+    "deleteRow": "Delete this row",
+    "deleteColumn": "Delete this column",
+    "source": "Show the Markdown"
   }
 }

@@ -3,8 +3,9 @@ import { Facet, StateField, type EditorState, type Range } from "@codemirror/sta
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view"
 import katex from "katex"
 import { maskCode } from "./completion"
-import { parseTable, type ParsedTable } from "./markdownTable"
+import { parseTable } from "./markdownTable"
 import type { Schema } from "./schema"
+import { EditableTableWidget, tableEditorTheme, type TableWidgetHooks } from "./tableEditor"
 import { gearSvg, tagIconSvg } from "./tagIcons"
 import { expandBare, parseOpenTag, parseOptions, type Attrs } from "./tagSyntax"
 
@@ -225,63 +226,29 @@ function cellHtml(text: string): string {
     })
 }
 
-class TableWidget extends WidgetType {
-    readonly table: ParsedTable
-  readonly source: string
-  readonly optionsLength: number
-  readonly attrs: Attrs
-  constructor(table: ParsedTable, source: string, optionsLength: number, attrs: Attrs) {
-    super()
-    this.table = table
-    this.source = source
-    this.optionsLength = optionsLength
-    this.attrs = attrs
-  }
-  eq(other: TableWidget) {
-    return other.source === this.source
-  }
-  toDOM(view: EditorView) {
-    const wrap = document.createElement("div")
-    wrap.className = "cm-lp-table"
-    const table = document.createElement("table")
-    const row = (cells: string[], tag: "th" | "td") => {
-      const tr = document.createElement("tr")
-      this.table.header.forEach((_, index) => {
-        const cell = document.createElement(tag)
-        cell.innerHTML = cellHtml(cells[index] ?? "")
-        const align = this.table.align[index]
-        if (align) cell.style.textAlign = align
-        tr.append(cell)
-      })
-      return tr
-    }
-    const head = document.createElement("thead")
-    head.append(row(this.table.header, "th"))
-    const body = document.createElement("tbody")
-    this.table.rows.forEach((cells) => body.append(row(cells, "td")))
-    table.append(head, body)
-    wrap.append(table)
-    // A click on the table puts the cursor in it, which shows the source to edit
-    wrap.addEventListener("click", () => placeCursor(view, wrap))
+/** What the editable table needs from this file: the typeset cell, the options gear and the way to the source. */
+const tableHooks: TableWidgetHooks = {
+  render: (text) => cellHtml(text),
+  gear: (view, wrap) => {
     const gear = button(view, "table", (anchor) => {
+      // The `{...}` line above the table is looked up now: it may have changed since the table was drawn
       const from = view.posAtDOM(wrap)
+      const line = view.state.doc.lineAt(from)
+      const found = line.from === from ? /^\s*\{([^{}]*)\}\s*$/.exec(line.text) : null
       view.state.facet(liveConfigure)({
         kind: "option",
         option: "table",
         from,
-        to: from + this.optionsLength,
-        missing: this.optionsLength === 0,
-        attrs: this.attrs,
+        to: from + (found ? line.length : 0),
+        missing: !found,
+        attrs: found ? parseOptions(found[1]) : [],
         anchor,
       })
     })
     gear.classList.add("cm-lp-table-gear")
-    wrap.append(gear)
-    return wrap
-  }
-  ignoreEvent() {
-    return true
-  }
+    return gear
+  },
+  source: (view, wrap) => placeCursor(view, wrap),
 }
 
 class MathWidget extends WidgetType {
@@ -425,23 +392,16 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
       const lines = text.slice(node.from, node.to).split("\n")
       const parsed = parseTable(lines)
       if (!parsed) return
-      // The `{...}` line above the table (a blank line between is fine)
+      // The `{...}` line above the table (a blank line between is fine) belongs to it
       let start = node.from
-      let optionsLength = 0
-      let attrs: Attrs = []
       for (let n = doc.lineAt(node.from).number - 1; n >= 1; n--) {
         const line = doc.line(n)
         if (line.text.trim() === "") continue
-        const found = /^\s*\{([^{}]*)\}\s*$/.exec(line.text)
-        if (found) {
-          start = line.from
-          optionsLength = line.length
-          attrs = parseOptions(found[1])
-        }
+        if (/^\s*\{([^{}]*)\}\s*$/.test(line.text)) start = line.from
         break
       }
       if (touches(start, node.to)) return
-      out.push(Decoration.replace({ widget: new TableWidget(parsed, text.slice(start, node.to), optionsLength, attrs), block: true }).range(start, node.to))
+      out.push(Decoration.replace({ widget: new EditableTableWidget(parsed, text.slice(start, node.to), node.from - start, tableHooks), block: true }).range(start, node.to))
       take(start, node.to)
     },
   })
@@ -590,7 +550,7 @@ export function livePreview(getSchema: () => Schema, onConfigure: (request: Conf
     update: (value, transaction) => (transaction.docChanged || transaction.selection || transaction.reconfigured ? build(transaction.state, getSchema) : value),
     provide: (f) => EditorView.decorations.from(f),
   })
-  return [liveSchema.of(getSchema), liveConfigure.of(onConfigure), frontMatter ? liveFrontMatter.of(frontMatter) : [], field, liveTheme]
+  return [liveSchema.of(getSchema), liveConfigure.of(onConfigure), frontMatter ? liveFrontMatter.of(frontMatter) : [], field, liveTheme, tableEditorTheme]
 }
 
 const liveTheme = EditorView.theme({
@@ -655,12 +615,6 @@ const liveTheme = EditorView.theme({
   ".cm-lp-opts-empty": { opacity: "0" },
   ".cm-line:hover .cm-lp-opts-empty": { opacity: "1" },
 
-  ".cm-lp-table": { position: "relative", margin: "6px 12px", overflowX: "auto", cursor: "text" },
-  ".cm-lp-table table": { borderCollapse: "collapse", width: "100%", fontSize: "0.95em" },
-  ".cm-lp-table th, .cm-lp-table td": { border: "1px solid var(--border)", padding: "4px 8px" },
-  ".cm-lp-table th": { backgroundColor: "var(--muted)", fontWeight: "600" },
-  ".cm-lp-table-gear": { position: "absolute", top: "2px", insetInlineEnd: "2px", backgroundColor: "var(--card)", border: "1px solid var(--border)", opacity: "0" },
-  ".cm-lp-table:hover .cm-lp-table-gear": { opacity: "1" },
 
   ".cm-lp-math": { cursor: "text" },
   ".cm-lp-math-block": { textAlign: "center", padding: "6px 0" },
