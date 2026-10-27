@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next"
 import { toggleWrap } from "@/lib/editor/format"
 import { insertTag, TAG_DRAG_TYPE } from "@/lib/editor/insertTag"
 import { frontMatterMount } from "@/components/editor/frontMatterMount"
+import { bidiIsolate } from "@/lib/editor/bidiIsolate"
 import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
@@ -92,8 +93,11 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   latest.current = { onChange, files, language: i18n.language, schema, primary, onConfigure, onPickColor }
   // The direction too: switched without rebuilding. Forced, the whole editor (gutter included) takes that direction
   const [dir] = useState(() => new Compartment())
-  const dirExtension = (value: "auto" | "rtl" | "ltr"): Extension =>
-    value === "auto" ? EditorView.perLineTextDirection.of(true) : [EditorView.perLineTextDirection.of(false), EditorView.editorAttributes.of({ dir: value })]
+  // Only Markdown is prose: settings and code files (config.toml, Typst) are always left-to-right, whatever the setting says
+  const dirExtension = (setting: "auto" | "rtl" | "ltr", fileKind: FileKind): Extension => {
+    const value = fileKind === "markdown" ? setting : "ltr"
+    return value === "auto" ? EditorView.perLineTextDirection.of(true) : [EditorView.perLineTextDirection.of(false), EditorView.editorAttributes.of({ dir: value })]
+  }
   // The live preview is switched on and off without rebuilding the editor
   const [live] = useState(() => new Compartment())
   const liveExtension = (fileKind: FileKind, on: boolean): Extension =>
@@ -109,14 +113,14 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         highlightActiveLine(),
         highlightSelectionMatches(),
         EditorView.lineWrapping,
-        dir.of(dirExtension(direction)),
+        dir.of(dirExtension(direction, fileKind)),
         EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
         placeholder ? placeholderExtension(placeholder) : [],
         languageFor(fileKind),
         live.of(liveExtension(fileKind, visual)),
         colorSwatches((request) => latest.current.onPickColor?.(request)),
         // The headings above the first visible line stay pinned, and the whole text is a miniature at the side
-        fileKind === "markdown" ? [stickyHeadings, stickyTheme] : [],
+        fileKind === "markdown" ? [stickyHeadings, stickyTheme, bidiIsolate] : [],
         showMinimap ? [minimap, minimapTheme] : [],
         // A tile of the tag palette dropped into the text writes that tag where it landed
         EditorView.domEventHandlers({
@@ -188,7 +192,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   }, [visual])
 
   useEffect(() => {
-    view.current?.dispatch({ effects: dir.reconfigure(dirExtension(direction)) })
+    view.current?.dispatch({ effects: dir.reconfigure(dirExtension(direction, current.current.kind)) })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the setting switches the direction
   }, [direction])
 
@@ -199,7 +203,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     states.current.set(current.current.path, editor.state)
     current.current = { path, kind }
     editor.setState(states.current.get(path) ?? createState(value, kind))
-    editor.dispatch({ effects: [live.reconfigure(liveExtension(kind, visual)), dir.reconfigure(dirExtension(direction))] })
+    editor.dispatch({ effects: [live.reconfigure(liveExtension(kind, visual)), dir.reconfigure(dirExtension(direction, kind))] })
     if (latest.current.primary) publishHistory(editor.state)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a different file replaces the state
   }, [path])

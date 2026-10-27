@@ -25,8 +25,8 @@ function copyFromConfig(frontMatter: string, toml: string, config: ConfigSchema)
 
 /**
  * The front matter of a document (the YAML between `---` lines at the top) as the same settings screen `config.toml` has: the keys of
- * the engine's schema with a control each, written back into the text. It stands in the visual editor in place of the source, flat and
- * edge to edge like the top of the page; the button with the code icon shows the source.
+ * the engine's schema with a control each, written back into the text. It stands in the visual editor in place of the source,
+ * as a rounded card of its own whose rows inside are flat and flush; the button with the code icon shows the source.
  */
 export function FrontMatterPanel({ text, onChange, onSource }: FrontMatterProps) {
   const { t, i18n } = useTranslation()
@@ -37,7 +37,7 @@ export function FrontMatterPanel({ text, onChange, onSource }: FrontMatterProps)
   if (!config) return null
 
   return (
-    <div dir={i18n.dir()} className="border-b border-border bg-background font-sans text-[13px] leading-normal whitespace-normal text-foreground">
+    <div dir={i18n.dir()} className="overflow-hidden rounded-xl border border-border bg-card font-sans text-[13px] leading-normal whitespace-normal text-card-foreground">
       <div className="flex h-9 items-center gap-1 pe-1">
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex h-9 min-w-0 flex-1 items-center gap-2 px-3 text-start text-[13px] font-semibold outline-none hover:bg-muted/50 focus-visible:bg-muted">
           <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", !open && "-rotate-90 rtl:rotate-90")} />
