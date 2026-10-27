@@ -167,13 +167,13 @@
         if mermaid-options(r) != none { r }
       }
       let found = find-image(rest)
-      assert(found != none or drawings.len() > 0 or mermaid != none, message: "<fig> needs an <img>, <cetz>, <lilaq> or ```mermaid block inside it")
+      assert(found != none or drawings.len() > 0 or mermaid != none, message: at-of(attrs) + "<fig> needs an <img>, <cetz>, <lilaq> or ```mermaid block inside it")
 
       let h = parse-length(attrs.at("height", default: none))
       let w = parse-length(attrs.at("width", default: none))
       let aspect = parse-ratio(attrs.at("ratio", default: none))
       let a = attrs.at("align", default: none)
-      assert(a == none or a in align-names, message: "<fig> align must be one of " + align-names.keys().join(", "))
+      assert(a == none or a in align-names, message: at-of(attrs) + "<fig> align must be one of " + align-names.keys().join(", "))
       let caption = if captions.len() > 0 { captions.at(0).body } else { none }
 
       let (img, radius) = if drawings.len() > 0 or mermaid != none { (none, 0pt) } else { found }

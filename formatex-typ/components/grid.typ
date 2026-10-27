@@ -62,7 +62,7 @@
 
       let option(attrs, key, names, default) = {
         let v = attrs.at(key, default: default)
-        assert(v in names, message: "<item> " + key + " must be one of " + names.keys().join(", ") + ", got " + repr(v))
+        assert(v in names, message: at-of(attrs) + "<item> " + key + " must be one of " + names.keys().join(", ") + ", got " + repr(v))
         names.at(v)
       }
       let sizes = ("auto": "auto", "fill": "fill")

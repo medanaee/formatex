@@ -9,7 +9,7 @@
         let r = find-raw(body)
         if r != none { r.text }
       }
-      assert(code != none, message: "<cetz> needs a fenced code block inside it, or src=\"file.typ\"")
+      assert(code != none, message: at-of(attrs) + "<cetz> needs a fenced code block inside it, or src=\"file.typ\"")
       // Labels are not paragraphs, so the auto-dir rules never reach them;
       // each label gets the direction of its own first letter instead.
       let directed-content(..args) = {

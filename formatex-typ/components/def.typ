@@ -43,9 +43,9 @@
     // with an optional custom title, color, and inline (badge) or block presentation.
     def: (attrs, body) => context {
       let id = attrs.at("id", default: attrs.at("to", default: none))
-      assert(id != none, message: "<def> requires an id attribute: <def id=\"...\">")
+      assert(id != none, message: at-of(attrs) + "<def> requires an id attribute: <def id=\"...\">")
       let mode = attrs.at("mode", default: "inline")
-      assert(mode in ("inline", "block"), message: "<def> mode must be 'inline' or 'block', got " + repr(mode))
+      assert(mode in ("inline", "block"), message: at-of(attrs) + "<def> mode must be 'inline' or 'block', got " + repr(mode))
       let color-attr = attrs.at("color", default: "accent")
       let colors = resolve-def-colors(color-attr)
       let icon-name = attrs.at("icon", default: "circle-question")
@@ -53,7 +53,7 @@
       let slug = lower(id.trim()).replace(regex("[^\p{L}\p{M}\p{N}_\- ]"), "").replace(" ", "-")
       let found = query(label(id))
       if found.len() == 0 { found = query(label(slug)) }
-      assert(found.len() > 0, message: "<def>: no element with id " + repr(id))
+      assert(found.len() > 0, message: at-of(attrs) + "<def>: no element with id " + repr(id))
       let el = found.first()
       if el.func() == metadata and type(el.value) == dictionary and "heading-id" in el.value {
         el = query(selector(heading).before(el.location())).last()

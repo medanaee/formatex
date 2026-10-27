@@ -43,13 +43,13 @@
         let val = (span-text: if has-text { body } else { none }, text-target: true)
         return [#metadata(val)#label(id)#body]
       }
-      assert(href != "", message: "<a> needs href=\"https://...\" or href=\"#id\"")
+      assert(href != "", message: at-of(attrs) + "<a> needs href=\"https://...\" or href=\"#id\"")
       let shown = if plain-text(body).trim() == "" { href } else { body }
       if not href.starts-with("#") { return link(href, shown) }
       // Headings also carry cmarker's own slug label, so an id can match more than one element.
       context {
         let found = query(label(href.slice(1)))
-        assert(found.len() > 0, message: "<a>: no element with id " + repr(href.slice(1)))
+        assert(found.len() > 0, message: at-of(attrs) + "<a>: no element with id " + repr(href.slice(1)))
         link(found.first().location(), reference-style(shown))
       }
     },

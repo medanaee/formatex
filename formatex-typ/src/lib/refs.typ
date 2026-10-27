@@ -57,21 +57,21 @@
 // `break` on <toc> / <lof> / <lot> / <lol>: "true" (page break before and after), "before", "after", "false".
 #let page-breaks(attrs) = {
   let b = attrs.at("break", default: "false")
-  assert(b in ("true", "false", "before", "after"), message: "break must be true, false, before or after, got " + repr(b))
+  assert(b in ("true", "false", "before", "after"), message: at-of(attrs) + "break must be true, false, before or after, got " + repr(b))
   (b in ("true", "before"), b in ("true", "after"))
 }
 
 // `pages` on <toc> / <lof> / <lot> / <lol>: "false" drops the dot leaders and page numbers.
 #let list-pages-on(attrs, tag-name) = {
   let p = attrs.at("pages", default: "true")
-  assert(p in ("true", "false"), message: "<" + tag-name + "> pages must be true or false, got " + repr(p))
+  assert(p in ("true", "false"), message: at-of(attrs) + "<" + tag-name + "> pages must be true or false, got " + repr(p))
   p == "true"
 }
 
 // `numbers` on the lists: "rtl" Persian, "ltr" Latin, "auto" each entry like its own title.
 #let list-numbers(attrs, tag-name, default) = {
   let nums = attrs.at("numbers", default: default)
-  assert(nums in ("rtl", "ltr", "auto"), message: "<" + tag-name + "> numbers must be rtl, ltr or auto, got " + repr(nums))
+  assert(nums in ("rtl", "ltr", "auto"), message: at-of(attrs) + "<" + tag-name + "> numbers must be rtl, ltr or auto, got " + repr(nums))
   nums
 }
 

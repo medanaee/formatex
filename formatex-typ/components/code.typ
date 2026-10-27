@@ -19,7 +19,7 @@
         (read(root-path(attrs.src)), attrs.at("lang", default: attrs.src.split(".").last()))
       } else {
         let r = find-raw(body)
-        assert(r != none, message: "<code> needs src=\"file\" or a fenced code block inside it")
+        assert(r != none, message: at-of(attrs) + "<code> needs src=\"file\" or a fenced code block inside it")
         (r.text, attrs.at("lang", default: r.at("lang", default: none)))
       }
       let all = source.split("\n").map(l => l.trim("\r", at: end))
@@ -28,7 +28,7 @@
         let ends = attrs.lines.split("-").map(p => int(p.trim()))
         first = ends.first()
         let last = calc.min(ends.last(), all.len())
-        assert(first >= 1 and first <= last, message: "<code> lines " + repr(attrs.lines) + " is outside the code (" + str(all.len()) + " lines)")
+        assert(first >= 1 and first <= last, message: at-of(attrs) + "<code> lines " + repr(attrs.lines) + " is outside the code (" + str(all.len()) + " lines)")
         all = all.slice(first - 1, last)
       }
       let code-block = raw(all.join("\n"), lang: lang, block: true)

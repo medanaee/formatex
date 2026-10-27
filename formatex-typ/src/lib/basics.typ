@@ -40,7 +40,7 @@
 // to the top or bottom of a page (like wide tables). One column: no effect.
 #let span-columns(attrs, tag-name, it) = {
   let span = attrs.at("span", default: "column")
-  assert(span in ("column", "all"), message: "<" + tag-name + "> span must be column or all, got " + repr(span))
+  assert(span in ("column", "all"), message: at-of(attrs) + "<" + tag-name + "> span must be column or all, got " + repr(span))
   if span == "all" and column-count > 1 { place(auto, scope: "parent", float: true, clearance: 1.5em, it) } else { it }
 }
 

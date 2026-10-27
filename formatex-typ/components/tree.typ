@@ -60,9 +60,9 @@
 
 #let tree-block(attrs, source) = {
   let items = tree-items(source)
-  assert(items.len() > 0, message: "<tree> needs at least one line")
+  assert(items.len() > 0, message: at-of(attrs) + "<tree> needs at least one line")
   let icons = attrs.at("icons", default: "true")
-  assert(icons in ("true", "false"), message: "<tree> icons must be true or false, got " + repr(icons))
+  assert(icons in ("true", "false"), message: at-of(attrs) + "<tree> icons must be true or false, got " + repr(icons))
   block(
     width: 100%,
     fill: theme.code-bg,
@@ -133,7 +133,7 @@
     tree: (attrs, body) => {
       let source = if "src" in attrs { read(root-path(attrs.src)) } else {
         let r = find-raw(body)
-        assert(r != none, message: "<tree> needs a fenced code block with one file or folder per line, or src=\"file\"")
+        assert(r != none, message: at-of(attrs) + "<tree> needs a fenced code block with one file or folder per line, or src=\"file\"")
         r.text
       }
       caption-figure(attrs, "tree", tree-block(attrs, source))

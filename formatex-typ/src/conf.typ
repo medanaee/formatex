@@ -259,20 +259,23 @@
   // (see `table-attrs` in main.typ); they apply to that one table and are then cleared.
   show table: it => context {
     let opts = table-options.get()
+    // `md-at` is where the `{...}` line is (src/preprocess/mark-lines.typ): every problem below says it
+    let where = at-prefix(opts.at("md-at", default: none))
     for key in opts.keys() {
-      assert(key in table-option-keys, message: "Unknown table option " + repr(key) + "; available: " + table-option-keys.join(", "))
+      if key == "md-at" { continue }
+      assert(key in table-option-keys, message: where + "Unknown table option " + repr(key) + "; available: " + table-option-keys.join(", "))
     }
     let width = opts.at("width", default: table-defaults.at("width", default: "auto"))
-    assert(width in ("auto", "full"), message: "Table width must be auto or full, got " + repr(width))
+    assert(width in ("auto", "full"), message: where + "Table width must be auto or full, got " + repr(width))
     let a = opts.at("align", default: inherited-align(table-defaults.at("align", default: "center")))
-    assert(a in align-names, message: "Table align must be one of " + align-names.keys().join(", ") + ", got " + repr(a))
+    assert(a in align-names, message: where + "Table align must be one of " + align-names.keys().join(", ") + ", got " + repr(a))
     let full = width == "full"
     // `head-align` / `body-align` set the text alignment of the header row / the other rows and win over the
     // column colons (`:---`, `---:`) of the Markdown separator row.
     let cell-align(key) = {
       let v = opts.at(key, default: none)
       if v == none { return none }
-      assert(v in align-names, message: "Table " + key + " must be one of " + align-names.keys().join(", ") + ", got " + repr(v))
+      assert(v in align-names, message: where + "Table " + key + " must be one of " + align-names.keys().join(", ") + ", got " + repr(v))
       align-names.at(v) + horizon
     }
     let body-align = cell-align("body-align")
@@ -297,7 +300,7 @@
     // across all columns. A full-width table is placed before it is measured, so its rebuilt
     // copy (which comes back through this rule with explicit widths) is not placed again.
     let span = opts.at("span", default: table-defaults.at("span", default: "column"))
-    assert(span in ("column", "all"), message: "Table span must be column or all, got " + repr(span))
+    assert(span in ("column", "all"), message: where + "Table span must be column or all, got " + repr(span))
     let spanning = span == "all" and column-count > 1
     let float-wide(body) = place(auto, scope: "parent", float: true, clearance: 1.5em, body)
 

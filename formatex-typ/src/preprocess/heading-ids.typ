@@ -45,13 +45,17 @@
     }
     let id = none
     let opts = (:)
+    // `md-at` is where the line is (src/preprocess/mark-lines.typ): not an option, but every problem here says it
+    let at-found = attrs.match(regex("md-at=\"([^\"]*)\""))
+    let where = if at-found == none { "" } else { at-prefix(at-found.captures.first()) }
     for t in attrs.matches(token) {
       let (tid, key, quoted, bare) = t.captures
       if tid != none { id = tid; continue }
-      assert(key in heading-option-keys, message: "Unknown heading option " + repr(key) + "; available: " + heading-option-keys.join(", "))
+      if key == "md-at" { continue }
+      assert(key in heading-option-keys, message: where + "Unknown heading option " + repr(key) + "; available: " + heading-option-keys.join(", "))
       let v = if quoted != none { quoted } else { bare }
       if key in ("numbering", "toc", "underline", "fill") {
-        assert(v in ("true", "false"), message: "Heading " + key + " must be true or false, got " + repr(v))
+        assert(v in ("true", "false"), message: where + "Heading " + key + " must be true or false, got " + repr(v))
         v = v == "true"
       }
       opts.insert(key, v)

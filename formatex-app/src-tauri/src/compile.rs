@@ -111,6 +111,19 @@ fn located(message: &str) -> Option<(String, usize, String)> {
     (!path.is_empty() && line > 0).then(|| (path.to_string(), line, format!("{head}{text}")))
 }
 
+/// Typst reports a missing label on its own, without a line; when the engine has already said the same thing with the line
+/// of the text (`no element with id "x"`), the plain one is dropped.
+fn drop_unplaced_labels(diagnostics: &mut Vec<Diagnostic>) {
+    let said: Vec<String> = diagnostics
+        .iter()
+        .filter(|d| d.path.is_some())
+        .filter_map(|d| d.message.split("no element with id \"").nth(1).and_then(|rest| rest.split('"').next()).map(str::to_owned))
+        .collect();
+    diagnostics.retain(|d| {
+        !(d.path.is_none() && said.iter().any(|id| d.message == format!("label `<{id}>` does not exist in the document")))
+    });
+}
+
 pub(crate) fn convert(world: &ProjectWorld, diagnostic: &SourceDiagnostic) -> Diagnostic {
     let location = diagnostic.span.id().map(|id| {
         let position = world.range(diagnostic.span).and_then(|range| {
@@ -192,6 +205,7 @@ fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, ov
         Ok(document) => Some(document),
         Err(errors) => {
             diagnostics.extend(errors.iter().map(|d| convert(&world, d)));
+            drop_unplaced_labels(&mut diagnostics);
             None
         }
     };
@@ -550,5 +564,22 @@ mod located_tests {
         assert_eq!(located("assertion failed: Unknown color \"x\" for user@example.com:3 foo"), None);
         assert_eq!(located("unknown variable: x"), None);
         assert_eq!(located("@main.md:0 zero is not a line"), None);
+    }
+}
+
+#[cfg(test)]
+mod label_tests {
+    use super::*;
+
+    fn problem(message: &str, path: Option<&str>) -> Diagnostic {
+        Diagnostic { severity: "error", message: message.into(), path: path.map(Into::into), line: path.map(|_| 3), column: None, hints: vec![] }
+    }
+
+    #[test]
+    fn drops_the_plain_message_when_the_placed_one_says_the_same() {
+        let mut all = vec![problem("assertion failed: no element with id \"x\"", Some("main.md")), problem("label `<x>` does not exist in the document", None), problem("label `<y>` does not exist in the document", None)];
+        drop_unplaced_labels(&mut all);
+        assert_eq!(all.len(), 2);
+        assert!(all[1].message.contains("<y>"));
     }
 }

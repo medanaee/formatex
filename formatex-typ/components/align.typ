@@ -7,7 +7,7 @@
     align: (attrs, body) => {
       let bare = attrs.keys().filter(k => k in align-names)
       let to = attrs.at("to", default: if bare.len() > 0 { bare.first() } else { "center" })
-      assert(to in align-names, message: "<align> to must be one of " + align-names.keys().join(", ") + ", got " + repr(to))
+      assert(to in align-names, message: at-of(attrs) + "<align> to must be one of " + align-names.keys().join(", ") + ", got " + repr(to))
       align-stack.update(s => s + (to,))
       {
         set align(align-names.at(to))

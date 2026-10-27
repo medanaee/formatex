@@ -19,7 +19,7 @@
         let r = find-raw(body)
         if r != none { r.text }
       }
-      assert(code != none, message: "<lilaq> needs a fenced code block inside it, or src=\"file.typ\"")
+      assert(code != none, message: at-of(attrs) + "<lilaq> needs a fenced code block inside it, or src=\"file.typ\"")
       let plot = {
         set text(fill: theme.fg)
         show: lilaq.set-spine(stroke: 0.7pt * zoom + theme.fg)

@@ -7,7 +7,7 @@
     dir: (attrs, body) => {
       let bare = attrs.keys().filter(k => k in ("rtl", "ltr", "auto"))
       let to = attrs.at("to", default: if bare.len() > 0 { bare.first() } else { "auto" })
-      assert(to in ("rtl", "ltr", "auto"), message: "<dir> to must be rtl, ltr or auto, got " + repr(to))
+      assert(to in ("rtl", "ltr", "auto"), message: at-of(attrs) + "<dir> to must be rtl, ltr or auto, got " + repr(to))
       dir-stack.update(s => s + (to,))
       {
         set text(dir: if to == "rtl" { rtl } else { ltr }) if to != "auto"

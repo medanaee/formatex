@@ -43,9 +43,10 @@
     let first = lines.at(j)
     if "start" in opts {
       let s = opts.remove("start")
-      assert(s.match(list-attrs-re-3) != none, message: "List start must be a whole number, got " + repr(s))
+      let where = at-prefix(opts.at("md-at", default: none))
+      assert(s.match(list-attrs-re-3) != none, message: where + "List start must be a whole number, got " + repr(s))
       let n = first.match(list-attrs-re-4)
-      assert(n != none, message: "start only works on a numbered list (1. ...)")
+      assert(n != none, message: where + "start only works on a numbered list (1. ...)")
       first = n.captures.at(0) + s + n.captures.at(1) + first.slice(n.end)
     }
     let end = j + 1

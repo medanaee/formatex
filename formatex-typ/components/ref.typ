@@ -9,7 +9,7 @@
       let slug = lower(id.trim()).replace(regex("[^\p{L}\p{M}\p{N}_\- ]"), "").replace(" ", "-")
       let found = query(label(id))
       if found.len() == 0 { found = query(label(slug)) }
-      assert(found.len() > 0, message: "<ref>: no element with id " + repr(id))
+      assert(found.len() > 0, message: at-of(attrs) + "<ref>: no element with id " + repr(id))
       let el = found.first()
       if el.func() == metadata and type(el.value) == dictionary and "heading-id" in el.value {
         el = query(selector(heading).before(el.location())).last()

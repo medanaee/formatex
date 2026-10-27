@@ -3,15 +3,15 @@
 
 #let picheader-tags = (
     picheader: ("void", attrs => {
-      assert("src" in attrs, message: "<picHeader> requires src=\"path\"")
-      assert("title" in attrs, message: "<picHeader> requires title=\"...\"")
+      assert("src" in attrs, message: at-of(attrs) + "<picHeader> requires src=\"path\"")
+      assert("title" in attrs, message: at-of(attrs) + "<picHeader> requires title=\"...\"")
       let flag(key, default) = {
         let v = attrs.at(key, default: default)
-        assert(v in ("true", "false"), message: "<picHeader> " + key + " must be true or false, got " + repr(v))
+        assert(v in ("true", "false"), message: at-of(attrs) + "<picHeader> " + key + " must be true or false, got " + repr(v))
         v == "true"
       }
       let brk = attrs.at("break", default: "false")
-      assert(brk in ("false", "before"), message: "<picHeader> break must be false or before, got " + repr(brk))
+      assert(brk in ("false", "before"), message: at-of(attrs) + "<picHeader> break must be false or before, got " + repr(brk))
       let mx = flag("margin-x", "true")
       let my = flag("margin-y", "true")
       let h = parse-length(attrs.at("height", default: "60mm"))

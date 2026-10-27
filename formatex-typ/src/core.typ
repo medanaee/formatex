@@ -89,12 +89,18 @@
   }
   parts.join("/")
 }
-// Returns the expanded text and, for the checks that report a line of the user's own file, every file read on the way as
-// `(path, text)` (an included file with its front matter, as it is on disk).
-#let expand-includes(text, chain) = {
+// Where a piece of the user's text is, `"path:line"`: `src/preprocess/mark-lines.typ` writes it into every tag (`_at="..."`) and
+// option line (`md-at="..."`) when a file is read, and a problem found later says it with `@path:line message`. The app reads that
+// mark and puts the problem on that line of that file.
+#let at-prefix(at) = if at == none { "" } else { "@" + at + " " }
+#let at-of(attrs) = at-prefix(attrs.at("_at", default: none))
+// A `[text](#id)` in the text: the id has to name something in the document. Typst says it too, but without the line.
+#let check-label(id, at) = context { assert(query(label(id)).len() > 0, message: at-prefix(at) + "no element with id " + repr(id)) }
+
+// `mark` is applied to the text of every included file as it is read (the main file is marked by the caller).
+#let expand-includes(text, chain, mark: (text, path) => text) = {
   let fence = none
   let out = ()
-  let files = ()
   // Comments go first, so a commented-out `<include>` line is not followed.
   for line in strip-comments(text).split("\n") {
     let f = line.match(regex("^\s{0,3}(`{3,}|~{3,})"))
@@ -111,27 +117,16 @@
     }
     let path = resolve-include(m.captures.first(), chain.last())
     assert(path not in chain, message: "<include> loop: " + (chain + (path,)).join(" -> "))
-    let included = read(rooted(path))
-    files.push((path, included))
+    let included = mark(read(rooted(path)), path)
     let fm = included.match(front-matter-regex)
     if fm != none { included = included.slice(fm.end) }
     // Blank lines keep the included blocks from merging with the surrounding paragraphs.
-    let inner = expand-includes(included, chain + (path,))
-    files += inner.files
     out.push("")
-    out.push(inner.text)
+    out.push(expand-includes(included, chain + (path,), mark: mark))
     out.push("")
   }
-  (text: out.join("\n"), files: files)
+  out.join("\n")
 }
-
-#let expanded-source = expand-includes(
-  if front-matter-match == none { source-text } else { source-text.slice(front-matter-match.end) },
-  (source-path,),
-)
-#let source-body = expanded-source.text
-// The main file and the files it includes, each as `(path, text)`: what the checks of `src/preprocess/check.typ` read.
-#let source-files = ((source-path, source-text),) + expanded-source.files
 
 #let merge-config(base, over) = {
   let out = base

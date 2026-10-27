@@ -13,21 +13,21 @@
 #let chat-option-keys = ("style", "user-name", "ai-name", "user-icon", "ai-icon", "user-color", "ai-color", "frame", "title", "width", "dir")
 
 #let chat-block(attrs, body) = {
-  for key in attrs.keys() {
-    assert(key in chat-option-keys, message: "Unknown <chat> option " + repr(key) + "; available: " + chat-option-keys.join(", "))
+  for key in attrs.keys().filter(key => key != "_at") {
+    assert(key in chat-option-keys, message: at-of(attrs) + "Unknown <chat> option " + repr(key) + "; available: " + chat-option-keys.join(", "))
   }
   let setting(key, default) = {
     let v = attrs.at(key, default: chat-config.at(key, default: none))
     if v == none or v == "" { default } else { v }
   }
   let style = setting("style", "auto")
-  assert(style in chat-styles, message: "<chat> style must be one of " + chat-styles.join(", ") + ", got " + repr(style))
+  assert(style in chat-styles, message: at-of(attrs) + "<chat> style must be one of " + chat-styles.join(", ") + ", got " + repr(style))
   if style == "auto" { style = if feel-name == "formal" { "transcript" } else if feel-name == "friendly" { "bubbles" } else { "assistant" } }
   let hue(key, fallback) = {
     let g = setting(key, none)
     if g == none { return fallback }
     if g in color-presets { return color-presets.at(g) }
-    assert(g.starts-with("#"), message: "Unknown <chat> " + key + " " + repr(g) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+    assert(g.starts-with("#"), message: at-of(attrs) + "Unknown <chat> " + key + " " + repr(g) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
     rgb(g)
   }
   let hues = (user: hue("user-color", theme.accent), ai: hue("ai-color", theme.secondary))
@@ -35,7 +35,7 @@
   let title = setting("title", none)
   let max-width = parse-length(str(setting("width", "80%")))
   let messages = untag(body, "chat-msg").tagged
-  assert(messages.len() > 0, message: "<chat> needs <user> and <ai> messages inside it")
+  assert(messages.len() > 0, message: at-of(attrs) + "<chat> needs <user> and <ai> messages inside it")
 
   context {
     let d = resolve-dir(setting("dir", "auto"), messages.first().body)

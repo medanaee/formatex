@@ -113,7 +113,7 @@
       // border = the sides that get a line, as letters of "lrtb" (left, right, top, bottom).
       let sides = attrs.at("border", default: "")
       if sides == "true" { sides = "lrtb" } else if sides == "false" { sides = "" }
-      assert(sides.clusters().all(c => c in ("l", "r", "t", "b")), message: "<docheader> border must be made of the letters l, r, t, b (for example lrtb or tb), got " + repr(sides))
+      assert(sides.clusters().all(c => c in ("l", "r", "t", "b")), message: at-of(attrs) + "<docheader> border must be made of the letters l, r, t, b (for example lrtb or tb), got " + repr(sides))
       let framed-border = sides != ""
       let framed-fill = attrs.at("fill", default: "false") == "true"
       let framed = framed-border or framed-fill

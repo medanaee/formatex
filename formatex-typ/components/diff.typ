@@ -219,7 +219,7 @@
       let id = attrs.at("id", default: none)
       assert(
         befores.len() == 1 and afters.len() == 1,
-        message: "<diff> needs one <before> and one <after>, each with a fenced code block or src=\"file\"",
+        message: at-of(attrs) + "<diff> needs one <before> and one <after>, each with a fenced code block or src=\"file\"",
       )
       // (text, fence language) of a <before> / <after>: its src file or its fenced code block.
       let version(item) = {
@@ -234,7 +234,7 @@
       let ops = diff-ops(old-lines, new-lines)
       let lang = attrs.at("lang", default: if old-lang != none { old-lang } else { new-lang })
       let mode = attrs.at("mode", default: "split")
-      assert(mode in ("split", "unified"), message: "<diff> mode must be split or unified, got " + repr(mode))
+      assert(mode in ("split", "unified"), message: at-of(attrs) + "<diff> mode must be split or unified, got " + repr(mode))
       let title(item, fa, en, d) = {
         let t = item.attrs.at("title", default: none)
         if t != none { t } else if d == rtl { fa } else { en }

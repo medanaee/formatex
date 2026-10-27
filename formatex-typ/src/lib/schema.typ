@@ -8,11 +8,6 @@
 // (tools/export-schema.mjs -> dist/tags.json); here it validates the attributes of every tag the same way.
 #let attr-number = regex("^[-−]?[\d۰-۹٠-٩.٫,٬\s%٪]+$")
 
-// A problem found in the user's own text is reported with its place, `@path:line message`: the app reads that prefix and puts the
-// problem on that line of that file. `at` is `"path:line"`; without it (a problem found later, while the handlers run) the
-// message stands alone.
-#let at-prefix(at) = if at == none { "" } else { "@" + at + " " }
-
 // Checks the values of `attrs` against specs of this shape. `label` starts every message: `<alert>` for a tag, `table option` for a
 // `{...}` line. `needs: (keys: (...), message: "...")` asks for at least one of those attributes to be given.
 #let check-values(label, attr-specs, attrs, at: none, needs: none) = {
@@ -56,12 +51,12 @@
     let shown = spec.at("display", default: name)
     out.insert(name, if type(handler) == array {
       ("void", attrs => {
-        check-attrs(shown, specs, attrs, needs: spec.at("needs", default: none))
+        check-attrs(shown, specs, attrs, at: attrs.at("_at", default: none), needs: spec.at("needs", default: none))
         (handler.at(1))(attrs)
       })
     } else {
       (attrs, body) => {
-        check-attrs(shown, specs, attrs, needs: spec.at("needs", default: none))
+        check-attrs(shown, specs, attrs, at: attrs.at("_at", default: none), needs: spec.at("needs", default: none))
         handler(attrs, body)
       }
     })

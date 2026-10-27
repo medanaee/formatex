@@ -7,11 +7,11 @@
     // Numbered steps on a vertical rail; the marker shape follows the feel (`feel.steps`).
     steps: (attrs, body) => {
       let items = untag(body, "step").tagged
-      assert(items.len() > 0, message: "<steps> needs <step> items inside it")
+      assert(items.len() > 0, message: at-of(attrs) + "<steps> needs <step> items inside it")
       let first = int(attrs.at("start", default: "1"))
       let given = attrs.at("color", default: none)
       let hue = if given == none { theme.accent } else if given in color-presets { color-presets.at(given) } else {
-        assert(given.starts-with("#"), message: "Unknown color " + repr(given) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+        assert(given.starts-with("#"), message: at-of(attrs) + "Unknown color " + repr(given) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
         rgb(given)
       }
       let tint = tinted(hue)

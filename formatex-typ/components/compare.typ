@@ -6,7 +6,7 @@
 // <compare>: <pros> and <cons> side by side, list items marked with ✓ / ✗.
 #let compare-block(attrs, body) = {
   let sides = untag(body, "compare-side").tagged
-  assert(sides.len() > 0, message: "<compare> needs <pros> and/or <cons> inside it")
+  assert(sides.len() > 0, message: at-of(attrs) + "<compare> needs <pros> and/or <cons> inside it")
   context {
     let d = resolve-dir(attrs.at("dir", default: "auto"), sides.map(s => s.body).join())
     let r = d == rtl

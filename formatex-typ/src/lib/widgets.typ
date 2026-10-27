@@ -71,6 +71,6 @@
 
 #let flag-attr(attrs, key, default, allowed, tag-name) = {
   let v = attrs.at(key, default: default)
-  assert(v in allowed, message: "<" + tag-name + "> " + key + " must be one of " + allowed.join(", ") + ", got " + repr(v))
+  assert(v in allowed, message: at-of(attrs) + "<" + tag-name + "> " + key + " must be one of " + allowed.join(", ") + ", got " + repr(v))
   v
 }

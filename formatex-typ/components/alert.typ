@@ -14,7 +14,7 @@
 #let alert-tags = (
     alert: (attrs, body) => {
       let kind = attrs.at("type", default: none)
-      assert(kind == none or kind in box-types, message: "Unknown alert type " + repr(kind) + "; available: " + box-types.keys().join(", "))
+      assert(kind == none or kind in box-types, message: at-of(attrs) + "Unknown alert type " + repr(kind) + "; available: " + box-types.keys().join(", "))
       let preset = if kind != none { box-types.at(kind) } else { (color: none, icon: none) }
 
       let given = attrs.at("color", default: preset.color)

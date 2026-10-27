@@ -76,7 +76,7 @@
 #let choices-block(attrs, body) = {
   let found = find-first(body, list)
   if found == none { found = find-first(body, enum) }
-  assert(found != none, message: "<choices> needs a Markdown list, one option per item")
+  assert(found != none, message: at-of(attrs) + "<choices> needs a Markdown list, one option per item")
   let items = found.children.map(it => it.body)
   let style = flag-attr(attrs, "numbers", "letters", ("letters", "numbers"), "choices")
   let correct = if "correct" in attrs {

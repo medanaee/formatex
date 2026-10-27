@@ -58,7 +58,7 @@
   let setting(key) = opts.at(key, default: list-config.at(key, default: none))
   let kind = setting("numbers")
   let kind = if kind == none { "auto" } else { kind }
-  assert(kind in list-number-kinds, message: "List numbers must be one of " + list-number-kinds.join(", ") + ", got " + repr(kind))
+  assert(kind in list-number-kinds, message: at-prefix(opts.at("md-at", default: none)) + "List numbers must be one of " + list-number-kinds.join(", ") + ", got " + repr(kind))
   let suffix = setting("suffix")
   let suffix = if suffix == none { "." } else { str(suffix) }
   let prefix = setting("prefix")
@@ -75,7 +75,8 @@
 // One list with a `{...}` line above it: its own style; `caption` / `#id` number it «فهرست ۱» / "List 1".
 #let list-block(opts, body) = {
   for key in opts.keys() {
-    assert(key in list-option-keys, message: "Unknown list option " + repr(key) + "; available: " + list-option-keys.join(", "))
+    if key == "md-at" { continue }
+    assert(key in list-option-keys, message: at-prefix(opts.at("md-at", default: none)) + "Unknown list option " + repr(key) + "; available: " + list-option-keys.join(", "))
   }
   let styled = list-style(opts, body)
   let caption = opts.at("caption", default: none)

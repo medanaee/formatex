@@ -55,7 +55,7 @@
 #let chart-data(attrs, body) = {
   let rows = if "src" in attrs { csv(root-path(attrs.src)) } else {
     let t = find-table(body)
-    assert(t != none, message: "<chart> needs a Markdown table inside it, or src=\"data.csv\"")
+    assert(t != none, message: at-of(attrs) + "<chart> needs a Markdown table inside it, or src=\"data.csv\"")
     let cols = if type(t.columns) == int { t.columns } else { t.columns.len() }
     let cells = ()
     for c in t.children {
@@ -71,7 +71,7 @@
   }
   assert(
     rows.len() >= 2 and rows.first().len() >= 2,
-    message: "<chart> needs a header row, at least one data row, a label column and at least one value column",
+    message: at-of(attrs) + "<chart> needs a header row, at least one data row, a label column and at least one value column",
   )
   let header = rows.first()
   let data-rows = rows.slice(1)
@@ -86,19 +86,19 @@
 
 #let chart-block(attrs, body) = {
   let kind = attrs.at("type", default: "bar")
-  assert(kind in chart-types, message: "<chart> type must be one of " + chart-types.join(", ") + ", got " + repr(kind))
+  assert(kind in chart-types, message: at-of(attrs) + "<chart> type must be one of " + chart-types.join(", ") + ", got " + repr(kind))
   let flag(key, default, allowed) = {
     let v = attrs.at(key, default: default)
-    assert(v in allowed, message: "<chart> " + key + " must be one of " + allowed.join(", ") + ", got " + repr(v))
+    assert(v in allowed, message: at-of(attrs) + "<chart> " + key + " must be one of " + allowed.join(", ") + ", got " + repr(v))
     v
   }
   let data = chart-data(attrs, body)
   let round = kind in ("pie", "donut")
-  if round { assert(data.series.len() == 1, message: "<chart type=\"" + kind + "\"> takes one value column, got " + str(data.series.len())) }
+  if round { assert(data.series.len() == 1, message: at-of(attrs) + "<chart type=\"" + kind + "\"> takes one value column, got " + str(data.series.len())) }
   let hues = if "colors" in attrs {
     attrs.colors.split(",").map(c => c.trim()).filter(c => c != "").map(c => {
       if c in color-presets { color-presets.at(c) } else if c == "accent" { theme.accent } else {
-        assert(c.starts-with("#"), message: "<chart> colors: unknown color " + repr(c) + "; use accent, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
+        assert(c.starts-with("#"), message: at-of(attrs) + "<chart> colors: unknown color " + repr(c) + "; use accent, a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
         rgb(c)
       }
     })
@@ -141,9 +141,9 @@
 
       if round {
         let values = data.series.first().values.map(v => if v == none { 0 } else { v })
-        assert(values.all(v => v >= 0), message: "<chart type=\"" + kind + "\"> values must not be negative")
+        assert(values.all(v => v >= 0), message: at-of(attrs) + "<chart type=\"" + kind + "\"> values must not be negative")
         let total = values.sum()
-        assert(total > 0, message: "<chart type=\"" + kind + "\"> needs at least one value above zero")
+        assert(total > 0, message: at-of(attrs) + "<chart type=\"" + kind + "\"> needs at least one value above zero")
         let radius = calc.min(full-w, full-h) / 2 - 2pt * zoom
         let (cx, cy) = (full-w / 2, full-h / 2)
         let side = if r { -1 } else { 1 }
@@ -205,14 +205,14 @@
         }
       } else {
         let all = data.series.map(s => s.values).flatten().filter(v => v != none)
-        assert(all.len() > 0, message: "<chart> has no values")
+        assert(all.len() > 0, message: at-of(attrs) + "<chart> has no values")
         let lo = if "min" in attrs { chart-number(attrs.min, "min") } else if kind == "bar" { calc.min(0, ..all) } else { calc.min(..all) }
         let hi = if "max" in attrs { chart-number(attrs.max, "max") } else if kind == "bar" { calc.max(0, ..all) } else { calc.max(..all) }
         // Labels under the lowest line points need room above the category labels.
         let axis = chart-scale(if kind == "line" and show-values and "min" not in attrs { lo - (hi - lo) * 0.12 } else { lo }, hi)
         let axis-min = if "min" in attrs { lo } else { axis.bottom }
         let axis-max = if "max" in attrs { hi } else { axis.top }
-        assert(axis-max > axis-min, message: "<chart> max must be greater than min")
+        assert(axis-max > axis-min, message: at-of(attrs) + "<chart> max must be greater than min")
         let ticks = range(int(calc.ceil(axis-min / axis.step - 1e-9)), int(calc.floor(axis-max / axis.step + 1e-9)) + 1).map(k => k * axis.step)
         let tick-labels = ticks.map(v => chart-label(v, unit, r))
         let gap = 0.6em.to-absolute()
@@ -230,7 +230,7 @@
         let x-title-h = if x-title != none { measure(x-title-text).height + gap } else { 0pt }
         let plot-top = (if show-values { 1.3em } else { 0.6em }).to-absolute()
         let plot-bottom = full-h - category-h - gap - x-title-h
-        assert(plot-bottom - plot-top > 20pt * zoom, message: "<chart> is too small for its labels; give it a larger height")
+        assert(plot-bottom - plot-top > 20pt * zoom, message: at-of(attrs) + "<chart> is too small for its labels; give it a larger height")
         let yv(v) = plot-bottom - (v - axis-min) / (axis-max - axis-min) * (plot-bottom - plot-top)
 
         for (v, t) in ticks.zip(tick-labels) {
@@ -345,7 +345,7 @@
 #let chart-tags = (
     chart: (attrs, body) => {
       let to = attrs.at("dir", default: "auto")
-      assert(to in ("rtl", "ltr", "auto"), message: "<chart> dir must be rtl, ltr or auto, got " + repr(to))
+      assert(to in ("rtl", "ltr", "auto"), message: at-of(attrs) + "<chart> dir must be rtl, ltr or auto, got " + repr(to))
       if to == "auto" { caption-figure(attrs, "chart", chart-block(attrs, body)) } else {
         dir-stack.update(s => s + (to,))
         caption-figure(attrs, "chart", chart-block(attrs, body))

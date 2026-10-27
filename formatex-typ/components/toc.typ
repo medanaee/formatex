@@ -14,7 +14,7 @@
       // with headings starting at ##, depth="1" lists only the sections.
       let depth = attrs.at("depth", default: none)
       if depth != none {
-        assert(depth.match(regex("^[1-9][0-9]*$")) != none, message: "<toc> depth must be a whole number from 1, got " + repr(depth))
+        assert(depth.match(regex("^[1-9][0-9]*$")) != none, message: at-of(attrs) + "<toc> depth must be a whole number from 1, got " + repr(depth))
         depth = int(depth)
       }
 
