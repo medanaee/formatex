@@ -19,7 +19,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "android:init": "tauri android init",
-    "android:patch": "node scripts/android-immersive.mjs && node scripts/android-signing.mjs",
+    "android:patch": "node scripts/android-icons.mjs && node scripts/android-immersive.mjs && node scripts/android-signing.mjs",
     "android:dev": "tauri android dev",
     "android:build": "tauri android build",
     "icons": "node scripts/make-icons.mjs"

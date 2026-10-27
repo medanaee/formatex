@@ -13,7 +13,7 @@ Source images live in [`src/assets/`](../../src/assets); `npm run icons` ([`scri
 
 - `src-tauri/icons/`: desktop and iOS icons (`tauri.conf.json` lists `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico`) and `android/` (committed, because `src-tauri/gen/` is generated and git-ignored).
 - `public/`: `favicon-32.png`, `icon.png`, `apple-touch-icon.png`, `maskable.png`, `manifest.webmanifest`; `index.html` links them.
-- `src-tauri/gen/android/.../res` is refreshed too when it exists, so a local Android build shows the new icon at once; a fresh `npm run android:init` starts from `icons/android`.
+- `src-tauri/gen/android/.../res` is refreshed too when it exists, so a local Android build shows the new icon at once; `tauri android init` does NOT use `icons/android` (it writes Tauri's default icon): `npm run android:patch` (and the release workflow) copies it into `gen/android` afterwards.
 
 ## Changing the icon
 
