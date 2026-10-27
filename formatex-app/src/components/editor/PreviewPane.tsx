@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import type { Diagnostic, PageLink, PageMap } from "@/lib/compiler"
 import { sourceLineAt } from "@/lib/editor/sourceLookup"
@@ -99,6 +100,43 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     onJumpToSource?.()
   }
 
+  const zoom = useSettingsStore((state) => state.previewZoom)
+  const setZoom = useSettingsStore((state) => state.setPreviewZoom)
+  const [current, setCurrent] = useState(1)
+
+  // The page at the top of the pane is the current one
+  const markPage = () => {
+    const box = scroller.current
+    if (!box) return
+    const edge = box.getBoundingClientRect().top + box.clientHeight / 3
+    let found = 1
+    pageEls.current.forEach((el, index) => {
+      if (el && el.getBoundingClientRect().top <= edge) found = index + 1
+    })
+    setCurrent(found)
+  }
+  const goToPage = (page: number) => {
+    const target = pageEls.current[Math.min(Math.max(page, 1), pages.length) - 1]
+    const box = scroller.current
+    if (!target || !box) return
+    box.scrollTo({ top: box.scrollTop + target.getBoundingClientRect().top - box.getBoundingClientRect().top - 12, behavior: "smooth" })
+  }
+  const shownPage = Math.min(current, Math.max(pages.length, 1))
+
+  // Ctrl + wheel (and a pinch on a touchpad) zooms the pages, not the whole window
+  useEffect(() => {
+    const box = scroller.current
+    if (!box) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return
+      event.preventDefault()
+      const { previewZoom, setPreviewZoom } = useSettingsStore.getState()
+      setPreviewZoom(previewZoom + (event.deltaY < 0 ? 10 : -10))
+    }
+    box.addEventListener("wheel", onWheel, { passive: false })
+    return () => box.removeEventListener("wheel", onWheel)
+  }, [])
+
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -119,13 +157,44 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-muted/40">
-      <div ref={scroller} className="min-h-0 flex-1 overflow-auto">
+      <div dir="ltr" className="flex h-8 shrink-0 items-center gap-1 border-b border-border bg-background px-2 text-xs text-muted-foreground select-none">
+        <Button variant="ghost" size="icon-xs" disabled={pages.length === 0 || shownPage <= 1} onClick={() => goToPage(shownPage - 1)} title={t("preview.prevPage")} aria-label={t("preview.prevPage")}>
+          <ChevronUp />
+        </Button>
+        <input
+          key={shownPage}
+          defaultValue={pages.length ? shownPage : ""}
+          disabled={pages.length === 0}
+          inputMode="numeric"
+          aria-label={t("preview.page")}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") goToPage(Number(event.currentTarget.value) || shownPage)
+          }}
+          onFocus={(event) => event.currentTarget.select()}
+          className="h-5 w-9 rounded border border-border bg-transparent text-center text-foreground tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <span className="tabular-nums">/ {pages.length}</span>
+        <Button variant="ghost" size="icon-xs" disabled={pages.length === 0 || shownPage >= pages.length} onClick={() => goToPage(shownPage + 1)} title={t("preview.nextPage")} aria-label={t("preview.nextPage")}>
+          <ChevronDown />
+        </Button>
+        <span className="flex-1" />
+        <Button variant="ghost" size="icon-xs" disabled={zoom <= 30} onClick={() => setZoom(zoom - 10)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
+          <Minus />
+        </Button>
+        <button type="button" onClick={() => setZoom(100)} title={t("preview.zoomFit")} className="h-5 min-w-10 rounded px-1 text-center text-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
+          {zoom}%
+        </button>
+        <Button variant="ghost" size="icon-xs" disabled={zoom >= 400} onClick={() => setZoom(zoom + 10)} title={t("preview.zoomIn")} aria-label={t("preview.zoomIn")}>
+          <Plus />
+        </Button>
+      </div>
+      <div ref={scroller} onScroll={markPage} className="min-h-0 flex-1 overflow-auto">
         {status === "unavailable" ? (
           <p className="p-6 text-center text-xs text-muted-foreground">{t("editor.unavailable")}</p>
         ) : images.length === 0 ? (
           <p className="p-6 text-center text-xs text-muted-foreground">{status === "compiling" ? t("editor.compiling") : t("editor.noPages")}</p>
         ) : (
-          <div className={cn("mx-auto flex max-w-3xl flex-col gap-3 p-3", !ok && "opacity-60")}>
+          <div style={{ width: `calc(min(100%, 48rem) * ${zoom / 100})` }} className={cn("mx-auto box-content flex flex-col gap-3 p-3", !ok && "opacity-60")}>
             {images.map((image, index) => {
               const map = pages[index]?.map
               return (

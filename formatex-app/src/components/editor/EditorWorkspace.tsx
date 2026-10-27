@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { EditorToolbar, type EditorTab } from "@/components/editor/EditorToolbar"
 import { EditorSidebar } from "@/components/editor/EditorSidebar"
@@ -8,6 +8,7 @@ import { PreviewPane } from "@/components/editor/PreviewPane"
 import { ProjectSettingsDialog } from "@/components/editor/ProjectSettingsDialog"
 import { ResizeHandle } from "@/components/ui/resize-handle"
 import { useSettingsStore } from "@/stores/useSettingsStore"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import type { DocumentItem } from "@/lib/db/types"
@@ -23,10 +24,13 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
   const { t, i18n } = useTranslation()
   const formFactor = useFormFactor()
   const wide = formFactor === "desktop"
-  const [tab, setTab] = useState<EditorTab>("edit")
-  const [treeOpen, setTreeOpen] = useState(true)
-  const [filesSheet, setFilesSheet] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const tab = useWorkspaceStore((state) => state.tab)
+  const filesSheet = useWorkspaceStore((state) => state.filesSheet)
+  const settingsOpen = useWorkspaceStore((state) => state.settingsOpen)
+  const panels = useSettingsStore((state) => state.panels)
+  const setTab = (next: EditorTab) => useWorkspaceStore.getState().set({ tab: next })
+  const setFilesSheet = (open: boolean) => useWorkspaceStore.getState().set({ filesSheet: open })
+  const setSettingsOpen = (open: boolean) => useWorkspaceStore.getState().set({ settingsOpen: open })
   const row = useRef<HTMLDivElement>(null)
   const treeWidth = useSettingsStore((state) => state.treeWidth)
   const previewPercent = useSettingsStore((state) => state.previewPercent)
@@ -50,6 +54,12 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
     if (reveal) setTab("edit")
   }, [reveal])
 
+  // The title bar shows the editor's menus and switches while this screen is up
+  useEffect(() => {
+    useWorkspaceStore.getState().set({ active: true, tab: "edit", filesSheet: false, settingsOpen: false })
+    return () => useWorkspaceStore.getState().set({ active: false })
+  }, [])
+
   useEffect(() => {
     void useEditorStore.getState().open(doc.id, doc.mainFile)
     return () => {
@@ -65,12 +75,12 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
         doc={doc}
         tab={wide ? undefined : tab}
         onTabChange={wide ? undefined : setTab}
-        onToggleFiles={() => (wide ? setTreeOpen((open) => !open) : setFilesSheet(true))}
+        onToggleFiles={() => setFilesSheet(true)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <div ref={row} className="flex min-h-0 flex-1">
-        {wide && treeOpen && (
+        {wide && panels.side && (
           <>
             <aside style={{ width: treeWidth }} className="shrink-0">
               <EditorSidebar />
@@ -80,14 +90,15 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
         )}
         {wide ? (
           <>
-            <main className="flex min-w-0 flex-1 flex-col">
+            {/* A hidden panel stays mounted: the editor keeps its history and place, the preview its scroll */}
+            <main className={cn("min-w-0 flex-1 flex-col", panels.editor ? "flex" : "hidden")}>
               <FormatBar />
               <div className="min-h-0 flex-1">
                 <FileView />
               </div>
             </main>
-            <ResizeHandle label={t("format.resizePreview")} onDrag={dragPreview} onNudge={(direction) => setPreviewPercent(previewPercent + direction * (rtl ? 2 : -2))} />
-            <section style={{ width: `${previewPercent}%` }} className="min-w-0 shrink-0">
+            {panels.editor && panels.preview && <ResizeHandle label={t("format.resizePreview")} onDrag={dragPreview} onNudge={(direction) => setPreviewPercent(previewPercent + direction * (rtl ? 2 : -2))} />}
+            <section style={panels.editor ? { width: `${previewPercent}%` } : undefined} className={cn("min-w-0", panels.editor ? "shrink-0" : "flex-1", !panels.preview && "hidden")}>
               <PreviewPane />
             </section>
           </>

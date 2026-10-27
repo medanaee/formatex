@@ -9,6 +9,13 @@ import { applyTheme, isThemePreference, watchSystemTheme, type ThemePreference }
 
 export type SidebarTab = "files" | "outline" | "tags"
 
+/** The three panels of the editor screen the title bar switches on and off. */
+export interface EditorPanels {
+  side: boolean
+  editor: boolean
+  preview: boolean
+}
+
 interface SettingsState {
   theme: ThemePreference
   language: AppLanguage
@@ -27,6 +34,12 @@ interface SettingsState {
   /** Width of the editor's side panel in px, and the share of the editor row the preview takes in percent (desktop). */
   treeWidth: number
   previewPercent: number
+  /** Which panels of the editor screen are shown (a wide window; a narrow one shows one at a time). */
+  panels: EditorPanels
+  setPanel: (panel: keyof EditorPanels, on: boolean) => void
+  /** Zoom of the preview pages in percent; 100 fits the width of the pane. */
+  previewZoom: number
+  setPreviewZoom: (zoom: number) => void
   /** The document themes the user made: available in every project. */
   customThemes: Record<string, CustomTheme>
   setCustomThemes: (themes: Record<string, CustomTheme>) => void
@@ -56,6 +69,15 @@ export const useSettingsStore = create<SettingsState>()(
       sidebarTab: "files",
       treeWidth: 240,
       previewPercent: 45,
+      panels: { side: true, editor: true, preview: true },
+      // The last of the editor and the preview stays: an editor screen with neither would be empty
+      setPanel: (panel, on) =>
+        set((state) => {
+          const next = { ...state.panels, [panel]: on }
+          return next.editor || next.preview ? { panels: next } : state
+        }),
+      previewZoom: 100,
+      setPreviewZoom: (zoom) => set({ previewZoom: Math.round(Math.min(Math.max(zoom, 30), 400)) }),
       customThemes: {},
       setCustomThemes: (customThemes) => set({ customThemes }),
       settingsSection: "appearance",

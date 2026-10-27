@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { ArrowLeft, Check, CircleAlert, FileDown, Files, Loader2, Pencil, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { EditorMenus, PanelToggles } from "@/components/editor/EditorChrome"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import type { DocumentItem } from "@/lib/db/types"
+import { isDesktopApp } from "@/lib/platform"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useLibraryStore } from "@/stores/useLibraryStore"
 
@@ -83,6 +85,8 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles, onOpenSett
   const exportMessage = useEditorStore((state) => state.exportMessage)
   const renameDocument = useLibraryStore((state) => state.renameDocument)
 
+  // In the desktop app the title bar carries the menus and the panel switches
+  const ownChrome = !isDesktopApp()
   const exporting = exportStatus === "working"
   const exportTitle = exportStatus === "error" ? `${t("editor.exportFailed")}: ${exportMessage}` : exportStatus === "done" ? t("editor.exported") : t("editor.export")
 
@@ -100,6 +104,8 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles, onOpenSett
         {saveState === "saving" ? <Loader2 className="size-3.5 animate-spin" /> : saveState === "error" ? <CircleAlert className="size-3.5 text-destructive" /> : <Check className="size-3.5" />}
       </span>
 
+      {ownChrome && tab === undefined && <EditorMenus />}
+
       <span className="hidden flex-1 sm:block" />
 
       {tab && onTabChange && (
@@ -115,9 +121,12 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles, onOpenSett
         />
       )}
 
-      <Button variant="ghost" size="icon-sm" onClick={onToggleFiles} title={t("editor.files")} aria-label={t("editor.files")}>
-        <Files />
-      </Button>
+      {ownChrome && tab === undefined && <PanelToggles />}
+      {ownChrome && tab !== undefined && (
+        <Button variant="ghost" size="icon-sm" onClick={onToggleFiles} title={t("editor.files")} aria-label={t("editor.files")}>
+          <Files />
+        </Button>
+      )}
       <Button variant="ghost" size="icon-sm" onClick={onOpenSettings} title={t("editor.settings")} aria-label={t("editor.settings")}>
         <Settings2 />
       </Button>

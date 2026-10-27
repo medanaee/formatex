@@ -156,3 +156,10 @@ Update this file at the end of every session: tick what is done, add what you fo
 ## Known issues
 
 - None yet.
+
+## Title bar panels and menus
+- [x] The title bar (desktop app) switches the side panel, the editor and the preview on and off; the last of editor / preview cannot be hidden; hidden panels stay mounted (history and scroll kept). A narrow window: the switches change the tab / open the files
+- [x] File / Edit / View menus after the app name (settings, export, close; undo, clipboard, find; panels, visual editor, zoom); on the web they sit in the editor toolbar
+- [x] Preview toolbar: page number box with previous / next, zoom out / in / fit, Ctrl+wheel zoom (stored)
+- [x] Sticky headings never showed: the layout was read inside an update (threw); now read in the measure phase
+- [x] Selecting Persian text in a left-to-right editor: the editor now knows about the isolated runs (`bidiIsolatedRanges`), so clicks and drags land where the browser drew the text

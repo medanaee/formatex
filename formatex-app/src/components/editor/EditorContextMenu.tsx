@@ -4,6 +4,7 @@ import { redo, selectAll, undo } from "@codemirror/commands"
 import { Bold, Clipboard, Code, Copy, Italic, Link2, MousePointer2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
 import { insertLink, insertText, toggleWrap } from "@/lib/editor/format"
 import { desktopOs, hasFinePointer } from "@/lib/platform"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
@@ -29,23 +30,8 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
     view.focus()
   }
 
-  const selection = () => (view ? view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to) : "")
   const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
 
-  const cut = async () => {
-    if (!view || !selection()) return
-    await navigator.clipboard.writeText(selection())
-    view.dispatch(view.state.replaceSelection(""))
-    view.focus()
-  }
-  const copy = async () => {
-    if (selection()) await navigator.clipboard.writeText(selection())
-  }
-  const paste = async () => {
-    if (!view) return
-    view.dispatch({ ...view.state.replaceSelection(await navigator.clipboard.readText()), userEvent: "input.paste" })
-    view.focus()
-  }
   const run = (command: (target: NonNullable<typeof view>) => unknown) => () => {
     if (!view) return
     command(view)
@@ -75,13 +61,13 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
           <Redo2 /> {t("format.redo")} <ContextMenuShortcut>{mod}Y</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => void cut()}>
+        <ContextMenuItem onSelect={() => void (view && cutSelection(view))}>
           <Scissors /> {t("menu.cut")} <ContextMenuShortcut>{mod}X</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void copy()}>
+        <ContextMenuItem onSelect={() => void (view && copySelection(view))}>
           <Copy /> {t("menu.copy")} <ContextMenuShortcut>{mod}C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void paste()}>
+        <ContextMenuItem onSelect={() => void (view && pasteClipboard(view))}>
           <Clipboard /> {t("menu.paste")} <ContextMenuShortcut>{mod}V</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem onSelect={run(selectAll)}>

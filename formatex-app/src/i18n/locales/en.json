@@ -297,5 +297,27 @@
     "deleteRow": "Delete this row",
     "deleteColumn": "Delete this column",
     "source": "Show the Markdown"
+  },
+  "appMenu": {
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "find": "Find",
+    "visual": "Visual editor",
+    "close": "Close project"
+  },
+  "panels": {
+    "title": "Panels",
+    "side": "Side panel",
+    "editor": "Editor",
+    "preview": "Preview"
+  },
+  "preview": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit to width",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page number"
   }
 }

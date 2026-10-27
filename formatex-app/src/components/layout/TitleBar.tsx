@@ -1,9 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { AppLogo } from "@/components/common/AppLogo"
+import { EditorMenus, PanelToggles } from "@/components/editor/EditorChrome"
 import { LAYERS } from "@/lib/layers"
 import { desktopOs, isDesktopApp } from "@/lib/platform"
 import { cn } from "@/lib/utils"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
 type AppWindow = ReturnType<typeof import("@tauri-apps/api/window").getCurrentWindow>
 
@@ -49,6 +51,7 @@ export function TitleBar() {
   const [maximized, setMaximized] = useState(false)
   const [appWindow, setAppWindow] = useState<AppWindow | null>(null)
   const desktop = isDesktopApp()
+  const editing = useWorkspaceStore((state) => state.active)
 
   useEffect(() => {
     if (!desktop) return
@@ -83,9 +86,13 @@ export function TitleBar() {
   return (
     <div dir="ltr" className={cn("flex h-9 shrink-0 items-stretch border-b border-border bg-sidebar text-sidebar-foreground select-none", LAYERS.CHROME)}>
       {mac && controls}
-      <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center gap-2 px-3">
+      <div className="flex min-w-0 items-center gap-2 ps-3">
         <AppLogo size={16} className="pointer-events-none" />
         <span className="pointer-events-none truncate text-xs font-medium">{t("common.appName")}</span>
+        {editing && <EditorMenus />}
+      </div>
+      <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center justify-end gap-2 px-3">
+        {editing && <PanelToggles />}
       </div>
       {!mac && controls}
     </div>

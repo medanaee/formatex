@@ -1,5 +1,5 @@
 import type { Range } from "@codemirror/state"
-import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view"
+import { Decoration, Direction, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import { frontMatterRange } from "./livePreview"
 
 /**
@@ -14,7 +14,9 @@ const PATTERNS = [
   /`[^`\n]+`/g,
 ]
 
-const isolate = Decoration.mark({ class: "cm-ltr-run" })
+// `bidiIsolate` tells the editor itself about the isolation: without it its idea of the visual order differs from the browser's,
+// and a click or a drag in Persian text next to a run lands in the wrong place
+const isolate = Decoration.mark({ class: "cm-ltr-run", bidiIsolate: Direction.LTR })
 const ltrLine = Decoration.line({ attributes: { dir: "ltr" } })
 
 function build(view: EditorView): DecorationSet {
@@ -51,7 +53,10 @@ export const bidiIsolate = [
         if (update.docChanged || update.viewportChanged) this.decorations = build(update.view)
       }
     },
-    { decorations: (value) => value.decorations }
+    {
+      decorations: (value) => value.decorations,
+      provide: (plugin) => EditorView.bidiIsolatedRanges.of((view) => view.plugin(plugin)?.decorations ?? Decoration.none),
+    }
   ),
   EditorView.baseTheme({ ".cm-ltr-run": { direction: "ltr", unicodeBidi: "isolate" } }),
 ]
