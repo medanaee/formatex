@@ -67,6 +67,7 @@ export default function App() {
       <main id="top">
         <section className="mx-auto grid max-w-5xl items-center gap-10 px-4 pt-14 pb-12 md:grid-cols-[1.05fr_1fr] md:pt-20 md:pb-16">
           <div className="flex flex-col items-start gap-5">
+            <img src="/icon.png" width={72} height={72} alt={t.name} className="size-16 select-none drop-shadow-sm sm:size-[72px]" draggable={false} />
             <Badge variant="secondary">{t.hero.platforms}</Badge>
             <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">{t.hero.title}</h1>
             <p className="max-w-prose text-[15px] leading-7 text-muted-foreground">{t.hero.lead}</p>
