@@ -1,4 +1,5 @@
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view"
+import { markedLines, setProblems } from "./problems"
 
 const WIDTH = 80
 const CHAR = 1.1
@@ -52,7 +53,7 @@ export const minimap = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.geometryChanged) this.schedule()
+      if (update.docChanged || update.geometryChanged || update.transactions.some((transaction) => transaction.effects.some((effect) => effect.is(setProblems)))) this.schedule()
       else if (update.viewportChanged) this.placeBand()
     }
 
@@ -109,6 +110,20 @@ export const minimap = ViewPlugin.fromClass(
           context.fillRect(3 + i * CHAR, y, (j - i) * CHAR, bar)
           i = j
         }
+      }
+      this.drawProblems(context, row)
+    }
+
+    /** The lines the compiler found wrong: a red bar across the miniature, and a notch at its edge that stays visible when the lines are tiny. */
+    drawProblems(context: CanvasRenderingContext2D, row: number) {
+      const style = getComputedStyle(this.view.dom)
+      for (const { line, severity } of markedLines(this.view.state)) {
+        context.fillStyle = severity === "error" ? style.getPropertyValue("--destructive").trim() || "red" : style.color
+        context.globalAlpha = severity === "error" ? 0.35 : 0.2
+        const y = (line - 1) * row
+        context.fillRect(0, y, WIDTH, Math.max(row, 2))
+        context.globalAlpha = 1
+        context.fillRect(WIDTH - 4, y - 1, 4, Math.max(row, 2) + 2)
       }
     }
 

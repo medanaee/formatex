@@ -15,6 +15,7 @@ import {
   type FsEntry,
   type ProjectFs,
 } from "@/lib/projects"
+import { locateDiagnostics } from "@/lib/editor/diagnosticSource"
 import { useLibraryStore } from "@/stores/useLibraryStore"
 
 /** Typing is saved after a pause. The preview does not wait for the save: it is rebuilt from the editor's text after a short pause. */
@@ -131,13 +132,15 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     set({ compileStatus: "compiling" })
     try {
       const before = get().pages
-      const output = await compileProject(projectId, mainFile, { overrides: get().texts, known: before.map((page) => page.hash) })
+      const overrides = get().texts
+      const output = await compileProject(projectId, mainFile, { overrides, known: before.map((page) => page.hash) })
       if (current !== session) return
       set((state) => ({
         compileStatus: "idle",
         // A page the compiler did not resend is unchanged: keep it (and its image) as it is
         pages: output.ok ? output.pages.map((page, index) => (page.svg !== null ? { hash: page.hash, svg: page.svg, map: page.map } : before[index])) : state.pages,
-        diagnostics: output.diagnostics,
+        // A problem raised inside the engine gets the line of the text it is about
+        diagnostics: locateDiagnostics(output.diagnostics, overrides, mainFile),
         ok: output.ok,
         elapsedMs: output.elapsedMs,
       }))

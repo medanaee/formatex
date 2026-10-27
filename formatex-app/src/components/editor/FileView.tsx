@@ -53,6 +53,9 @@ export function FileView() {
   const text = useEditorStore((state) => (path ? state.texts[path] : undefined))
   const reveal = useEditorStore((state) => state.reveal)
   const files = useEditorStore((state) => state.files)
+  const diagnostics = useEditorStore((state) => state.diagnostics)
+  // The compiler's problems in this file, as lines to mark
+  const problems = useMemo(() => diagnostics.filter((d) => d.path === path && d.line).map((d) => ({ line: d.line!, severity: d.severity, message: d.message })), [diagnostics, path])
   const visual = useSettingsStore((state) => state.visualEditor)
   const configVisual = useSettingsStore((state) => state.configVisual)
   const direction = useSettingsStore((state) => state.editorDirection)
@@ -80,6 +83,7 @@ export function FileView() {
         value={text}
         files={paths}
         reveal={reveal}
+        problems={problems}
         primary
         placeholder={t("editor.sourcePlaceholder")}
         onChange={(next) => useEditorStore.getState().edit(path, next)}

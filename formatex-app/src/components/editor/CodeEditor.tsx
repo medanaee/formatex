@@ -15,6 +15,7 @@ import { bidiIsolate } from "@/lib/editor/bidiIsolate"
 import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
+import { problemExtension, setProblems, type Problem } from "@/lib/editor/problems"
 import { stickyHeadings, stickyTheme } from "@/lib/editor/stickyHeadings"
 import { completionSource } from "@/lib/editor/completionSource"
 import { typstLanguage } from "@/lib/editor/typstLanguage"
@@ -55,6 +56,8 @@ interface CodeEditorProps {
   minimap?: boolean
   /** A color swatch was clicked, or a `#` was typed where a color goes. */
   onPickColor?: (request: ColorRequest) => void
+  /** Lines to mark as wrong (the compiler's problems in this file); they are also drawn in the minimap. */
+  problems?: readonly Problem[]
   /** Base direction: "auto" lets every line follow its own first letter; "rtl" / "ltr" force it on the whole editor. */
   direction?: "auto" | "rtl" | "ltr"
   className?: string
@@ -79,7 +82,7 @@ function languageFor(kind: FileKind): Extension {
  * CodeMirror 6 with the engine's autocomplete. Text in either direction: each line takes the direction of its own first strong
  * letter, so a Persian paragraph and an English one in the same file both read correctly.
  */
-export function CodeEditor({ path, value, kind, onChange, files, reveal, placeholder, lineNumbers: showLineNumbers = true, primary = false, visual = false, minimap: showMinimap = false, onConfigure, onPickColor, direction = "auto", className }: CodeEditorProps) {
+export function CodeEditor({ path, value, kind, onChange, files, reveal, placeholder, lineNumbers: showLineNumbers = true, primary = false, visual = false, minimap: showMinimap = false, onConfigure, onPickColor, problems, direction = "auto", className }: CodeEditorProps) {
   const { i18n } = useTranslation()
   // The tags autocomplete knows: the built-in ones and the user's components (the app refreshes it when a component changes)
   const schema = useSchemaStore((state) => state.schema)
@@ -121,6 +124,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         colorSwatches((request) => latest.current.onPickColor?.(request)),
         // The headings above the first visible line stay pinned, and the whole text is a miniature at the side
         fileKind === "markdown" ? [stickyHeadings, stickyTheme, bidiIsolate] : [],
+        problemExtension,
         showMinimap ? [minimap, minimapTheme] : [],
         // A tile of the tag palette dropped into the text writes that tag where it landed
         EditorView.domEventHandlers({
@@ -207,6 +211,12 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     if (latest.current.primary) publishHistory(editor.state)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a different file replaces the state
   }, [path])
+
+  // The compiler's problems of this file are marked; another file brings its own state, so they are set again with it
+  useEffect(() => {
+    view.current?.dispatch({ effects: setProblems.of(problems ?? []) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `path` too: a state built for another file starts without marks
+  }, [problems, path])
 
   // The text changed outside the editor (rename, reload)
   useEffect(() => {

@@ -167,3 +167,5 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] Preview click to source: runs are searched in the whole text (over line breaks), repeats are settled by the neighbouring runs, then by position
 - [ ] The click-to-source change is only unit-tested: try it in the desktop app on a document with repeated phrases
 - [x] Preview zoom: the number opens a menu (fit width, fit page, 50-300%); steps (+/-, Ctrl+wheel) start from the size shown, also out of a fit mode
+- [x] Problems found inside the engine (unknown color, bad table option, a tag without its attribute) get the Markdown line their message points at (`diagnosticSource.ts`, a text match on the quoted value and the tag); the line is red in the editor and in the minimap, and the problem list jumps to it
+- [ ] The match is a heuristic: an error whose message quotes nothing from the text (a math error, a failed include) still has no line. A precise fix would make the engine report the line (preprocessing knows it)
