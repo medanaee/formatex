@@ -9,6 +9,8 @@ import { tags as t } from "@lezer/highlight"
 export const editorTheme = EditorView.theme({
   "&": {
     height: "100%",
+    // Its panels have z-index 300: kept inside the editor, so menus and popovers (80) open over them
+    isolation: "isolate",
     color: "var(--foreground)",
     backgroundColor: "var(--background)",
     fontSize: "13px",

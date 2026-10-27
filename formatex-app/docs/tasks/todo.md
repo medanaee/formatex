@@ -163,3 +163,6 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] Preview toolbar: page number box with previous / next, zoom out / in / fit, Ctrl+wheel zoom (stored)
 - [x] Sticky headings never showed: the layout was read inside an update (threw); now read in the measure phase
 - [x] Selecting Persian text in a left-to-right editor: the editor now knows about the isolated runs (`bidiIsolatedRanges`), so clicks and drags land where the browser drew the text
+- [x] Menus (context, File / Edit / View) are frosted glass; the editor is its own stacking context, so its sticky panel (z-index 300) no longer paints over menus
+- [x] Preview click to source: runs are searched in the whole text (over line breaks), repeats are settled by the neighbouring runs, then by position
+- [ ] The click-to-source change is only unit-tested: try it in the desktop app on a document with repeated phrases
