@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 // The highlighter color: a preset's hue (or a hex) at marker strength, stronger than the pale tint of <alert>.
 // `true` means the default, yellow.

@@ -1,7 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/mitex.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 #import "/src/page.typ": page-name
 
 // <docheader> > <main> (<l-img>, <r-img>, <title size="1|2|3">) + <info>. <main> is optional: its children

@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <tree>: one line per file or folder, nested by indentation; `name/` is a folder and
 // `name  # note` adds a note. Pasted `tree` output works too: its line-drawing prefix counts as indentation.

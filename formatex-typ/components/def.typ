@@ -1,8 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/mitex.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 // Colors for <def>: title and icon color, plus tinted background and border for inline badge mode.
 #let resolve-def-colors(c, attrs: none) = {

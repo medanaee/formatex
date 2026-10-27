@@ -1,7 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/mitex.typ": *
-#import "/src/lib/latex-code.typ": *
+#import "/src/kit.typ": *
 
 #let cetz-tags = (
     cetz: (attrs, body) => {

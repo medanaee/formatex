@@ -1,7 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <progress>: a list of "label: value" lines (one bar each), or one bar from `value` with the body as its label.
 #let progress-styles = ("bar", "stars", "dots")

@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 #let icon-tags = (
     // <icon name="check" color="green" size="1.2em" />: a Font Awesome icon in the middle of a sentence.

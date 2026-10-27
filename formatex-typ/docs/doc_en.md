@@ -78,6 +78,7 @@ doc_en.md  ──(cmarker)──▶  main.typ + src/  ──(typst)──▶  ma
 | `main.typ` | Entry point (a few lines). Renders the Markdown through the preprocessors in `src/preprocess/` and the tags in `components/`. |
 | `components/<name>.typ` | One Typst file per component (its tags and code). |
 | `src/lib/` | Helpers shared by several components. |
+| `src/kit.typ` | What a component imports (`#import "/src/kit.typ": *`): the prelude and every helper library of `src/lib/`. |
 | `tools/` | `build-all.mjs` (every theme × feel), `gen-registry.mjs` (rebuilds `components/_registry.typ` from the component files), `bundle.mjs` (one-file build, `dist/formatex.typ`) and `export-schema.mjs` (`dist/tags.json`: every tag with its attributes and allowed values, for editor autocomplete). |
 | `src/core.typ`, `src/page.typ`, `src/conf.typ`, `src/prelude.typ` | The template: `core` (config, themes, feels, fonts, direction), `page` (page, header, footer, cover), `conf` (styling of code, quotes, tables, headings), `prelude` (what every file imports). |
 | `src/themes.typ` | The eight color palettes. |

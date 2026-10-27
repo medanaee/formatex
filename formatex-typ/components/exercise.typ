@@ -1,8 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/lists.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <exercise>: numbered question; <choices> lays out a list as lettered options; <answer> is
 // shown, hidden or collected under <answers> by `answers` (config / --input).

@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 #let toc-tags = (
     toc: (attrs, body) => {

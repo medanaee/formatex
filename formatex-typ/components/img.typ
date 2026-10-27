@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *
 
 #let img-tags = (
     img: ("void", attrs => {

@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *
 
 // "3,7-9" -> (3, 7, 8, 9)
 #let parse-line-set(s) = {

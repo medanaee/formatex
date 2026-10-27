@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 // <lof> / <lot> / <lol>: captioned figures of one kind, laid out like <toc> entries.
 #let figure-list(kind, tag-name, attrs, fa-title, en-title) = {

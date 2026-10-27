@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 // <chat>: an AI conversation of <user> and <ai> messages. [chat] in config.toml / front matter,
 // overridden by the tag's attributes. The look follows the feel unless `style` is set:

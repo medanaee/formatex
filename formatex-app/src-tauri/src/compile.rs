@@ -420,8 +420,7 @@ mod component_tests {
         assert!(schema["tags"]["alert"].is_object());
         assert!(schema["tags"]["shout"].is_null());
 
-        let source = r#"#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+        let source = r#"#import "/src/kit.typ": *
 
 #let shout-tags = (
   shout: (attrs, body) => text(weight: "bold", upper(plain-text(body))),

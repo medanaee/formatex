@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 // <letter>: an official letter (Persian or English) — header with number / date / attachments,
 // addressee, subject, body, closing and signature, copies.

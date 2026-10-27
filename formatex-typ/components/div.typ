@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 // <div tailwind="p-4 bg-blue rounded-lg flex gap-2 ...">: a container styled by Tailwind-like utility
 // classes. Spacing is 0.25em per step, colors are theme-aware, rounding does not follow the feel (a `rounded-*` class always rounds), and the flex layout is computed here because Typst has no flexbox.

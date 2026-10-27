@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 #let box-types = (
   note: (color: "purple", icon: "note-sticky"),

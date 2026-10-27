@@ -22,8 +22,7 @@ export function newComponentSource(name: string, kind: ComponentKind): string {
 //   ${name}-tags    the code of each tag: (attrs, body) => content
 //                   attrs: the attributes written on the tag (strings); body: what stands between <${name}> and </${name}>
 //   ${name}-schema  what autocomplete knows about the tag: its kind, a description and its attributes
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *
 
 #let ${name}-tags = (
   ${name}: (attrs, body) => {

@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *
 
 #let badge-tags = (
     // <badge color="green" icon="check">stable</badge>

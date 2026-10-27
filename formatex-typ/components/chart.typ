@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <chart>: a table with the labels in its first column and one series per other column.
 #let chart-types = ("bar", "line", "pie", "donut")

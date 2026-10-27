@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
+#import "/src/kit.typ": *
 
 // <diff>: line lists, edit operations and the two layouts (unified / split).
 // An op is (kind: "eq" | "del" | "add", oi, ni, on, nn): indices into the old / new

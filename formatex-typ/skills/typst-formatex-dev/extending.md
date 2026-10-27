@@ -14,6 +14,7 @@ For the internals (helpers, tag mechanics) see [reference.md](reference.md); for
 | Page, header, footer, cover | `src/page.typ` | `page-header`, `page-footer`, `cover-page` |
 | Code / quote / table / heading styling | `src/conf.typ` | `conf` |
 | What every file imports | `src/prelude.typ` | template names + `@preview` packages |
+| What a component imports | `src/kit.typ` | the prelude plus the helper libraries (`basics`, `colors`, `widgets`, `refs`, `lists`, `mitex`, `latex-code`) |
 | Tag / attribute schema for editors | `tools/export-schema.mjs` | `dist/tags.json` |
 | Components (`<alert>`, `<fig>`, ...) | `components/<name>.typ` | exports `<name>-tags` and `<name>-schema` (tags, attributes, allowed values) |
 | Registry of all components | `components/_registry.typ` | **generated** by `tools/gen-registry.mjs`; do not edit |
@@ -127,7 +128,7 @@ A missing key is not caught where you define the theme; it fails later deep insi
 ### Registration
 
 - Create `components/<name>.typ`, then run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it). Nothing in `main.typ` changes.
-  - The file starts with `#import "/src/prelude.typ": *` (the template's names and the `@preview` packages; add a package there if a component needs a new one) plus `#import "/src/lib/<file>.typ": *` for each shared helper file it uses and exports `#let <name>-tags = ( tag: (attrs, body) => ..., ... )` (closing `)` in column 0). Self-closing tags use `tag: ("void", attrs => ...)`.
+  - The file starts with `#import "/src/kit.typ": *` (the template's names, the `@preview` packages and every helper library; add a package to `src/prelude.typ` if a component needs a new one, and a new helper library to `src/kit.typ`: its names must differ from all the others) and exports `#let <name>-tags = ( tag: (attrs, body) => ..., ... )` (closing `)` in column 0). Self-closing tags use `tag: ("void", attrs => ...)`.
   - **Schema (required for every tag):** also export `#let <name>-schema = ( "tag": (kind: "block" | "inline" | "void" | "mixed", description: (en: "...", fa: "..."), attrs: ( "name": (type: "enum" | "bool" | "int" | "number" | "length" | "string" | "path" | "color", values: (...) /* enum only */, default: "...", required: true, doc: (en: "...", fa: "...")) ), children: ("child-tag",), display: "camelCase" /* optional */) )`. The registry checks every attribute of every tag against it before your handler runs (enum, bool, int and number values, required attributes; unknown attributes pass), so a handler needs no `assert` for those. `tools\export-schema.mjs` writes the same data to `dist/tags.json` for editor autocomplete. Keep it in sync with the handler: a missing tag entry stops the build, a missing attribute only hides it from autocomplete.
   - Optional exports: `#let <name>-rules(doc) = { show ...; doc }` for document-wide show rules (a `#show` inside an imported file does not leak out; put `// rules-order: N` on the line above to order it, default 100), and `#let <name>-scope = (...)` merged into cmarker's scope.
   - A tag may be declared by one component only (the generator stops on duplicates). Child tags (`<caption>`, `<item>`) belong to the file of their parent.

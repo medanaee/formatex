@@ -1,7 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <compare>: <pros> and <cons> side by side, list items marked with ✓ / ✗.
 #let compare-block(attrs, body) = {

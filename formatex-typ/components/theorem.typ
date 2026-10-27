@@ -1,6 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 #let theorem-block(kind, attrs, body) = {
   let spec = theorem-kinds.at(kind)

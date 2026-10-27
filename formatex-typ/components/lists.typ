@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/lists.typ": *
+#import "/src/kit.typ": *
 
 #let lists-tags = (:)
 

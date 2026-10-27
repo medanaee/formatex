@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/refs.typ": *
+#import "/src/kit.typ": *
 
 #let ref-tags = (
     ref: (attrs, body) => context {

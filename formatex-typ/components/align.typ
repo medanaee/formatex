@@ -1,4 +1,4 @@
-#import "/src/prelude.typ": *
+#import "/src/kit.typ": *
 
 
 #let align-tags = (

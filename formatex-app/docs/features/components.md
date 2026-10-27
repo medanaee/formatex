@@ -7,8 +7,7 @@ Decision: [ADR 0007](../decisions/0007-component-library.md). Code: [`Components
 One Typst file, `components/<name>.typ`:
 
 ```typst
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *       // everything a component needs: the template, the helpers, the packages
 
 #let shout-tags = (                 // the code of each tag
   shout: (attrs, body) => text(weight: "bold", body),

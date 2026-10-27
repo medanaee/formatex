@@ -1,7 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/mitex.typ": *
-#import "/src/lib/latex-code.typ": *
+#import "/src/kit.typ": *
 
 // <lilaq>: a data plot drawn with the Lilaq package. The code block holds Typst whose last expression is a
 // `lq.diagram(...)`. Strokes, ticks, grid and text take the theme's colors so plots stay visible on dark pages.

@@ -1,8 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
-#import "/src/lib/colors.typ": *
-#import "/src/lib/refs.typ": *
-#import "/src/lib/widgets.typ": *
+#import "/src/kit.typ": *
 
 // <todo>: draft notes. `todo = "hide"` (config / --input) removes them and <todos> for the final version.
 #let todo-mode = sys.inputs.at("todo", default: str(config.at("todo", default: "show")))

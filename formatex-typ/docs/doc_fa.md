@@ -75,6 +75,7 @@ doc_fa.md  ──(cmarker)──▶  main.typ + src/  ──(typst)──▶  ma
 | `main.typ` | نقطهٔ ورود (چند خط). Markdown را از پیش‌پردازنده‌های `src/preprocess/` و تگ‌های `components/` رد می‌کند و رندر می‌کند. |
 | `components/<name>.typ` | یک فایل Typst برای هر کامپوننت (تگ‌ها و کد). |
 | `src/lib/` | توابع کمکی مشترک بین چند کامپوننت. |
+| `src/kit.typ` | چیزی که یک کامپوننت import می‌کند (`#import "/src/kit.typ": *`): prelude و همه‌ی کتابخانه‌های کمکی `src/lib/`. |
 | `tools/` | `build-all.mjs` (همهٔ تم × حالت)، `gen-registry.mjs` (ساخت `components/_registry.typ` از فایل‌های کامپوننت) و `bundle.mjs` (بیلد تک‌فایل، `dist/formatex.typ`) و `export-schema.mjs` (`dist/tags.json`: همهٔ تگ‌ها با ویژگی‌ها و مقدارهای مجاز، برای autocomplete ویرایشگر). |
 | `src/core.typ` | بازصادرکنندهٔ `src/core.typ` (تنظیمات، تم، feel، فونت، جهت)، `src/page.typ` (صفحه، سرصفحه، پاصفحه، جلد) و `src/conf.typ` (استایل کد، نقل‌قول، جدول، عنوان). |
 | `src/themes.typ` | هشت پالت رنگی. |

@@ -1,5 +1,4 @@
-#import "/src/prelude.typ": *
-#import "/src/lib/basics.typ": *
+#import "/src/kit.typ": *
 
 #let kbd-tags = (
     // <kbd>Ctrl+Shift+P</kbd>: one key cap per `+`-separated key.
