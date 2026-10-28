@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Blocks, Eye, HardDrive, Languages, Moon, Palette, PenLine, Sun, type LucideIcon } from "lucide-react"
+import { ArrowDownToLine, Apple, Blocks, Eye, HardDrive, Languages, Monitor, Moon, Palette, PenLine, Smartphone, Sun, Terminal, type LucideIcon } from "lucide-react"
 import { HeroMock } from "@/components/HeroMock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,13 @@ const ICONS: Record<Copy["features"][number]["icon"], LucideIcon> = {
   palette: Palette,
   pen: PenLine,
   "hard-drive": HardDrive,
+}
+
+const PLATFORM_ICONS: Record<Copy["platforms"][number]["icon"], LucideIcon> = {
+  monitor: Monitor,
+  apple: Apple,
+  terminal: Terminal,
+  smartphone: Smartphone,
 }
 
 /** The mark of GitHub (Lucide no longer ships brand icons). */
@@ -144,14 +151,22 @@ export default function App() {
             </Button>
           </div>
           <ul className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {t.platforms.map((platform) => (
-              <li key={platform.name} className="rounded-xl border border-border px-4 py-3">
-                <div className="text-sm font-semibold">{platform.name}</div>
-                <div className="mt-0.5 text-xs text-muted-foreground" dir="auto">
-                  {platform.note}
-                </div>
-              </li>
-            ))}
+            {t.platforms.map((platform) => {
+              const Icon = PLATFORM_ICONS[platform.icon]
+              return (
+                <li key={platform.name} className="flex items-center gap-3 rounded-xl border border-border px-4 py-3">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">{platform.name}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground" dir="auto">
+                      {platform.note}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </section>
       </main>
