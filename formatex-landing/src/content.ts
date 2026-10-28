@@ -13,7 +13,7 @@ export interface Copy {
   steps: { title: string; text: string }[]
   downloadTitle: string
   downloadText: string
-  platforms: { icon: "monitor" | "apple" | "terminal" | "smartphone"; name: string; note: string }[]
+  platforms: { icon: "windows" | "apple" | "linux" | "android"; name: string; note: string }[]
   getIt: string
   footer: string
   toggles: { language: string; theme: string }
@@ -49,10 +49,10 @@ export const COPY: Record<Lang, Copy> = {
     downloadTitle: "دانلود",
     downloadText: "رایگان و متن‌باز. آخرین نسخه را از GitHub بگیرید.",
     platforms: [
-      { icon: "monitor", name: "ویندوز", note: "نصب‌کننده‌ی .exe و .msi" },
+      { icon: "windows", name: "ویندوز", note: "نصب‌کننده‌ی .exe و .msi" },
       { icon: "apple", name: "مک", note: "فایل .dmg" },
-      { icon: "terminal", name: "لینوکس", note: ".AppImage، .deb و .rpm" },
-      { icon: "smartphone", name: "اندروید", note: "فایل .apk برای هر معماری" },
+      { icon: "linux", name: "لینوکس", note: ".AppImage، .deb و .rpm" },
+      { icon: "android", name: "اندروید", note: "فایل .apk برای هر معماری" },
     ],
     getIt: "آخرین نسخه",
     footer: "ساخته‌شده با Tauri و Typst.",
@@ -86,10 +86,10 @@ export const COPY: Record<Lang, Copy> = {
     downloadTitle: "Download",
     downloadText: "Free and open source. Get the latest version from GitHub.",
     platforms: [
-      { icon: "monitor", name: "Windows", note: ".exe and .msi installers" },
+      { icon: "windows", name: "Windows", note: ".exe and .msi installers" },
       { icon: "apple", name: "macOS", note: ".dmg" },
-      { icon: "terminal", name: "Linux", note: ".AppImage, .deb and .rpm" },
-      { icon: "smartphone", name: "Android", note: ".apk for every architecture" },
+      { icon: "linux", name: "Linux", note: ".AppImage, .deb and .rpm" },
+      { icon: "android", name: "Android", note: ".apk for every architecture" },
     ],
     getIt: "Latest release",
     footer: "Built with Tauri and Typst.",

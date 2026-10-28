@@ -1,4 +1,5 @@
-import { ArrowDownToLine, Apple, Blocks, Eye, HardDrive, Languages, Monitor, Moon, Palette, PenLine, Smartphone, Sun, Terminal, type LucideIcon } from "lucide-react"
+import { ArrowDownToLine, Blocks, Eye, HardDrive, Languages, Moon, Palette, PenLine, Sun, type LucideIcon } from "lucide-react"
+import { siAndroid, siApple, siLinux } from "simple-icons"
 import { HeroMock } from "@/components/HeroMock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,11 +17,24 @@ const ICONS: Record<Copy["features"][number]["icon"], LucideIcon> = {
   "hard-drive": HardDrive,
 }
 
-const PLATFORM_ICONS: Record<Copy["platforms"][number]["icon"], LucideIcon> = {
-  monitor: Monitor,
-  apple: Apple,
-  terminal: Terminal,
-  smartphone: Smartphone,
+/**
+ * The marks of the platforms, one color (the text color, so they follow the theme). Apple, Linux (Tux) and Android are the paths of
+ * Simple Icons (CC0); Windows is its four-pane mark, drawn here because Simple Icons no longer carries it. They are trademarks of
+ * their owners and only say which systems the app runs on.
+ */
+const PLATFORM_PATHS: Record<Copy["platforms"][number]["icon"], string> = {
+  windows: "M0 0h11.4v11.4H0ZM12.6 0H24v11.4H12.6ZM0 12.6h11.4V24H0ZM12.6 12.6H24V24H12.6Z",
+  apple: siApple.path,
+  linux: siLinux.path,
+  android: siAndroid.path,
+}
+
+function PlatformMark({ icon }: { icon: Copy["platforms"][number]["icon"] }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-7">
+      <path d={PLATFORM_PATHS[icon]} />
+    </svg>
+  )
 }
 
 /** The mark of GitHub (Lucide no longer ships brand icons). */
@@ -151,22 +165,17 @@ export default function App() {
             </Button>
           </div>
           <ul className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {t.platforms.map((platform) => {
-              const Icon = PLATFORM_ICONS[platform.icon]
-              return (
-                <li key={platform.name} className="flex items-center gap-3 rounded-xl border border-border px-4 py-3">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                    <Icon className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold">{platform.name}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground" dir="auto">
-                      {platform.note}
-                    </div>
+            {t.platforms.map((platform) => (
+              <li key={platform.name} className="flex flex-col items-start gap-3 rounded-xl border border-border px-4 py-4">
+                <PlatformMark icon={platform.icon} />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">{platform.name}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground" dir="auto">
+                    {platform.note}
                   </div>
-                </li>
-              )
-            })}
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       </main>
