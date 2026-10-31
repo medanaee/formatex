@@ -6,20 +6,29 @@ const decoder = new TextDecoder()
 
 type Fs = typeof import("@tauri-apps/plugin-fs")
 
-/** The project folder `$APPDATA/documents/<id>/` through plugin-fs; the native compiler reads the same files. */
+/**
+ * A project folder through plugin-fs; the native compiler reads the same files. By default `$APPDATA/documents/<id>/`; with
+ * `absolute` the root is a folder of the user's (an absolute path the app has been given access to) and `ignore` names the
+ * folders at its top that are left out of the listing.
+ */
 export class TauriProjectFs implements ProjectFs {
   private readonly root: string
+  private readonly absolute: boolean
+  private readonly ignore: readonly string[]
   private fsModule: Promise<Fs> | null = null
 
-  constructor(projectId: string) {
-    this.root = `documents/${projectId}`
+  constructor(projectId: string, absolute?: { root: string; ignore?: readonly string[] }) {
+    this.root = absolute ? absolute.root.replace(/[\\/]+$/, "") : `documents/${projectId}`
+    this.absolute = !!absolute
+    this.ignore = absolute?.ignore ?? []
   }
 
   private fs(): Promise<Fs> {
     return (this.fsModule ??= import("@tauri-apps/plugin-fs"))
   }
 
-  private async options() {
+  private async options(): Promise<{ baseDir?: number }> {
+    if (this.absolute) return {}
     const { BaseDirectory } = await this.fs()
     return { baseDir: BaseDirectory.AppData }
   }
@@ -34,6 +43,7 @@ export class TauriProjectFs implements ProjectFs {
       for (const entry of await fs.readDir(this.full(dir), options)) {
         const path = dir ? `${dir}/${entry.name}` : entry.name
         if (entry.isDirectory) {
+          if (!dir && this.ignore.includes(entry.name)) continue
           out.push({ path, kind: "dir" })
           await walk(path)
         } else if (entry.isFile) {
@@ -79,7 +89,7 @@ export class TauriProjectFs implements ProjectFs {
   async rename(from: string, to: string): Promise<void> {
     const fs = await this.fs()
     const options = await this.options()
-    await fs.rename(this.full(from), this.full(to), { oldPathBaseDir: options.baseDir, newPathBaseDir: options.baseDir })
+    await fs.rename(this.full(from), this.full(to), options.baseDir === undefined ? {} : { oldPathBaseDir: options.baseDir, newPathBaseDir: options.baseDir })
   }
 
   async exists(path: string): Promise<boolean> {

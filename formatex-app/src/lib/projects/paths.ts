@@ -2,9 +2,15 @@
 export const RESERVED_ROOTS = ["main.typ", "code-dark.tmTheme", "src", "components", "tools"] as const
 
 export const CONFIG_FILE = "config.toml"
+/** Where a project kept in a folder of the user's has its own files: `.formatex/config.toml` is its `config.toml`. */
+export const FORMATEX_DIR = ".formatex"
+/** The place of the project's `config.toml` in a folder project; the editor opens it as `config.toml`. */
+export const FORMATEX_CONFIG = `${FORMATEX_DIR}/config.toml`
+/** Folders of a user's folder the project never lists (their content is not part of the document). */
+export const IGNORED_DIRS = [".git", "node_modules"] as const
 export const DEFAULT_MAIN_FILE = "main.md"
 
-export type FileKind = "markdown" | "toml" | "typst" | "text" | "code" | "image" | "font" | "binary"
+export type FileKind = "markdown" | "toml" | "typst" | "text" | "code" | "image" | "pdf" | "font" | "binary"
 
 /** Source files of a programming language (a script a document quotes or an exercise's solution): shown as text with that language's colors. */
 export const CODE_EXTENSIONS = [
@@ -33,6 +39,7 @@ const EXTENSIONS: Record<string, FileKind> = {
   webp: "image",
   svg: "image",
   bmp: "image",
+  pdf: "pdf",
   ttf: "font",
   otf: "font",
   ttc: "font",
@@ -101,6 +108,8 @@ export interface FsEntry {
   /** Project-relative path with `/` separators, no leading slash. */
   path: string
   kind: "file" | "dir"
+  /** Another name of a file listed elsewhere (a folder project's `config.toml` is `.formatex/config.toml`): kept for the editor, not shown in the tree. */
+  alias?: true
 }
 
 /** Folders before files, then by name with numbers in order (`img2` before `img10`). */
@@ -110,6 +119,8 @@ export function compareEntries(a: FsEntry, b: FsEntry): number {
   const length = Math.min(sa.length, sb.length)
   for (let i = 0; i < length; i++) {
     if (sa[i] === sb[i]) continue
+    // The project's own folder is pinned above everything else
+    if (i === 0 && (sa[0] === FORMATEX_DIR || sb[0] === FORMATEX_DIR)) return sa[0] === FORMATEX_DIR ? -1 : 1
     const aIsDir = i < sa.length - 1 || a.kind === "dir"
     const bIsDir = i < sb.length - 1 || b.kind === "dir"
     if (aIsDir !== bIsDir) return aIsDir ? -1 : 1

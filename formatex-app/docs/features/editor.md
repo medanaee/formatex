@@ -8,7 +8,7 @@ Decisions: [ADR 0005](../decisions/0005-native-typst-engine.md) (native Typst), 
 - A **file tree** like Overleaf's: folders, create file / folder, rename, delete, upload images and data, mark the main Markdown file (★). It sits at the **start edge** (the right in Persian). Rows can be multi-selected, dragged into folders, copied, cut and pasted, and files can be dropped from the computer (see below).
 - A **code editor** (CodeMirror 6) for Markdown and TOML with **autocomplete from the engine's schema**, **undo / redo** and a **format bar** above it.
 - A **live preview** of the typeset pages (SVG) with a status bar: pages, time, errors and warnings; a click on a problem jumps to its line.
-- **Project settings**: the project's `config.toml` (the user pastes or edits their own). **The main file is the `source` of that file**, as it is for the engine on the command line: no file has a special name (`main.md` is only what a new project starts with), the star in the file tree marks the file `source` names, and "Set as main file" writes it there. A missing `source`, or one that names a file not in the project, is an error on that line of `config.toml` (the preview keeps its last pages and nothing falls back to another file). `src/lib/projects/configSource.ts` reads and writes the line; renaming or moving the main file rewrites it; a ZIP whose config names no `source` gets the one it was exported with.
+- **Project settings**: the project's `config.toml` (the user pastes or edits their own). The gear in the toolbar and File > Settings open it in the editor like any file (the visual settings panel, or the source): there is no settings dialog. The main file is chosen with the star menu of the file tree or the `source` key. **The main file is the `source` of that file**, as it is for the engine on the command line: no file has a special name (`main.md` is only what a new project starts with), the star in the file tree marks the file `source` names, and "Set as main file" writes it there. A missing `source`, or one that names a file not in the project, is an error on that line of `config.toml` (the preview keeps its last pages and nothing falls back to another file). `src/lib/projects/configSource.ts` reads and writes the line; renaming or moving the main file rewrites it; a ZIP whose config names no `source` gets the one it was exported with.
 - **Export PDF** through the native Save dialog.
 
 ## Layout
@@ -86,7 +86,7 @@ Two schemas come from it: `config` (config.toml: every document) and `front-matt
 | front matter | a line start | The settings and the blocks (`header:`, `footer:`, `cover:`, `bibliography:`, ...) at the top level; the keys of a block when indented under it, minus those already there |
 | front matter | `key: ` | The values of that key, by its schema |
 
-It is silent in comments and outside the `---` block (the rest of the file uses the tag autocomplete). The logic is pure ([`configCompletion.ts`](../../src/lib/editor/configCompletion.ts), 18 tests) and the project settings dialog's `config.toml` editor uses it too.
+It is silent in comments and outside the `---` block (the rest of the file uses the tag autocomplete). The logic is pure ([`configCompletion.ts`](../../src/lib/editor/configCompletion.ts), 18 tests) and the `config.toml` code editor uses it too.
 
 The engine's code does not read this schema: it documents the settings. When the engine gains or changes a setting, update `config-schema.typ` in the same change.
 

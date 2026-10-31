@@ -29,6 +29,8 @@ const MIGRATIONS: string[][] = [
       updated_at INTEGER NOT NULL
     )`,
   ],
+  // 4: a project can keep its files in a folder of the user's (NULL = the app's own storage)
+  [`ALTER TABLE documents ADD COLUMN location TEXT`],
 ]
 
 export const SCHEMA_VERSION = MIGRATIONS.length

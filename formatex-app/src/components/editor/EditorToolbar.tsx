@@ -6,6 +6,7 @@ import { EditorMenus, PanelToggles } from "@/components/editor/EditorChrome"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import type { DocumentItem } from "@/lib/db/types"
+import { openProjectSettings } from "@/lib/editor/openSettings"
 import { isDesktopApp } from "@/lib/platform"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useLibraryStore } from "@/stores/useLibraryStore"
@@ -18,7 +19,6 @@ interface EditorToolbarProps {
   tab?: EditorTab
   onTabChange?: (tab: EditorTab) => void
   onToggleFiles: () => void
-  onOpenSettings: () => void
 }
 
 /** The project's title as plain text with an edit button; editing turns it into a field with an underline (the only underlined field of the app). */
@@ -78,7 +78,7 @@ function EditableTitle({ title, onRename }: { title: string; onRename: (title: s
 }
 
 /** One compact row: back, title, save state, the Edit / Preview switch (narrow screens), files, settings and export. */
-export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles, onOpenSettings }: EditorToolbarProps) {
+export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorToolbarProps) {
   const { t } = useTranslation()
   const saveState = useEditorStore((state) => state.saveState)
   const exportStatus = useEditorStore((state) => state.exportStatus)
@@ -127,7 +127,7 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles, onOpenSett
           <Files />
         </Button>
       )}
-      <Button variant="ghost" size="icon-sm" onClick={onOpenSettings} title={t("editor.settings")} aria-label={t("editor.settings")}>
+      <Button variant="ghost" size="icon-sm" onClick={() => void openProjectSettings()} title={t("editor.settings")} aria-label={t("editor.settings")}>
         <Settings2 />
       </Button>
       <Button size="sm" disabled={exporting} onClick={() => void useEditorStore.getState().exportPdf()} title={exportTitle} aria-label={t("editor.export")} className="ms-0.5 sm:ms-1">

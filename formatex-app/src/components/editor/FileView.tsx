@@ -4,6 +4,7 @@ import { CodeEditor } from "@/components/editor/CodeEditor"
 import { ColorPopover } from "@/components/editor/ColorPopover"
 import { EditorContextMenu } from "@/components/editor/EditorContextMenu"
 import { ConfigPanel } from "@/components/editor/ConfigPanel"
+import { PdfViewer } from "@/components/editor/PdfViewer"
 import { OptionsPopover } from "@/components/editor/OptionsPopover"
 import { OverridePopover } from "@/components/editor/OverrideInfo"
 import type { OverrideRequest } from "@/lib/editor/overrideGutter"
@@ -73,6 +74,7 @@ export function FileView() {
   const kind = fileKindOf(path)
   if (path === CONFIG_FILE && configVisual) return <ConfigPanel />
   if (kind === "image") return <ImageViewer path={path} />
+  if (kind === "pdf") return <PdfViewer key={path} path={path} />
   if (isTextKind(kind) && text !== undefined) {
     return (
       <>

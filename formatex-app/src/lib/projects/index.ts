@@ -1,8 +1,10 @@
 import defaultConfig from "../../../engine/config.toml?raw"
 import starterMain from "../../../templates/main.md?raw"
 import { isTauri } from "@/lib/platform"
+import { useLibraryStore } from "@/stores/useLibraryStore"
+import { FolderProjectFs } from "./folderProjectFs"
 import { sourceOf } from "./configSource"
-import { CONFIG_FILE, DEFAULT_MAIN_FILE } from "./paths"
+import { CONFIG_FILE, DEFAULT_MAIN_FILE, IGNORED_DIRS } from "./paths"
 import type { ProjectFs } from "./types"
 import { WebProjectFs } from "./webProjectFs"
 
@@ -13,10 +15,22 @@ export type { ProjectFs } from "./types"
 /** The default `config.toml` of a new project (the engine's own, pointing at `main.md`). */
 export const DEFAULT_CONFIG = defaultConfig
 
-/** The files of a project: real files in the app, localStorage in a browser. */
+/** The folder of the user's a project keeps its files in, registered for the native compiler too; `null` for the app's own storage. */
+export async function projectLocation(projectId: string): Promise<string | null> {
+  const location = useLibraryStore.getState().documents.find((doc) => doc.id === projectId)?.location ?? null
+  if (!location || !isTauri()) return null
+  const { invoke } = await import("@tauri-apps/api/core")
+  // The access to the folder lasts as long as the app runs, so it is asked for again each time a project is opened
+  await invoke("project_set_root", { projectId, root: location })
+  return location
+}
+
+/** The files of a project: real files in the app (in its own storage or in the folder the user chose), localStorage in a browser. */
 export async function openProjectFs(projectId: string): Promise<ProjectFs> {
   if (isTauri()) {
     const { TauriProjectFs } = await import("./tauriProjectFs")
+    const location = await projectLocation(projectId)
+    if (location) return new FolderProjectFs(new TauriProjectFs(projectId, { root: location, ignore: IGNORED_DIRS }))
     return new TauriProjectFs(projectId)
   }
   return new WebProjectFs(projectId)

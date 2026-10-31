@@ -4,22 +4,14 @@ import {
   ClipboardPaste,
   Copy,
   Download,
-  File as FileIcon,
-  FileCode,
   FilePlus,
-  FileText,
-  Folder,
-  FolderOpen,
   FolderPlus,
-  Image as ImageIcon,
   Lock,
   MoreHorizontal,
   Pencil,
   Scissors,
-  Settings2,
   Star,
   Trash2,
-  Type,
   Upload,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -28,11 +20,12 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { pickFiles } from "@/lib/files/saveFile"
-import { baseName, CODE_EXTENSIONS, CONFIG_FILE, fileKindOf, nameProblem, parentOf, type FileKind, type FsEntry } from "@/lib/projects"
+import { FileIcon } from "@/components/common/FileIcon"
+import { baseName, CODE_EXTENSIONS, CONFIG_FILE, FORMATEX_CONFIG, FORMATEX_DIR, fileKindOf, nameProblem, parentOf, type FsEntry } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 
-const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "csv", "json", "bib", "txt", "md", "toml", "typ", ...CODE_EXTENSIONS]
+const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "pdf", "csv", "json", "bib", "txt", "md", "toml", "typ", ...CODE_EXTENSIONS]
 /** What a drag carries between rows of the tree. */
 const DRAG_TYPE = "application/x-formatex-paths"
 
@@ -42,17 +35,6 @@ type Dialog =
   | { type: "rename"; entry: FsEntry }
   | { type: "delete"; paths: string[] }
   | null
-
-function iconFor(entry: FsEntry, open: boolean) {
-  if (entry.kind === "dir") return open ? FolderOpen : Folder
-  const kind: FileKind = fileKindOf(entry.path)
-  if (entry.path === CONFIG_FILE) return Settings2
-  if (kind === "image") return ImageIcon
-  if (kind === "font") return Type
-  if (kind === "code") return FileCode
-  if (kind === "markdown" || kind === "text" || kind === "typst" || kind === "toml") return FileText
-  return FileIcon
-}
 
 /**
  * The files of the project, like Overleaf's. Click opens; Ctrl / Cmd + click toggles and Shift + click selects a range.
@@ -68,7 +50,15 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   const clipboard = useEditorStore((state) => state.clipboard)
   const store = useEditorStore.getState
 
+  const projectId = useEditorStore((state) => state.projectId)
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  // Every folder starts closed when a project is opened (the folders are known only once its files are listed)
+  const closedFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (!projectId || closedFor.current === projectId || files.length === 0) return
+    closedFor.current = projectId
+    setCollapsed(new Set(files.filter((entry) => entry.kind === "dir").map((entry) => entry.path)))
+  }, [projectId, files])
   const [dialog, setDialog] = useState<Dialog>(null)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const anchor = useRef<string | null>(null)
@@ -89,11 +79,11 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   }, [dropTarget, collapsed])
 
   const visible = useMemo(
-    () => files.filter((entry) => !entry.path.split("/").slice(0, -1).some((_, index, parts) => collapsed.has(parts.slice(0, index + 1).join("/")))),
+    () => files.filter((entry) => !entry.alias && !entry.path.split("/").slice(0, -1).some((_, index, parts) => collapsed.has(parts.slice(0, index + 1).join("/")))),
     [files, collapsed]
   )
 
-  const locked = (path: string) => path === CONFIG_FILE || path === mainFile
+  const locked = (path: string) => path === CONFIG_FILE || path === FORMATEX_CONFIG || path === FORMATEX_DIR || path === mainFile
   /** Selected paths that still exist (a rename or delete may have removed some). */
   const chosen = visible.filter((entry) => selected.has(entry.path)).map((entry) => entry.path)
   /** Where a paste or an upload lands: the selected folder, else the folder of the selected file, else the root. */
@@ -217,23 +207,23 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground select-none outline-none" tabIndex={0} onKeyDown={onKeyDown}>
-      <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-sidebar-border ps-3 pe-1">
-        <span className="flex-1 truncate text-xs font-medium text-muted-foreground">
+      <div className="flex h-7 shrink-0 items-center gap-0.5 border-b border-sidebar-border ps-3 pe-1">
+        <span className="flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           {chosen.length > 1 ? t("files.selected", { count: chosen.length }) : t("editor.files")}
         </span>
-        <Button variant="ghost" size="icon-lg" onClick={() => setDialog({ type: "newFile", parent: targetFolder() })} title={t("files.newFile")} aria-label={t("files.newFile")}>
+        <Button variant="ghost" size="icon-xs" onClick={() => setDialog({ type: "newFile", parent: targetFolder() })} title={t("files.newFile")} aria-label={t("files.newFile")}>
           <FilePlus />
         </Button>
-        <Button variant="ghost" size="icon-lg" onClick={() => setDialog({ type: "newFolder", parent: targetFolder() })} title={t("files.newFolder")} aria-label={t("files.newFolder")}>
+        <Button variant="ghost" size="icon-xs" onClick={() => setDialog({ type: "newFolder", parent: targetFolder() })} title={t("files.newFolder")} aria-label={t("files.newFolder")}>
           <FolderPlus />
         </Button>
-        <Button variant="ghost" size="icon-lg" onClick={() => void upload(targetFolder())} title={t("files.upload")} aria-label={t("files.upload")}>
+        <Button variant="ghost" size="icon-xs" onClick={() => void upload(targetFolder())} title={t("files.upload")} aria-label={t("files.upload")}>
           <Upload />
         </Button>
       </div>
 
       <ul
-        className={cn("min-h-0 flex-1 overflow-y-auto py-1", dropTarget === "" && "bg-sidebar-accent/40")}
+        className={cn("min-h-0 flex-1 overflow-y-auto py-0.5", dropTarget === "" && "bg-sidebar-accent/40")}
         role="tree"
         aria-multiselectable="true"
         onDragOver={(event) => dragOver(event, "")}
@@ -247,7 +237,6 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
           const depth = entry.path.split("/").length - 1
           const isDir = entry.kind === "dir"
           const isOpen = isDir && !collapsed.has(entry.path)
-          const Icon = iconFor(entry, isOpen)
           const isMain = entry.path === mainFile
           const isSelected = selected.has(entry.path)
           const cut = clipboard?.mode === "cut" && clipboard.paths.includes(entry.path)
@@ -263,28 +252,28 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                 onDragOver={(event) => dragOver(event, rowFolder(entry))}
                 onDrop={(event) => void drop(event, rowFolder(entry))}
                 className={cn(
-                  "group flex h-9 items-center gap-1 pe-1 text-[13px] hover:bg-sidebar-accent/60",
+                  "group flex h-6 items-center gap-1 pe-1 text-xs hover:bg-sidebar-accent/60 pointer-coarse:h-9 pointer-coarse:text-[13px]",
                   isSelected && "bg-sidebar-accent text-sidebar-accent-foreground",
-                  entry.path === activePath && !isSelected && "bg-sidebar-accent/70",
+                  (entry.path === activePath || (entry.path === FORMATEX_CONFIG && activePath === CONFIG_FILE)) && !isSelected && "bg-sidebar-accent/70",
                   isDir && dropTarget === entry.path && "bg-primary/10 ring-2 ring-inset ring-ring",
                   cut && "opacity-50"
                 )}
-                style={{ paddingInlineStart: `${depth * 12 + 8}px` }}
+                style={{ paddingInlineStart: `${depth * 10 + 6}px` }}
               >
-                <button type="button" onClick={(event) => void clickRow(event, entry)} className="flex min-w-0 flex-1 items-center gap-1.5 text-start outline-none focus-visible:underline">
+                <button type="button" onClick={(event) => void clickRow(event, entry)} className="flex h-full min-w-0 flex-1 items-center gap-1 text-start outline-none focus-visible:underline">
                   {isDir ? (
-                    <ChevronRight className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", isOpen ? "rotate-90" : "rtl:rotate-180")} />
+                    <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground transition-transform", isOpen ? "rotate-90" : "rtl:rotate-180")} />
                   ) : (
-                    <span className="w-3.5 shrink-0" />
+                    <span className="w-3 shrink-0" />
                   )}
-                  <Icon className="size-4 shrink-0 text-muted-foreground" />
+                  <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
                   <span dir="auto" className="truncate">{baseName(entry.path)}</span>
                   {isMain && <Star className="size-3 shrink-0 fill-current text-muted-foreground" aria-label={t("files.main")} />}
                 </button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon-xs" className="shrink-0 text-muted-foreground" aria-label={t("files.more")}>
+                    <Button variant="ghost" size="icon-xs" className="size-5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:size-7 pointer-coarse:opacity-100" aria-label={t("files.more")}>
                       <MoreHorizontal />
                     </Button>
                   </DropdownMenuTrigger>

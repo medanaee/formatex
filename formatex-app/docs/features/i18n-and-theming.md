@@ -20,7 +20,7 @@ Add the key to **both** JSON files, then use `t("group.key")`. `t` is type-check
 
 ## Direction
 
-`applyLanguageSettings(language)` sets `<html dir>` and `<html lang>` on boot, on rehydrate and on every language change. Use logical CSS properties so the layout mirrors itself ([guidelines](../design-roles/guidelines.md)).
+`applyLanguageSettings(language)` sets `<html dir>` and `<html lang>` on boot, on rehydrate and on every language change, so in Persian the whole page mirrors. Use logical CSS properties so the layout mirrors itself ([guidelines](../design-roles/guidelines.md)). A component whose own content must never flip (the PDF viewer) sets `dir="ltr"`.
 
 ## Theme
 

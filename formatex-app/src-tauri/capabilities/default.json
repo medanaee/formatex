@@ -19,6 +19,7 @@
     "fs:allow-remove",
     "fs:allow-rename",
     "fs:allow-exists",
+    "opener:allow-reveal-item-in-dir",
     {
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://**" }, { "url": "http://**" }, { "url": "mailto:*" }]

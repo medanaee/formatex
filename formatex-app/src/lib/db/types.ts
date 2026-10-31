@@ -9,6 +9,8 @@ export interface DocumentItem {
   mainFile: string
   /** The folder of the library the project is in; none (or null) means the top level. */
   parentId?: string | null
+  /** Absolute path of the folder the project's files live in (a folder the user opened); none (or null) means the app's own storage. */
+  location?: string | null
   createdAt: number
   updatedAt: number
 }

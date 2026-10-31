@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent, type ReactNode, type RefObject } from "react"
 import { FileText, MoreVertical } from "lucide-react"
+import { StorageBadge } from "@/components/library/StorageBadge"
 import { Button } from "@/components/ui/button"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -184,8 +185,11 @@ export function ProjectCard({ doc, subtitle, actions, menuLabel, href, onTouchDr
       {href}
       <Thumbnail doc={doc} />
       <div className="min-w-0 px-3 py-2">
-        <div dir="auto" className="truncate text-[13px] font-semibold">
-          {doc.title}
+        <div className="flex items-center gap-1.5">
+          <div dir="auto" className="min-w-0 truncate text-[13px] font-semibold">
+            {doc.title}
+          </div>
+          <StorageBadge location={doc.location} />
         </div>
         <div className="text-[11px] text-muted-foreground">{subtitle}</div>
       </div>

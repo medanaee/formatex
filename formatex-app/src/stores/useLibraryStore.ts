@@ -17,11 +17,14 @@ interface LibraryState {
   /** False until the storage has been read; the boot screen keeps the app hidden until then. */
   loaded: boolean
   hydrate: (documents: DocumentItem[], folders?: FolderItem[]) => void
-  createDocument: (title: string, parentId?: string | null) => DocumentItem
+  /** `location`: the folder of the user's that holds the project's files (none: the app's own storage). */
+  createDocument: (title: string, parentId?: string | null, location?: string | null) => DocumentItem
   /** A new project record titled "<title> (copy)" next to the original; its files are copied by the caller. */
   duplicateDocument: (id: string, suffix: string) => DocumentItem | null
   renameDocument: (id: string, title: string) => void
   setMainFile: (id: string, mainFile: string) => void
+  /** Moves a project's files' home: a folder of the user's, or `null` for the app's own storage (the files are copied by the caller). */
+  setLocation: (id: string, location: string | null) => void
   /** Marks a project as changed now (a file in it was edited), so the library lists it first. */
   touch: (id: string) => void
   removeDocument: (id: string) => void
@@ -61,9 +64,9 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
 
   hydrate: (documents, folders = []) => set({ documents, folders, loaded: true }),
 
-  createDocument: (title, parentId = get().folderId) => {
+  createDocument: (title, parentId = get().folderId, location = null) => {
     const now = Date.now()
-    const doc: DocumentItem = { id: crypto.randomUUID(), title, mainFile: "main.md", parentId, createdAt: now, updatedAt: now }
+    const doc: DocumentItem = { id: crypto.randomUUID(), title, mainFile: "main.md", parentId, location, createdAt: now, updatedAt: now }
     set((state) => ({ documents: [doc, ...state.documents] }))
     return doc
   },
@@ -72,7 +75,8 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     const source = get().documents.find((doc) => doc.id === id)
     if (!source) return null
     const now = Date.now()
-    const copy: DocumentItem = { ...source, id: crypto.randomUUID(), title: `${source.title} ${suffix}`, createdAt: now, updatedAt: now }
+    // A copy is always kept in the app (copying files out of a folder must not write into the same folder)
+    const copy: DocumentItem = { ...source, id: crypto.randomUUID(), title: `${source.title} ${suffix}`, location: null, createdAt: now, updatedAt: now }
     set((state) => ({ documents: [copy, ...state.documents] }))
     return copy
   },
@@ -80,6 +84,8 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
   renameDocument: (id, title) => set((state) => ({ documents: patch(state.documents, id, { title }) })),
 
   setMainFile: (id, mainFile) => set((state) => ({ documents: patch(state.documents, id, { mainFile }) })),
+
+  setLocation: (id, location) => set((state) => ({ documents: patch(state.documents, id, { location }) })),
 
   touch: (id) => set((state) => ({ documents: patch(state.documents, id, {}) })),
 

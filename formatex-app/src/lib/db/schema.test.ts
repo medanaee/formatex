@@ -22,7 +22,8 @@ describe("runMigrations", () => {
   it("upgrades a version-1 database and keeps its documents", async () => {
     const driver = createMemoryDriver()
     await runMigrations(driver)
-    // Pretend the database is at version 1: drop what migrations 2 and 3 added, and the version
+    // Pretend the database is at version 1: drop what migrations 2 to 4 added, and the version
+    await driver.execute(`ALTER TABLE documents DROP COLUMN location`)
     await driver.execute(`ALTER TABLE documents DROP COLUMN parent_id`)
     await driver.execute(`DROP TABLE folders`)
     await driver.execute(`ALTER TABLE documents DROP COLUMN main_file`)

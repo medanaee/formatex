@@ -6,12 +6,15 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useFormFactor } from "@/hooks/useFormFactor"
+import { openProjectSettings } from "@/lib/editor/openSettings"
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
 import { stepZoom } from "@/lib/previewZoom"
 import { desktopOs } from "@/lib/platform"
+import { canUseFolders, revealFolder } from "@/lib/projects/storageMode"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
+import { useLibraryStore } from "@/stores/useLibraryStore"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
@@ -25,6 +28,8 @@ export function EditorMenus() {
   const canUndo = useEditorViewStore((state) => state.canUndo)
   const canRedo = useEditorViewStore((state) => state.canRedo)
   const exporting = useEditorStore((state) => state.exportStatus) === "working"
+  const projectId = useEditorStore((state) => state.projectId)
+  const location = useLibraryStore((state) => state.documents.find((doc) => doc.id === projectId)?.location) ?? null
   const panels = useSettingsStore((state) => state.panels)
   const setPanel = useSettingsStore((state) => state.setPanel)
   const visualEditor = useSettingsStore((state) => state.visualEditor)
@@ -44,10 +49,23 @@ export function EditorMenus() {
       <DropdownMenu>
         <DropdownMenuTrigger className={trigger}>{t("appMenu.file")}</DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-56" {...keepFocus}>
-          <DropdownMenuItem onSelect={() => useWorkspaceStore.getState().set({ settingsOpen: true })}>{t("editor.settings")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void openProjectSettings()}>{t("editor.settings")}</DropdownMenuItem>
           <DropdownMenuItem disabled={exporting} onSelect={() => void useEditorStore.getState().exportPdf()}>
             {t("editor.export")}
           </DropdownMenuItem>
+          {canUseFolders() && (
+            <>
+              <DropdownMenuSeparator />
+              {location ? (
+                <>
+                  <DropdownMenuItem onSelect={() => useWorkspaceStore.getState().set({ storageDialog: "toLocal" })}>{t("storage.menuToLocal")}</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void revealFolder(location)}>{t("storage.menuShow")}</DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem onSelect={() => useWorkspaceStore.getState().set({ storageDialog: "toFolder" })}>{t("storage.menuToFolder")}</DropdownMenuItem>
+              )}
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => void navigate({ to: "/" })}>{t("appMenu.close")}</DropdownMenuItem>
         </DropdownMenuContent>

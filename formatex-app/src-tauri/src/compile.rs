@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
 use serde::Serialize;
@@ -82,11 +82,42 @@ impl Diagnostic {
 
 type Inputs = HashMap<String, String>;
 
+/// Projects kept in a folder of the user's (project id to that folder), registered by the app with `project_set_root`.
+static ROOTS: LazyLock<Mutex<HashMap<String, PathBuf>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Tells the compiler where a project's files are: a folder the user chose (also opened for the file plugin, so the app can edit
+/// it), or `None` for the app's own storage again.
+#[tauri::command]
+pub fn project_set_root(app: AppHandle, project_id: String, root: Option<String>) -> Result<(), String> {
+    check_id(&project_id)?;
+    let mut roots = ROOTS.lock().unwrap_or_else(|e| e.into_inner());
+    match root {
+        Some(root) => {
+            let path = PathBuf::from(&root);
+            if !path.is_absolute() || !path.is_dir() {
+                return Err(format!("not a folder: {root:?}"));
+            }
+            use tauri_plugin_fs::FsExt;
+            app.fs_scope().allow_directory(&path, true).map_err(|e| e.to_string())?;
+            roots.insert(project_id, path);
+        }
+        None => {
+            roots.remove(&project_id);
+        }
+    }
+    Ok(())
+}
+
+fn check_id(project_id: &str) -> Result<(), String> {
+    let valid = !project_id.is_empty() && project_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    if valid { Ok(()) } else { Err(format!("invalid project id {project_id:?}")) }
+}
+
 /// Ids come from the app (UUIDs); refuse anything that could leave the documents folder.
 fn project_dir(engine: &Engine, project_id: &str) -> Result<PathBuf, String> {
-    let valid = !project_id.is_empty() && project_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
-    if !valid {
-        return Err(format!("invalid project id {project_id:?}"));
+    check_id(project_id)?;
+    if let Some(dir) = ROOTS.lock().unwrap_or_else(|e| e.into_inner()).get(project_id) {
+        return if dir.is_dir() { Ok(dir.clone()) } else { Err(format!("project folder not found: {}", dir.display())) };
     }
     let dir = engine.data_dir.join("documents").join(project_id);
     if dir.is_dir() { Ok(dir) } else { Err(format!("project folder not found: {project_id}")) }
@@ -187,13 +218,13 @@ fn compile(engine: &Engine, project_id: &str, main: &str, mut inputs: Inputs, ov
 
     // The kept world is rebuilt when what it was built from changed: another main file or inputs, a new component library, new fonts
     let sorted: BTreeMap<_, _> = inputs.iter().collect();
-    let key = format!("{sorted:?}|{}|{:p}", engine.components.generation(), Arc::as_ptr(&fonts));
+    let key = format!("{sorted:?}|{}|{:p}|{}", engine.components.generation(), Arc::as_ptr(&fonts), dir.display());
     let world = {
         let mut worlds = engine.worlds.lock().unwrap_or_else(|e| e.into_inner());
         match worlds.get(project_id) {
             Some((existing, world)) if *existing == key => world.clone(),
             _ => {
-                let world = Arc::new(Mutex::new(ProjectWorld::new(Some(dir), engine::ENTRY, engine.packages.clone(), fonts, engine.components.clone(), &inputs, HashMap::new())));
+                let world = Arc::new(Mutex::new(ProjectWorld::new(Some(dir.clone()), engine::ENTRY, engine.packages.clone(), fonts, engine.components.clone(), &inputs, HashMap::new())));
                 worlds.insert(project_id.to_string(), (key, world.clone()));
                 world
             }
@@ -379,6 +410,32 @@ mod tests {
         let broken = compile(&engine, "starter", "main.md", Inputs::new(), HashMap::new()).unwrap();
         assert!(broken.document.is_none());
         assert!(broken.diagnostics.iter().any(|d| d.severity == "error"));
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    /// A project kept in a folder of the user's compiles from there, with its config in `.formatex/config.toml` (and no `config.toml`).
+    #[test]
+    fn compiles_a_project_kept_in_a_folder() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-folder-{}", std::process::id()));
+        let folder = data_dir.join("my notes");
+        fs::create_dir_all(folder.join(".formatex")).unwrap();
+        fs::write(folder.join(".formatex").join("config.toml"), include_str!("../../engine/config.toml").replace("\"main.md\"", "\"notes.md\"")).unwrap();
+        fs::write(folder.join("notes.md"), "# Hello
+
+A folder project.
+").unwrap();
+
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+        ROOTS.lock().unwrap().insert("folderproject".into(), folder.clone());
+        let compiled = compile(&engine, "folderproject", "notes.md", Inputs::new(), HashMap::new()).unwrap();
+        ROOTS.lock().unwrap().remove("folderproject");
+        assert!(compiled.document.is_some(), "{:?}", compiled.diagnostics.iter().map(|d| d.message()).collect::<Vec<_>>());
         let _ = fs::remove_dir_all(data_dir);
     }
 

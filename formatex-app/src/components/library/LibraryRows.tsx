@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 import { ChevronRight, CornerLeftUp, FileText, Folder, FolderOpen, MoreVertical } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { StorageBadge } from "@/components/library/StorageBadge"
 import { Button } from "@/components/ui/button"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -116,8 +117,9 @@ function Row({ row, tree, expanded, onToggle, onOpenFolder, onOpenDoc, folderAct
             <button type="button" onClick={choose} className="flex min-w-0 flex-1 items-center gap-2 rounded py-1.5 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Icon className={cn("size-4 shrink-0", isFolder ? "text-[var(--syntax-link)]" : "text-muted-foreground")} />
               <span className="min-w-0">
-                <span dir="auto" className={cn("block truncate", isFolder && "font-semibold")}>
-                  {name}
+                <span dir="auto" className={cn("flex items-center gap-1.5 truncate", isFolder && "font-semibold")}>
+                  <span className="min-w-0 truncate">{name}</span>
+                  {!isFolder && <StorageBadge location={row.doc.location} />}
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground sm:hidden">{isFolder ? items : updated}</span>
               </span>

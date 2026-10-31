@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
-import { fileKindOf, isTextKind } from "./paths"
+import { compareEntries, fileKindOf, isTextKind, type FsEntry } from "./paths"
 
 describe("code files", () => {
   it("are shown as text, whatever the language", () => {
@@ -22,5 +22,18 @@ describe("code files", () => {
     expect(codeLanguageFor("a.py")).not.toEqual([])
     expect(codeLanguageFor("Dockerfile")).not.toEqual([])
     expect(codeLanguageFor("notes.log")).toEqual([])
+  })
+})
+
+describe("compareEntries", () => {
+  it("pins .formatex above every other folder and file", () => {
+    const entries: FsEntry[] = [
+      { path: "notes.md", kind: "file" },
+      { path: "images", kind: "dir" },
+      { path: ".formatex/config.toml", kind: "file" },
+      { path: ".formatex", kind: "dir" },
+      { path: "a", kind: "dir" },
+    ]
+    expect(entries.sort(compareEntries).map((entry) => entry.path)).toEqual([".formatex", ".formatex/config.toml", "a", "images", "notes.md"])
   })
 })

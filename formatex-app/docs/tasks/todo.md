@@ -22,7 +22,7 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] Autocomplete from `engine/tags.json`: tags, attributes, values, project files, closing tags, `{...}` options (33 tests)
 - [x] Live SVG preview with problems list (click jumps to the line), last good pages kept
 - [x] Project files: folder per project, Overleaf-style file tree, upload, rename, delete, main file, reserved engine names
-- [x] Project settings: main file + the project's `config.toml` editor, reset to default
+- [x] Project settings: the gear opens `config.toml` in the editor (the old settings dialog is gone; a key is reset with its reset button)
 - [x] PDF export through the Save dialog
 - [x] Fonts: system fonts on desktop, imported fonts (Android and any OS), Settings → Fonts
 - [x] App icons: desktop / iOS / favicon from `icon.png`, Android adaptive icon from `maskable.png` (`npm run icons`)
@@ -177,6 +177,24 @@ Update this file at the end of every session: tick what is done, add what you fo
 
 - [x] The file a project typesets is the `source` of its `config.toml`, always (`useEditorStore.resolveMain`, `configSource.ts`); the library's stored `mainFile` is only a copy. A missing `source` or a file that does not exist is an error at that line of `config.toml`, with no fallback to `main.md`; the file tree stars the file `source` names; "Set as main file", a rename or a move of the main file, and a ZIP import write the line
 - [ ] The Rust commands still take the main file as an argument (they are given what config.toml names); they could read it themselves
+
+## Folder projects (done, tests pass; not yet tried by hand in the native app)
+
+- [x] `documents.location` + `FolderProjectFs` (`.formatex/config.toml`), `project_set_root` in Rust (scope + compiler), Rust test; [ADR 0010](../decisions/0010-project-in-a-user-folder.md)
+- [x] New-project dialog: in the app / in a folder (an existing folder is opened; `.formatex` is created with the chosen main file)
+- [x] File menu: move to a folder (conflicts: replace / skip / keep both), move to the app (tick the files), show the folder; library badge; lost-folder screen
+- [ ] Watch the folder for changes made outside the app
+- [ ] Android (SAF) and web (File System Access API) folders
+- [ ] A recent-folders list / "Open folder" shortcut outside the new-project dialog
+
+## File icons (done)
+
+- [x] The file tree uses the Material Icon Theme icons (the set VS Code users know) by extension, name and folder name; only the ~70 SVGs the app needs are copied (no dependency), `.formatex` keeps the Formatex mark
+
+## PDF viewer (done, not yet tried with a real PDF in the native app)
+
+- [x] `.pdf` files open in the editor area with pdf.js (`pdfjs-dist`, loaded on demand): lazy-drawn pages, previous / next, page box, zoom, fit width
+- [ ] Text selection and search inside the PDF
 
 ## CI / release
 

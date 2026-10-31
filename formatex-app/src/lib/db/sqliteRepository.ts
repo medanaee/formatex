@@ -5,6 +5,7 @@ interface DocumentRow {
   title: string
   main_file: string
   parent_id: string | null
+  location: string | null
   created_at: number
   updated_at: number
 }
@@ -24,6 +25,7 @@ const toDocument = (row: DocumentRow): DocumentItem => ({
   title: row.title,
   mainFile: row.main_file,
   parentId: row.parent_id,
+  location: row.location,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 })
@@ -38,16 +40,16 @@ export class SqliteRepository implements Repository {
 
   async loadDocuments(): Promise<DocumentItem[]> {
     const rows = await this.driver.select<DocumentRow>(
-      `SELECT id, title, main_file, parent_id, created_at, updated_at FROM documents ORDER BY updated_at DESC`
+      `SELECT id, title, main_file, parent_id, location, created_at, updated_at FROM documents ORDER BY updated_at DESC`
     )
     return rows.map(toDocument)
   }
 
   async saveDocument(doc: DocumentItem): Promise<void> {
     await this.driver.execute(
-      `INSERT INTO documents (id, title, main_file, parent_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET title = excluded.title, main_file = excluded.main_file, parent_id = excluded.parent_id, updated_at = excluded.updated_at`,
-      [doc.id, doc.title, doc.mainFile, doc.parentId ?? null, doc.createdAt, doc.updatedAt]
+      `INSERT INTO documents (id, title, main_file, parent_id, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET title = excluded.title, main_file = excluded.main_file, parent_id = excluded.parent_id, location = excluded.location, updated_at = excluded.updated_at`,
+      [doc.id, doc.title, doc.mainFile, doc.parentId ?? null, doc.location ?? null, doc.createdAt, doc.updatedAt]
     )
   }
 

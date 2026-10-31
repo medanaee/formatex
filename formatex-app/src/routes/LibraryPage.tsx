@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
 import { ActionItems, DROP_ROOT, FolderCard, ProjectCard, useDropTarget, type DragPayload, type MenuAction } from "@/components/library/LibraryCards"
 import { LibraryRows, type LibraryRow } from "@/components/library/LibraryRows"
+import { LOCAL_CHOICE, StoragePicker, type StorageChoice } from "@/components/library/StoragePicker"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import type { DocumentItem, FolderItem } from "@/lib/db/types"
 import { saveBytes, pickFiles } from "@/lib/files/saveFile"
 import { copyProjectFiles, deleteProjectFiles, initProject, projectMainFile } from "@/lib/projects"
+import { canUseFolders, folderName, initFolderProject } from "@/lib/projects/storageMode"
 import { exportProjectZip, readProjectZip, writeImportedProject } from "@/lib/projects/zip"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import { cn } from "@/lib/utils"
@@ -40,6 +42,7 @@ export function LibraryPage() {
 
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null)
   const [name, setName] = useState("")
+  const [choice, setChoice] = useState<StorageChoice>(LOCAL_CHOICE)
   const [deleting, setDeleting] = useState<{ doc?: DocumentItem; folder?: FolderItem } | null>(null)
   /** A zip that could not be saved or read: what went wrong, shown in a dialog. */
   const [problem, setProblem] = useState<string | null>(null)
@@ -166,7 +169,7 @@ export function LibraryPage() {
   ]
 
   const backgroundActions: MenuAction[] = [
-    { key: "new", label: t("library.new"), icon: <Plus />, onSelect: () => (setName(""), setNameDialog({ kind: "document" })) },
+    { key: "new", label: t("library.new"), icon: <Plus />, onSelect: () => (setName(""), setChoice(LOCAL_CHOICE), setNameDialog({ kind: "document" })) },
     { key: "folder", label: t("library.newFolder"), icon: <FolderPlus />, onSelect: () => (setName(""), setNameDialog({ kind: "folder" })) },
     { key: "import", label: t("library.importZip"), icon: <Upload />, onSelect: () => void importZip() },
     ...(clipboard ? ["separator" as const, { key: "paste", label: t("menu.paste"), icon: <ClipboardPaste />, onSelect: paste }] : []),
@@ -184,9 +187,12 @@ export function LibraryPage() {
     } else if (dialog.kind === "rename") {
       if (value) store.renameDocument(dialog.doc.id, value)
     } else {
-      const doc = store.createDocument(value || t("library.untitled"), here)
+      const inFolder = choice.storage === "folder" && choice.folder
+      if (choice.storage === "folder" && !choice.folder) return
+      const doc = store.createDocument(value || (inFolder ? folderName(choice.folder!) : t("library.untitled")), here, inFolder ? choice.folder : null)
       try {
-        await initProject(doc.id)
+        if (inFolder) await initFolderProject(doc.id, choice.main || null)
+        else await initProject(doc.id)
       } catch (error) {
         // The editor starts an empty project from the template when it finds no files
         console.error("[formatex] could not create the project files", error)
@@ -232,7 +238,7 @@ export function LibraryPage() {
               <FolderPlus data-icon="inline-start" />
               <span className="hidden sm:inline">{t("library.newFolder")}</span>
             </Button>
-            <Button onClick={() => (setName(""), setNameDialog({ kind: "document" }))}>
+            <Button onClick={() => (setName(""), setChoice(LOCAL_CHOICE), setNameDialog({ kind: "document" }))}>
               <Plus data-icon="inline-start" />
               <span className="hidden sm:inline">{t("library.new")}</span>
               <span className="sr-only sm:hidden">{t("library.new")}</span>
@@ -325,7 +331,7 @@ export function LibraryPage() {
             <Button variant="outline" size="lg" onClick={() => setNameDialog(null)}>
               {t("common.cancel")}
             </Button>
-            <Button size="lg" onClick={() => void submitName()}>
+            <Button size="lg" disabled={nameDialog?.kind === "document" && choice.storage === "folder" && !choice.folder} onClick={() => void submitName()}>
               {nameDialog?.kind === "rename" || (nameDialog?.kind === "folder" && nameDialog.folder) ? t("common.save") : t("common.create")}
             </Button>
           </>
@@ -334,6 +340,7 @@ export function LibraryPage() {
         <div className="grid gap-2">
           <Label htmlFor="library-name">{nameDialog?.kind === "folder" ? t("library.folderName") : t("library.titleLabel")}</Label>
           <Input id="library-name" dir="auto" autoFocus value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void submitName()} className="h-10" />
+          {nameDialog?.kind === "document" && canUseFolders() && <StoragePicker value={choice} onChange={setChoice} />}
         </div>
       </ResponsiveDialog>
 

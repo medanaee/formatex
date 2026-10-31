@@ -137,13 +137,6 @@
     "dropInto": "Drop here to add to â€œ{{folder}}â€‌",
     "root": "the project"
   },
-  "projectSettings": {
-    "title": "Project settings",
-    "config": "config.toml",
-    "reset": "Reset to default",
-    "resetConfirm": "Replace config.toml with the default?",
-    "pasteHint": "Paste your config.toml here"
-  },
   "fonts": {
     "title": "Fonts",
     "import": "Import fonts",
@@ -292,6 +285,41 @@
     "selectAll": "Select all",
     "select": "Select text",
     "goToPreview": "Go to here in preview"
+  },
+  "pdf": {
+    "loading": "Loading…",
+    "failed": "This PDF could not be opened"
+  },
+  "storage": {
+    "label": "Storage",
+    "local": "In the app",
+    "folder": "In a folder",
+    "chooseFolder": "Choose a folder…",
+    "changeFolder": "Change folder",
+    "noFolder": "No folder chosen",
+    "mainFile": "Main file",
+    "newMain": "Create main.md",
+    "badge": "Kept in a folder: {{path}}",
+    "menuToFolder": "Move to a folder…",
+    "menuToLocal": "Move to the app's storage…",
+    "menuShow": "Show the folder",
+    "toFolderTitle": "Move the project to a folder",
+    "toLocalTitle": "Move the project to the app's storage",
+    "toFolderNote": "The files are copied into the folder, then the copy in the app is deleted.",
+    "toLocalNote": "Choose the files to copy. The folder itself stays as it is.",
+    "conflicts": "{{count}} files already exist in the folder",
+    "replace": "Replace",
+    "skip": "Skip",
+    "both": "Keep both",
+    "move": "Move",
+    "moving": "Moving…",
+    "configAlways": "Always copied",
+    "selectAll": "All",
+    "selectNone": "None",
+    "failed": "Could not move the project: {{message}}",
+    "missing": "The project's folder was not found: {{path}}",
+    "pickAgain": "Choose the folder again",
+    "removeFromLibrary": "Remove from the library"
   },
   "overrides": {
     "mark": "Overridden by the document",

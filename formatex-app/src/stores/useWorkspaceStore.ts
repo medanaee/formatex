@@ -8,7 +8,8 @@ interface WorkspaceState {
   filesSheet: boolean
   /** The zoom of the preview pages in percent as drawn now, whatever the mode (a fit mode is a percent too). */
   previewShown: number
-  settingsOpen: boolean
+  /** The dialog that moves the project between the storage of the app and a folder of the user. */
+  storageDialog: "toFolder" | "toLocal" | null
   set: (patch: Partial<Omit<WorkspaceState, "set">>) => void
 }
 
@@ -18,6 +19,6 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   tab: "edit",
   filesSheet: false,
   previewShown: 100,
-  settingsOpen: false,
+  storageDialog: null,
   set: (patch) => set(patch),
 }))

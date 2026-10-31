@@ -27,6 +27,8 @@ use crate::engine;
 /// - `@preview/...` paths are packages.
 struct Loader {
     project: Option<FsRoot>,
+    /// The project's folder on disk; a project kept in a folder of the user's (`.formatex/config.toml` exists) reads its `config.toml` from there.
+    root: Option<PathBuf>,
     packages: Arc<SystemPackages>,
     components: Arc<ComponentLibrary>,
     extra: Arc<Mutex<HashMap<String, Vec<u8>>>>,
@@ -55,6 +57,11 @@ impl FileLoader for Loader {
                     return engine::file(path)
                         .map(Bytes::new)
                         .ok_or_else(|| FileError::NotFound(path.into()));
+                }
+                if path == "config.toml" {
+                    if let Some(config) = self.root.as_ref().map(|root| root.join(".formatex").join("config.toml")).filter(|config| config.is_file()) {
+                        return std::fs::read(&config).map(Bytes::new).map_err(|error| FileError::from_io(error, &config));
+                    }
                 }
                 match &self.project {
                     Some(project) => project.load(id.vpath()),
@@ -98,7 +105,7 @@ impl ProjectWorld {
         Self {
             library: LazyHash::new(Library::builder().with_inputs(dict).build()),
             fonts,
-            files: FileStore::new(Loader { project: project_dir.map(FsRoot::new), packages, components, extra: extra.clone() }),
+            files: FileStore::new(Loader { project: project_dir.clone().map(FsRoot::new), root: project_dir, packages, components, extra: extra.clone() }),
             time: Time::system(),
             entry: entry.to_string(),
             extra,

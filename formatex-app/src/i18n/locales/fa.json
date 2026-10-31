@@ -137,13 +137,6 @@
     "dropInto": "اینجا رها کنید تا به «{{folder}}» اضافه شود",
     "root": "پروژه"
   },
-  "projectSettings": {
-    "title": "تنظیمات پروژه",
-    "config": "config.toml",
-    "reset": "بازگشت به پیش‌فرض",
-    "resetConfirm": "config.toml با نسخهٔ پیش‌فرض جایگزین شود؟",
-    "pasteHint": "config.toml خود را اینجا بچسبانید"
-  },
   "fonts": {
     "title": "فونت‌ها",
     "import": "افزودن فونت",
@@ -292,6 +285,41 @@
     "selectAll": "انتخاب همه",
     "select": "انتخاب متن",
     "goToPreview": "رفتن به این بخش در پیش‌نمایش"
+  },
+  "pdf": {
+    "loading": "در حال بارگذاری…",
+    "failed": "این PDF باز نشد"
+  },
+  "storage": {
+    "label": "محل ذخیره",
+    "local": "در برنامه",
+    "folder": "در یک فولدر",
+    "chooseFolder": "انتخاب فولدر…",
+    "changeFolder": "تغییر فولدر",
+    "noFolder": "فولدری انتخاب نشده",
+    "mainFile": "فایل اصلی",
+    "newMain": "ساخت main.md",
+    "badge": "در یک فولدر: {{path}}",
+    "menuToFolder": "انتقال به یک فولدر…",
+    "menuToLocal": "انتقال به حافظهٔ برنامه…",
+    "menuShow": "نمایش فولدر",
+    "toFolderTitle": "انتقال پروژه به یک فولدر",
+    "toLocalTitle": "انتقال پروژه به حافظهٔ برنامه",
+    "toFolderNote": "فایل‌ها در فولدر کپی می‌شوند و بعد نسخهٔ داخل برنامه پاک می‌شود.",
+    "toLocalNote": "فایل‌هایی را که می‌خواهی کپی شوند انتخاب کن. خود فولدر دست‌نخورده می‌ماند.",
+    "conflicts": "{{count}} فایل از قبل در فولدر هست",
+    "replace": "جایگزین",
+    "skip": "رد کردن",
+    "both": "نگه داشتن هر دو",
+    "move": "انتقال",
+    "moving": "در حال انتقال…",
+    "configAlways": "همیشه کپی می‌شود",
+    "selectAll": "همه",
+    "selectNone": "هیچ‌کدام",
+    "failed": "انتقال پروژه انجام نشد: {{message}}",
+    "missing": "فولدر پروژه پیدا نشد: {{path}}",
+    "pickAgain": "انتخاب دوبارهٔ فولدر",
+    "removeFromLibrary": "حذف از کتابخانه"
   },
   "overrides": {
     "mark": "توسط سند بازنویسی شده است",

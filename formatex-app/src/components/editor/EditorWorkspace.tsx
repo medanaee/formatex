@@ -1,12 +1,16 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { EditorToolbar, type EditorTab } from "@/components/editor/EditorToolbar"
 import { EditorSidebar } from "@/components/editor/EditorSidebar"
 import { FormatBar } from "@/components/editor/FormatBar"
 import { FileView } from "@/components/editor/FileView"
 import { PreviewPane } from "@/components/editor/PreviewPane"
-import { ProjectSettingsDialog } from "@/components/editor/ProjectSettingsDialog"
+import { StorageDialogs } from "@/components/editor/StorageDialogs"
+import { Button } from "@/components/ui/button"
 import { ResizeHandle } from "@/components/ui/resize-handle"
+import { pickFolder } from "@/lib/projects/storageMode"
+import { useLibraryStore } from "@/stores/useLibraryStore"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
@@ -27,12 +31,14 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
   const wide = formFactor === "desktop"
   const tab = useWorkspaceStore((state) => state.tab)
   const filesSheet = useWorkspaceStore((state) => state.filesSheet)
-  const settingsOpen = useWorkspaceStore((state) => state.settingsOpen)
   const panels = useSettingsStore((state) => state.panels)
   const setTab = (next: EditorTab) => useWorkspaceStore.getState().set({ tab: next })
   const setFilesSheet = (open: boolean) => useWorkspaceStore.getState().set({ filesSheet: open })
-  const setSettingsOpen = (open: boolean) => useWorkspaceStore.getState().set({ settingsOpen: open })
   const row = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  // The folder of a project kept in a folder of the user may be gone (moved, deleted, a drive that is not there)
+  const [lostFolder, setLostFolder] = useState(false)
+  const [retry, setRetry] = useState(0)
   const treeWidth = useSettingsStore((state) => state.treeWidth)
   const previewPercent = useSettingsStore((state) => state.previewPercent)
   const setTreeWidth = useSettingsStore((state) => state.setTreeWidth)
@@ -60,18 +66,54 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
 
   // The title bar shows the editor's menus and switches while this screen is up
   useEffect(() => {
-    useWorkspaceStore.getState().set({ active: true, tab: "edit", filesSheet: false, settingsOpen: false })
+    useWorkspaceStore.getState().set({ active: true, tab: "edit", filesSheet: false, storageDialog: null })
     return () => useWorkspaceStore.getState().set({ active: false })
   }, [])
 
   useEffect(() => {
-    void useEditorStore.getState().open(doc.id)
+    setLostFolder(false)
+    useEditorStore
+      .getState()
+      .open(doc.id)
+      .catch((error) => {
+        console.error("[formatex] could not open the project", error)
+        if (useLibraryStore.getState().documents.find((item) => item.id === doc.id)?.location) setLostFolder(true)
+      })
     return () => {
       void useEditorStore.getState().close()
     }
     // Only a different project reopens; a renamed title or a new main file is handled by the store
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc.id])
+  }, [doc.id, retry])
+
+  if (lostFolder) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-xs">
+        <p dir="auto">{t("storage.missing", { path: doc.location ?? "" })}</p>
+        <div className="flex gap-2">
+          <Button
+            onClick={async () => {
+              const folder = await pickFolder()
+              if (!folder) return
+              useLibraryStore.getState().setLocation(doc.id, folder)
+              setRetry((n) => n + 1)
+            }}
+          >
+            {t("storage.pickAgain")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              useLibraryStore.getState().removeDocument(doc.id)
+              void navigate({ to: "/" })
+            }}
+          >
+            {t("storage.removeFromLibrary")}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -80,7 +122,6 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
         tab={wide ? undefined : tab}
         onTabChange={wide ? undefined : setTab}
         onToggleFiles={() => setFilesSheet(true)}
-        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <div ref={row} className="flex min-h-0 flex-1">
@@ -133,7 +174,7 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
         </Sheet>
       )}
 
-      <ProjectSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <StorageDialogs />
     </div>
   )
 }

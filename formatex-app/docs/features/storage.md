@@ -13,6 +13,16 @@ Files $APPDATA/documents/<id>/   the project: config.toml, main.md, images/, ...
 localStorage formatex_app_settings  (theme, language, sidebar)
 ```
 
+## Where a project keeps its files (desktop)
+
+A project is in the app's storage (`$APPDATA/documents/<id>/`, the default) or in a folder of the user (`documents.location`, an absolute path; migration 4). Decision: [ADR 0010](../decisions/0010-project-in-a-user-folder.md).
+
+- **Folder mode:** the folder is opened like a VS Code workspace. Paths are relative to it; the project's own files live in `<folder>/.formatex/` (`config.toml`, which holds `source`, the main file). `.formatex` and its `config.toml` are shown in the file tree like any file (not deletable or renamable); clicking `.formatex/config.toml` opens the project's settings as `config.toml` (`FolderProjectFs` also lists a hidden alias entry `config.toml` for the editor). `.git` and `node_modules` are not listed.
+- **Access:** `openProjectFs(id)` calls the Rust command `project_set_root` (it registers the folder for the native compiler and adds it to the file plugin's scope for this run). If the folder is gone, the editor shows a screen with "choose the folder again" / "remove from the library".
+- **Creating:** the new-project dialog has *In the app / In a folder*. A folder that already has `.formatex/config.toml` is opened as it is; any other folder gets one (defaults, `source` = the Markdown file you pick, or a new `main.md`). Your own files are never changed.
+- **Moving (File menu):** *Move to a folder…* copies the files in (files already there: replace / skip / keep both; `config.toml` goes to `.formatex/`), then deletes the app's copy. *Move to the app's storage…* copies the files you tick (and always `config.toml`; `source` is emptied if its file is not copied) and leaves the folder as it is. The pure planning is in `lib/projects/storagePlan.ts`.
+- A duplicate of a folder project is always a project in the app. Web and Android do not offer folders yet.
+
 ## Flow
 
 1. `main.tsx` renders `<StorageBoot>`, which calls `startPersistence()`.

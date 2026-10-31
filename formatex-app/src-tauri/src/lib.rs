@@ -18,6 +18,7 @@ pub fn run() {
       compile::compile_project,
       compile::export_pdf,
       compile::project_preview,
+      compile::project_set_root,
       compile::fonts_list,
       compile::fonts_reload,
       components::components_list,

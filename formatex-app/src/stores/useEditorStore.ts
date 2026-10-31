@@ -4,6 +4,7 @@ import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { saveBytes } from "@/lib/files/saveFile"
 import {
   CONFIG_FILE,
+  FORMATEX_CONFIG,
   fileKindOf,
   initProject,
   isTextKind,
@@ -289,6 +290,8 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     },
 
     select: async (path) => {
+      // A folder project's config is listed as `.formatex/config.toml`; it is edited as `config.toml`, the one name every part of the editor knows
+      if (path === FORMATEX_CONFIG && get().files.some((file) => file.path === CONFIG_FILE && file.alias)) path = CONFIG_FILE
       if (isTextKind(fileKindOf(path))) await get().load(path)
       set({ activePath: path })
     },
