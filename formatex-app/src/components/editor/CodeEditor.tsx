@@ -18,6 +18,7 @@ import { minimap, minimapTheme } from "@/lib/editor/minimap"
 import { problemExtension, setProblems, type Problem } from "@/lib/editor/problems"
 import { stickyHeadings, stickyTheme } from "@/lib/editor/stickyHeadings"
 import { completionSource } from "@/lib/editor/completionSource"
+import { codeLanguageFor } from "@/lib/editor/codeLanguages"
 import { typstLanguage } from "@/lib/editor/typstLanguage"
 import { editorHighlighting, editorTheme } from "@/lib/editor/theme"
 import type { FileKind } from "@/lib/projects"
@@ -71,10 +72,11 @@ function publishHistory(state: EditorState): void {
   if (current.canUndo !== canUndo || current.canRedo !== canRedo) current.set({ canUndo, canRedo })
 }
 
-function languageFor(kind: FileKind): Extension {
+function languageFor(kind: FileKind, path: string): Extension {
   if (kind === "markdown") return markdown({ base: markdownLanguage })
   if (kind === "toml") return StreamLanguage.define(toml)
   if (kind === "typst") return typstLanguage
+  if (kind === "code") return codeLanguageFor(path)
   return []
 }
 
@@ -106,7 +108,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   const liveExtension = (fileKind: FileKind, on: boolean): Extension =>
     on && fileKind === "markdown" ? livePreview(() => latest.current.schema, (request) => latest.current.onConfigure?.(request), frontMatterMount) : []
 
-  const createState = (doc: string, fileKind: FileKind) =>
+  const createState = (doc: string, fileKind: FileKind, filePath: string) =>
     EditorState.create({
       doc,
       extensions: [
@@ -119,7 +121,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         dir.of(dirExtension(direction, fileKind)),
         EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
         placeholder ? placeholderExtension(placeholder) : [],
-        languageFor(fileKind),
+        languageFor(fileKind, filePath),
         live.of(liveExtension(fileKind, visual)),
         colorSwatches((request) => latest.current.onPickColor?.(request)),
         // The headings above the first visible line stay pinned, and the whole text is a miniature at the side
@@ -174,7 +176,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
 
   // Create the view once
   useEffect(() => {
-    const editor = new EditorView({ state: createState(value, kind), parent: host.current! })
+    const editor = new EditorView({ state: createState(value, kind, path), parent: host.current! })
     view.current = editor
     if (latest.current.primary) {
       useEditorViewStore.getState().set({ view: editor })
@@ -206,7 +208,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     if (!editor || current.current.path === path) return
     states.current.set(current.current.path, editor.state)
     current.current = { path, kind }
-    editor.setState(states.current.get(path) ?? createState(value, kind))
+    editor.setState(states.current.get(path) ?? createState(value, kind, path))
     editor.dispatch({ effects: [live.reconfigure(liveExtension(kind, visual)), dir.reconfigure(dirExtension(direction, kind))] })
     if (latest.current.primary) publishHistory(editor.state)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a different file replaces the state

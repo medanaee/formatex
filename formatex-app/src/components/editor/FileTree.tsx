@@ -5,6 +5,7 @@ import {
   Copy,
   Download,
   File as FileIcon,
+  FileCode,
   FilePlus,
   FileText,
   Folder,
@@ -27,11 +28,11 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { pickFiles } from "@/lib/files/saveFile"
-import { baseName, CONFIG_FILE, fileKindOf, nameProblem, parentOf, type FileKind, type FsEntry } from "@/lib/projects"
+import { baseName, CODE_EXTENSIONS, CONFIG_FILE, fileKindOf, nameProblem, parentOf, type FileKind, type FsEntry } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 
-const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "csv", "json", "bib", "txt", "md", "toml", "typ"]
+const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "csv", "json", "bib", "txt", "md", "toml", "typ", ...CODE_EXTENSIONS]
 /** What a drag carries between rows of the tree. */
 const DRAG_TYPE = "application/x-formatex-paths"
 
@@ -48,6 +49,7 @@ function iconFor(entry: FsEntry, open: boolean) {
   if (entry.path === CONFIG_FILE) return Settings2
   if (kind === "image") return ImageIcon
   if (kind === "font") return Type
+  if (kind === "code") return FileCode
   if (kind === "markdown" || kind === "text" || kind === "typst" || kind === "toml") return FileText
   return FileIcon
 }
