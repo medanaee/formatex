@@ -91,6 +91,14 @@ The engine's code does not read this schema: it documents the settings. When the
 - **Direction button** in the format bar (after undo / redo): cycles **A** (automatic: every line follows its own first letter, so Persian and English lines both read correctly), **RTL** and **LTR** (the whole editor, gutter included, is forced to that direction). Remembered; applies to every text file.
 - **Font:** a monospace Latin font first (`ui-monospace`, Cascadia Mono, Menlo, Consolas), then **Vazir Code** (bundled, public domain; [`src/assets/fonts`](../../src/assets/fonts)). The browser takes each character from the first font that has its glyph, so Latin comes from the monospace font and Persian (and any other character it lacks) from Vazir Code.
 
+## Source to preview
+
+Decision: [ADR 0008](../decisions/0008-source-to-preview-mapping.md). Logic: [`previewLookup.ts`](../../src/lib/editor/previewLookup.ts) (`previewPlaceOf`, tested), [`followTyping.ts`](../../src/lib/editor/followTyping.ts), [`usePreviewScrollStore`](../../src/stores/usePreviewScrollStore.ts).
+
+- **Follow typing:** once the pages rebuilt after an edit arrive, the preview scrolls to the cursor's line (unless that is already in the middle part of the pane). It does not move while a build runs. Scrolling the preview by hand (wheel, touch, scrollbar) pauses it for 4 seconds. The locate button in the preview bar turns it off and on (remembered; on by default). It works for Markdown files, including files brought in with `<include>`.
+- **Go to here in preview** (last item of a Markdown file's right-click menu): scrolls the preview to the place of the press and marks the line for a moment. It brings the preview up first when it is hidden (a hidden panel on desktop, the Preview tab on a narrow screen). Disabled while there are no pages.
+- **Exact to the block:** the engine marks the start of every block of the source (`--input markers=1`, set by the preview only) and the compiler reports where each marker landed ([ADR 0009](../decisions/0009-exact-source-mapping.md)). A source line goes to the marker above it, a click on the preview to the marker above the click, so identical paragraphs and `<include>`d files are told apart; a click opens the right file. Inside the block the text search finds the row and, for a click, the word (the cursor goes to the start of the clicked word, even in a long paragraph that is one line of the source). Logic: [`markerLookup.ts`](../../src/lib/editor/markerLookup.ts) (tested), with [`previewLookup.ts`](../../src/lib/editor/previewLookup.ts) and [`sourceLookup.ts`](../../src/lib/editor/sourceLookup.ts) as the search; with no markers the search over the whole document answers (ADR 0008).
+
 ## Saving and compiling
 
 1. Typing updates the store at once; a **400 ms pause** writes the file (`ProjectFs.writeText`).

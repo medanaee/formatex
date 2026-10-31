@@ -16,4 +16,4 @@
 #let marked-front = marked-source.match(front-matter-regex)
 #let source-body = expand-includes(if marked-front == none { marked-source } else { marked-source.slice(marked-front.end) }, (source-path,), mark: mark)
 
-#cmarker.render(preprocess(source-body), math: mitex, scope: (image: (source, ..args) => image(source, ..args), make-heading-numbering: make-heading-numbering, check-label: check-label) + scope-extras, html: html-tags)
+#cmarker.render(preprocess(source-body), math: mitex, scope: (image: (source, ..args) => image(source, ..args), make-heading-numbering: make-heading-numbering, check-label: check-label, fx-mark: fx-mark) + scope-extras, html: html-tags)

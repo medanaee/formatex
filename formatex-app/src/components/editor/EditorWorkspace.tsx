@@ -12,6 +12,7 @@ import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import type { DocumentItem } from "@/lib/db/types"
+import { startFollowingTyping } from "@/lib/editor/followTyping"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 
@@ -53,6 +54,9 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
   useEffect(() => {
     if (reveal) setTab("edit")
   }, [reveal])
+
+  // The preview follows the text being edited
+  useEffect(() => startFollowingTyping(), [])
 
   // The title bar shows the editor's menus and switches while this screen is up
   useEffect(() => {

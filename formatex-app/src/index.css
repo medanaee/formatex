@@ -196,3 +196,17 @@
 @utility pe-safe {
   padding-inline-end: env(safe-area-inset-right, 0px);
 }
+
+/* The mark on the place "Go to here in preview" shows: it stays a moment, then fades */
+@keyframes preview-flash {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.preview-flash {
+  animation: preview-flash 1.6s ease-out forwards;
+}

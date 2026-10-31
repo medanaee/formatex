@@ -23,7 +23,7 @@ use typst_svg::SvgOptions;
 use crate::components::ComponentLibrary;
 use crate::engine;
 use crate::fonts::{FamilyInfo, FontService};
-use crate::links::{self, PageMap};
+use crate::links::{self, Marker, PageMap};
 use crate::world::ProjectWorld;
 
 /// Everything the commands share; created once at startup.
@@ -64,6 +64,8 @@ pub struct CompileOutput {
     /// Every page in order; empty when the compilation failed.
     pages: Vec<PageOutput>,
     diagnostics: Vec<Diagnostic>,
+    /// Where each block of the source starts on the pages; empty unless the build was asked for `markers=1`.
+    markers: Vec<Marker>,
     ok: bool,
     elapsed_ms: u128,
 }
@@ -248,9 +250,11 @@ pub async fn compile_project(
                     .collect()
             })
             .unwrap_or_default();
+        let markers = compiled.document.as_ref().map(links::markers).unwrap_or_default();
         Ok(CompileOutput {
             ok: compiled.document.is_some(),
             pages,
+            markers,
             diagnostics: compiled.diagnostics,
             elapsed_ms: started.elapsed().as_millis(),
         })
@@ -375,6 +379,161 @@ mod tests {
         let broken = compile(&engine, "starter", "main.md", Inputs::new(), HashMap::new()).unwrap();
         assert!(broken.document.is_none());
         assert!(broken.diagnostics.iter().any(|d| d.severity == "error"));
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    /// With `markers=1` every block of the Markdown (and of an included file) reports where it starts on the pages; without it
+    /// there are none, and the pages are the same.
+    #[test]
+    fn reports_where_the_blocks_of_the_source_start() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-markers-{}", std::process::id()));
+        let project = data_dir.join("documents").join("marked");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        let repeated = (0..4).map(|_| "October
+
+").collect::<String>();
+        fs::write(project.join("part.md"), "Included text
+").unwrap();
+        fs::write(project.join("main.md"), format!("{repeated}<pagebreak>
+
+{repeated}- one
+- two
+
+<include src=\"part.md\">
+")).unwrap();
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+        let built = |inputs: Inputs| {
+            let compiled = compile(&engine, "marked", "main.md", inputs, HashMap::new()).unwrap();
+            let problems: Vec<String> = compiled.diagnostics.iter().filter(|d| d.is_error()).map(|d| d.message().to_string()).collect();
+            compiled.document.unwrap_or_else(|| panic!("does not compile: {problems:?}"))
+        };
+        let plain = built(Inputs::new());
+        assert!(links::markers(&plain).is_empty());
+        let inputs: Inputs = [("markers".to_string(), "1".to_string())].into();
+        let marked = built(inputs);
+        assert_eq!(plain.pages().len(), marked.pages().len());
+        let found = links::markers(&marked);
+        let lines: Vec<(String, usize, usize)> = found.iter().map(|m| (m.file.clone(), m.line, m.page)).collect();
+        // The eight identical paragraphs have a marker each, the ones after the page break are on the next page
+        assert_eq!(lines.iter().filter(|(f, l, p)| f == "main.md" && *l <= 7 && *p == 1 && *l % 2 == 1).count(), 4, "{lines:?}");
+        assert!(lines.iter().any(|(f, l, p)| f == "main.md" && *l == 11 && *p == 2), "{lines:?}");
+        assert!(lines.iter().any(|(f, _, _)| f == "part.md"), "{lines:?}");
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    /// A list item that wraps over several lines is marked where it starts, not where its text ends: the marker of each item is at
+    /// the height of the first line of that item.
+    #[test]
+    fn marks_a_wrapped_list_item_at_its_top() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-list-{}", std::process::id()));
+        let project = data_dir.join("documents").join("lists");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        let long = "word ".repeat(45);
+        let items: String = (1..=3).map(|i| format!("- Item{i} start {long}end
+")).collect();
+        let loose: String = (1..=3).map(|i| format!("{i}. Loose{i} start {long}end
+
+")).collect();
+        fs::write(project.join("main.md"), format!("Intro paragraph.
+
+{items}
+{loose}")).unwrap();
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+        let inputs: Inputs = [("markers".to_string(), "1".to_string())].into();
+        let compiled = compile(&engine, "lists", "main.md", inputs, HashMap::new()).unwrap();
+        let document = compiled.document.expect("compiles");
+        let found = links::markers(&document);
+        let page = serde_json::to_value(links::map_page(&document, &document.pages()[0])).unwrap();
+        let runs = page["texts"].as_array().unwrap();
+        // A text run's box starts 0.85 em above its baseline and is 1.25 em high, so its baseline is at 0.68 of its height
+        let baselines: Vec<f64> = runs.iter().map(|r| r["y"].as_f64().unwrap() + 0.68 * r["h"].as_f64().unwrap()).collect();
+        for marker in &found {
+            if (5..=14).contains(&marker.line) {
+                // A list item's marker is on the baseline of the item's first row (the middle of the row's runs lies above it)
+                assert!(baselines.iter().any(|b| (b - marker.y).abs() < 1.0), "item at line {}: marker y {} is not on a baseline", marker.line, marker.y);
+            } else {
+                // The marker of another block is at the top of the block: never below the first row of its text
+                assert!(baselines.iter().any(|b| *b >= marker.y - 1.5 && *b - marker.y < 25.0), "block at line {}: marker y {} has no text just under it", marker.line, marker.y);
+            }
+        }
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    /// Where a marker lies against the text runs of its row: a list item's on the baseline, a block's above its first row. The lookups in
+    /// `markerLookup.ts` rely on it (a regression test there holds the numbers measured from this document).
+    #[test]
+    fn markers_lie_on_the_baseline_or_above_the_text() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-measure-{}", std::process::id()));
+        let project = data_dir.join("documents").join("m");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        let list = "1. WBS چیست و با یک لیست ساده‌ی کارها چه فرقی دارد؟
+2. تفاوت Activity، Summary Task و Milestone؟
+3. چرا Milestone مدت ندارد؟
+4. چهار نوع وابستگی را نام ببرید. کدام پرکاربردتر است؟
+5. Duration و Effort چه فرقی دارند؟ مثال بزنید.
+6. مسیر بحرانی چیست؟ آیا همیشه «مهم‌ترین کارها» هستند؟
+7. Total Slack و Free Slack را تعریف کنید.
+8. چرا ۴۴ ساعت در تنظیمات مهم است؟ اگر کسی ۵۵ ساعت کار کند، Overallocation چند درصد است؟
+9. تفاوت WBS در روش Predictive و Agile؟
+10. چرا در WBS این پروژه «Testing» قبل از «Pilot» می‌آید؟
+";
+        let other = "# عنوان اصلی
+
+یک پاراگراف فارسی ساده.
+
+> نقل قول فارسی
+
+- مورد اول
+  - زیرمورد الف
+  - زیرمورد ب
+- مورد دوم
+
+| ستون | مقدار |
+|---|---|
+| سطر یک | ۱ |
+| سطر دو | ۲ |
+
+پایان.
+";
+        fs::write(project.join("main.md"), format!("# Title
+
+Intro paragraph here.
+
+{list}
+{other}")).unwrap();
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+        let inputs: Inputs = [("markers".to_string(), "1".to_string())].into();
+        let document = compile(&engine, "m", "main.md", inputs, HashMap::new()).unwrap().document.expect("compiles");
+        let found = links::markers(&document);
+        let page = serde_json::to_value(links::map_page(&document, &document.pages()[0])).unwrap();
+        let runs = page["texts"].as_array().unwrap();
+        for marker in &found {
+            println!("MARKER line {:>2} page {} x {:>7.2} y {:>7.2}", marker.line, marker.page, marker.x, marker.y);
+        }
+        for run in runs {
+            println!("RUN y {:>7.2} h {:>5.2} x {:>7.2} w {:>7.2} {}", run["y"].as_f64().unwrap(), run["h"].as_f64().unwrap(), run["x"].as_f64().unwrap(), run["w"].as_f64().unwrap(), run["text"].as_str().unwrap().chars().take(24).collect::<String>());
+        }
         let _ = fs::remove_dir_all(data_dir);
     }
 

@@ -47,7 +47,7 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 `useFormFactor` (phone / tablet / desktop), `useIsPortrait`.
 
 ### `src/stores/`
-`useSettingsStore` (theme, language, sidebar; persisted), `useLibraryStore` (projects in memory), `useEditorStore` (the open project: files, buffers, autosave, compile, export, problems), `useComponentsStore` (the component library screen), `useSchemaStore` (the tags autocomplete knows).
+`useSettingsStore` (theme, language, sidebar; persisted), `useLibraryStore` (projects in memory), `useEditorStore` (the open project: files, buffers, autosave, compile, export, problems), `useComponentsStore` (the component library screen), `useSchemaStore` (the tags autocomplete knows), `usePreviewScrollStore` (the place the preview is asked to show; last manual scroll).
 
 ### `src/lib/`
 | Path | What |
@@ -60,8 +60,8 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `androidBack.ts` | Android back button handling. |
 | `safeStorage.ts`, `persistedSettings.ts` | Never-throwing localStorage for zustand persist; early read of saved settings. |
 | `utils.ts` | `cn()`. |
-| `editor/` | `configCompletion.ts` (autocomplete for config.toml and the front matter), `livePreview.ts` (the visual view: decorations and widgets), `tagSyntax.ts` (read / write tag and `{...}` attributes), `applyOptions.ts` (the edit a popover change makes), `markdownTable.ts`, `format.ts` (format bar commands), `insertTag.ts`, `tagIcons.ts`, `typstLanguage.ts` (light Typst highlighter), `schema.ts` (types + `engine/tags.json`), `completion.ts` (pure autocomplete), `completionSource.ts` (CodeMirror adapter), `theme.ts` (editor look from CSS variables). |
-| `projects/` | `ProjectFs` (`types.ts`), `tauriProjectFs.ts`, `webProjectFs.ts`, `paths.ts` (names, kinds, reserved paths), `index.ts` (`openProjectFs`, `initProject`, `deleteProjectFiles`, default config). |
+| `editor/` | `configCompletion.ts` (autocomplete for config.toml and the front matter), `livePreview.ts` (the visual view: decorations and widgets), `tagSyntax.ts` (read / write tag and `{...}` attributes), `applyOptions.ts` (the edit a popover change makes), `markdownTable.ts`, `format.ts` (format bar commands), `insertTag.ts`, `tagIcons.ts`, `typstLanguage.ts` (light Typst highlighter), `schema.ts` (types + `engine/tags.json`), `completion.ts` (pure autocomplete), `completionSource.ts` (CodeMirror adapter), `theme.ts` (editor look from CSS variables), `sourceLookup.ts` (click on a page → source line), `previewLookup.ts` (source line → place on a page), `followTyping.ts` (the preview follows the edit), `markerLookup.ts` (exact block mapping from the engine's markers), `previewPlace.ts` (markers first, text search as fallback). |
+| `projects/` | `ProjectFs` (`types.ts`), `tauriProjectFs.ts`, `webProjectFs.ts`, `paths.ts` (names, kinds incl. `code` files such as `.py`, reserved paths; their colors come from `src/lib/editor/codeLanguages.ts`), `index.ts` (`openProjectFs`, `initProject`, `deleteProjectFiles`, default config). |
 | `components/` | `api.ts` (the component commands; `componentsApi`), `template.ts` (name rule, new-component source), `webComponents.ts` (browser fallback). |
 | `compiler/` | `compileProject`, `exportPdf`, `listFonts`, `reloadFonts` over Tauri `invoke`; `CompilerUnavailableError` in a browser. |
 | `files/` | `saveFile.ts` (Save dialog / download, file picker), `fonts.ts` (import / remove fonts). |

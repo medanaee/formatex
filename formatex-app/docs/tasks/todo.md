@@ -112,6 +112,17 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [ ] Click-to-source is heuristic (text search); check long documents and repeated phrases
 - [ ] The minimap and sticky headings are not adapted for RTL scrollbars on every platform
 
+## Source to preview (done, not yet tested by hand in the native app)
+
+- [x] Preview follows the typing: after the build that follows an edit it scrolls to the cursor's line; waits out builds, pauses 4 s after a manual scroll, toggle in the preview bar (`previewFollow`) ([ADR 0008](../decisions/0008-source-to-preview-mapping.md), `previewLookup.ts`, `followTyping.ts`, 11 tests)
+- [x] Editor menu: **Go to here in preview** (scrolls and marks the line; brings the preview up on a narrow screen or when its panel is hidden)
+- [ ] Heuristic (text search): check long documents, repeated phrases, tables and figures in the native app; text that Typst changes (numbering, hyphenation across runs) does not match
+- [ ] A line with no words (image, bare tag) goes to the nearest line with text; the engine could carry Markdown positions to the layout for an exact mapping
+- [x] Exact mapping to the block, both directions ([ADR 0009](../decisions/0009-exact-source-mapping.md) stage 1): invisible `fx-mark` markers from `mark-lines.typ` (preview builds only), reported by `links.rs`, used by `markerLookup.ts` for the menu, following and clicks (a click opens the right `<include>`d file); text search only inside the block. Layout checked on `doc_en.md` / `doc_fa.md` with and without markers
+- [x] A click on the preview goes to the clicked word inside a paragraph (column from the x inside the run, reversed for RTL; `sourcePlaceAt`, `normalizeWithMap`); exact words from glyph advances in `links.rs` are not done
+- [ ] Try the markers by hand in `tauri:dev` on a long multi-file document (click, right-click menu, typing); look for blocks without markers (tables inside tags, nested lists, `<steps>` and other components) and for a layout change in a component of the library
+- [ ] ADR 0009 stage 2: a source map in the Markdown to Typst conversion (cmarker returns only a string that is `eval`ed, so it cannot carry positions; it would have to be forked or replaced)
+
 ## Library round (done, not yet tested in the native app)
 
 - [x] Own context menus everywhere (editor, library cards, text fields); the browser menu never shows (`TextFieldMenu`, `EditorContextMenu`, `ui/context-menu.tsx`)
@@ -146,6 +157,11 @@ Update this file at the end of every session: tick what is done, add what you fo
 
 - [x] Tables of the visual editor are edited in place (`tableEditor.ts`): type in a cell, Tab / Enter move, Tab in the last cell adds a row, a bar adds / removes rows and columns at the cell, plus strips after the last row and column; every change is written back as an aligned GFM table (`markdownTable.ts`)
 - [ ] Not tried by touch; `contenteditable="plaintext-only"` needs a current WebView (Chrome 105+)
+
+## Code files in the project (done, not yet tried in the native app)
+
+- [x] `.py` and other source files (`CODE_EXTENSIONS` in `paths.ts`: Python, JS / TS, C family, Java, Go, Rust, shell, SQL, CSS, XML, and more, plus `Dockerfile` / `Makefile`) are file kind `code`: listed with a code icon, opened as text in the editor (always left-to-right) with that language's colors from `@codemirror/legacy-modes` (`codeLanguages.ts`), uploadable, and kept as text in ZIP import
+- [ ] Languages without a mode there (for example `.php`, `.vb`, `.asm`, `.tex`, `.log`, `.bat`) open as plain text
 
 ## CI / release
 

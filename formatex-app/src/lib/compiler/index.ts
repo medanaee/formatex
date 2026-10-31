@@ -49,10 +49,24 @@ export interface CompiledPage {
   map: PageMap | null
 }
 
+/** Where a block of the Markdown starts on the pages (the engine's invisible marker): its file and line, and its place on a page. */
+export interface SourceMarker {
+  file: string
+  /** 1-based. */
+  line: number
+  /** 1-based. */
+  page: number
+  /** Points from the page's top start corner, like the boxes of a `PageMap`. */
+  x: number
+  y: number
+}
+
 export interface CompileOutput {
   /** Every page in order; empty when the compilation failed. */
   pages: CompiledPage[]
   diagnostics: Diagnostic[]
+  /** The blocks of the source in document order; empty for an engine that does not mark them. */
+  markers: SourceMarker[]
   ok: boolean
   elapsedMs: number
 }
@@ -70,6 +84,7 @@ export const compilerAvailable = (): boolean => isTauri()
 interface RawOutput {
   pages: CompiledPage[]
   diagnostics: Diagnostic[]
+  markers?: SourceMarker[]
   ok: boolean
   elapsed_ms: number
 }
@@ -99,8 +114,9 @@ export async function compileProject(
   main: string,
   options: { inputs?: Record<string, string>; /** Unsaved text by path, used instead of the files on disk. */ overrides?: Record<string, string>; /** Hashes of the pages already shown, by index: those pages are not sent again. */ known?: string[] } = {}
 ): Promise<CompileOutput> {
-  const raw = await invoke<RawOutput>("compile_project", { projectId, main, ...options })
-  return { pages: raw.pages, diagnostics: raw.diagnostics, ok: raw.ok, elapsedMs: raw.elapsed_ms }
+  // The preview asks the engine to mark where each block of the source starts (a PDF export does not)
+  const raw = await invoke<RawOutput>("compile_project", { projectId, main, ...options, inputs: { markers: "1", ...options.inputs } })
+  return { pages: raw.pages, diagnostics: raw.diagnostics, markers: raw.markers ?? [], ok: raw.ok, elapsedMs: raw.elapsed_ms }
 }
 
 /** The first page of a project as SVG text (a card of the library); `null` when it does not compile. */

@@ -280,7 +280,8 @@
     "copy": "Copy",
     "paste": "Paste",
     "selectAll": "Select all",
-    "select": "Select text"
+    "select": "Select text",
+    "goToPreview": "Go to here in preview"
   },
   "frontMatter": {
     "title": "Document settings",
@@ -321,6 +322,7 @@
     "page": "Page number",
     "fitWidth": "Fit width",
     "fitPage": "Fit page",
-    "zoom": "Zoom"
+    "zoom": "Zoom",
+    "follow": "Follow the text you edit"
   }
 }

@@ -43,6 +43,9 @@ interface SettingsState {
   /** Zoom of the preview pages in percent; 100 fits the width of the pane. */
   previewZoom: PreviewZoom
   setPreviewZoom: (zoom: PreviewZoom) => void
+  /** The preview scrolls to the text being edited once it has been rebuilt. */
+  previewFollow: boolean
+  setPreviewFollow: (follow: boolean) => void
   /** The document themes the user made: available in every project. */
   customThemes: Record<string, CustomTheme>
   setCustomThemes: (themes: Record<string, CustomTheme>) => void
@@ -81,6 +84,8 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       previewZoom: 100,
       setPreviewZoom: (zoom) => set({ previewZoom: typeof zoom === "number" ? Math.round(Math.min(Math.max(zoom, 30), 400)) : zoom }),
+      previewFollow: true,
+      setPreviewFollow: (previewFollow) => set({ previewFollow }),
       customThemes: {},
       setCustomThemes: (customThemes) => set({ customThemes }),
       settingsSection: "appearance",

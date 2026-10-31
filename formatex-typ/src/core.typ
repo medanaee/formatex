@@ -79,7 +79,8 @@
 // A path starting with ./ or ../ is relative to the file that contains the include; any other path is
 // relative to the project root (like images). An included file's front matter is dropped:
 // only the main file's settings count. Lines inside fenced code blocks are left alone.
-#let include-line = regex("^\s{0,3}<include\s+src=\"([^\"]+)\"\s*/?>(?:\s*</include>)?\s*\r?$")
+// `mark-lines` has put its `_at="file:line"` after the tag name by then.
+#let include-line = regex("^\s{0,3}<include(?:\s+_at=\"[^\"]*\")?\s+src=\"([^\"]+)\"\s*/?>(?:\s*</include>)?\s*\r?$")
 #let resolve-include(path, from) = {
   if not (path.starts-with("./") or path.starts-with("../")) { return path }
   let parts = from.split("/").slice(0, -1)
@@ -149,6 +150,10 @@
   assert(found > 0, message: at-prefix(at) + "no element with id " + repr(id))
   assert(found == 1, message: at-prefix(at) + "id " + repr(id) + " is defined " + str(found) + " times, so [text](#" + id + ") cannot pick one; write <a href=\"#" + id + "\">text</a> or give one of them another id")
 }
+
+// Where a block of the user's text starts, for the app's preview (`sys.inputs.markers`, see src/preprocess/mark-lines.typ): invisible,
+// and found again by its label with its place on the page.
+#let fx-mark(at) = [#metadata((fx: at))<fx-mark>]
 
 // `mark` is applied to the text of every included file as it is read (the main file is marked by the caller).
 #let expand-includes(text, chain, mark: (text, path) => text) = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, Minus, Plus } from "lucide-react"
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, LocateFixed, Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -8,12 +8,14 @@ import { stepZoom, ZOOM_PRESETS } from "@/lib/previewZoom"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import type { Diagnostic, PageLink, PageMap } from "@/lib/compiler"
-import { sourceLineAt } from "@/lib/editor/sourceLookup"
+import { lineFromMarker, markerAt } from "@/lib/editor/markerLookup"
+import { sourcePlaceAt } from "@/lib/editor/sourceLookup"
 import { isTauri } from "@/lib/platform"
 import { CONFIG_FILE } from "@/lib/projects"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
+import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 
 interface PageImage {
   url: string
@@ -91,18 +93,34 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     box.scrollTo({ top: box.scrollTop + target.getBoundingClientRect().top - box.getBoundingClientRect().top + inPage - 16, behavior: "smooth" })
   }
 
-  const jumpToSource = (event: MouseEvent<HTMLDivElement>, index: number) => {
+  const jumpToSource = async (event: MouseEvent<HTMLDivElement>, index: number) => {
     const map = pages[index]?.map
-    const { mainFile, texts } = useEditorStore.getState()
-    const source = texts[mainFile]
-    if (!map || source === undefined) return
+    if (!map) return
     const rect = event.currentTarget.getBoundingClientRect()
-    const line = sourceLineAt(source, pages.map((page) => page.map), index, ((event.clientX - rect.left) / rect.width) * map.width, ((event.clientY - rect.top) / rect.height) * map.height)
-    if (line === null) return
-    void useEditorStore.getState().revealAt(mainFile, line, 1)
+    const x = ((event.clientX - rect.left) / rect.width) * map.width
+    const y = ((event.clientY - rect.top) / rect.height) * map.height
+    const store = useEditorStore.getState()
+    const maps = pages.map((page) => page.map)
+    // The block the click is in comes from the engine's markers (any file of the project); the text search only finds the row in it
+    const marker = markerAt(store.markers, index, x, y, maps)
+    if (marker) {
+      const source = await store.load(marker.file).catch(() => undefined)
+      const place = source === undefined ? { line: marker.line, column: 1 } : lineFromMarker(store.markers, maps, marker, source, index, x, y)
+      void store.revealAt(marker.file, place.line, place.column)
+      onJumpToSource?.()
+      return
+    }
+    // A build without markers: the text search over the whole document, in the main file
+    const source = store.texts[store.mainFile]
+    if (source === undefined) return
+    const place = sourcePlaceAt(source, maps, index, x, y)
+    if (place === null) return
+    void store.revealAt(store.mainFile, place.line, place.column)
     onJumpToSource?.()
   }
 
+  const follow = useSettingsStore((state) => state.previewFollow)
+  const setFollow = useSettingsStore((state) => state.setPreviewFollow)
   const zoom = useSettingsStore((state) => state.previewZoom)
   const setZoom = useSettingsStore((state) => state.setPreviewZoom)
   const [current, setCurrent] = useState(1)
@@ -147,17 +165,48 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
   }
   const shownPage = Math.min(current, Math.max(pages.length, 1))
 
+  // A place the editor asked for (following the typing, or "Go to here in preview"): scrolled to unless it is already well in view
+  const target = usePreviewScrollStore((state) => state.target)
+  const applied = useRef(0)
+  useEffect(() => {
+    const box = scroller.current
+    const el = target ? pageEls.current[target.page] : null
+    const map = target ? pages[target.page]?.map : null
+    // A hidden pane has no size yet: the request waits until it has
+    if (!target || target.id === applied.current || !box || box.clientHeight === 0 || !el || !map) return
+    applied.current = target.id
+    const rect = el.getBoundingClientRect()
+    const scale = rect.height / map.height
+    const top = rect.top - box.getBoundingClientRect().top + target.y * scale
+    const bottom = top + Math.max(target.h * scale, 14)
+    if (top < box.clientHeight * 0.15 || bottom > box.clientHeight * 0.8) box.scrollTo({ top: box.scrollTop + top - box.clientHeight / 3, behavior: "smooth" })
+  }, [target, pages, size.w, size.h])
+
   // Ctrl + wheel (and a pinch on a touchpad) zooms the pages, not the whole window
   useEffect(() => {
     const box = scroller.current
     if (!box) return
     const onWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) return
+      if (!event.ctrlKey) {
+        usePreviewScrollStore.getState().manualScroll()
+        return
+      }
       event.preventDefault()
       stepZoom(event.deltaY < 0 ? 1 : -1)
     }
+    // Scrolling by hand: the wheel, a finger, or dragging the scrollbar (a press on the pane itself, not on a page)
+    const onTouch = () => usePreviewScrollStore.getState().manualScroll()
+    const onPress = (event: PointerEvent) => {
+      if (event.target === box) usePreviewScrollStore.getState().manualScroll()
+    }
     box.addEventListener("wheel", onWheel, { passive: false })
-    return () => box.removeEventListener("wheel", onWheel)
+    box.addEventListener("touchmove", onTouch, { passive: true })
+    box.addEventListener("pointerdown", onPress)
+    return () => {
+      box.removeEventListener("wheel", onWheel)
+      box.removeEventListener("touchmove", onTouch)
+      box.removeEventListener("pointerdown", onPress)
+    }
   }, [])
 
   const [open, setOpen] = useState(false)
@@ -201,6 +250,9 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
           <ChevronDown />
         </Button>
         <span className="flex-1" />
+        <Button variant={follow ? "secondary" : "ghost"} size="icon-xs" aria-pressed={follow} onClick={() => setFollow(!follow)} title={t("preview.follow")} aria-label={t("preview.follow")}>
+          <LocateFixed />
+        </Button>
         <Button variant="ghost" size="icon-xs" disabled={percent <= 30} onClick={() => stepZoom(-1)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
           <Minus />
         </Button>
@@ -237,8 +289,16 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
               return (
                 // The page is white paper in either theme; only its frame follows the theme. Keyed by position, so a rebuilt page
                 // swaps its image in place instead of remounting the list
-                <div key={index} ref={(el) => void (pageEls.current[index] = el)} className="relative cursor-text" onClick={(event) => jumpToSource(event, index)}>
+                <div key={index} ref={(el) => void (pageEls.current[index] = el)} className="relative cursor-text" onClick={(event) => void jumpToSource(event, index)}>
                   <img src={image.url} alt={`${index + 1}`} style={{ aspectRatio: image.ratio }} className="block h-auto w-full rounded-sm bg-white shadow-xs ring-1 ring-border" draggable={false} />
+                  {map && target?.flash && target.page === index && (
+                    // Marks the place the user asked for; a new request has a new id, which restarts the fade
+                    <div
+                      key={target.id}
+                      style={{ position: "absolute", insetInline: 0, top: `${(target.y / map.height) * 100}%`, height: `${(Math.max(target.h, 12) / map.height) * 100}%` }}
+                      className="preview-flash pointer-events-none rounded-xs bg-primary/25 ring-1 ring-primary/50"
+                    />
+                  )}
                   {map?.links.map((link, i) => (
                     // Boxes are in points from the page's physical top-left corner, like the image, whatever the interface direction
                     <a

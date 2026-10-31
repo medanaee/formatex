@@ -1,13 +1,18 @@
 import { useRef, type ReactNode } from "react"
 import { startCompletion } from "@codemirror/autocomplete"
 import { redo, selectAll, undo } from "@codemirror/commands"
-import { Bold, Clipboard, Code, Copy, Italic, Link2, MousePointer2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
+import { Bold, Clipboard, Code, Copy, Italic, Link2, LocateFixed, MousePointer2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
 import { insertLink, insertText, toggleWrap } from "@/lib/editor/format"
+import { previewPlaceForLine } from "@/lib/editor/previewPlace"
 import { desktopOs, hasFinePointer } from "@/lib/platform"
+import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
+import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
+import { useSettingsStore } from "@/stores/useSettingsStore"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
 /** The right-click menu of the text editor: history, clipboard, selection, and for Markdown the formatting tools. */
 export function EditorContextMenu({ markdown, children }: { markdown: boolean; children: ReactNode }) {
@@ -28,6 +33,23 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
     const line = view.state.doc.lineAt(position)
     view.dispatch({ selection: word ? { anchor: word.from, head: word.to } : { anchor: line.from, head: line.to }, scrollIntoView: true })
     view.focus()
+  }
+
+  const hasPages = useEditorStore((state) => state.pages.length > 0)
+
+  /** Shows the place of the last press in the typeset pages: the preview scrolls to it and marks it (on a narrow screen it comes up). */
+  const goToPreview = () => {
+    const { activePath, texts } = useEditorStore.getState()
+    const source = activePath ? texts[activePath] : undefined
+    if (!view || !activePath || source === undefined) return
+    const position = (point.current && view.posAtCoords(point.current)) ?? view.state.selection.main.head
+    const line = view.state.doc.lineAt(position)
+    const place = previewPlaceForLine(activePath, source, line.number, position - line.from)
+    if (!place) return
+    // A hidden preview comes up first: its panel on a wide window, its tab on a narrow one
+    if (!useSettingsStore.getState().panels.preview) useSettingsStore.getState().setPanel("preview", true)
+    useWorkspaceStore.getState().set({ tab: "preview" })
+    usePreviewScrollStore.getState().show(place, true)
   }
 
   const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
@@ -95,6 +117,10 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
               })}
             >
               <Tags /> {t("format.tag")}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem disabled={!hasPages} onSelect={goToPreview}>
+              <LocateFixed /> {t("menu.goToPreview")}
             </ContextMenuItem>
           </>
         )}

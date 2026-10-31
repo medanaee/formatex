@@ -2,11 +2,16 @@
 //! the compiler also reports where the links are and where the text runs are (in points, from the page's top start corner):
 //!
 //! - links: an external URL, or a place in the document (a page and a point on it);
-//! - text runs: their words and boxes, which the editor uses to find the source line of a clicked word.
+//! - text runs: their words and boxes, which the editor uses to find the source line of a clicked word;
+//! - markers: where each block of the user's Markdown starts on the pages (the engine puts an invisible `fx-mark` there when it is
+//!   built with `markers=1`), which the editor uses to go from a source line to a place on a page and back.
 
 use serde::Serialize;
+use typst::foundations::{Label, Selector, Value};
+use typst::introspection::{Introspector, MetadataElem};
 use typst::layout::{Frame, FrameItem};
 use typst::model::Destination;
+use typst::utils::PicoStr;
 use typst_layout::{Page, PagedDocument};
 
 /// Runs of text kept per page; a page has a few hundred, the cap only stops a pathological one.
@@ -134,4 +139,63 @@ pub fn map_page(document: &PagedDocument, page: &Page) -> PageMap {
     let mut out = PageMap { width: size.x.to_pt(), height: size.y.to_pt(), ..PageMap::default() };
     walk(document, &page.frame, Affine::IDENTITY, &mut out);
     out
+}
+
+/// Where a block of the source starts in the document: the file and line the engine wrote into an invisible marker, and the place
+/// the marker got on its page (1-based page, points from the page's top start corner).
+#[derive(Serialize, Debug, PartialEq)]
+pub struct Marker {
+    pub file: String,
+    pub line: usize,
+    pub page: usize,
+    pub x: f64,
+    pub y: f64,
+}
+
+/// The label the engine's `fx-mark` carries (`src/core.typ`).
+const MARKER_LABEL: &str = "fx-mark";
+
+/// The value of a marker: `(fx: "path:line")`.
+fn parse_marker(value: &Value) -> Option<(String, usize)> {
+    let Value::Dict(dict) = value else { return None };
+    let Ok(Value::Str(at)) = dict.get("fx") else { return None };
+    let (file, line) = at.as_str().rsplit_once(':')?;
+    let line: usize = line.parse().ok()?;
+    (!file.is_empty() && line > 0).then(|| (file.to_string(), line))
+}
+
+/// Every marker of the document, in document order (empty when the engine was not built with `markers=1`).
+pub fn markers(document: &PagedDocument) -> Vec<Marker> {
+    let Some(label) = Label::new(PicoStr::intern(MARKER_LABEL)) else { return Vec::new() };
+    let introspector = document.introspector();
+    introspector
+        .query(&Selector::Label(label))
+        .iter()
+        .filter_map(|content| {
+            let value = &content.to_packed::<MetadataElem>()?.value;
+            let (file, line) = parse_marker(value)?;
+            let position = introspector.position(content.location()?)?;
+            Some(Marker { file, line, page: position.page.get(), x: position.point.x.to_pt(), y: position.point.y.to_pt() })
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use typst::foundations::{dict, Str};
+
+    #[test]
+    fn reads_the_file_and_line_of_a_marker() {
+        let value = Value::Dict(dict! { "fx" => Str::from("docs/a b.md:12") });
+        assert_eq!(parse_marker(&value), Some(("docs/a b.md".to_string(), 12)));
+    }
+
+    #[test]
+    fn ignores_other_metadata() {
+        assert_eq!(parse_marker(&Value::Dict(dict! { "heading-id" => Str::from("x") })), None);
+        assert_eq!(parse_marker(&Value::Dict(dict! { "fx" => Str::from("main.md:0") })), None);
+        assert_eq!(parse_marker(&Value::Dict(dict! { "fx" => Str::from("nocolon") })), None);
+        assert_eq!(parse_marker(&Value::None), None);
+    }
 }

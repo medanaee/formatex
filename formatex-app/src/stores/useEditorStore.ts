@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { CompilerUnavailableError, compileProject, exportPdf, type Diagnostic, type PageMap } from "@/lib/compiler"
+import { CompilerUnavailableError, compileProject, exportPdf, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { saveBytes } from "@/lib/files/saveFile"
 import {
@@ -39,12 +39,16 @@ interface EditorState {
   /** The pages of the last successful compilation; kept while a later one fails, so the preview does not blank out. */
   pages: { hash: string; svg: string; map: PageMap | null }[]
   diagnostics: Diagnostic[]
+  /** Where each block of the source starts on `pages` (from the same build). */
+  markers: SourceMarker[]
   ok: boolean
   elapsedMs: number | null
   exportStatus: ExportStatus
   exportMessage: string | null
   /** The place a click on a problem asked the editor to show. */
   reveal: RevealRequest | null
+  /** The file the user last changed the text of; the preview follows it once rebuilt. */
+  lastEdit: { path: string; id: number } | null
   /** Files copied or cut in the tree, waiting for a paste. */
   clipboard: { paths: string[]; mode: "copy" | "cut" } | null
 
@@ -138,6 +142,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         // A page the compiler did not resend is unchanged: keep it (and its image) as it is
         pages: output.ok ? output.pages.map((page, index) => (page.svg !== null ? { hash: page.hash, svg: page.svg, map: page.map } : before[index])) : state.pages,
         diagnostics: output.diagnostics,
+        markers: output.ok ? output.markers : state.markers,
         ok: output.ok,
         elapsedMs: output.elapsedMs,
       }))
@@ -197,11 +202,13 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     compileStatus: "idle",
     pages: [],
     diagnostics: [],
+    markers: [],
     ok: true,
     elapsedMs: null,
     exportStatus: "idle",
     exportMessage: null,
     reveal: null,
+    lastEdit: null,
     clipboard: null,
 
     open: async (projectId, mainFile) => {
@@ -215,7 +222,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         files = await fs.list()
       }
       const active = files.some((file) => file.path === mainFile) ? mainFile : (files.find((file) => file.kind === "file" && isTextKind(fileKindOf(file.path)))?.path ?? null)
-      set({ projectId, mainFile, files, activePath: null, texts: {}, saveState: "saved", pages: [], diagnostics: [], ok: true, elapsedMs: null, exportStatus: "idle", exportMessage: null, reveal: null, clipboard: null })
+      set({ projectId, mainFile, files, activePath: null, texts: {}, saveState: "saved", pages: [], diagnostics: [], markers: [], ok: true, elapsedMs: null, exportStatus: "idle", exportMessage: null, reveal: null, lastEdit: null, clipboard: null })
       if (active) await get().select(active)
       get().compile()
     },
@@ -226,7 +233,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
       session++
       fs = null
       compileAgain = false
-      set({ projectId: null, files: [], activePath: null, texts: {}, pages: [], diagnostics: [] })
+      set({ projectId: null, files: [], activePath: null, texts: {}, pages: [], markers: [], diagnostics: [] })
     },
 
     load: async (path) => {
@@ -248,7 +255,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     },
 
     edit: (path, text) => {
-      set((state) => ({ texts: { ...state.texts, [path]: text }, saveState: "saving" }))
+      set((state) => ({ texts: { ...state.texts, [path]: text }, saveState: "saving", lastEdit: { path, id: (state.lastEdit?.id ?? 0) + 1 } }))
       clearTimeout(compileTimer)
       compileTimer = setTimeout(() => get().compile(), COMPILE_DELAY_MS)
       clearTimeout(pendingSaves.get(path))
