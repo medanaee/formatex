@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+﻿import { useState, type ReactNode } from "react"
 import { Check, FileDown, FileText, Folder, FolderOpen, Pencil } from "lucide-react"
 import type { Copy } from "@/content"
 
@@ -51,7 +51,7 @@ export function Studio({ t }: { t: Copy["studio"] }) {
   )
 
   return (
-    <section id="how" className="mx-auto max-w-6xl px-[clamp(16px,4vw,48px)] py-28">
+    <section id="how" className="mx-auto max-w-[1320px] px-[clamp(30px,4vw,48px)] py-28">
       <span className="eyebrow">{t.eyebrow}</span>
       <h2 className="h2">
         {t.title[0]}

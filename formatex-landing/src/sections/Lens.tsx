@@ -1,6 +1,9 @@
-import { useEffect, useRef } from "react"
-import { ArrowDownToLine } from "lucide-react"
+﻿import { useEffect, useRef, type CSSProperties } from "react"
+import { ChevronsUpDown } from "lucide-react"
 import { GitHubMark } from "@/components/marks"
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
+import { LightRays } from "@/components/ui/light-rays"
+import { TypingAnimation } from "@/components/ui/typing-animation"
 import { RELEASES, REPO, type Copy } from "@/content"
 
 /** A word between Markdown marks. Each part is its own isolate, so in a right-to-left line the marks stay on either side of the word. */
@@ -10,7 +13,7 @@ function Marked({ mark, children }: { mark: string; children: string }) {
       <bdi dir="ltr" className="dim">
         {mark}
       </bdi>
-      <bdi>{children}</bdi>
+      <bdi className="m">{children}</bdi>
       <bdi dir="ltr" className="dim">
         {mark}
       </bdi>
@@ -18,147 +21,193 @@ function Marked({ mark, children }: { mark: string; children: string }) {
   )
 }
 
-/** The hero: the typeset headline, and a lens that follows the pointer and shows the Markdown it was set from. */
-export function Lens({ t, dir }: { t: Copy["lens"]; dir: "ltr" | "rtl" }) {
-  const hero = useRef<HTMLElement>(null)
+/**
+ * The hero: the typeset headline on a screen that stays while the page scrolls. A line comes down from the top, like the handle of a
+ * before and after slider turned sideways: above it the same rows are the Markdown they were set from, below it they are still the page.
+ */
+export function Lens({ t, dir, ready }: { t: Copy["lens"]; dir: "ltr" | "rtl"; ready: boolean }) {
+  const track = useRef<HTMLElement>(null)
+  const source = useRef<HTMLDivElement>(null)
+  const line = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const node = hero.current
-    if (!node) return
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches
-    let manual = false
-    let tx = 0
-    let ty = 0
-    let cx = -1
-    let cy = 0
+    const outer = track.current
+    const layer = source.current
+    const handle = line.current
+    if (!outer || !layer || !handle) return
+    let shown = 0
+    let drawn = -1
     let frame = 0
-    const onMove = (event: PointerEvent) => {
-      const rect = node.getBoundingClientRect()
-      manual = true
-      tx = event.clientX - rect.left
-      ty = event.clientY - rect.top
-    }
-    const onLeave = () => {
-      manual = false
-    }
-    const loop = (time: number) => {
-      const rect = node.getBoundingClientRect()
-      if (!manual) {
-        tx = rect.width * (0.5 + 0.3 * Math.sin(time / 1700))
-        ty = rect.height * (0.46 + 0.14 * Math.sin(time / 1100 + 1))
+    const tick = () => {
+      const rect = outer.getBoundingClientRect()
+      const span = Math.max(1, outer.offsetHeight - innerHeight)
+      const progress = Math.min(1, Math.max(0, -rect.top / span))
+      // The line is a little ahead of the scroll, so the last part of the track holds the finished source
+      const target = Math.min(1, progress * 1.15)
+      shown += (target - shown) * 0.14
+      if (Math.abs(target - shown) < 0.0005) shown = target
+      if (shown !== drawn) {
+        drawn = shown
+        const percent = shown * 100
+        layer.style.clipPath = `inset(0 0 ${100 - percent}% 0)`
+        handle.style.top = `${percent}%`
+        handle.style.opacity = shown <= 0.002 || shown >= 0.998 ? "0" : "1"
       }
-      if (cx < 0) {
-        cx = tx
-        cy = ty
-      }
-      cx += (tx - cx) * 0.16
-      cy += (ty - cy) * 0.16
-      node.style.setProperty("--mx", `${cx}px`)
-      node.style.setProperty("--my", `${cy}px`)
-      if (!reduced || manual) frame = requestAnimationFrame(loop)
+      frame = requestAnimationFrame(tick)
     }
-    node.addEventListener("pointermove", onMove)
-    node.addEventListener("pointerleave", onLeave)
-    frame = requestAnimationFrame(loop)
-    return () => {
-      cancelAnimationFrame(frame)
-      node.removeEventListener("pointermove", onMove)
-      node.removeEventListener("pointerleave", onLeave)
-    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
   }, [])
 
+  // The first texts are typed, fast, one after the other, once the logo has gone
+  const speed = 26
+  let at = 120
+  const type = (text: string, extra: { cursor?: boolean } = {}) => {
+    const start = at
+    at += Array.from(text).length * speed + 50
+    return (
+      <TypingAnimation key={`${text}-${start}`} startOnView={false} delay={start} duration={speed} showCursor={Boolean(extra.cursor)} blinkCursor={false} className="leading-[inherit] tracking-[inherit] whitespace-pre">
+        {text}
+      </TypingAnimation>
+    )
+  }
+  const calm = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches
   const [subA, subB, subC] = t.sub
   const [leadA, leadB, leadC] = t.lead
   return (
-    <section ref={hero} className="lens" id="top">
-      <div className="lens-glow" />
-      <div className="lens-stack">
-        <div className="mb-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase rtl:tracking-normal">{t.kicker}</div>
-        <div className="t1">{t.title}</div>
-        <div className="t2">
-          <span>
-            {subA}
-            <b>{subB}</b>
-            {subC}
-          </span>
+    <section ref={track} className="hero" id="top">
+      <div className="lens hero-sticky">
+        <div className="lens-glow" aria-hidden="true">
+          <LightRays count={calm ? 0 : 8} color="rgba(141, 180, 255, 0.6)" length="85vh" />
+          <LightRays count={calm ? 0 : 4} color="rgba(199, 155, 255, 0.5)" speed={19} length="75vh" />
         </div>
-        <div className="t3">
-          <span>
-            {leadA}
-            <em>{leadB}</em>
-            {leadC}
-            <span className="chip">{t.alert}</span>
-          </span>
-        </div>
-        <div className="t4">
-          <div className="bars-hero" aria-hidden="true">
-            {[34, 58, 44, 78, 100].map((height) => (
-              <i key={height} style={{ height: `${height}%` }} />
-            ))}
+        <div className="lens-stack">
+          <div className="t0">
+            <img src="/logo.svg" alt={t.name} draggable={false} />
+          </div>
+          <div className="t1">{ready && !calm ? type(t.title, { cursor: true }) : calm ? t.title : null}</div>
+          <div className="t2">
+            <span>
+              {ready && !calm ? type(subA) : calm ? subA : null}
+              <b>{ready && !calm ? type(subB) : calm ? subB : null}</b>
+              {ready && !calm && subC ? type(subC) : calm ? subC : null}
+            </span>
+          </div>
+          <div className="t3">
+            <span className="reveal" data-on={ready || calm} style={{ "--d": "300ms" } as CSSProperties}>
+              {leadA}
+              <em>{leadB}</em>
+              {leadC}
+              <span className="chip">{t.alert}</span>
+            </span>
+          </div>
+          <div className="t4">
+            <ol className="steps-h reveal" data-on={ready || calm} style={{ "--d": "150ms" } as CSSProperties}>
+              {t.steps.map((step, i) => (
+                <li key={step}>
+                  <b>{i + 1}</b>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="t5">
+            <div className="badges reveal" data-on={ready || calm} style={{ "--d": "0ms" } as CSSProperties}>
+              {t.platforms.map((name, i) => (
+                <span key={name} className="hbadge" style={{ "--h": ["var(--violet)", "var(--blue)", "var(--green)", "var(--violet)"][i] } as CSSProperties}>
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="t5">
-          <div className="meter" aria-hidden="true">
-            <i />
+
+        {/* The same rows as source, above the line. The row boxes are the same, so each line sits on the line it came from. */}
+        <div ref={source} className="lens-stack lens-src" aria-hidden="true" dir={dir} style={{ clipPath: "inset(0 0 100% 0)" }}>
+          <div className="t0">
+            <bdi dir="ltr">
+              <span className="k">&lt;img</span> <span className="a">src</span>=<span className="s">"/logo.svg"</span> <span className="k">/&gt;</span>
+            </bdi>
           </div>
-          <span dir="ltr">72%</span>
-        </div>
-      </div>
-
-      {/* The same rows, set as source: only the lens shows them. The row boxes are the same, so the lines sit on each other.
-          Every marked piece is a <bdi>, so its markers keep their place around the word in a right-to-left line. */}
-      <div className="lens-stack lens-src" aria-hidden="true" dir={dir}>
-        <div className="mb-3 text-xs">&nbsp;</div>
-        <div className="t1">
-          <span>
-            <bdi dir="ltr" className="dim">
-              #&nbsp;
+          <div className="t1">
+            <span>
+              <bdi dir="ltr" className="a">
+                #&nbsp;
+              </bdi>
+              {t.title}
+            </span>
+          </div>
+          <div className="t2">
+            <span>
+              <bdi dir="ltr" className="a">
+                ##&nbsp;
+              </bdi>
+              {subA}
+              <Marked mark="**">{subB}</Marked>
+              {subC}
+            </span>
+          </div>
+          <div className="t3">
+            <span>
+              {leadA}
+              <Marked mark="*">{leadB}</Marked>
+              {leadC}
+              <bdi dir="ltr" className="k">
+                &nbsp;&lt;alert&gt;
+              </bdi>
+              <bdi>{t.alert}</bdi>
+              <bdi dir="ltr" className="k">
+                &lt;/alert&gt;
+              </bdi>
+            </span>
+          </div>
+          <div className="t4">
+            <bdi dir="ltr">
+              <span className="k">&lt;steps&gt;</span>
+              {t.steps.map((step) => (
+                <span key={step}>
+                  <span className="k">&lt;step&gt;</span>
+                  <bdi dir="auto">{step}</bdi>
+                  <span className="k">&lt;/step&gt;</span>
+                </span>
+              ))}
+              <span className="k">&lt;/steps&gt;</span>
             </bdi>
-            {t.title}
-          </span>
-        </div>
-        <div className="t2">
-          <span>
-            <bdi dir="ltr" className="dim">
-              ##&nbsp;
+          </div>
+          <div className="t5">
+            <bdi dir="ltr">
+              {t.platforms.map((name) => (
+                <span key={name}>
+                  <span className="k">&lt;badge&gt;</span>
+                  <bdi dir="auto">{name}</bdi>
+                  <span className="k">&lt;/badge&gt;</span>{" "}
+                </span>
+              ))}
             </bdi>
-            {subA}
-            <Marked mark="**">{subB}</Marked>
-            {subC}
-          </span>
+          </div>
         </div>
-        <div className="t3">
-          <span>
-            {leadA}
-            <Marked mark="*">{leadB}</Marked>
-            {leadC}
-            <bdi dir="ltr">&nbsp;&lt;alert&gt;</bdi>
-            <bdi>{t.alert}</bdi>
-            <bdi dir="ltr">&lt;/alert&gt;</bdi>
-          </span>
-        </div>
-        <div className="t4">
-          <bdi dir="ltr">&lt;chart type="bar" data="4,7,5,9,12" /&gt;</bdi>
-        </div>
-        <div className="t5">
-          <bdi dir="ltr">&lt;progress value="72" /&gt;</bdi>
-        </div>
-      </div>
 
-      <div className="lens-ring" aria-hidden="true" />
-      <div className="lens-hint">
-        <i />
-        {t.hint}
-      </div>
-      <div className="lens-cta">
-        <a className="pill pill-main" href={RELEASES}>
-          <ArrowDownToLine className="size-4" />
-          {t.download}
-        </a>
-        <a className="pill pill-ghost" href={REPO}>
-          <GitHubMark className="size-4" />
-          {t.source}
-        </a>
+        <div ref={line} className="lens-line" aria-hidden="true" style={{ top: "0%", opacity: 0 }}>
+          <span className="tagl up mono">Markdown</span>
+          <span className="tagl down mono">PDF</span>
+          <span className="knob-h">
+            <ChevronsUpDown className="size-5" />
+          </span>
+        </div>
+
+        <div className="lens-hint">
+          <i />
+          {t.hint}
+        </div>
+        <div className="lens-cta">
+          <InteractiveHoverButton href={RELEASES} className="h-[38px] border-white/25 py-0 text-sm leading-[36px]">
+            {t.download}
+          </InteractiveHoverButton>
+          <a className="pill pill-ghost" href={REPO}>
+            <GitHubMark className="size-4" />
+            {t.source}
+          </a>
+        </div>
       </div>
     </section>
   )

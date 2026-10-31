@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react"
+﻿import { useEffect, useMemo, useState, type CSSProperties } from "react"
 import { Info, Pencil } from "lucide-react"
 import type { Copy } from "@/content"
 
@@ -46,7 +46,7 @@ export function Forge({ t }: { t: Copy["forge"] }) {
   const list = [bg, fg, heading, muted, accent, secondary, rule, codeBg, codeStroke]
 
   return (
-    <section id="forge" className="mx-auto max-w-6xl px-[clamp(16px,4vw,48px)] py-28">
+    <section id="forge" className="mx-auto max-w-[1320px] px-[clamp(30px,4vw,48px)] py-28">
       <span className="eyebrow">{t.eyebrow}</span>
       <h2 className="h2 max-w-3xl">{t.title}</h2>
       <p className="lead">{t.text}</p>

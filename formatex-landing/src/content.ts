@@ -3,19 +3,19 @@ export type Lang = "fa" | "en"
 export const REPO = "https://github.com/medanaee/formatex"
 export const RELEASES = `${REPO}/releases/latest`
 
-export type ComponentKey = "alert" | "chart" | "grid" | "tree" | "table" | "steps" | "code"
-
 export interface Copy {
   name: string
   nav: { how: string; components: string; forge: string; download: string }
   lens: {
-    kicker: string
+    name: string
     title: string
     /** [before, highlighted, after] */
     sub: [string, string, string]
     /** [before, chip, after]; the source shows the chip as an alert tag */
     lead: [string, string, string]
     alert: string
+    steps: [string, string, string]
+    platforms: string[]
     hint: string
     download: string
     source: string
@@ -38,16 +38,8 @@ export interface Copy {
     title: string
     text: string
     hint: string
-    cards: {
-      alerts: [string, string, string, string]
-      steps: [string, string, string]
-      pros: [string, string]
-      cons: string
-      theorem: { name: string; text: string }
-      chat: { user: string; ai: string }
-      todo: string
-      rating: string
-    }
+    prev: string
+    next: string
   }
   forge: {
     eyebrow: string
@@ -64,22 +56,20 @@ export interface Copy {
     stamp: string
     sample: { title: string; body: string }
   }
+  refs: {
+    eyebrow: string
+    title: string
+    text: string
+    hint: string
+    pages: { tag: string; name: string }[]
+  }
   library: {
     eyebrow: string
     title: string
     text: string
-    count: string
-    pick: string
     themes: string[]
-    sheet: { title: string; body: string }
-    parts: {
-      info: string
-      warn: string
-      chart: { caption: string; labels: string[]; values: string[] }
-      grid: { title: string; text: string }[]
-      table: { caption: string; head: [string, string]; rows: [string, string][] }
-      steps: string[]
-    }
+    feelTitle: string
+    feels: { name: string; note: string }[]
   }
   final: { title: string; text: string; platforms: string }
   footer: string
@@ -92,12 +82,14 @@ export const COPY: Record<Lang, Copy> = {
     name: "Formatex",
     nav: { how: "How it works", components: "Components", forge: "Make it yours", download: "Download" },
     lens: {
-      kicker: "Markdown to exact bilingual PDF",
+      name: "Formatex",
       title: "Write the text,",
       sub: ["we set the ", "page.", ""],
       lead: ["Persian and ", "English", " side by side, with an exact PDF."],
       alert: "no fuss",
-      hint: "Move the lens to see the source",
+      steps: ["Write", "See", "Export"],
+      platforms: ["Windows", "macOS", "Linux", "Android"],
+      hint: "Scroll: the page turns into its source",
       download: "Download",
       source: "Source code",
     },
@@ -124,17 +116,9 @@ export const COPY: Record<Lang, Copy> = {
       count: "70+",
       title: "tags, ready to use.",
       text: "Callouts, charts, trees, diffs, theorems, chats, letters and quizzes: each one is a tag you write in the text, and each one follows the theme of the page.",
-      hint: "Hover a card to see its tag",
-      cards: {
-        alerts: ["Info", "Tip", "Warning", "Danger"],
-        steps: ["Write", "Check", "Export"],
-        pros: ["Fast", "Offline"],
-        cons: "Large file",
-        theorem: { name: "Theorem 1.", text: "Every page has a number." },
-        chat: { user: "Can you make a table?", ai: "Done. It is on page 3." },
-        todo: "Add the cover page",
-        rating: "Rating",
-      },
+      hint: "Each preview is rendered by the engine of the app, in the midnight theme.",
+      prev: "Previous",
+      next: "Next",
     },
     forge: {
       eyebrow: "Make it yours",
@@ -151,26 +135,28 @@ export const COPY: Record<Lang, Copy> = {
       stamp: "APPROVED",
       sample: { title: "Q3 report", body: "Your colors, your tags, the same exact PDF." },
     },
+    refs: {
+      eyebrow: "Documents",
+      title: "Contents, lists and references, done for you.",
+      text: "Write a tag once. The numbers, the page numbers, the links and the bibliography follow the text as it changes, and every reference is a link in the PDF.",
+      hint: "Hover a page (or tap it) to see the tags",
+      pages: [
+        { tag: "<toc>", name: "Table of contents" },
+        { tag: "<lof> <lot> <lol>", name: "Lists of figures, tables and listings" },
+        { tag: "<ref> <cite> <bibliography>", name: "Cross-references and citations" },
+      ],
+    },
     library: {
-      eyebrow: "Components",
-      title: "Components, one tag each.",
-      text: "Switch a few on, turn the theme dial, and the page builds right here. In Formatex every one of them is a single tag, and you can make your own.",
-      count: "components",
-      pick: "Pick a tag",
+      eyebrow: "Themes",
+      title: "One page, eight themes, three feels.",
+      text: "A theme is nine colors; a feel is the shape: the corners and the fonts. Everything on the page follows both: headings, alerts, charts, tables and code. This is one real page, set by the engine of the app every way. Turn the dial, then pick a feel.",
       themes: ["Paper", "Sepia", "Ocean", "Sage", "Midnight", "Nord", "Zinc", "Dracula"],
-      sheet: { title: "Q3 report", body: "Results match Excel and Python: 12% growth over last quarter, most of it from the home market." },
-      parts: {
-        info: "Pages are numbered from the cover.",
-        warn: "Check the page numbers before you print.",
-        chart: { caption: "Figure 1: Sales by season", labels: ["Spring", "Summer", "Autumn", "Winter"], values: ["12", "16", "9", "14"] },
-        grid: [
-          { title: "Growth", text: "12% over last quarter" },
-          { title: "Clients", text: "48 active" },
-          { title: "Cities", text: "3 markets" },
-        ],
-        table: { caption: "Table 1: Sales", head: ["Quarter", "Sales"], rows: [["Spring", "120"], ["Summer", "168"], ["Autumn", "94"]] },
-        steps: ["Write the text", "Check the preview", "Export the PDF"],
-      },
+      feelTitle: "Feel",
+      feels: [
+        { name: "Formal", note: "Square corners, book type" },
+        { name: "Standard", note: "Slightly rounded, Inter" },
+        { name: "Friendly", note: "Soft and round, Lexend" },
+      ],
     },
     final: { title: "Free, open source, and on your device.", text: "Download the latest version from GitHub.", platforms: "Windows · macOS · Linux · Android" },
     footer: "Built with Tauri and Typst.",
@@ -180,12 +166,14 @@ export const COPY: Record<Lang, Copy> = {
     name: "فرمتکس",
     nav: { how: "چطور کار می‌کند", components: "کامپوننت‌ها", forge: "مال خودتان", download: "دانلود" },
     lens: {
-      kicker: "مارک‌داون به PDF دوزبانه‌ی دقیق",
+      name: "فرمتکس",
       title: "نوشته را بنویس،",
       sub: ["صفحه را ", "ما", " می‌چینیم."],
       lead: ["فارسی و ", "English", " کنار هم، با خروجی PDF دقیق."],
       alert: "بدون دردسر",
-      hint: "ذره‌بین را حرکت دهید تا منبع را ببینید",
+      steps: ["بنویس", "ببین", "خروجی بگیر"],
+      platforms: ["ویندوز", "مک", "لینوکس", "اندروید"],
+      hint: "اسکرول کنید: صفحه به منبعش تبدیل می‌شود",
       download: "دانلود",
       source: "کد منبع",
     },
@@ -212,17 +200,9 @@ export const COPY: Record<Lang, Copy> = {
       count: "+۷۰",
       title: "تگ آماده.",
       text: "کادر هشدار، نمودار، درخت، مقایسه، قضیه، گفتگو، نامه و آزمون: هر کدام یک تگ است که در متن می‌نویسید و از تم صفحه پیروی می‌کند.",
-      hint: "روی هر کارت بروید تا تگش را ببینید",
-      cards: {
-        alerts: ["اطلاعات", "نکته", "هشدار", "خطر"],
-        steps: ["بنویس", "ببین", "خروجی"],
-        pros: ["سریع", "آفلاین"],
-        cons: "حجم زیاد",
-        theorem: { name: "قضیه ۱.", text: "هر صفحه یک شماره دارد." },
-        chat: { user: "یک جدول می‌سازی؟", ai: "انجام شد. در صفحه‌ی ۳ است." },
-        todo: "صفحه‌ی جلد را اضافه کن",
-        rating: "امتیاز",
-      },
+      hint: "هر پیش‌نمایش را موتور خود اپ، با تم نیمه‌شب، ساخته است.",
+      prev: "قبلی",
+      next: "بعدی",
     },
     forge: {
       eyebrow: "مال خودتان کنید",
@@ -239,26 +219,28 @@ export const COPY: Record<Lang, Copy> = {
       stamp: "تأیید شد",
       sample: { title: "گزارش فصل سوم", body: "رنگ‌های شما، تگ‌های شما، همان PDF دقیق." },
     },
+    refs: {
+      eyebrow: "سند",
+      title: "فهرست، ارجاع و منبع، خودکار.",
+      text: "یک تگ را یک بار می‌نویسید. شماره‌ها، شماره‌ی صفحه‌ها، پیوندها و فهرست منابع با تغییر متن به‌روز می‌شوند و هر ارجاع در PDF یک پیوند است.",
+      hint: "روی یک صفحه بروید (یا لمسش کنید) تا تگ‌ها را ببینید",
+      pages: [
+        { tag: "<toc>", name: "فهرست مطالب" },
+        { tag: "<lof> <lot> <lol>", name: "فهرست شکل‌ها، جدول‌ها و کدها" },
+        { tag: "<ref> <cite> <bibliography>", name: "ارجاع و استناد" },
+      ],
+    },
     library: {
-      eyebrow: "کامپوننت‌ها",
-      title: "هر کامپوننت، یک تگ.",
-      text: "چند تا را روشن کنید، دکمه‌ی تم را بچرخانید و صفحه همین‌جا ساخته می‌شود. در فرمتکس هر کدام فقط یک تگ است و کامپوننت خودتان را هم می‌سازید.",
-      count: "کامپوننت",
-      pick: "یک تگ را انتخاب کنید",
+      eyebrow: "تم‌ها",
+      title: "یک صفحه، هشت تم، سه حس.",
+      text: "تم نُه رنگ است و حس (feel) شکل: گوشه‌ها و فونت‌ها. هر چیز روی صفحه از هر دو پیروی می‌کند: تیترها، هشدارها، نمودارها، جدول‌ها و کد. این یک صفحه‌ی واقعی است که موتور خود اپ به هر شکل ساخته است. دکمه را بچرخانید و یک حس انتخاب کنید.",
       themes: ["کاغذ", "سپیا", "اقیانوس", "مریم‌گلی", "نیمه‌شب", "نُرد", "زینک", "دراکولا"],
-      sheet: { title: "گزارش فصل سوم", body: "نتایج با Excel و Python هم‌خوان بود؛ ۱۲٪ رشد نسبت به فصل پیش، و بیشترِ آن از بازار داخلی." },
-      parts: {
-        info: "شماره‌ی صفحه‌ها از جلد شروع می‌شود.",
-        warn: "پیش از چاپ، شماره‌ی صفحه‌ها را بازبینی کنید.",
-        chart: { caption: "شکل ۱: فروش به تفکیک فصل", labels: ["بهار", "تابستان", "پاییز", "زمستان"], values: ["۱۲", "۱۶", "۹", "۱۴"] },
-        grid: [
-          { title: "رشد", text: "۱۲٪ نسبت به فصل پیش" },
-          { title: "مشتری", text: "۴۸ فعال" },
-          { title: "شهر", text: "۳ بازار" },
-        ],
-        table: { caption: "جدول ۱: فروش", head: ["فصل", "فروش"], rows: [["بهار", "۱۲۰"], ["تابستان", "۱۶۸"], ["پاییز", "۹۴"]] },
-        steps: ["متن را بنویسید", "پیش‌نمایش را ببینید", "PDF را بگیرید"],
-      },
+      feelTitle: "حس",
+      feels: [
+        { name: "رسمی", note: "گوشه‌های تیز، قلم کتابی" },
+        { name: "استاندارد", note: "کمی گرد، Inter" },
+        { name: "دوستانه", note: "گرد و نرم، Lexend" },
+      ],
     },
     final: { title: "رایگان، متن‌باز و روی دستگاه شما.", text: "آخرین نسخه را از GitHub بگیرید.", platforms: "ویندوز · مک · لینوکس · اندروید" },
     footer: "ساخته‌شده با Tauri و Typst.",
