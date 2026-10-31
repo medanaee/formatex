@@ -42,7 +42,17 @@
     "deleteFolderConfirm": "پوشهٔ «{{title}}» حذف شود؟ پروژه‌ها و پوشه‌های داخل آن یک سطح بالا می‌روند.",
     "exportZip": "خروجی ZIP",
     "importZip": "وارد کردن ZIP",
-    "zipFailed": "فایل ZIP قابل استفاده نبود"
+    "zipFailed": "فایل ZIP قابل استفاده نبود",
+    "view": "نما",
+    "up": "یک پوشه بالاتر",
+    "viewGrid": "شبکه‌ای",
+    "viewTable": "جدول",
+    "viewTree": "درختی",
+    "colName": "نام",
+    "colItems": "تعداد",
+    "colUpdated": "آخرین تغییر",
+    "expand": "باز کردن",
+    "collapse": "بستن"
   },
   "editor": {
     "title": "ویرایشگر",
@@ -282,6 +292,12 @@
     "selectAll": "انتخاب همه",
     "select": "انتخاب متن",
     "goToPreview": "رفتن به این بخش در پیش‌نمایش"
+  },
+  "overrides": {
+    "mark": "توسط سند بازنویسی شده است",
+    "text": "{{file}} این تنظیم را در بخش آغازین (front matter) خود هم دارد؛ پس تغییرش اینجا اثری ندارد.",
+    "value": "مقدار در سند",
+    "goto": "رفتن به خط {{line}}"
   },
   "frontMatter": {
     "title": "تنظیمات سند",

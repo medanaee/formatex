@@ -163,6 +163,21 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] `.py` and other source files (`CODE_EXTENSIONS` in `paths.ts`: Python, JS / TS, C family, Java, Go, Rust, shell, SQL, CSS, XML, and more, plus `Dockerfile` / `Makefile`) are file kind `code`: listed with a code icon, opened as text in the editor (always left-to-right) with that language's colors from `@codemirror/legacy-modes` (`codeLanguages.ts`), uploadable, and kept as text in ZIP import
 - [ ] Languages without a mode there (for example `.php`, `.vb`, `.asm`, `.tex`, `.log`, `.bat`) open as plain text
 
+## Library views (done, checked in a browser, not yet in the native app)
+
+- [x] The library has three views, chosen with a switch in the header (setting `libraryView`, kept between runs): the cards, a full-width **table** of the folder being shown (name, items, updated; the first row `..` goes up one folder and takes drops), and a **tree** (every folder from the top, opened and closed in place like the editor's file tree; its header is the top level to drop on). Rows have the same menu, drag and drop (mouse and finger) as the cards
+- [ ] Not tried by touch; the tree's opened folders are forgotten when the page is left
+
+## Overridden settings (done, tests pass; not yet tried by hand in the native app)
+
+- [x] A config.toml key that the main file's front matter also sets gets a blue info icon in the visual editor and in the code editor's gutter, with a popover (the document's value, jump to its line); pure logic in `overrides.ts` (9 tests)
+- [ ] Also compare with the front matter of the file being edited when it is not the main file (config.toml is the only file with the marks today, so nothing to compare yet)
+
+## Main file from config.toml (done, checked in a browser, not yet in the native app)
+
+- [x] The file a project typesets is the `source` of its `config.toml`, always (`useEditorStore.resolveMain`, `configSource.ts`); the library's stored `mainFile` is only a copy. A missing `source` or a file that does not exist is an error at that line of `config.toml`, with no fallback to `main.md`; the file tree stars the file `source` names; "Set as main file", a rename or a move of the main file, and a ZIP import write the line
+- [ ] The Rust commands still take the main file as an argument (they are given what config.toml names); they could read it themselves
+
 ## CI / release
 
 - [x] `.github/workflows/ci.yml` and `release.yml`: a release is built when the version in `tauri.conf.json` goes up, or the latest release is rebuilt when a commit message has `[build]`

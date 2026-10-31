@@ -5,6 +5,9 @@ import { ColorPopover } from "@/components/editor/ColorPopover"
 import { EditorContextMenu } from "@/components/editor/EditorContextMenu"
 import { ConfigPanel } from "@/components/editor/ConfigPanel"
 import { OptionsPopover } from "@/components/editor/OptionsPopover"
+import { OverridePopover } from "@/components/editor/OverrideInfo"
+import type { OverrideRequest } from "@/lib/editor/overrideGutter"
+import { useFrontMatterEntries } from "@/hooks/useFrontMatterEntries"
 import type { ColorRequest } from "@/lib/editor/colorSwatches"
 import type { ConfigureRequest } from "@/lib/editor/livePreview"
 import { useFormFactor } from "@/hooks/useFormFactor"
@@ -61,6 +64,8 @@ export function FileView() {
   const direction = useSettingsStore((state) => state.editorDirection)
   const [request, setRequest] = useState<ConfigureRequest | null>(null)
   const [colorRequest, setColorRequest] = useState<ColorRequest | null>(null)
+  const [overrideRequest, setOverrideRequest] = useState<OverrideRequest | null>(null)
+  const { entries: frontMatter, file: mainFile } = useFrontMatterEntries()
   const paths = useMemo(() => files.filter((entry) => entry.kind === "file").map((entry) => entry.path), [files])
 
   if (!path) return <div className="flex h-full items-center justify-center text-xs text-muted-foreground">{t("files.empty")}</div>
@@ -78,6 +83,8 @@ export function FileView() {
         direction={direction}
         onConfigure={setRequest}
         onPickColor={setColorRequest}
+        frontMatter={path === CONFIG_FILE ? frontMatter : undefined}
+        onOverrideInfo={setOverrideRequest}
         path={path}
         kind={kind}
         value={text}
@@ -91,6 +98,7 @@ export function FileView() {
       </EditorContextMenu>
       <OptionsPopover request={request} onRequestChange={setRequest} />
       <ColorPopover request={colorRequest} onRequestChange={setColorRequest} />
+      <OverridePopover request={overrideRequest} file={mainFile} onRequestChange={setOverrideRequest} />
       </>
     )
   }

@@ -5,6 +5,8 @@ import { ToggleGroup } from "radix-ui"
 interface SegmentedOption<T extends string> {
   value: T
   label: string
+  /** The name when `label` is left empty (an icon-only choice). */
+  title?: string
   icon?: ReactNode
 }
 
@@ -35,6 +37,8 @@ function SegmentedControl<T extends string>({ value, onValueChange, options, lab
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
+          title={option.title ?? option.label}
+          aria-label={option.title ?? option.label}
           className={cn("inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs [&_svg]:size-3.5", compact && "h-6 rounded-[5px] px-2 text-[11px]")}
         >
           {option.icon}

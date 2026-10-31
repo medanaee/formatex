@@ -42,7 +42,18 @@ describe("export and import", () => {
     await writeImportedProject("zip-dst", project)
     const copy = await openProjectFs("zip-dst")
     expect(await copy.readText("docs/a.md")).toBe("# سلام\n")
-    expect(await copy.readText("config.toml")).toBe('theme = "nord"\n')
+    // The main file is the `source` of config.toml: a config that named none gets the project's
+    expect(await copy.readText("config.toml")).toBe('source = "docs/a.md"\ntheme = "nord"\n')
     expect([...(await copy.readBytes("images/p.png"))]).toEqual([137, 80, 78, 71, 0, 255])
+  })
+
+  it("keeps the source a config.toml already names", async () => {
+    const fs = await openProjectFs("zip-src2")
+    await fs.writeText("config.toml", 'source = "b.md"\ntheme = "nord"\n')
+    await fs.writeText("a.md", "# a\n")
+    await fs.writeText("b.md", "# b\n")
+    const project = readProjectZip(await exportProjectZip("zip-src2", "t", "a.md"), "x")
+    await writeImportedProject("zip-dst2", project)
+    expect(await (await openProjectFs("zip-dst2")).readText("config.toml")).toBe('source = "b.md"\ntheme = "nord"\n')
   })
 })

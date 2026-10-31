@@ -1,5 +1,6 @@
 import { compilerAvailable, projectPreview } from "@/lib/compiler"
 import type { DocumentItem } from "@/lib/db/types"
+import { projectMainFile } from "@/lib/projects"
 
 /** Thumbnails by project and time of last change: an edited project gets a new one, an untouched one keeps its. */
 const cache = new Map<string, string | null>()
@@ -21,7 +22,9 @@ export function requestThumbnail(doc: DocumentItem): Promise<string | null> {
     if (cache.has(key)) return cache.get(key) ?? null
     let url: string | null = null
     try {
-      const svg = await projectPreview(doc.id, doc.mainFile)
+      // The file the project's config.toml names; a project that names none has no page to show
+      const main = await projectMainFile(doc.id)
+      const svg = main ? await projectPreview(doc.id, main) : null
       if (svg) url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }))
     } catch {
       url = null

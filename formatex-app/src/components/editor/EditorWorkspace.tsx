@@ -65,7 +65,7 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
   }, [])
 
   useEffect(() => {
-    void useEditorStore.getState().open(doc.id, doc.mainFile)
+    void useEditorStore.getState().open(doc.id)
     return () => {
       void useEditorStore.getState().close()
     }

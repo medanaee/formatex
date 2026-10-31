@@ -3,12 +3,14 @@ import { ChevronDown, RotateCcw, Search } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ThemeDots } from "@/components/common/ThemeDots"
 import { ColorField, LengthField } from "@/components/editor/fields"
+import { OverrideBadge } from "@/components/editor/OverrideInfo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { localized, type AttrSpec, type ConfigSchema } from "@/lib/editor/schema"
 import type { SettingsFormat } from "@/lib/editor/settingsFormat"
+import { overrideFor, type FrontMatterEntry } from "@/lib/editor/overrides"
 import { BUILTIN_THEMES, type ThemeColor } from "@/lib/editor/themes"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
@@ -128,6 +130,8 @@ interface SettingsFormProps {
   format: SettingsFormat
   /** Names of the project's own themes, offered by `theme`. */
   extraThemes?: string[]
+  /** The settings the main document sets in its front matter (`config.toml` only): they get an info icon saying the document wins. */
+  overrides?: { entries: readonly FrontMatterEntry[]; file: string }
   /** A box to search the keys; off where the form sits inside the text. */
   search?: boolean
   /** Tables that start closed. */
@@ -154,7 +158,7 @@ function shown(format: SettingsFormat, text: string, table: string, key: string)
  * A change rewrites that one line of the file, keeping the comments; a key that is not set shows the default, and a reset button
  * removes the key again. Keys the schema does not know stay in the source. `config.toml` and the front matter of a document both use it.
  */
-export function SettingsForm({ text, onChange, config, format, extraThemes, search = true, defaultClosed, stacked = false, side = false, flat = false, className }: SettingsFormProps) {
+export function SettingsForm({ text, onChange, config, format, extraThemes, overrides, search = true, defaultClosed, stacked = false, side = false, flat = false, className }: SettingsFormProps) {
   const { t, i18n } = useTranslation()
   const entries = useEditorStore((state) => state.files)
   const [query, setQuery] = useState("")
@@ -201,10 +205,12 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, sear
               <div className={cn("divide-y divide-border border-t border-border", flat && "bg-muted/20")}>
                 {keys.map(([name, spec]) => {
                   const { value, plain } = shown(format, text, id, name)
+                  const overridden = overrides && overrideFor(overrides.entries, id ? `${id}.${name}` : name)
                   return (
                     <div key={name} className={cn("grid gap-1.5 px-3 py-2", side ? "grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] items-center gap-3" : !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-3")}>
                       <div className="min-w-0">
                         <div dir="ltr" className="flex items-center gap-1 font-mono text-xs font-medium">
+                          {overridden && overrides && <OverrideBadge entry={overridden} file={overrides.file} className="-ms-1" />}
                           <span className={cn(value === undefined && "text-muted-foreground")}>{name}</span>
                         </div>
                         <div dir="auto" className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">

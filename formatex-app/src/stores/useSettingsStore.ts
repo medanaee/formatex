@@ -12,6 +12,9 @@ export type PreviewZoom = number | "width" | "page"
 
 export type SidebarTab = "files" | "outline" | "tags"
 
+export type LibraryView = "grid" | "table" | "tree"
+export const LIBRARY_VIEWS: readonly LibraryView[] = ["grid", "table", "tree"]
+
 /** The three panels of the editor screen the title bar switches on and off. */
 export interface EditorPanels {
   side: boolean
@@ -46,6 +49,9 @@ interface SettingsState {
   /** The preview scrolls to the text being edited once it has been rebuilt. */
   previewFollow: boolean
   setPreviewFollow: (follow: boolean) => void
+  /** How the library lists projects: cards, a table of the folder being shown, or the whole folder tree as an expandable table. */
+  libraryView: LibraryView
+  setLibraryView: (view: LibraryView) => void
   /** The document themes the user made: available in every project. */
   customThemes: Record<string, CustomTheme>
   setCustomThemes: (themes: Record<string, CustomTheme>) => void
@@ -86,6 +92,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPreviewZoom: (zoom) => set({ previewZoom: typeof zoom === "number" ? Math.round(Math.min(Math.max(zoom, 30), 400)) : zoom }),
       previewFollow: true,
       setPreviewFollow: (previewFollow) => set({ previewFollow }),
+      libraryView: "grid",
+      setLibraryView: (libraryView) => set({ libraryView }),
       customThemes: {},
       setCustomThemes: (customThemes) => set({ customThemes }),
       settingsSection: "appearance",
@@ -121,6 +129,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (!state) return
         // A stored value from an older / newer version may not be valid any more
         if (typeof state.previewZoom !== "number" && state.previewZoom !== "width" && state.previewZoom !== "page") state.previewZoom = 100
+        if (!LIBRARY_VIEWS.includes(state.libraryView)) state.libraryView = "grid"
         if (!isThemePreference(state.theme)) state.theme = "system"
         if (!isSupportedLanguage(state.language)) state.language = DEFAULT_LANGUAGE
         applyTheme(state.theme)

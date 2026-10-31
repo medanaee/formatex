@@ -277,7 +277,9 @@ export class EditableTableWidget extends WidgetType {
     const state = wrap.__table
     if (!state) return false
     const next = normalizeTable(this.table)
-    if (!sameShape(state.table, next)) return false
+    // The shape is compared with the cells on the page: a row or column added here changed `state.table` already
+    const shown = { header: new Array<string>(wrap.querySelectorAll("thead th").length), rows: new Array<string[]>(wrap.querySelectorAll("tbody tr").length) } as ParsedTable
+    if (!sameShape(shown, next)) return false
     state.table = next
     state.length = this.source.length - this.prefix
     state.prefix = this.prefix
@@ -300,7 +302,7 @@ export const tableEditorTheme = EditorView.baseTheme({
   ".cm-lp-table-area": { overflowX: "auto" },
   ".cm-lp-table-grid": { display: "flex", alignItems: "stretch", width: "fit-content", minWidth: "100%" },
   ".cm-lp-table table": { borderCollapse: "collapse", flex: "1", fontSize: "0.95em" },
-  ".cm-lp-table th, .cm-lp-table td": { border: "1px solid var(--border)", padding: "4px 8px", minWidth: "3em", outline: "none", verticalAlign: "top" },
+  ".cm-lp-table th, .cm-lp-table td": { border: "1px solid var(--border)", padding: "4px 8px", minWidth: "3em", height: "2em", outline: "none", verticalAlign: "top" },
   ".cm-lp-table th": { backgroundColor: "var(--muted)", fontWeight: "600" },
   ".cm-lp-table th:focus, .cm-lp-table td:focus": { boxShadow: "inset 0 0 0 2px var(--ring)", backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)", whiteSpace: "pre-wrap" },
   ".cm-lp-table-bar": {

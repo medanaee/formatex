@@ -8,7 +8,7 @@ Decisions: [ADR 0005](../decisions/0005-native-typst-engine.md) (native Typst), 
 - A **file tree** like Overleaf's: folders, create file / folder, rename, delete, upload images and data, mark the main Markdown file (★). It sits at the **start edge** (the right in Persian). Rows can be multi-selected, dragged into folders, copied, cut and pasted, and files can be dropped from the computer (see below).
 - A **code editor** (CodeMirror 6) for Markdown and TOML with **autocomplete from the engine's schema**, **undo / redo** and a **format bar** above it.
 - A **live preview** of the typeset pages (SVG) with a status bar: pages, time, errors and warnings; a click on a problem jumps to its line.
-- **Project settings**: the main file and the project's `config.toml` (the user pastes or edits their own).
+- **Project settings**: the project's `config.toml` (the user pastes or edits their own). **The main file is the `source` of that file**, as it is for the engine on the command line: no file has a special name (`main.md` is only what a new project starts with), the star in the file tree marks the file `source` names, and "Set as main file" writes it there. A missing `source`, or one that names a file not in the project, is an error on that line of `config.toml` (the preview keeps its last pages and nothing falls back to another file). `src/lib/projects/configSource.ts` reads and writes the line; renaming or moving the main file rewrites it; a ZIP whose config names no `source` gets the one it was exported with.
 - **Export PDF** through the native Save dialog.
 
 ## Layout
@@ -50,7 +50,7 @@ The commands are pure functions on the editor view ([`format.ts`](../../src/lib/
 - **From the computer:** drop files on a folder or on the tree; they are added there. (`dragDropEnabled` is off in `tauri.conf.json`, so the window passes ordinary HTML5 drops to the page; with it on, WebView2 blocks drags inside the page.)
 - **Clipboard:** **Ctrl / ⌘ + C / X / V** copy, cut and paste (into the selected folder, or the folder of the selected file). Cut rows are dimmed until pasted. The `⋯` menu of a row has Copy, Cut and Paste for touch screens.
 - **Delete** removes the selection after a confirmation (the main file and `config.toml` are never removed); **F2** renames the selected row.
-- Open files follow their moves: a moved or renamed file keeps its editor buffer, and the main file pointer is updated.
+- Open files follow their moves: a moved or renamed file keeps its editor buffer, and, for the main file, the `source` in `config.toml` is updated.
 
 Phone and tablet have no modifier keys: use the `⋯` menu (copy, cut, paste, rename, delete) and the buttons; multi-select with keyboard and mouse is a desktop feature.
 
@@ -67,6 +67,10 @@ Source of truth: the schema of the enabled components. It starts as `engine/tags
 | `{` on a heading, table, list, equation or span | The engine's `{...}` options (`{width=full caption="..."}`), with their values. |
 
 It is silent in front matter, fenced code and inline code. Descriptions follow the interface language (`en` / `fa`).
+
+## Settings the document overrides
+
+The engine merges the front matter of the document over `config.toml` (`merge-config`), so a key set in both is read from the document and a change in `config.toml` does nothing. Both places where `config.toml` is edited say so for the **main file's** front matter: a blue info icon (`text-info`) in front of the key in the visual editor (`ConfigPanel`, via `SettingsForm`'s `overrides` prop) and in the gutter of the code editor (`overrideGutter.ts`). A mouse resting on the icon, or a tap, opens a popover that says the document sets the setting too, shows the document's value and jumps to its front-matter line. Keys are compared by dotted path (`heading.color`, `themes.ocean.bg`); a value set on a parent (`list: ...`) covers everything below it, while a block (`header:`) covers only the keys it lists. It follows both files live and does nothing for a missing or broken front matter. The logic is pure ([`overrides.ts`](../../src/lib/editor/overrides.ts), 9 tests). The file being edited is not compared (it is `config.toml` itself).
 
 ## Autocomplete for `config.toml` and the front matter
 

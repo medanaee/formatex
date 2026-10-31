@@ -1,5 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from "fflate"
-import { CONFIG_FILE, DEFAULT_CONFIG, DEFAULT_MAIN_FILE, fileKindOf, isReservedPath, isTextKind, openProjectFs } from "./index"
+import { CONFIG_FILE, DEFAULT_CONFIG, DEFAULT_MAIN_FILE, fileKindOf, isReservedPath, isTextKind, openProjectFs, sourceOf, withSource } from "./index"
 
 /** Written at the top of an exported project: what the app needs to put it back together. */
 const MANIFEST = "formatex-project.json"
@@ -102,5 +102,8 @@ export async function writeImportedProject(projectId: string, project: ImportedP
     if (isTextKind(fileKindOf(file.path))) await fs.writeText(file.path, strFromU8(file.data))
     else await fs.writeBytes(file.path, file.data)
   }
-  if (!project.files.some((file) => file.path === CONFIG_FILE)) await fs.writeText(CONFIG_FILE, DEFAULT_CONFIG)
+  // The project's main file is the `source` of its config.toml: a zip without one (or with a config that names none) gets the one found
+  const config = project.files.find((file) => file.path === CONFIG_FILE)
+  const text = config ? strFromU8(config.data) : DEFAULT_CONFIG
+  if (!config || !sourceOf(text)) await fs.writeText(CONFIG_FILE, withSource(text, project.mainFile))
 }

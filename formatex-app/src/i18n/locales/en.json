@@ -42,7 +42,17 @@
     "deleteFolderConfirm": "Delete the folder â€œ{{title}}â€‌? Its projects and folders move up one level.",
     "exportZip": "Export as ZIP",
     "importZip": "Import ZIP",
-    "zipFailed": "The ZIP could not be used"
+    "zipFailed": "The ZIP could not be used",
+    "view": "View",
+    "up": "Up one folder",
+    "viewGrid": "Grid",
+    "viewTable": "Table",
+    "viewTree": "Tree",
+    "colName": "Name",
+    "colItems": "Items",
+    "colUpdated": "Updated",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "editor": {
     "title": "Editor",
@@ -282,6 +292,12 @@
     "selectAll": "Select all",
     "select": "Select text",
     "goToPreview": "Go to here in preview"
+  },
+  "overrides": {
+    "mark": "Overridden by the document",
+    "text": "{{file}} sets this too in its front matter, so changing it here has no effect.",
+    "value": "The document uses",
+    "goto": "Go to line {{line}}"
   },
   "frontMatter": {
     "title": "Document settings",

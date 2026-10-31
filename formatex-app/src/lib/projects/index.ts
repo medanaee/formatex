@@ -1,11 +1,13 @@
 import defaultConfig from "../../../engine/config.toml?raw"
 import starterMain from "../../../templates/main.md?raw"
 import { isTauri } from "@/lib/platform"
+import { sourceOf } from "./configSource"
 import { CONFIG_FILE, DEFAULT_MAIN_FILE } from "./paths"
 import type { ProjectFs } from "./types"
 import { WebProjectFs } from "./webProjectFs"
 
 export * from "./paths"
+export * from "./configSource"
 export type { ProjectFs } from "./types"
 
 /** The default `config.toml` of a new project (the engine's own, pointing at `main.md`). */
@@ -18,6 +20,16 @@ export async function openProjectFs(projectId: string): Promise<ProjectFs> {
     return new TauriProjectFs(projectId)
   }
   return new WebProjectFs(projectId)
+}
+
+/** The Markdown file a project typesets: the `source` of its `config.toml`, read from disk (`null` when there is none). */
+export async function projectMainFile(projectId: string): Promise<string | null> {
+  try {
+    const fs = await openProjectFs(projectId)
+    return sourceOf(await fs.readText(CONFIG_FILE))?.path || null
+  } catch {
+    return null
+  }
 }
 
 /** Creates the files of a new project: config.toml, a starter document and an `images` folder. */

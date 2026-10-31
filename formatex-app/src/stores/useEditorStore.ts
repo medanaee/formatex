@@ -3,6 +3,7 @@ import { CompilerUnavailableError, compileProject, exportPdf, type Diagnostic, t
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { saveBytes } from "@/lib/files/saveFile"
 import {
+  CONFIG_FILE,
   fileKindOf,
   initProject,
   isTextKind,
@@ -11,7 +12,9 @@ import {
   openProjectFs,
   parentOf,
   isReservedPath,
+  sourceOf,
   uniqueName,
+  withSource,
   type FsEntry,
   type ProjectFs,
 } from "@/lib/projects"
@@ -27,6 +30,7 @@ export type ExportStatus = "idle" | "working" | "done" | "error"
 
 interface EditorState {
   projectId: string | null
+  /** The Markdown file that is typeset: the `source` of config.toml (`""` when it names none). Follows config.toml; never set by hand. */
   mainFile: string
   /** Every file and folder of the project, in display order. */
   files: FsEntry[]
@@ -52,7 +56,7 @@ interface EditorState {
   /** Files copied or cut in the tree, waiting for a paste. */
   clipboard: { paths: string[]; mode: "copy" | "cut" } | null
 
-  open: (projectId: string, mainFile: string) => Promise<void>
+  open: (projectId: string) => Promise<void>
   close: () => Promise<void>
   select: (path: string) => Promise<void>
   revealAt: (path: string, line: number, column: number) => Promise<void>
@@ -74,6 +78,7 @@ interface EditorState {
   /** Pastes the clipboard into a folder: a copy stays in the clipboard, a cut is moved once. */
   paste: (targetDir: string) => Promise<string[]>
   importFiles: (parent: string, files: { name: string; data: Uint8Array }[]) => Promise<string[]>
+  /** Makes a file the one to typeset by writing it as the `source` of config.toml. */
   setMainFile: (path: string) => void
   exportPdf: () => Promise<void>
 }
@@ -90,6 +95,7 @@ let session = 0
 const topLevel = (paths: string[]): string[] => paths.filter((path) => !paths.some((other) => other !== path && path.startsWith(`${other}/`)))
 
 const errorDiagnostic = (message: string): Diagnostic => ({ severity: "error", message, path: null, line: null, column: null, hints: [] })
+const configProblem = (message: string, line: number | null): Diagnostic => ({ severity: "error", message, path: CONFIG_FILE, line, column: line ? 1 : null, hints: [] })
 
 export const useEditorStore = create<EditorState>()((set, get) => {
   const touch = () => {
@@ -123,8 +129,29 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     await Promise.all(paths.map(save))
   }
 
-  async function runCompile(): Promise<void> {
+  /**
+   * The file to typeset is whatever `source` of config.toml names, as for the engine on the command line (there is no file with a
+   * special name). Reads it (from the editor's text of config.toml, else the file), loads that file's text, and returns what is wrong:
+   * no `source`, or a file that is not in the project.
+   */
+  async function resolveMain(): Promise<Diagnostic | null> {
+    const config = await get().load(CONFIG_FILE).catch(() => "")
+    const found = sourceOf(config)
+    const main = found?.path ?? ""
     const { projectId, mainFile } = get()
+    if (main !== mainFile) {
+      set({ mainFile: main })
+      if (projectId && main) useLibraryStore.getState().setMainFile(projectId, main)
+    }
+    if (!found) return configProblem('config.toml has no `source`: the Markdown file to typeset, for example source = "main.md"', null)
+    if (!main) return configProblem("`source` in config.toml is empty: write the path of the Markdown file to typeset", found.line)
+    if (!get().files.some((file) => file.kind === "file" && file.path === main)) return configProblem(`\`source\` in config.toml names "${main}", which is not a file of the project`, found.line)
+    if (isTextKind(fileKindOf(main))) await get().load(main)
+    return null
+  }
+
+  async function runCompile(): Promise<void> {
+    const { projectId } = get()
     if (!projectId) return
     if (compiling) {
       compileAgain = true
@@ -134,6 +161,14 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     const current = session
     set({ compileStatus: "compiling" })
     try {
+      const problem = await resolveMain()
+      if (current !== session) return
+      if (problem) {
+        // The pages on screen stay: only the problem is new
+        set({ compileStatus: "idle", ok: false, diagnostics: [problem] })
+        return
+      }
+      const { mainFile } = get()
       const before = get().pages
       const output = await compileProject(projectId, mainFile, { overrides: get().texts, known: before.map((page) => page.hash) })
       if (current !== session) return
@@ -163,14 +198,21 @@ export const useEditorStore = create<EditorState>()((set, get) => {
   async function relocate(from: string, to: string): Promise<void> {
     if (!fs || from === to) return
     await fs.rename(from, to)
+    const mainBefore = get().mainFile
     const move = (candidate: string) => (candidate === from ? to : candidate.startsWith(`${from}/`) ? to + candidate.slice(from.length) : candidate)
     set((state) => ({
       texts: Object.fromEntries(Object.entries(state.texts).map(([key, text]) => [move(key), text])),
       activePath: state.activePath ? move(state.activePath) : null,
       mainFile: move(state.mainFile),
     }))
+    // The main file is named in config.toml: when it moved, the name there moves with it
     const { projectId, mainFile } = get()
-    if (projectId) useLibraryStore.getState().setMainFile(projectId, mainFile)
+    if (mainFile !== mainBefore) {
+      const config = withSource(await get().load(CONFIG_FILE).catch(() => ""), mainFile)
+      set((state) => ({ texts: { ...state.texts, [CONFIG_FILE]: config } }))
+      await fs.writeText(CONFIG_FILE, config)
+      if (projectId) useLibraryStore.getState().setMainFile(projectId, mainFile)
+    }
   }
 
   /** Copies a file, or a folder with everything in it. */
@@ -211,7 +253,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     lastEdit: null,
     clipboard: null,
 
-    open: async (projectId, mainFile) => {
+    open: async (projectId) => {
       await get().close()
       session++
       fs = await openProjectFs(projectId)
@@ -221,7 +263,9 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         await initProject(projectId)
         files = await fs.list()
       }
-      const active = files.some((file) => file.path === mainFile) ? mainFile : (files.find((file) => file.kind === "file" && isTextKind(fileKindOf(file.path)))?.path ?? null)
+      // The file to typeset is named by config.toml; when it names none that exists, config.toml is what to look at
+      const mainFile = sourceOf(await fs.readText(CONFIG_FILE).catch(() => ""))?.path ?? ""
+      const active = files.some((file) => file.kind === "file" && file.path === mainFile) ? mainFile : files.some((file) => file.path === CONFIG_FILE) ? CONFIG_FILE : (files.find((file) => file.kind === "file" && isTextKind(fileKindOf(file.path)))?.path ?? null)
       set({ projectId, mainFile, files, activePath: null, texts: {}, saveState: "saved", pages: [], diagnostics: [], markers: [], ok: true, elapsedMs: null, exportStatus: "idle", exportMessage: null, reveal: null, lastEdit: null, clipboard: null })
       if (active) await get().select(active)
       get().compile()
@@ -396,10 +440,14 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     },
 
     setMainFile: (path) => {
-      const { projectId } = get()
-      set({ mainFile: path })
-      if (projectId) useLibraryStore.getState().setMainFile(projectId, path)
-      get().compile()
+      void (async () => {
+        const config = await get().load(CONFIG_FILE).catch(() => "")
+        const { projectId } = get()
+        set({ mainFile: path })
+        if (projectId) useLibraryStore.getState().setMainFile(projectId, path)
+        // The edit saves config.toml and rebuilds the preview
+        get().edit(CONFIG_FILE, withSource(config, path))
+      })()
     },
 
     exportPdf: async () => {

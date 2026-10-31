@@ -8,6 +8,8 @@ import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
 import { Annotation, Compartment, EditorState, Transaction, type Extension } from "@codemirror/state"
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, placeholder as placeholderExtension } from "@codemirror/view"
 import { useTranslation } from "react-i18next"
+import { overrideGutter, overrideInfo, overrideLabel, setFrontMatter, type OverrideRequest } from "@/lib/editor/overrideGutter"
+import type { FrontMatterEntry } from "@/lib/editor/overrides"
 import { toggleWrap } from "@/lib/editor/format"
 import { insertTag, TAG_DRAG_TYPE } from "@/lib/editor/insertTag"
 import { frontMatterMount } from "@/components/editor/frontMatterMount"
@@ -57,6 +59,10 @@ interface CodeEditorProps {
   minimap?: boolean
   /** A color swatch was clicked, or a `#` was typed where a color goes. */
   onPickColor?: (request: ColorRequest) => void
+  /** `config.toml` only: the settings the main document sets in its front matter; their lines get an info mark in the gutter. */
+  frontMatter?: readonly FrontMatterEntry[]
+  /** The info mark was hovered or tapped. */
+  onOverrideInfo?: (request: OverrideRequest) => void
   /** Lines to mark as wrong (the compiler's problems in this file); they are also drawn in the minimap. */
   problems?: readonly Problem[]
   /** Base direction: "auto" lets every line follow its own first letter; "rtl" / "ltr" force it on the whole editor. */
@@ -84,8 +90,8 @@ function languageFor(kind: FileKind, path: string): Extension {
  * CodeMirror 6 with the engine's autocomplete. Text in either direction: each line takes the direction of its own first strong
  * letter, so a Persian paragraph and an English one in the same file both read correctly.
  */
-export function CodeEditor({ path, value, kind, onChange, files, reveal, placeholder, lineNumbers: showLineNumbers = true, primary = false, visual = false, minimap: showMinimap = false, onConfigure, onPickColor, problems, direction = "auto", className }: CodeEditorProps) {
-  const { i18n } = useTranslation()
+export function CodeEditor({ path, value, kind, onChange, files, reveal, placeholder, lineNumbers: showLineNumbers = true, primary = false, visual = false, minimap: showMinimap = false, onConfigure, onPickColor, onOverrideInfo, frontMatter, problems, direction = "auto", className }: CodeEditorProps) {
+  const { t, i18n } = useTranslation()
   // The tags autocomplete knows: the built-in ones and the user's components (the app refreshes it when a component changes)
   const schema = useSchemaStore((state) => state.schema)
   const host = useRef<HTMLDivElement>(null)
@@ -94,8 +100,8 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   const current = useRef({ path, kind })
 
   // The newest props, read by callbacks the editor keeps for its whole life
-  const latest = useRef({ onChange, files, language: i18n.language, schema, primary, onConfigure, onPickColor })
-  latest.current = { onChange, files, language: i18n.language, schema, primary, onConfigure, onPickColor }
+  const latest = useRef({ onChange, files, language: i18n.language, schema, primary, onConfigure, onPickColor, onOverrideInfo, frontMatter, markLabel: t("overrides.mark") })
+  latest.current = { onChange, files, language: i18n.language, schema, primary, onConfigure, onPickColor, onOverrideInfo, frontMatter, markLabel: t("overrides.mark") }
   // The direction too: switched without rebuilding. Forced, the whole editor (gutter included) takes that direction
   const [dir] = useState(() => new Compartment())
   // Only Markdown is prose: settings and code files (config.toml, Typst) are always left-to-right, whatever the setting says
@@ -127,6 +133,8 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         // The headings above the first visible line stay pinned, and the whole text is a miniature at the side
         fileKind === "markdown" ? [stickyHeadings, stickyTheme, bidiIsolate] : [],
         problemExtension,
+        // The settings of config.toml the main document overrides
+        fileKind === "toml" ? [overrideGutter, overrideInfo.of((request) => latest.current.onOverrideInfo?.(request)), overrideLabel.of(latest.current.markLabel)] : [],
         showMinimap ? [minimap, minimapTheme] : [],
         // A tile of the tag palette dropped into the text writes that tag where it landed
         EditorView.domEventHandlers({
@@ -213,6 +221,12 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     if (latest.current.primary) publishHistory(editor.state)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a different file replaces the state
   }, [path])
+
+  // The overridden settings of config.toml are marked; another file brings its own state, so they are set again with it
+  useEffect(() => {
+    if (kind === "toml") view.current?.dispatch({ effects: setFrontMatter.of(frontMatter ?? []) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `path` too: a state built for another file starts without marks
+  }, [frontMatter, path, kind])
 
   // The compiler's problems of this file are marked; another file brings its own state, so they are set again with it
   useEffect(() => {

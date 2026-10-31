@@ -1,20 +1,24 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Archive, ChevronRight, ClipboardPaste, Copy, CopyPlus, ExternalLink, FileText, FolderPlus, Pencil, Plus, Scissors, Trash2, Upload } from "lucide-react"
+import { Archive, ChevronRight, ClipboardPaste, Copy, CopyPlus, ExternalLink, FileText, FolderTree, FolderPlus, LayoutGrid, Pencil, Plus, Scissors, Table2, Trash2, Upload } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
 import { ActionItems, DROP_ROOT, FolderCard, ProjectCard, useDropTarget, type DragPayload, type MenuAction } from "@/components/library/LibraryCards"
+import { LibraryRows, type LibraryRow } from "@/components/library/LibraryRows"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { DocumentItem, FolderItem } from "@/lib/db/types"
 import { saveBytes, pickFiles } from "@/lib/files/saveFile"
-import { copyProjectFiles, deleteProjectFiles, initProject } from "@/lib/projects"
+import { copyProjectFiles, deleteProjectFiles, initProject, projectMainFile } from "@/lib/projects"
 import { exportProjectZip, readProjectZip, writeImportedProject } from "@/lib/projects/zip"
+import { useFormFactor } from "@/hooks/useFormFactor"
 import { cn } from "@/lib/utils"
 import { useLibraryStore } from "@/stores/useLibraryStore"
+import { useSettingsStore } from "@/stores/useSettingsStore"
 
 type NameDialog = { kind: "folder"; folder?: FolderItem } | { kind: "document" } | { kind: "rename"; doc: DocumentItem }
 
@@ -22,7 +26,7 @@ type NameDialog = { kind: "folder"; folder?: FolderItem } | { kind: "document" }
 function Crumb({ label, folder, current, onOpen, onDropItems }: { label: string; /** The folder this crumb stands for, for a finger drop: its id, or DROP_ROOT. */ folder: string; current: boolean; onOpen: () => void; onDropItems: (payload: DragPayload) => void }) {
   const drop = useDropTarget(onDropItems)
   return (
-    <button type="button" data-drop-folder={folder} onClick={onOpen} {...drop.props} className={cn("max-w-40 truncate rounded-md px-1.5 py-1 text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", current ? "font-semibold text-foreground" : "text-muted-foreground", drop.over && "bg-primary/10 ring-2 ring-primary/40", "data-[drop-over]:bg-primary/10 data-[drop-over]:ring-2 data-[drop-over]:ring-primary/40")}>
+    <button type="button" data-drop-folder={folder} onClick={onOpen} {...drop.props} className={cn("max-w-40 truncate rounded-md px-1.5 py-1 text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", current ? "font-semibold text-foreground" : "text-muted-foreground", drop.over && "bg-primary/10 ring-2 ring-inset ring-primary/40", "data-[drop-over]:bg-primary/10 data-[drop-over]:ring-2 data-[drop-over]:ring-inset data-[drop-over]:ring-primary/40")}>
       {label}
     </button>
   )
@@ -56,6 +60,39 @@ export function LibraryPage() {
     return chain
   }, [current, folders])
 
+  // The names of the views are written out only where the header has the room
+  const wide = useFormFactor() === "desktop"
+  const view = useSettingsStore((state) => state.libraryView)
+  const setView = useSettingsStore((state) => state.setLibraryView)
+  /** The folders opened in the tree view (kept while the page is open). */
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
+  const toggle = (id: string) =>
+    setExpanded((previous) => {
+      const next = new Set(previous)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
+  // The lines of the table view (what is in this folder) or the tree view (every folder from the top, the opened ones with their content)
+  const rows = useMemo<LibraryRow[]>(() => {
+    const itemsOf = (id: string) => documents.filter((doc) => doc.parentId === id).length + folders.filter((folder) => folder.parentId === id).length
+    const sortedFolders = (parent: string | null) => folders.filter((folder) => (folder.parentId ?? null) === parent).sort((a, b) => a.name.localeCompare(b.name))
+    const docsOf = (parent: string | null) => documents.filter((doc) => (doc.parentId ?? null) === parent)
+    // Inside a folder the first line is `..`, one level up
+    if (view === "table") return [...(current ? [{ kind: "up", parent: current.parentId ?? null } as LibraryRow] : []), ...sortedFolders(here).map((folder): LibraryRow => ({ kind: "folder", folder, depth: 0, items: itemsOf(folder.id) })), ...docsOf(here).map((doc): LibraryRow => ({ kind: "doc", doc, depth: 0 }))]
+    const out: LibraryRow[] = []
+    const walk = (parent: string | null, depth: number, seen: ReadonlySet<string>) => {
+      for (const folder of sortedFolders(parent)) {
+        out.push({ kind: "folder", folder, depth, items: itemsOf(folder.id) })
+        // `seen` stops a damaged record that points to itself from looping
+        if (expanded.has(folder.id) && !seen.has(folder.id)) walk(folder.id, depth + 1, new Set(seen).add(folder.id))
+      }
+      for (const doc of docsOf(parent)) out.push({ kind: "doc", doc, depth })
+    }
+    walk(null, 0, new Set())
+    return out
+  }, [view, documents, folders, here, current, expanded])
+
   const countIn = (id: string) => documents.filter((doc) => doc.parentId === id).length + folders.filter((folder) => folder.parentId === id).length
   const open = (doc: DocumentItem) => void navigate({ to: "/editor/$documentId", params: { documentId: doc.id } })
   const drop = (target: string | null) => (payload: DragPayload) => store.move(payload.docs, payload.folders, target)
@@ -75,7 +112,7 @@ export function LibraryPage() {
 
   const exportZip = async (doc: DocumentItem) => {
     try {
-      const bytes = await exportProjectZip(doc.id, doc.title, doc.mainFile)
+      const bytes = await exportProjectZip(doc.id, doc.title, (await projectMainFile(doc.id)) ?? doc.mainFile)
       await saveBytes(bytes, `${doc.title.replace(/[\\/:*?"<>|]+/g, "_").trim() || "project"}.zip`, "application/zip")
     } catch (error) {
       setProblem(String((error as Error)?.message ?? error))
@@ -159,7 +196,21 @@ export function LibraryPage() {
   }
 
   const dialogTitle = nameDialog?.kind === "document" ? t("library.new") : nameDialog?.kind === "folder" ? (nameDialog.folder ? t("common.rename") : t("library.newFolder")) : t("common.rename")
-  const empty = shownDocs.length === 0 && shownFolders.length === 0
+  const empty = view === "tree" ? documents.length === 0 && folders.length === 0 : shownDocs.length === 0 && shownFolders.length === 0
+  const shownPath = view === "tree" ? [] : path
+  const viewSwitch = (
+    <SegmentedControl
+      compact
+      label={t("library.view")}
+      value={view}
+      onValueChange={setView}
+      options={[
+        { value: "grid", label: wide ? t("library.viewGrid") : "", title: t("library.viewGrid"), icon: <LayoutGrid /> },
+        { value: "table", label: wide ? t("library.viewTable") : "", title: t("library.viewTable"), icon: <Table2 /> },
+        { value: "tree", label: wide ? t("library.viewTree") : "", title: t("library.viewTree"), icon: <FolderTree /> },
+      ]}
+    />
+  )
 
   return (
     <>
@@ -190,27 +241,45 @@ export function LibraryPage() {
         }
       />
 
-      {path.length > 0 && (
-        <nav aria-label={t("library.path")} className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border px-3 py-1" dir="auto">
-          <Crumb label={t("library.title")} folder={DROP_ROOT} current={false} onOpen={() => store.openFolder(null)} onDropItems={drop(null)} />
-          {path.map((folder, index) => (
+      {/* The path bar is always there: the folders above, and at its end the choice of view. The tree shows every folder, so it has no path. */}
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
+        <nav aria-label={t("library.path")} className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto" dir="auto">
+          <Crumb label={t("library.title")} folder={DROP_ROOT} current={shownPath.length === 0} onOpen={() => store.openFolder(null)} onDropItems={drop(null)} />
+          {shownPath.map((folder, index) => (
             <span key={folder.id} className="flex items-center gap-0.5">
               <ChevronRight className="size-3 text-muted-foreground rtl:rotate-180" />
-              <Crumb label={folder.name} folder={folder.id} current={index === path.length - 1} onOpen={() => store.openFolder(folder.id)} onDropItems={drop(folder.id)} />
+              <Crumb label={folder.name} folder={folder.id} current={index === shownPath.length - 1} onOpen={() => store.openFolder(folder.id)} onDropItems={drop(folder.id)} />
             </span>
           ))}
         </nav>
-      )}
+        {viewSwitch}
+      </div>
 
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4" onDragOver={(event) => event.preventDefault()} onDrop={(event) => path.length > 0 && event.preventDefault()}>
+          <div className={cn("flex-1 overflow-y-auto", view === "grid" || empty ? "p-3 sm:p-4" : "p-0")} onDragOver={(event) => event.preventDefault()} onDrop={(event) => path.length > 0 && event.preventDefault()}>
             {empty ? (
               <div className="flex h-full flex-col items-center justify-center gap-1 text-center text-muted-foreground">
                 <FileText className="mb-2 size-10 stroke-1" />
                 <div className="text-sm font-medium text-foreground">{t(current ? "library.emptyFolder" : "library.empty")}</div>
                 <div className="text-xs">{t("library.emptyHint")}</div>
               </div>
+            ) : view !== "grid" ? (
+              <LibraryRows
+                rows={rows}
+                tree={view === "tree"}
+                expanded={expanded}
+                onToggle={toggle}
+                onOpenFolder={store.openFolder}
+                onOpenTop={() => store.openFolder(null)}
+                onOpenDoc={open}
+                folderActions={folderActions}
+                docActions={docActions}
+                onDropItems={drop}
+                onTouchDrop={(payload, target) => store.move(payload.docs, payload.folders, target)}
+                menuLabel={t("library.actions")}
+                formatDate={(time) => formatDate.format(time)}
+              />
             ) : (
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {shownFolders.map((folder) => (
