@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فرمتکس · ه: آشپزخانه‌ی کامپوننت</title>
+<script src="lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Vazirmatn:wght@300;400;500;700;900&family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet">
+<style>
+:root{--y:#ffe14d;--k:#111;--w:#fffdf6}
+*{box-sizing:border-box;margin:0}
+body{background:var(--y);color:var(--k);font:500 16px/1.7 Inter,Vazirmatn,system-ui,sans-serif;min-height:100svh}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+header{display:flex;align-items:center;gap:20px;height:64px;font-size:14px}
+header b{font-size:16px;font-weight:900}header span{flex:1}header .dl{background:var(--k);color:var(--y);padding:6px 16px;border-radius:8px;font-weight:700}
+h1{font-weight:900;font-size:clamp(40px,7.4vw,100px);line-height:1.1;letter-spacing:-.03em;margin:34px 0 10px}
+h1 mark{background:var(--k);color:var(--y);padding:0 .22em;border-radius:.16em;display:inline-block;transform:rotate(-2deg)}
+.sub{max-width:520px;font-weight:500}
+.lab{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:22px;margin-top:34px;align-items:start}
+.panel{border:2.5px solid var(--k);border-radius:18px;background:var(--w);box-shadow:6px 6px 0 var(--k);padding:20px}
+.panel h3{font:700 12px 'JetBrains Mono';letter-spacing:.14em;margin-bottom:14px;direction:ltr;text-align:right;display:flex;justify-content:space-between}
+.tags{display:flex;flex-wrap:wrap;gap:10px;direction:ltr}
+.tag{font:700 15px 'JetBrains Mono';border:2.5px solid var(--k);border-radius:10px;background:#fff;padding:8px 14px;cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s;box-shadow:3px 3px 0 var(--k);user-select:none}
+.tag:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--k)}
+.tag:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--k)}
+.tag.on{background:var(--k);color:var(--y);transform:translate(3px,3px);box-shadow:0 0 0 var(--k)}
+.dialwrap{display:flex;align-items:center;gap:22px;margin-top:26px;padding-top:22px;border-top:2.5px dashed #11111155}
+.dial{position:relative;width:132px;height:132px;flex:none;touch-action:none;cursor:grab}
+.dial svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.knob{position:absolute;inset:20px;border-radius:50%;background:var(--k);box-shadow:3px 3px 0 #0005;transition:transform .35s cubic-bezier(.3,1.5,.5,1)}
+.knob::after{content:"";position:absolute;top:8px;left:50%;width:6px;height:22px;margin-left:-3px;border-radius:3px;background:var(--y)}
+.dial.drag .knob{transition:none}
+.themes{display:grid;gap:6px;font-weight:700}
+.themes button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:3px 10px;border-radius:8px;font:700 15px Inter,Vazirmatn}
+.themes button i{width:14px;height:14px;border-radius:50%;border:2px solid var(--k);background:var(--c)}
+.themes button.on{background:var(--k);color:var(--y)}
+.themes button.on i{border-color:var(--y)}
+/* the sheet */
+.sheet{--ac:#111;--bg:#fffdf6;--fg:#111;--ff:Inter,Vazirmatn;--hd:Inter,Vazirmatn;background:var(--bg);color:var(--fg);font-family:var(--ff);min-height:540px;transition:background .4s,color .4s;position:relative;padding:34px 34px 44px}
+.sheet h2{font:900 34px/1.25 var(--hd);margin-bottom:6px;color:var(--fg);transition:color .4s}
+.sheet .meta{font:500 12px 'JetBrains Mono';color:var(--ac);letter-spacing:.1em;margin-bottom:20px;direction:ltr;text-align:right;transition:color .4s}
+.sheet p.t{font-size:16px;line-height:2;opacity:.85}
+.sheet .empty{border:2px dashed currentColor;opacity:.3;border-radius:12px;padding:28px;text-align:center;margin-top:18px;font-weight:700}
+.cmp{margin-top:18px;animation:pop .45s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.8) translateY(14px)}}
+.c-alert{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:10px;background:color-mix(in srgb,var(--ac) 12%,transparent);border-inline-start:5px solid var(--ac);font-weight:700}
+.c-alert i{width:22px;height:22px;border-radius:50%;background:var(--ac);color:var(--bg);display:grid;place-items:center;font:900 13px Inter;font-style:normal;flex:none}
+.c-chart{display:flex;gap:10px;align-items:flex-end;height:100px;direction:ltr;border-bottom:2px solid currentColor}
+.c-chart i{flex:1;background:color-mix(in srgb,var(--ac) 35%,transparent);border-radius:4px 4px 0 0}.c-chart i:last-child{background:var(--ac)}
+.c-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.c-grid div{border:2px solid currentColor;border-radius:10px;padding:10px;text-align:center;font-weight:700;font-size:14px}
+.c-grid div:nth-child(2){background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.c-tree{font:600 14px Inter,Vazirmatn;line-height:2}
+.c-tree ul{list-style:none;padding:0;margin:0}.c-tree ul ul{margin-inline-start:20px;border-inline-start:2px solid var(--ac);padding-inline-start:14px}
+.c-tree li::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ac);margin-inline-end:8px}
+.c-table{width:100%;border-collapse:collapse;font-size:14px;font-weight:600}
+.c-table th{background:var(--ac);color:var(--bg);padding:6px 10px;text-align:start}.c-table td{padding:6px 10px;border-bottom:1.5px solid currentColor}
+.c-math{font:italic 700 26px/1.2 Fraunces,serif;text-align:center;direction:ltr;letter-spacing:.02em}
+.c-math sup{font-size:.6em}.c-math .fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .3em;font-size:.8em}.c-math .fr b{border-bottom:2px solid currentColor;padding:0 .3em}
+.stamp{position:absolute;top:18px;inset-inline-start:18px;font:900 11px 'JetBrains Mono';letter-spacing:.14em;border:2px solid var(--ac);color:var(--ac);padding:2px 8px;border-radius:5px;transform:rotate(-5deg);direction:ltr;transition:.4s}
+.cta{margin:84px 0 40px;text-align:center}
+.cta a{display:inline-block;background:var(--k);color:var(--y);padding:18px 40px;border-radius:14px;font-weight:900;font-size:22px;box-shadow:6px 6px 0 #0006;transition:.15s}
+.cta a:hover{transform:translate(-2px,-2px);box-shadow:9px 9px 0 #0006}
+.cta a:active{transform:translate(4px,4px);box-shadow:0 0 0 #0006}
+.cta p{margin-top:16px;font-size:13px;font-weight:600}
+footer{border-top:2.5px solid var(--k);padding:16px 0;font-size:13px;font-weight:600}
+@media(max-width:860px){.lab{grid-template-columns:1fr}.sheet{min-height:420px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b><span class="l-fa">فرمتکس</span><span class="l-en">Formatex</span></b><span></span><a href="index.html"><span class="l-fa">همه‌ی طرح‌ها</span><span class="l-en">All concepts</span></a><a class="dl" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود</span><span class="l-en">Download</span></a></header>
+  <h1><span class="l-fa">سند را <mark>بپز.</mark></span><span class="l-en">Cook a <mark>document.</mark></span></h1>
+  <p class="sub"><span class="l-fa">چند کامپوننت انتخاب کنید، دکمه‌ی تم را بچرخانید، و صفحه همین‌جا ساخته می‌شود. در فرمتکس هر کدام فقط یک تگ است.</span><span class="l-en">Pick a few components, turn the theme dial, and the page builds right here. In Formatex each one is a single tag.</span></p>
+
+  <section class="lab">
+    <div class="panel">
+      <h3><span id="count">0 / 6</span><span>COMPONENTS</span></h3>
+      <div class="tags" id="tags">
+        <button class="tag" data-k="alert">&lt;alert&gt;</button>
+        <button class="tag" data-k="chart">&lt;chart&gt;</button>
+        <button class="tag" data-k="grid">&lt;grid&gt;</button>
+        <button class="tag" data-k="tree">&lt;tree&gt;</button>
+        <button class="tag" data-k="table">&lt;table&gt;</button>
+        <button class="tag" data-k="math">&lt;math&gt;</button>
+      </div>
+      <div class="dialwrap">
+        <div class="dial" id="dial"><svg viewBox="0 0 132 132" id="ticks"></svg><div class="knob" id="knob"></div></div>
+        <div class="themes" id="themes"></div>
+      </div>
+    </div>
+    <div class="panel" style="padding:0;overflow:hidden">
+      <div class="sheet" id="sheet">
+        <span class="stamp" id="stamp">CLASSIC</span>
+        <h2><span class="l-fa">گزارش فصل سوم</span><span class="l-en">Q3 report</span></h2>
+        <div class="meta">PAGE 1 / 1</div>
+        <p class="t"><span class="l-fa">نتایج با Excel و Python هم‌خوان بود؛ ۱۲٪ رشد نسبت به فصل پیش، و بیشترِ آن از بازار داخلی.</span><span class="l-en">Results match Excel and Python: 12% growth over last quarter, most of it from the home market.</span></p>
+        <div id="slot"></div>
+        <div class="empty" id="empty"><span class="l-fa">یک تگ را انتخاب کنید</span><span class="l-en">Pick a tag</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <a href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود فرمتکس</span><span class="l-en">Download Formatex</span></a>
+    <p><span class="l-fa">ویندوز · مک · لینوکس · اندروید — رایگان و متن‌باز</span><span class="l-en">Windows · macOS · Linux · Android — free and open source</span></p>
+  </section>
+  <footer><span class="l-fa">ساخته‌شده با Tauri و Typst</span><span class="l-en">Built with Tauri and Typst</span></footer>
+</div>
+<script>
+const TPLS={
+fa:{
+ alert:'<div class="c-alert"><i>i</i>پیش از چاپ، شماره‌ی صفحه‌ها را بازبینی کنید.</div>',
+ chart:'<div class="c-chart"><i style="height:30%"></i><i style="height:52%"></i><i style="height:38%"></i><i style="height:72%"></i><i style="height:96%"></i></div>',
+ grid:'<div class="c-grid"><div>۱۲٪ رشد</div><div>۴۸ مشتری</div><div>۳ شهر</div></div>',
+ tree:'<div class="c-tree"><ul><li>گزارش<ul><li>مقدمه</li><li>روش<ul><li>داده</li></ul></li><li>نتیجه</li></ul></li></ul></div>',
+ table:'<table class="c-table"><tr><th>فصل</th><th>فروش</th></tr><tr><td>بهار</td><td>۱۲۰</td></tr><tr><td>تابستان</td><td>۱۶۸</td></tr></table>',
+ math:'<div class="c-math">x<sup>2</sup> + y<sup>2</sup> = <span class="fr"><b>a</b><span>b</span></span></div>'},
+en:{
+ alert:'<div class="c-alert"><i>i</i>Check the page numbers before you print.</div>',
+ chart:'<div class="c-chart"><i style="height:30%"></i><i style="height:52%"></i><i style="height:38%"></i><i style="height:72%"></i><i style="height:96%"></i></div>',
+ grid:'<div class="c-grid"><div>12% growth</div><div>48 clients</div><div>3 cities</div></div>',
+ tree:'<div class="c-tree"><ul><li>Report<ul><li>Intro</li><li>Method<ul><li>Data</li></ul></li><li>Result</li></ul></li></ul></div>',
+ table:'<table class="c-table"><tr><th>Quarter</th><th>Sales</th></tr><tr><td>Spring</td><td>120</td></tr><tr><td>Summer</td><td>168</td></tr></table>',
+ math:'<div class="c-math">x<sup>2</sup> + y<sup>2</sup> = <span class="fr"><b>a</b><span>b</span></span></div>'}};
+const TPL=new Proxy({},{get:(_,k)=>TPLS[window.LANG||'en'][k]});
+const ORDER=Object.keys(TPLS.en),on=new Set();
+const slot=document.getElementById('slot'),empty=document.getElementById('empty');
+function render(){
+  slot.innerHTML='';ORDER.filter(k=>on.has(k)).forEach(k=>{const d=document.createElement('div');d.className='cmp';d.innerHTML=TPL[k];slot.appendChild(d)});
+  empty.style.display=on.size?'none':'';document.getElementById('count').textContent=on.size+' / '+ORDER.length;
+}
+document.getElementById('tags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(!b)return;const k=b.dataset.k;on.has(k)?on.delete(k):on.add(k);b.classList.toggle('on');render()});
+['alert','grid','chart'].forEach((k,i)=>setTimeout(()=>document.querySelector(`.tag[data-k=${k}]`).click(),500+i*450));
+
+/* the dial */
+const TH=[
+ {n:'کلاسیک',e:'Classic',c:'#111',bg:'#fffdf6',fg:'#111',ac:'#111',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'CLASSIC'},
+ {n:'نیلی',e:'Indigo',c:'#2f5bff',bg:'#f1f4ff',fg:'#0e1a4a',ac:'#2f5bff',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'INDIGO'},
+ {n:'زمرد',e:'Emerald',c:'#14935a',bg:'#effaf3',fg:'#0b3b25',ac:'#14935a',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'EMERALD'},
+ {n:'آتش',e:'Ember',c:'#e8431f',bg:'#fff1ea',fg:'#4a1608',ac:'#e8431f',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'EMBER'},
+ {n:'گل',e:'Rose',c:'#d6338a',bg:'#fff0f7',fg:'#4a0f2d',ac:'#d6338a',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'ROSE'},
+ {n:'مرکب',e:'Ink',c:'#f5c518',bg:'#16161a',fg:'#f3efe3',ac:'#f5c518',ff:'Inter,Vazirmatn',hd:'Inter,Vazirmatn',s:'INK'}
+];
+const sheet=document.getElementById('sheet'),knob=document.getElementById('knob'),dial=document.getElementById('dial'),ticks=document.getElementById('ticks'),list=document.getElementById('themes');
+const N=TH.length,STEP=360/N;let cur=0;
+ticks.innerHTML=TH.map((t,i)=>{const a=(i*STEP-90)*Math.PI/180;return `<circle cx="${66+Math.cos(a)*62}" cy="${66+Math.sin(a)*62}" r="5" fill="${t.c}" stroke="#111" stroke-width="2.5"/>`}).join('');
+const drawList=()=>{list.innerHTML=TH.map((t,i)=>`<button data-i="${i}" style="--c:${t.c}"><i></i>${(window.LANG==='fa')?t.n:t.e}</button>`).join('');[...list.children].forEach((b,j)=>b.classList.toggle('on',j===cur))};drawList();
+function apply(i){cur=i;const t=TH[i];
+  for(const [k,v] of Object.entries({bg:t.bg,fg:t.fg,ac:t.ac,ff:t.ff,hd:t.hd}))sheet.style.setProperty('--'+k,v);
+  document.getElementById('stamp').textContent=t.s;knob.style.transform=`rotate(${i*STEP}deg)`;
+  [...list.children].forEach((b,j)=>b.classList.toggle('on',j===i));}
+list.addEventListener('click',e=>{const b=e.target.closest('button');b&&apply(+b.dataset.i)});
+let dragging=false;
+const angleOf=e=>{const r=dial.getBoundingClientRect();return (Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI+90+360)%360};
+dial.addEventListener('pointerdown',e=>{dragging=true;dial.setPointerCapture(e.pointerId);dial.classList.add('drag')});
+dial.addEventListener('pointermove',e=>{if(!dragging)return;const a=angleOf(e);knob.style.transform=`rotate(${a}deg)`;const i=Math.round(a/STEP)%N;if(i!==cur){apply(i);knob.style.transform=`rotate(${a}deg)`}});
+dial.addEventListener('pointerup',()=>{dragging=false;dial.classList.remove('drag');knob.style.transform=`rotate(${cur*STEP}deg)`});
+apply(0);
+document.addEventListener('langchange',()=>{drawList();render()});
+// the demo plays itself once so the dial is clearly alive
+[1,3,0].forEach((i,k)=>setTimeout(()=>{if(!dragging)apply(i)},2400+k*1100));
+</script>
+</body>
+</html>

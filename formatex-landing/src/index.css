@@ -1,20 +1,33 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource/inter/300.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
 @import "@fontsource/inter/700.css";
-@import "@fontsource/vazirmatn/400.css";
-@import "@fontsource/vazirmatn/500.css";
-@import "@fontsource/vazirmatn/600.css";
-@import "@fontsource/vazirmatn/700.css";
+@import "@fontsource/domine/400.css";
+@import "@fontsource/domine/500.css";
+@import "@fontsource/domine/600.css";
+@import "@fontsource/domine/700.css";
+@import "./landing.css";
+
+/* Titles: Domine for Latin, Abar (variable) for Persian. Abar's axes: wght 400 to 1000, and CNTR, the thick-thin contrast, 0 to 100.
+   Text: Inter for Latin, Iran Sans X (the font the app and the PDF engine bring) for Persian. */
+@font-face { font-family: "Abar"; font-weight: 400 1000; font-display: swap; src: url("./assets/fonts/Abar-VF.woff2") format("woff2"); }
+@font-face { font-family: "Vazir Code"; font-weight: 400 700; font-display: swap; src: url("./assets/fonts/Vazir-Code.woff2") format("woff2"); }
+@font-face { font-family: "IRANSansX"; font-weight: 300; font-display: swap; src: url("./assets/fonts/IRANSansX-Light.ttf") format("truetype"); }
+@font-face { font-family: "IRANSansX"; font-weight: 400; font-display: swap; src: url("./assets/fonts/IRANSansX-Regular.ttf") format("truetype"); }
+@font-face { font-family: "IRANSansX"; font-weight: 500; font-display: swap; src: url("./assets/fonts/IRANSansX-Medium.ttf") format("truetype"); }
+@font-face { font-family: "IRANSansX"; font-weight: 600; font-display: swap; src: url("./assets/fonts/IRANSansX-DemiBold.ttf") format("truetype"); }
+@font-face { font-family: "IRANSansX"; font-weight: 700; font-display: swap; src: url("./assets/fonts/IRANSansX-Bold.ttf") format("truetype"); }
+@font-face { font-family: "IRANSansX"; font-weight: 800 900; font-display: swap; src: url("./assets/fonts/IRANSansX-ExtraBold.ttf") format("truetype"); }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "Inter", "Vazirmatn", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", "IRANSansX", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -42,49 +55,37 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The same tokens as the app (formatex-app/src/index.css), so the two look like one product */
+/* Dark only. The accents are the three colors of the logo (violet, blue, green), lightened to read on black */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.86 0.005 260);
-  --input: oklch(0.86 0.005 260);
-  --ring: oklch(0.708 0 0);
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  --font-display: "Domine", "Abar", Georgia, serif;
+  --violet: #c79bff;
+  --blue: #8db4ff;
+  --green: #6ee7a0;
+  --background: #07080c;
+  --foreground: #f3f4f8;
+  --card: #0d0f15;
+  --card-foreground: #f3f4f8;
+  --popover: #0d0f15;
+  --popover-foreground: #f3f4f8;
+  --primary: #f3f4f8;
+  --primary-foreground: #07080c;
+  --secondary: #141722;
+  --secondary-foreground: #f3f4f8;
+  --muted: #141722;
+  --muted-foreground: #8d93a6;
+  --accent: #141722;
+  --accent-foreground: #f3f4f8;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #1f2330;
+  --input: #1f2330;
+  --ring: #3d6dff;
   --radius: 0.625rem;
+  color-scheme: dark;
 }
 
-.dark {
-  --background: oklch(0.185 0.005 260);
-  --foreground: oklch(0.96 0.005 260);
-  --card: oklch(0.22 0.008 260);
-  --card-foreground: oklch(0.96 0.005 260);
-  --popover: oklch(0.23 0.008 260);
-  --popover-foreground: oklch(0.96 0.005 260);
-  --primary: oklch(0.94 0.005 260);
-  --primary-foreground: oklch(0.185 0.005 260);
-  --secondary: oklch(0.26 0.008 260);
-  --secondary-foreground: oklch(0.96 0.005 260);
-  --muted: oklch(0.25 0.008 260);
-  --muted-foreground: oklch(0.72 0.01 260);
-  --accent: oklch(0.26 0.008 260);
-  --accent-foreground: oklch(0.96 0.005 260);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.38 0.012 260);
-  --input: oklch(0.38 0.012 260);
-  --ring: oklch(0.6 0.01 260);
-}
+/* Persian source code is set in Vazir Code, the monospace Persian font */
+[dir="rtl"] { --font-mono: "Vazir Code", ui-monospace, Consolas, monospace; }
 
 @layer base {
   * {

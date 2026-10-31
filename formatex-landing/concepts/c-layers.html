@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فرمتکس · ج: لایه‌های سند</title>
+<script src="lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf2;--ink:#0f1722;--mute:#5d6b7c;--ac:#2f5bff}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.7 Inter,Vazirmatn,system-ui,sans-serif}
+a{color:inherit;text-decoration:none}
+header{position:fixed;inset:0 0 auto 0;z-index:20;display:flex;align-items:center;gap:20px;height:60px;padding:0 24px;font-size:14px}
+header b{font-size:15px}header span{flex:1}header .dl{background:var(--ink);color:#fff;padding:5px 14px;border-radius:99px;font-weight:600}
+.track{height:340vh;position:relative}
+.sticky{position:sticky;top:0;height:100svh;overflow:hidden;display:grid;grid-template-columns:1fr 1.25fr;align-items:center;padding:0 5vw;gap:2vw}
+.copy h1{font-weight:900;font-size:clamp(38px,5.4vw,78px);line-height:1.15;letter-spacing:-.02em}
+.copy h1 em{font-style:normal;color:var(--ac)}
+.copy>p{color:var(--mute);max-width:420px;margin-top:14px}
+ol{list-style:none;margin-top:34px;padding:0;display:grid;gap:4px;max-width:380px}
+ol li{display:flex;gap:14px;align-items:baseline;padding:9px 14px;border-radius:12px;border:1px solid transparent;transition:.3s;color:var(--mute);cursor:default}
+ol li b{font:500 12px 'JetBrains Mono';color:inherit;width:22px}
+ol li span{font-weight:700;font-size:17px}
+ol li small{margin-inline-start:auto;font-size:12.5px;opacity:.0;transition:.3s}
+ol li.on{color:var(--ink);background:#fff;border-color:#d4dbe5;box-shadow:0 10px 24px -14px #1b2a4a66}
+ol li.on small{opacity:.8}
+.scene{height:min(86svh,740px);perspective:2600px;display:grid;place-items:center}
+.world{position:relative;width:340px;height:440px;transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateZ(var(--rz)) translateZ(-120px) scale(.92);transition:transform .15s linear}
+.sheet{position:absolute;inset:0;border-radius:10px;transform:translateZ(var(--z));transform-style:preserve-3d;padding:26px;border:1px solid #0000001a;
+  box-shadow:0 0 0 1px #fff8 inset;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .3s,filter .3s;overflow:hidden}
+.sheet.on{box-shadow:0 0 0 2px var(--ac),0 0 60px -6px #2f5bff88;filter:none}
+.sheet label{position:absolute;bottom:12px;inset-inline-end:16px;font:600 11px 'JetBrains Mono';letter-spacing:.14em;opacity:.55}
+.s-src{background:#10141c;color:#cbd5e1;font:500 13px/2 'JetBrains Mono';direction:ltr;white-space:pre}
+.s-src i{font-style:normal;color:#60a5fa}.s-src u{text-decoration:none;color:#f9a8d4}.s-src q{quotes:none;color:#fcd34d}
+.s-cmp{background:#f2f6ff;border-style:dashed;border-color:#2f5bff55}
+.blk{border:1.5px dashed #2f5bff;border-radius:8px;color:#2f5bff;font:600 12px 'JetBrains Mono';padding:10px 12px;margin-bottom:16px;direction:ltr;display:flex;align-items:flex-end;background:#2f5bff0d}
+.s-thm{background:linear-gradient(135deg,#ffe3b8,#ffc9d6 55%,#d3c9ff)}
+.s-thm .aa{font:900 120px/1 Vazirmatn;color:#161616;margin:6px 0 10px}
+.dots{display:flex;gap:10px}.dots i{width:30px;height:30px;border-radius:50%;border:2px solid #fff}
+.s-pdf{background:#fffefb}
+.s-pdf h4{font:900 26px Inter,Vazirmatn;margin-bottom:12px}
+.ln{height:7px;border-radius:4px;background:#d9d9d9;margin-bottom:10px}
+.al{border-inline-start:4px solid #2f9e57;background:#e9f6ec;border-radius:5px;padding:7px 12px;font:500 13px Inter,Vazirmatn;margin:14px 0}
+.bars{display:flex;gap:8px;align-items:flex-end;height:70px;direction:ltr;margin-top:12px}.bars i{flex:1;background:#d9d6cb;border-radius:3px 3px 0 0}.bars i:last-child{background:var(--ac)}
+.after{background:#101a2b;color:#fff;text-align:center;padding:110px 20px 70px}
+.after h2{font-weight:900;font-size:clamp(30px,4.4vw,54px);line-height:1.3}
+.after a{display:inline-block;margin-top:28px;background:#fff;color:#101a2b;padding:15px 34px;border-radius:99px;font-weight:800;font-size:18px;transition:.25s}
+.after a:hover{transform:translateY(-3px);background:#cfe0ff}
+.after p{opacity:.55;font-size:13px;margin-top:14px}
+@media(max-width:860px){.sticky{grid-template-columns:1fr;align-content:start;padding-top:80px;gap:0}.scene{height:52svh}.world{width:240px;height:312px;font-size:.7em}ol{margin-top:14px}ol li small{display:none}.copy h1{font-size:36px}.copy>p{display:none}.sheet{padding:16px}.s-thm .aa{font-size:80px}}
+</style>
+</head>
+<body>
+<header><b><span class="l-fa">فرمتکس</span><span class="l-en">Formatex</span></b><span></span><a href="index.html"><span class="l-fa">همه‌ی طرح‌ها</span><span class="l-en">All concepts</span></a><a class="dl" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود</span><span class="l-en">Download</span></a></header>
+<div class="track" id="track">
+ <div class="sticky">
+  <div class="copy">
+    <h1><span class="l-fa">یک سند،<br><em>چهار لایه.</em></span><span class="l-en">One document,<br><em>four layers.</em></span></h1>
+    <p><span class="l-fa">پایین بروید تا سند باز شود. متن ساده شما چطور به یک PDF دقیق تبدیل می‌شود.</span><span class="l-en">Scroll to pull the document apart: how your plain text becomes an exact PDF.</span></p>
+    <ol id="steps">
+      <li data-i="3"><b>01</b><span><span class="l-fa">متن</span><span class="l-en">Text</span></span><small><span class="l-fa">مارک‌داون ساده</span><span class="l-en">Plain Markdown</span></small></li>
+      <li data-i="2"><b>02</b><span><span class="l-fa">کامپوننت</span><span class="l-en">Components</span></span><small>alert, chart, tree…</small></li>
+      <li data-i="1"><b>03</b><span><span class="l-fa">تم</span><span class="l-en">Theme</span></span><small><span class="l-fa">رنگ، فونت، اندازه</span><span class="l-en">color, font, size</span></small></li>
+      <li data-i="0"><b>04</b><span>PDF</span><small><span class="l-fa">آماده‌ی چاپ</span><span class="l-en">ready to print</span></small></li>
+    </ol>
+  </div>
+  <div class="scene" id="scene">
+   <div class="world" id="world">
+    <div class="sheet s-pdf" data-i="0"><h4><span class="l-fa">گزارش فصل سوم</span><span class="l-en">Q3 report</span></h4><div class="ln" style="width:92%"></div><div class="ln" style="width:100%"></div><div class="ln" style="width:70%"></div><div class="al"><span class="l-fa">پیش از چاپ بازبینی کنید</span><span class="l-en">Review before printing</span></div><div class="ln" style="width:96%"></div><div class="ln" style="width:60%"></div><div class="bars"><i style="height:30%"></i><i style="height:50%"></i><i style="height:38%"></i><i style="height:70%"></i><i style="height:95%"></i></div><label>PDF</label></div>
+    <div class="sheet s-thm" data-i="1"><div class="aa">Aa</div><div class="dots"><i style="background:#161616"></i><i style="background:#2f5bff"></i><i style="background:#2f9e57"></i><i style="background:#e8431f"></i></div><label>THEME</label></div>
+    <div class="sheet s-cmp" data-i="2"><div class="blk" style="height:48px">alert</div><div class="blk" style="height:88px">chart</div><div class="blk" style="height:40px">tree</div><div class="blk" style="height:70px">grid</div><label>COMPONENTS</label></div>
+    <div class="sheet s-src" data-i="3"><i>#</i> <span class="l-fa">گزارش فصل سوم</span><span class="l-en">Q3 report</span>
+
+<span class="l-fa">نتایج با <u>**Excel**</u> هم‌خوان.</span><span class="l-en">Results match <u>**Excel**</u>.</span>
+
+<i>&lt;alert</i> <q>type="tip"</q><i>&gt;</i>
+  <span class="l-fa">پیش از چاپ…</span><span class="l-en">Review before printing…</span>
+<i>&lt;/alert&gt;</i>
+
+<i>&lt;chart</i> <q>data="4,7,5,9,12"</q> <i>/&gt;</i><label>MARKDOWN</label></div>
+   </div>
+  </div>
+ </div>
+</div>
+<section class="after">
+  <h2><span class="l-fa">از متن ساده تا صفحه‌ی آماده.<br>بدون دردسر.</span><span class="l-en">From plain text to a finished page.<br>No fuss.</span></h2>
+  <a href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود فرمتکس</span><span class="l-en">Download Formatex</span></a>
+  <p><span class="l-fa">ویندوز · مک · لینوکس · اندروید · رایگان و متن‌باز</span><span class="l-en">Windows · macOS · Linux · Android · free and open source</span></p>
+</section>
+<script>
+const track=document.getElementById('track'),world=document.getElementById('world'),sheets=[...world.children],steps=[...document.querySelectorAll('#steps li')];
+let mx=0,my=0,hover=-1,p=0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=t=>t*t*(3-2*t);
+function frame(){
+  const r=track.getBoundingClientRect(),total=track.offsetHeight-innerHeight;
+  p=clamp(-r.top/total,0,1);
+  const open=ease(clamp(p*1.7,0,1)),narrow=innerWidth<860,gap=narrow?46:74;
+  world.style.setProperty('--rx',(18+ (1-open)*14 + 40*open + my*-6)+'deg');
+  world.style.setProperty('--rz',(-4 - 34*open + mx*8 + p*14)+'deg');
+  const active=p<.22?-1:clamp(3-Math.floor((p-.22)/.19),0,3);
+  sheets.forEach(s=>{const i=+s.dataset.i;const lift=(hover===i?18:0);
+    s.style.setProperty('--z',(i*(8+open*gap)+lift)+'px');
+    const on=(hover>=0?hover===i:active===i);s.classList.toggle('on',on&&open>.3);});
+  steps.forEach(li=>{const i=+li.dataset.i;li.classList.toggle('on',hover>=0?hover===i:active===i)});
+  requestAnimationFrame(frame);
+}
+addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+sheets.forEach(s=>{s.addEventListener('pointerenter',()=>hover=+s.dataset.i);s.addEventListener('pointerleave',()=>hover=-1)});
+steps.forEach(li=>{li.addEventListener('pointerenter',()=>hover=+li.dataset.i);li.addEventListener('pointerleave',()=>hover=-1)});
+frame();
+</script>
+</body>
+</html>

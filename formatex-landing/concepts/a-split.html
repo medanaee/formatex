@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فرمتکس · الف: صفحه‌ی دونیمه</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4ef;--ink:#121212;--mute:#77746b;--line:#dcd9cf;--ac:#e8431f}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.7 Inter,Vazirmatn,system-ui,sans-serif;min-height:100svh}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{display:flex;align-items:center;gap:20px;height:64px;font-size:14px}
+header b{font-weight:700;display:flex;gap:8px;align-items:center;font-size:15px}
+header b i{width:10px;height:10px;background:var(--ac);border-radius:50%}
+header span{flex:1}
+header a.dl{border:1.5px solid var(--ink);padding:5px 14px;border-radius:99px;font-weight:600;transition:.2s}
+header a.dl:hover{background:var(--ink);color:var(--bg)}
+.hero{text-align:center;padding:48px 0 36px}
+.hero small{font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:var(--mute);direction:ltr;display:inline-block}
+h1{font-weight:900;font-size:clamp(40px,8vw,92px);line-height:1.15;margin:14px 0 12px;letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--ac)}
+.hero p{max-width:520px;margin:0 auto;color:var(--mute)}
+
+/* the splitter */
+.demo{position:relative;max-width:940px;height:448px;margin:28px auto 0;border-radius:16px;overflow:hidden;direction:ltr;user-select:none;touch-action:pan-y;cursor:ew-resize;
+  box-shadow:0 1px 0 #fff inset,0 30px 60px -30px rgba(40,30,10,.45),0 0 0 1px rgba(0,0,0,.08);--x:50%}
+.layer{position:absolute;inset:0;padding:22px 30px;display:flex;flex-direction:column}
+.row{height:var(--h);display:flex;align-items:center;flex:none}
+.src{background:#15171b;color:#d9d6cd;font:500 15px 'JetBrains Mono',monospace;white-space:pre}
+.src .row{border-bottom:1px dashed #ffffff14}
+.src .n{width:26px;color:#5b5e66;font-size:12px}
+.k{color:#7dd3fc}.s{color:#fbbf24}.h{color:#f472b6}.b{color:#86efac}.c{color:#6b6f78}
+.pdf{background:#fffdf8;color:#161616;clip-path:inset(0 0 0 var(--x))}
+.pdf .row{border-bottom:1px solid #00000010}
+.pdf h2{font:900 38px/1 Vazirmatn}
+.pdf p{font:400 21px Inter,Vazirmatn}
+.pdf p b{font-family:Inter;font-weight:700}
+.alert{display:flex;gap:12px;align-items:center;width:100%;padding:12px 16px;background:#e9f6ec;border-inline-start:4px solid #2f9e57;border-radius:6px;font:500 18px Inter,Vazirmatn;color:#14532d}
+.alert i{flex:none;width:22px;height:22px;border-radius:50%;background:#2f9e57;color:#fff;display:grid;place-items:center;font:700 13px Inter;font-style:normal}
+.chart{display:flex;align-items:flex-end;gap:12px;height:96px;width:100%;direction:ltr}
+html[lang=fa] .pdf{direction:rtl}html[lang=fa] .chart{justify-content:flex-end}
+.chart span{flex:0 0 46px;background:#d8d4c8;border-radius:5px 5px 0 0;position:relative}
+.chart span:last-child{background:var(--ac)}
+.chart span::after{content:attr(data-v);position:absolute;top:-22px;left:50%;transform:translateX(-50%);font:600 13px Inter,Vazirmatn}
+.tree{display:flex;align-items:center;gap:0;font:500 16px Inter,Vazirmatn}
+.tree span{padding:6px 14px;border:1.5px solid #161616;border-radius:8px}
+.tree u{width:26px;height:1.5px;background:#161616;display:block}
+.tag{position:absolute;top:10px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;padding:3px 8px;border-radius:99px;z-index:3}
+.tag.l{left:12px;background:#ffffff1c;color:#cfd0d4}
+.tag.r{right:12px;background:#0000000f;color:#555}
+.handle{position:absolute;top:0;bottom:0;left:var(--x);width:2px;margin-left:-1px;background:var(--ac);z-index:4}
+.handle::after{content:"";position:absolute;top:50%;left:50%;width:46px;height:46px;transform:translate(-50%,-50%);border-radius:50%;background:var(--ac);box-shadow:0 0 0 6px #e8431f33,0 6px 18px #0006}
+.handle svg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;width:24px}
+.demo:active .handle::after{box-shadow:0 0 0 10px #e8431f44,0 6px 18px #0006}
+.hint{text-align:center;margin-top:14px;font-size:13px;color:var(--mute)}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:72px;border-top:1.5px solid var(--ink)}
+.cols div{padding:22px 22px 28px;border-inline-start:1px solid var(--line)}
+.cols div:first-child{border:0;padding-inline-start:0}
+.cols b{font:500 12px 'JetBrains Mono',monospace;color:var(--ac);display:block;margin-bottom:6px;unicode-bidi:plaintext}
+.cols h3{font-size:19px;margin-bottom:4px}
+.cols p{color:var(--mute);font-size:14.5px}
+.cta{text-align:center;padding:84px 0 56px}
+.cta a.big{display:inline-flex;gap:10px;align-items:center;background:var(--ink);color:var(--bg);padding:16px 34px;border-radius:99px;font-weight:700;font-size:18px;transition:.25s}
+.cta a.big:hover{background:var(--ac);transform:translateY(-3px)}
+.cta p{margin-top:14px;color:var(--mute);font-size:13px}
+footer{border-top:1px solid var(--line);padding:18px 0;font-size:13px;color:var(--mute);display:flex;justify-content:space-between}
+@media(max-width:700px){.cols{grid-template-columns:1fr}.cols div{border:0;border-top:1px solid var(--line);padding-inline-start:0}.src{font-size:11px}.layer{padding:22px 14px}.pdf p{font-size:16px}.pdf h2{font-size:28px}.alert{font-size:14px}.demo{height:448px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b><i></i>فرمتکس</b><span></span><a href="index.html"><span class="l-fa">همه‌ی طرح‌ها</span><span class="l-en">All concepts</span></a><a class="dl" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود</span><span class="l-en">Download</span></a></header>
+
+  <section class="hero">
+    <small>MARKDOWN → PDF</small>
+    <h1><span class="l-fa">بنویس. <em>ببین.</em><br>چاپ کن.</span><span class="l-en">Write. <em>See.</em><br>Print.</span></h1>
+    <p><span class="l-fa">مارک‌داون ساده در یک طرف، صفحه‌ی حروف‌چینی‌شده‌ی فارسی و انگلیسی در طرف دیگر. خط را بکش و ببین.</span><span class="l-en">Plain Markdown on one side, the typeset Persian and English page on the other. Drag the line.</span></p>
+
+    <div class="demo" id="demo" role="slider" tabindex="0" aria-label="مقایسه‌ی متن و PDF" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <div class="layer src">
+<div class="row" style="--h:84px"><span class="n">1</span><span class="h">#</span><span>&nbsp;</span><span class="l-fa"><span dir="rtl">گزارش فصل سوم</span></span><span class="l-en">Q3 report</span></div>
+<div class="row" style="--h:60px"><span class="n">2</span><span class="l-fa"><span dir="rtl">نتایج با <span class="b">**Excel**</span> و <span class="b">**Python**</span> هم‌خوان بود؛ ۱۲٪ رشد.</span></span><span class="l-en"><span>Results match <span class="b">**Excel**</span> and <span class="b">**Python**</span>; 12% growth.</span></span></div>
+<div class="row" style="--h:76px"><span class="n">3</span><span class="k">&lt;alert</span><span>&nbsp;</span><span class="s">type="tip"</span><span class="k">&gt;</span><span class="l-fa"><span dir="rtl">پیش از چاپ بازبینی کنید</span></span><span class="l-en">Review before printing</span><span class="k">&lt;/alert&gt;</span></div>
+<div class="row" style="--h:124px"><span class="n">4</span><span class="k">&lt;chart</span><span>&nbsp;</span><span class="s">type="bar"</span><span>&nbsp;</span><span class="s">data="4,7,5,9,12"</span><span>&nbsp;</span><span class="k">/&gt;</span></div>
+<div class="row" style="--h:60px;border:0"><span class="n">5</span><span class="k">&lt;tree&gt;</span><span class="l-fa"><span dir="rtl">مقدمه ‹ روش ‹ نتیجه</span></span><span class="l-en">Intro › Method › Result</span><span class="k">&lt;/tree&gt;</span></div>
+      </div>
+      <div class="layer pdf" id="pdf">
+<div class="row" style="--h:84px"><h2><span class="l-fa">گزارش فصل سوم</span><span class="l-en">Q3 report</span></h2></div>
+<div class="row" style="--h:60px"><p><span class="l-fa">نتایج با <b>Excel</b> و <b>Python</b> هم‌خوان بود؛ ۱۲٪ رشد.</span><span class="l-en">Results match <b>Excel</b> and <b>Python</b>; 12% growth.</span></p></div>
+<div class="row" style="--h:76px"><div class="alert"><i>i</i><span class="l-fa">پیش از چاپ بازبینی کنید</span><span class="l-en">Review before printing</span></div></div>
+<div class="row" style="--h:124px;align-items:flex-end;padding-bottom:12px"><div class="chart"><span style="height:30%" data-v="4"></span><span style="height:52%" data-v="7"></span><span style="height:38%" data-v="5"></span><span style="height:70%" data-v="9"></span><span style="height:92%" data-v="12"></span></div></div>
+<div class="row" style="--h:60px;border:0"><div class="tree"><span><span class="l-fa">مقدمه</span><span class="l-en">Intro</span></span><u></u><span><span class="l-fa">روش</span><span class="l-en">Method</span></span><u></u><span><span class="l-fa">نتیجه</span><span class="l-en">Result</span></span></div></div>
+      </div>
+      <span class="tag l">MARKDOWN</span><span class="tag r">PDF</span>
+      <div class="handle"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div>
+    </div>
+    <p class="hint"><span class="l-fa">بکشید، یا با کلیدهای جهت‌دار حرکت دهید</span><span class="l-en">Drag, or use the arrow keys</span></p>
+  </section>
+
+  <section class="cols">
+    <div><b>01</b><h3><span class="l-fa">دوزبانه، واقعاً</span><span class="l-en">Truly bilingual</span></h3><p><span class="l-fa">جهت هر پاراگراف از روی خودش تشخیص داده می‌شود.</span><span class="l-en">Each paragraph finds its own direction.</span></p></div>
+    <div><b>02</b><h3><span class="l-fa">کامپوننت</span><span class="l-en">Components</span></h3><p><span class="l-fa">alert، chart، tree، grid و هر چه خودتان بسازید.</span><span class="l-en">alert, chart, tree, grid and anything you build.</span></p></div>
+    <div><b>03</b><h3><span class="l-fa">روی دستگاه شما</span><span class="l-en">On your device</span></h3><p><span class="l-fa">برنامه‌ی بومی، آفلاین و متن‌باز.</span><span class="l-en">A native app, offline and open source.</span></p></div>
+  </section>
+
+  <section class="cta">
+    <a class="big" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود فرمتکس</span><span class="l-en">Download Formatex</span></a>
+    <p><span class="l-fa">ویندوز · مک · لینوکس · اندروید</span><span class="l-en">Windows · macOS · Linux · Android</span></p>
+  </section>
+  <footer><span><span class="l-fa">ساخته‌شده با Tauri و Typst</span><span class="l-en">Built with Tauri and Typst</span></span><span>GitHub</span></footer>
+</div>
+<script>
+const demo=document.getElementById('demo');let auto=true,x=50,t0=performance.now();
+const set=v=>{x=Math.max(0,Math.min(100,v));demo.style.setProperty('--x',x+'%');demo.setAttribute('aria-valuenow',Math.round(x))};
+const fromEvent=e=>{const r=demo.getBoundingClientRect();set((e.clientX-r.left)/r.width*100)};
+demo.addEventListener('pointerdown',e=>{auto=false;demo.setPointerCapture(e.pointerId);fromEvent(e);demo.onpointermove=fromEvent});
+demo.addEventListener('pointerup',()=>demo.onpointermove=null);
+demo.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){auto=false;set(x+(e.key==='ArrowLeft'?-4:4))}});
+(function loop(t){if(auto)set(50+40*Math.sin((t-t0)/1100));requestAnimationFrame(loop)})(t0);
+</script>
+</body>
+</html>

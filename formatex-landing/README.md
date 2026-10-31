@@ -28,11 +28,13 @@ A custom domain is added under the Worker's Settings, Domains & Routes (or as `r
 
 ## Where things are
 
-- `src/content.ts`: every text of the page, in both languages, and the links (the repository and its latest release).
-- `src/App.tsx`: the page. `src/components/HeroMock.tsx`: the drawing of the app in the hero (boxes, not a screenshot).
-- `src/lib/preferences.ts`: language (and the page's direction) and theme, kept in `localStorage`; `index.html` applies them before the first paint.
-- `src/components/ui/`: shadcn components (`npx shadcn@latest add <name>`; `components.json` is the app's, RTL on).
-- `public/`: the icon, favicon and Apple touch icon, copied from the app (`npm run icons` there makes them).
+- `src/content.ts`: every text of the page, in both languages (English first), and the links (the repository and its latest release).
+- `src/App.tsx`: the page. `src/components/Intro.tsx`: the white logo arriving as liquid glass on black (`liquid-glass-logo*` are the installed ReactDrops component; `public/logo.svg` is the white mark it draws).
+- `src/sections/`: `Lens.tsx` (the hero: a lens that shows the Markdown under the headline), `Layers.tsx` (the document pulled apart in 3D on scroll), `Library.tsx` (components and the theme dial).
+- `src/landing.css`: the styles of those sections and the intro. `src/index.css`: tokens (dark only, the colors of the logo) and fonts: titles in Domine (Latin) and Abar (Persian; variable, `wght` 400 to 1000 and `CNTR`, the thick-thin contrast), text in Inter (Latin) and Iran Sans X (Persian).
+- `src/lib/preferences.ts`: language (and the page's direction), kept in `localStorage`; `index.html` applies the direction before the first paint.
+- `concepts/`: the earlier standalone design studies (not deployed).
+- `public/`: the icon, favicon, Apple touch icon and the white logo.
 
 ## Auto deploy
 

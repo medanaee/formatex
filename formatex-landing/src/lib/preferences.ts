@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import type { Lang } from "@/content"
 
-type Theme = "light" | "dark"
-
 const read = (key: string): string | null => {
   try {
     return localStorage.getItem(key)
@@ -18,13 +16,9 @@ const write = (key: string, value: string) => {
   }
 }
 
-/** The language of the page (Persian first, English when the browser asks for it) and its direction on `<html>`. */
+/** The language of the page (English first, Persian on the toggle) and its direction on `<html>`. */
 export function useLang(): [Lang, () => void] {
-  const [lang, setLang] = useState<Lang>(() => {
-    const stored = read("formatex-landing-lang")
-    if (stored === "fa" || stored === "en") return stored
-    return typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("en") ? "en" : "fa"
-  })
+  const [lang, setLang] = useState<Lang>(() => (read("formatex-landing-lang") === "fa" ? "fa" : "en"))
   useEffect(() => {
     document.documentElement.lang = lang
     document.documentElement.dir = lang === "fa" ? "rtl" : "ltr"
@@ -32,18 +26,4 @@ export function useLang(): [Lang, () => void] {
     write("formatex-landing-lang", lang)
   }, [lang])
   return [lang, useCallback(() => setLang((current) => (current === "fa" ? "en" : "fa")), [])]
-}
-
-/** Light or dark, from the choice made before, else from the system; the class on `<html>` is what the styles read. */
-export function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = read("formatex-landing-theme")
-    if (stored === "light" || stored === "dark") return stored
-    return typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-  })
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark")
-    write("formatex-landing-theme", theme)
-  }, [theme])
-  return [theme, useCallback(() => setTheme((current) => (current === "dark" ? "light" : "dark")), [])]
 }

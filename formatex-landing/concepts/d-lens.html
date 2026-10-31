@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فرمتکس · د: ذره‌بین</title>
+<script src="lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#efe9db;--ink:#1a1712;--mute:#7b7364;--r:150px}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.7 Inter,Vazirmatn,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+header{position:absolute;inset:0 0 auto 0;z-index:30;display:flex;align-items:center;gap:20px;height:64px;padding:0 28px;font-size:14px}
+header b{font-size:15px}header span{flex:1}header .dl{background:var(--ink);color:var(--bg);padding:5px 14px;border-radius:99px;font-weight:600}
+.hero{position:relative;height:100svh;min-height:620px;overflow:hidden;cursor:none;--mx:50%;--my:50%}
+.stack{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 6vw;gap:1.2vh}
+.stack>div{display:flex;align-items:center}
+.t1{font:900 clamp(54px,11.4vw,190px)/1.18 Inter,Vazirmatn;letter-spacing:-.03em;height:clamp(78px,16vw,260px)}
+.t2{font:300 clamp(34px,6.4vw,100px)/1.2 Inter,Vazirmatn;height:clamp(56px,9vw,140px)}
+.t2 b{font-weight:900;background:linear-gradient(transparent 62%,#ffd23f 62% 92%,transparent 92%);padding:0 .1em}
+.t3{font:400 clamp(16px,1.9vw,26px)/1.5 Inter,Vazirmatn;color:var(--mute);height:clamp(40px,5vw,70px)}
+.t3 span.al{background:#cfe9d4;color:#16532a;padding:2px 14px;border-radius:6px;margin:0 8px;font-weight:500}
+.t3 em{font:600 1em Inter;font-style:normal;color:var(--ink)}
+/* source layer: same rows, revealed by a mask */
+.src{background:#0e0f0c;color:#c8ff5b;-webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 calc(100% - 1.5px),transparent 100%);mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 calc(100% - 1.5px),transparent 100%);pointer-events:none;z-index:5}
+html[lang=fa] .src>div{justify-content:flex-end}
+.src .t1,.src .t2,.src .t3{font-family:'JetBrains Mono',Vazirmatn,monospace;color:#c8ff5b;font-weight:500;letter-spacing:0}
+.src .t1{font-size:clamp(28px,5.6vw,92px)}
+.src .t2{font-size:clamp(20px,3.4vw,54px)}
+.src .t3{font-size:clamp(12px,1.5vw,21px)}
+.src .d{color:#ff8fd0}.src .a{color:#7fe0ff}.src .g{color:#ffd23f}
+.ring{position:absolute;left:var(--mx);top:var(--my);width:calc(var(--r)*2);height:calc(var(--r)*2);transform:translate(-50%,-50%);border-radius:50%;border:1.5px solid var(--ink);pointer-events:none;z-index:6;mix-blend-mode:difference;border-color:#fff}
+.ring::before,.ring::after{content:"";position:absolute;background:#fff;left:50%;top:50%}
+.ring::before{width:14px;height:1.5px;transform:translate(-50%,-50%)}.ring::after{width:1.5px;height:14px;transform:translate(-50%,-50%)}
+html[lang=en] .t1{font-size:clamp(48px,8.6vw,150px)}html[lang=en] .t2{font-size:clamp(30px,5.4vw,88px)}html[lang=en] .src .t1{font-size:clamp(22px,4.2vw,72px)}html[lang=en] .src .t2{font-size:clamp(16px,2.8vw,46px)}
+.lab{position:absolute;bottom:26px;right:6vw;font:500 12px 'JetBrains Mono';letter-spacing:.14em;color:var(--mute);z-index:7;direction:ltr}
+.lab i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8431f;margin-inline-end:8px;animation:p 1.4s infinite}
+@keyframes p{50%{opacity:.2}}
+.cta{position:absolute;bottom:20px;left:6vw;z-index:20;cursor:pointer}
+.cta a{display:inline-block;background:var(--ink);color:var(--bg);padding:13px 28px;border-radius:99px;font-weight:700;transition:.25s}
+.cta a:hover{background:#e8431f;transform:rotate(-2deg) scale(1.05)}
+.below{display:grid;grid-template-columns:repeat(3,1fr);border-top:1.5px solid var(--ink)}
+.below div{padding:34px 6vw 40px 24px;border-inline-start:1px solid #1a171233}
+.below div:first-child{border:0}
+.below b{font-size:22px;display:block;margin-bottom:6px;font-weight:900}
+.below p{color:var(--mute);font-size:15px}
+footer{padding:16px 6vw;font-size:13px;color:var(--mute);border-top:1px solid #1a171233}
+@media(hover:none){.hero{cursor:auto}.ring{display:block}}
+@media(max-width:760px){.below{grid-template-columns:1fr}.below div{border:0;border-top:1px solid #1a171233}:root{--r:100px}.cta{left:20px}}
+</style>
+</head>
+<body>
+<header><b><span class="l-fa">فرمتکس</span><span class="l-en">Formatex</span></b><span></span><a href="index.html"><span class="l-fa">همه‌ی طرح‌ها</span><span class="l-en">All concepts</span></a><a class="dl" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود</span><span class="l-en">Download</span></a></header>
+
+<section class="hero" id="hero">
+  <div class="stack">
+    <div class="t1"><span class="l-fa">نوشته را بنویس،</span><span class="l-en">Write the text,</span></div>
+    <div class="t2"><span class="l-fa">صفحه را <b>ما</b> می‌چینیم.</span><span class="l-en">we set the <b>page.</b></span></div>
+    <div class="t3"><span class="l-fa">فارسی و <em>English</em> کنار هم <span class="al">بدون دردسر</span> با خروجی PDF دقیق.</span><span class="l-en">Persian and <em>English</em> side by side, <span class="al">no fuss</span>, with an exact PDF.</span></div>
+  </div>
+  <div class="stack src" aria-hidden="true">
+    <div class="t1" dir="ltr"><span class="d">#</span>&nbsp;<span class="l-fa">نوشته را بنویس،</span><span class="l-en">Write the text,</span></div>
+    <div class="t2" dir="ltr"><span class="d">##</span>&nbsp;<span class="l-fa">صفحه را <span class="g">**ما**</span> می‌چینیم.</span><span class="l-en">we set the <span class="g">**page.**</span></span></div>
+    <div class="t3" dir="ltr"><span class="l-fa">فارسی و <span class="g">*English*</span> کنار هم <span class="a">&lt;alert&gt;</span>بدون دردسر<span class="a">&lt;/alert&gt;</span></span><span class="l-en">Persian and <span class="g">*English*</span> side by side <span class="a">&lt;alert&gt;</span>no fuss<span class="a">&lt;/alert&gt;</span></span></div>
+  </div>
+  <div class="ring"></div>
+  <div class="lab"><i></i>MOVE THE LENS · SEE THE SOURCE</div>
+  <div class="cta"><a href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود فرمتکس ↓</span><span class="l-en">Download Formatex ↓</span></a></div>
+</section>
+
+<section class="below">
+  <div><b><span class="l-fa">مارک‌داون، فقط</span><span class="l-en">Just Markdown</span></b><p><span class="l-fa">هر چه می‌نویسید متن ساده است. تگ‌ها فقط وقتی لازم است.</span><span class="l-en">What you write is plain text. Tags only when you need them.</span></p></div>
+  <div><b><span class="l-fa">پیش‌نمایش زنده</span><span class="l-en">Live preview</span></b><p><span class="l-fa">هر تغییر همان لحظه حروف‌چینی می‌شود.</span><span class="l-en">Every change is typeset at once.</span></p></div>
+  <div><b><span class="l-fa">آفلاین و متن‌باز</span><span class="l-en">Offline and open source</span></b><p><span class="l-fa">روی ویندوز، مک، لینوکس و اندروید.</span><span class="l-en">On Windows, macOS, Linux and Android.</span></p></div>
+</section>
+<footer><span class="l-fa">ساخته‌شده با Tauri و Typst</span><span class="l-en">Built with Tauri and Typst</span></footer>
+
+<script>
+const hero=document.getElementById('hero');let manual=false,tx=0,ty=0,cx=0,cy=0,inited=false;
+const rect=()=>hero.getBoundingClientRect();
+hero.addEventListener('pointermove',e=>{manual=true;const r=rect();tx=e.clientX-r.left;ty=e.clientY-r.top});
+hero.addEventListener('pointerleave',()=>{manual=false});
+(function loop(t){
+  const r=rect();
+  if(!manual){tx=r.width*(.5+.32*Math.sin(t/1700));ty=r.height*(.5+.2*Math.sin(t/1100+1))}
+  if(!inited){cx=tx;cy=ty;inited=true}
+  cx+=(tx-cx)*.16;cy+=(ty-cy)*.16;
+  hero.style.setProperty('--mx',cx+'px');hero.style.setProperty('--my',cy+'px');
+  requestAnimationFrame(loop)})(0);
+</script>
+</body>
+</html>

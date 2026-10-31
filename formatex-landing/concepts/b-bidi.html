@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فرمتکس · ب: جهت متن</title>
+<script src="lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0e12;--ink:#f1efe9;--mute:#8b8d96;--line:#23252d;--fa:#ffb84d;--en:#5ee0d0}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.7 Inter,Vazirmatn,system-ui,sans-serif;min-height:100svh;
+  background-image:radial-gradient(800px 400px at 50% -10%,#1d2030,transparent)}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+header{display:flex;align-items:center;gap:20px;height:64px;font-size:14px}
+header b{font-size:15px}header span{flex:1}header .dl{background:var(--ink);color:var(--bg);padding:5px 14px;border-radius:99px;font-weight:600}
+.hero{padding:56px 0 20px;text-align:center}
+h1{font-weight:900;font-size:clamp(36px,6.4vw,76px);line-height:1.2;letter-spacing:-.02em}
+h1 .fa{color:var(--fa)}h1 .en{color:var(--en);font-family:Inter;font-weight:800;display:inline-block}
+.hero p{color:var(--mute);max-width:540px;margin:14px auto 0}
+.box{margin-top:44px;border:1px solid var(--line);border-radius:20px;background:#12141a;padding:22px;box-shadow:0 40px 80px -40px #000}
+.in{width:100%;background:#0b0c10;border:1px solid var(--line);border-radius:12px;padding:14px 18px;color:var(--ink);font:500 22px Inter,Vazirmatn,Inter;outline:0;transition:.2s}
+.in:focus{border-color:#ffffff40}
+.stage{position:relative;margin:26px 0 8px;min-height:120px;direction:ltr}
+.chip{position:absolute;left:0;top:0;display:flex;align-items:center;gap:8px;height:48px;padding:0 14px;border-radius:12px;font:600 20px Inter,Vazirmatn,Inter;white-space:nowrap;border:1.5px solid;will-change:transform}
+.chip.rtl{color:var(--fa);border-color:#ffb84d66;background:#ffb84d14}
+.chip.ltr{color:var(--en);border-color:#5ee0d066;background:#5ee0d014;font-family:Inter}
+.chip sub{position:absolute;top:-9px;inset-inline-start:8px;font:500 10px 'JetBrains Mono';background:#12141a;padding:0 4px;color:var(--mute);direction:ltr}
+.chip i{font-style:normal;font-size:15px;opacity:.9}
+svg.path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+svg.path path{fill:none;stroke:#fff;stroke-opacity:.35;stroke-width:1.5;stroke-dasharray:4 5}
+.ctrl{display:flex;align-items:center;gap:14px;direction:ltr;font:500 12px 'JetBrains Mono';color:var(--mute);margin-top:10px}
+.ctrl input{flex:1;accent-color:#fff}
+.ctrl em{font-style:normal;transition:.2s}
+.legend{display:flex;gap:18px;font-size:13px;color:var(--mute);margin-top:14px}
+.legend s{display:inline-block;width:9px;height:9px;border-radius:3px;margin-inline-end:6px;text-decoration:none}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:56px}
+.row3 div{border:1px solid var(--line);border-radius:16px;padding:20px;background:#ffffff04}
+.row3 b{display:block;font-size:17px;margin-bottom:4px}.row3 p{color:var(--mute);font-size:14px}
+.cta{text-align:center;padding:80px 0 50px}
+.cta a{display:inline-block;background:linear-gradient(90deg,var(--fa),var(--en));color:#0b0c10;padding:15px 34px;border-radius:99px;font-weight:800;font-size:18px;transition:.25s}
+.cta a:hover{transform:translateY(-3px) scale(1.03)}
+footer{border-top:1px solid var(--line);padding:18px 0;font-size:13px;color:var(--mute)}
+@media(max-width:700px){.row3{grid-template-columns:1fr}.chip{height:40px;font-size:16px;padding:0 10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b><span class="l-fa">فرمتکس</span><span class="l-en">Formatex</span></b><span></span><a href="index.html"><span class="l-fa">همه‌ی طرح‌ها</span><span class="l-en">All concepts</span></a><a class="dl" href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود</span><span class="l-en">Download</span></a></header>
+  <section class="hero">
+    <h1><span class="l-fa"><span class="fa">راست به چپ،</span><br><span class="en">left to right،</span> <span class="fa">هر دو.</span></span><span class="l-en"><span class="fa">Right to left,</span><br><span class="en">left to right,</span> <span class="fa">both.</span></span></h1>
+    <p><span class="l-fa">ترکیب فارسی و انگلیسی در یک جمله کار ساده‌ای نیست. فرمتکس ترتیب را درست می‌چیند. جمله‌ی خودتان را بنویسید و ببینید چطور چیده می‌شود.</span><span class="l-en">Mixing Persian and English in one sentence is not simple. Formatex puts the order right. Type your own sentence and watch it being laid out.</span></p>
+    <div class="box">
+      <input class="in" id="in" dir="auto" value="Send the گزارش فصلی to علی before فردا صبح" spellcheck="false" aria-label="جمله">
+      <div class="stage" id="stage"><svg class="path" id="svg"><path id="pth"/></svg></div>
+      <div class="ctrl"><em id="l1">STORED</em><input type="range" id="rng" min="0" max="1000" value="0"><em id="l2">DISPLAYED</em></div>
+      <div class="legend"><span><s style="background:var(--fa)"></s><span class="l-fa">راست‌به‌چپ</span><span class="l-en">right-to-left</span></span><span><s style="background:var(--en)"></s><span class="l-fa">چپ‌به‌راست</span><span class="l-en">left-to-right</span></span><span><span class="l-fa">خط‌چین = مسیر خواندن</span><span class="l-en">dashed line = reading path</span></span></div>
+    </div>
+  </section>
+  <section class="row3">
+    <div><b><span class="l-fa">تشخیص خودکار</span><span class="l-en">Automatic</span></b><p><span class="l-fa">هر پاراگراف جهت خودش را پیدا می‌کند.</span><span class="l-en">Each paragraph finds its own direction.</span></p></div>
+    <div><b><span class="l-fa">ارقام و نشانه‌ها</span><span class="l-en">Digits and marks</span></b><p><span class="l-fa">اعداد فارسی، فهرست‌ها و ارجاع‌ها درست می‌نشینند.</span><span class="l-en">Persian digits, lists and references land right.</span></p></div>
+    <div><b><span class="l-fa">PDF دقیق</span><span class="l-en">An exact PDF</span></b><p><span class="l-fa">با موتور Typst، همان چیزی که می‌بینید چاپ می‌شود.</span><span class="l-en">With the Typst engine, what you see is what prints.</span></p></div>
+  </section>
+  <section class="cta"><a href="https://github.com/medanaee/formatex/releases/latest"><span class="l-fa">دانلود فرمتکس</span><span class="l-en">Download Formatex</span></a></section>
+  <footer><span class="l-fa">ساخته‌شده با Tauri و Typst</span><span class="l-en">Built with Tauri and Typst</span></footer>
+</div>
+<script>
+const $=id=>document.getElementById(id),inp=$('in'),stage=$('stage'),rng=$('rng'),pth=$('pth'),svg=$('svg');
+const RTL=/[֐-ࣿיִ-﷿ﹰ-﻿]/,LTR=/[A-Za-z]/;
+let chips=[],A=[],B=[],auto=true,tm=0;
+const dirOf=(w,prev)=>RTL.test(w)?'rtl':LTR.test(w)?'ltr':prev||'rtl';
+function build(){
+  const words=inp.value.trim().split(/\s+/).filter(Boolean).slice(0,14);
+  stage.querySelectorAll('.chip').forEach(c=>c.remove());chips=[];
+  let prev=null;const d=words.map(w=>prev=dirOf(w,prev));
+  words.forEach((w,i)=>{const c=document.createElement('div');c.className='chip '+d[i];c.innerHTML=`<sub>${i+1}</sub><i>${d[i]=='rtl'?'←':'→'}</i><span>${w.replace(/</g,'&lt;')}</span>`;stage.appendChild(c);chips.push(c)});
+  const base=d[0]||'rtl',W=stage.clientWidth,gap=10,H=48+(innerWidth<700?-8:0)+18;
+  const wd=chips.map(c=>c.offsetWidth);
+  // wrap in logical order, then reorder each line: runs of one direction; with an rtl base the runs go right to left and rtl runs read backwards
+  const lines=[[]];let lx=0;wd.forEach((w,i)=>{if(lx+w>W&&lines[lines.length-1].length){lines.push([]);lx=0}lines[lines.length-1].push(i);lx+=w+gap});
+  A=[];B=[];lines.forEach((ln,li)=>{
+    let x=0;ln.forEach(i=>{A[i]={x,y:li*H};x+=wd[i]+gap});
+    const runs=[];ln.forEach(i=>{const r=runs[runs.length-1];r&&r.d===d[i]?r.i.push(i):runs.push({d:d[i],i:[i]})});
+    const vr=base==='rtl'?[...runs].reverse():runs,vis=[];vr.forEach(r=>(r.d==='rtl'?[...r.i].reverse():r.i).forEach(i=>vis.push(i)));
+    const tw=vis.reduce((a,i)=>a+wd[i]+gap,-gap);let bx=base==='rtl'?W-tw:0;
+    vis.forEach(i=>{B[i]={x:bx,y:li*H};bx+=wd[i]+gap});
+  });
+  A.h=B.h=lines.length*H;
+  stage.style.height=Math.max(A.h,B.h)+'px';svg.setAttribute('viewBox',`0 0 ${W} ${Math.max(A.h,B.h)}`);
+  draw(+rng.value/1000);
+}
+function draw(t){
+  const e=t*t*(3-2*t);let pts=[];
+  chips.forEach((c,i)=>{const x=A[i].x+(B[i].x-A[i].x)*e,y=A[i].y+(B[i].y-A[i].y)*e;c.style.transform=`translate(${x}px,${y}px)`;pts.push([x+c.offsetWidth/2,y+24])});
+  pth.setAttribute('d',pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' '));
+  $('l1').style.color=t<.5?'#fff':'';$('l2').style.color=t>=.5?'#fff':'';
+}
+rng.addEventListener('input',()=>{auto=false;draw(rng.value/1000)});
+inp.addEventListener('input',()=>{auto=false;rng.value=1000;build();});
+addEventListener('resize',build);
+const DEF={en:'Send the گزارش فصلی to علی before فردا صبح',fa:'خروجی Q3 را با Excel و Python بساز در 2 دقیقه'};
+document.addEventListener('langchange',()=>{if(inp.dataset.l!==window.LANG){inp.dataset.l=window.LANG;inp.value=DEF[window.LANG];auto=true;build()}});
+document.fonts.ready.then(()=>{build();
+  (function loop(t){if(auto){const v=(Math.sin(t/1400-1.2)+1)/2;rng.value=v*1000;draw(v)}requestAnimationFrame(loop)})(0)});
+inp.addEventListener('focus',()=>auto=false);
+</script>
+</body>
+</html>
