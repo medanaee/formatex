@@ -9,7 +9,7 @@ Every component is an HTML-like tag inside the Markdown. General rules (repeated
 5. Colors: a preset name or a hex string (see [Color presets](#color-presets)).
 6. Tags nest freely.
 
-Contents: [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-and-markdown-footnotes) · [Tables](#tables) · [Lists](#lists) · [Numbered equations](#numbered-equations) · [Heading ids](#heading-ids-and-options) · [docheader](#docheader-title-block) · [picHeader](#picheader-picture-header) · [toc / lof / lot / lol](#toc-lof-lot-lol-contents-and-lists) · [alert](#alert-callout) · [box](#box-container) · [div](#div-container-with-tailwind-style-classes) · [Color presets](#color-presets) · [img](#img-image) · [fig + caption](#fig--caption-numbered-figure) · [cetz](#cetz-drawing) · [lilaq](#lilaq-data-plots) · [Mermaid diagrams](#mermaid-diagrams) · [tree](#tree-file-and-folder-tree) · [chart](#chart-data-chart) · [grid + item](#grid--item-columns) · [align](#align-alignment) · [dir](#dir-text-direction-of-a-part) · [cite + bibliography](#cite--bibliography-citations) · [ref](#ref-cross-reference) · [span / def](#marking-text-and-defining-terms-span-anchor-def) · [code](#code-code-listing) · [diff](#diff-code-and-text-comparison) · [a and links](#links-and-a) · [kbd + badge](#kbd--badge) · [steps + step](#steps--step-numbered-procedure) · [chat + user + ai](#chat--user--ai-ai-conversation) · [Theorem blocks](#theorem-blocks) · [include](#include-split-into-files)
+Contents: [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-and-markdown-footnotes) · [Tables](#tables) · [Lists](#lists) · [Numbered equations](#numbered-equations) · [Heading ids](#heading-ids-and-options) · [docheader](#docheader-title-block) · [picHeader](#picheader-picture-header) · [toc / lof / lot / lol](#toc-lof-lot-lol-contents-and-lists) · [alert](#alert-callout) · [box](#box-container) · [div](#div-container-with-tailwind-style-classes) · [Color presets](#color-presets) · [img](#img-image) · [fig + caption](#fig--caption-numbered-figure) · [cetz](#cetz-drawing) · [typ](#typ-typst-code-or-a-typst-file) · [lilaq](#lilaq-data-plots) · [Mermaid diagrams](#mermaid-diagrams) · [tree](#tree-file-and-folder-tree) · [chart](#chart-data-chart) · [grid + item](#grid--item-columns) · [align](#align-alignment) · [dir](#dir-text-direction-of-a-part) · [cite + bibliography](#cite--bibliography-citations) · [ref](#ref-cross-reference) · [span / def](#marking-text-and-defining-terms-span-anchor-def) · [code](#code-code-listing) · [diff](#diff-code-and-text-comparison) · [a and links](#links-and-a) · [kbd + badge](#kbd--badge) · [steps + step](#steps--step-numbered-procedure) · [chat + user + ai](#chat--user--ai-ai-conversation) · [Theorem blocks](#theorem-blocks) · [include](#include-split-into-files)
 
 ---
 
@@ -462,6 +462,32 @@ lq.diagram(
 - **Inside `<fig>`** a plot behaves like a drawing: it supports `id`, `align` and a caption, and a plot wider than the line is shrunk to fit. On its own it is centered.
 - **Plot or drawing?** Lilaq draws data with real axes. For boxes, arrows and hand-placed shapes use `<cetz>`; for a quick bar, line or pie chart from a table use `<chart>`.
 - **Gotchas:** `range` takes a named step (`range(0, 10, step: 2)`), and `lq.place(x, y, ...)` uses data coordinates. Typst fetches the package on the first build, so that build needs internet access.
+
+## `<typ>`: Typst code or a Typst file
+
+Puts Typst straight into the document: a fenced code block of Typst markup inside the tag, or `src="file.typ"` for a file. The result is set in place, as if the text of that file stood there.
+
+````markdown
+<typ src="parts/intro.typ"></typ>
+
+<typ>
+
+```typ
+== A section written in Typst
+
+The accent is #text(fill: theme.accent)[this color].
+
+#include "parts/table.typ"
+```
+
+</typ>
+````
+
+- `src` is a Typst file from the project root (like `src` of `<img>`), or the code block; `dir="auto|rtl|ltr"` sets the text direction of the result (default `auto`).
+- **Nested includes work.** A `src` file is included by Typst itself: the `#include "..."` / `#import "..."` lines inside it resolve relative to the file that holds them, at any depth, and each file is set where it is included.
+- **A code block has no file of its own**, so its relative `#include` / `#import` paths are read from the project root. Absolute paths, `@preview/...` packages and URLs stay as written.
+- **Scope:** a code block sees `theme`, `zoom` and `feel`; anything else it imports (`#import "/src/kit.typ": *` brings the engine's whole kit). A `src` file sees nothing by default: start it with that import when it needs the theme.
+- It is markup, so headings, lists, `#figure`, `#table` and the rest work, and the document's rules apply: headings join the numbering and the table of contents, text takes the theme. `#set` / `#show` inside a file or block stay inside it.
 
 ## Mermaid diagrams
 

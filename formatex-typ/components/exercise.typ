@@ -191,5 +191,84 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let exercise-docs = (
+  en: (
+    about: `````md
+A numbered exercise or quiz question: `<exercise>` holds the question, `<choices>` makes lettered options (`correct="3"` marks the right one), `<answer>` holds the solution, `<answers>` gathers them. Whether answers show is set by the `answers` setting.
 
+- All exercises share one counter in document order. `points` shows the score; `title` names the exercise; `id` makes it a `<ref>` target.
+- `<choices>` turns a Markdown list (bulleted or numbered) into lettered options; `correct="3"` marks the right option by number. A `<choices>` without a list is a compile error.
+- Answers depend on the `answers` setting: `show` (default) puts each `<answer>` under its question and highlights the right option; `hide` makes a question sheet; `end` collects them where `<answers></answers>` stands.
+- Leave blank lines inside `<exercise>`, `<choices>` and `<answer>`.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+تمرین یا سؤال آزمون شماره‌دار: `<exercise>` سؤال را نگه می‌دارد، `<choices>` گزینه‌های حرف‌دار می‌سازد (`correct="3"` گزینهٔ درست را نشان می‌دهد)، `<answer>` پاسخ را و `<answers>` همهٔ پاسخ‌ها را یک‌جا جمع می‌کند. نمایش پاسخ‌ها را تنظیم `answers` تعیین می‌کند.
 
+- همهٔ تمرین‌ها یک شمارنده دارند، به ترتیب سند. `points` نمره را نشان می‌دهد، `title` نام تمرین است و `id` آن را هدف `<ref>` می‌کند.
+- `<choices>` یک فهرست Markdown (گلوله‌ای یا شماره‌دار) را به گزینه‌های حرف‌دار تبدیل می‌کند؛ `correct="3"` گزینهٔ درست را با شماره نشان می‌دهد. `<choices>` بدون فهرست خطای ساخت است.
+- پاسخ‌ها به تنظیم `answers` بستگی دارند: `show` (پیش‌فرض) هر `<answer>` را زیر سؤال می‌گذارد و گزینهٔ درست را برجسته می‌کند؛ `hide` برگهٔ سؤال می‌سازد؛ `end` همه را جایی جمع می‌کند که `<answers></answers>` نوشته شده.
+- داخل `<exercise>`، `<choices>` و `<answer>` خط خالی بگذارید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<exercise points="2" id="ex-limit">
+
+Compute $\lim_{x \to 0} \frac{\sin x}{x}$.
+
+<answer>
+
+By L'Hôpital's rule, the limit is $1$.
+
+</answer>
+
+</exercise>
+
+<exercise title="Multiple choice" points="1">
+
+Which language was made for typesetting scientific documents?
+
+<choices correct="3">
+
+- Python
+- JavaScript
+- Typst
+- SQL
+
+</choices>
+
+</exercise>
+`````.text,
+    fa: `````md
+<exercise points="2" id="ex-limit">
+
+حد زیر را محاسبه کنید: $\lim_{x \to 0} \frac{\sin x}{x}$
+
+<answer>
+
+با قاعدهٔ هوپیتال، حد برابر $1$ است.
+
+</answer>
+
+</exercise>
+
+<exercise title="چندگزینه‌ای" points="1">
+
+کدام زبان برای حروف‌چینی اسناد علمی ساخته شده است؟
+
+<choices correct="3">
+
+- Python
+- JavaScript
+- Typst
+- SQL
+
+</choices>
+
+</exercise>
+`````.text,
+  ),
+)

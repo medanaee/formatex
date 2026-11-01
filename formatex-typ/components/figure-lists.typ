@@ -71,5 +71,42 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let figure-lists-docs = (
+  en: (
+    about: `````md
+Automatic lists of figures (`<lof>`), tables (`<lot>`) and code listings (`<lol>`), built from the captions in the document, with page numbers.
 
+- `<lof>` lists every `<fig>`, `<tree>` and `<chart>` that has a caption; `<lot>` every table with a caption (`{caption="..."}` above it); `<lol>` every `<code>` with a caption. Things without a caption are not listed.
+- `dir`, `numbers`, `title`, `pages="false"` (captions only) and `break` (`true`, `before`, `after`) are the options; each entry keeps its caption's own direction. Use `break="after"` on the last list to keep the lists on one page.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+فهرست خودکار شکل‌ها (`<lof>`)، جدول‌ها (`<lot>`) و کدها (`<lol>`) که از عنوان‌های (caption) سند ساخته می‌شود، با شمارهٔ صفحه.
 
+- `<lof>` هر `<fig>`، `<tree>` و `<chart>` دارای عنوان را فهرست می‌کند؛ `<lot>` هر جدول دارای عنوان را (`{caption="..."}` بالای جدول)؛ `<lol>` هر `<code>` دارای عنوان را. چیزهای بدون عنوان فهرست نمی‌شوند.
+- گزینه‌ها: `dir`، `numbers`، `title`، `pages="false"` (فقط عنوان‌ها) و `break` (`true`، `before`، `after`)؛ هر ورودی جهت عنوان خودش را نگه می‌دارد. روی آخرین فهرست `break="after"` بگذارید تا فهرست‌ها در یک صفحه بمانند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<toc break="true"></toc>
+
+<lof></lof>
+
+<lot></lot>
+
+<lol break="after"></lol>
+`````.text,
+    fa: `````md
+<toc break="true"></toc>
+
+<lof></lof>
+
+<lot></lot>
+
+<lol break="after"></lol>
+`````.text,
+  ),
+)

@@ -157,5 +157,50 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let theorem-docs = (
+  en: (
+    about: `````md
+Mathematical blocks: `<theorem>`, `<lemma>`, `<definition>`, `<corollary>`, `<example>`, `<remark>` and `<proof>`, numbered per kind, with optional `title` and `id`.
 
+- Seven kinds, each with its own counter: `<theorem>` «قضیه», `<lemma>` «لم», `<definition>` «تعریف», `<corollary>` «نتیجه», `<example>` «مثال», `<remark>` «نکته» (the label follows the language) and the unnumbered `<proof>` «اثبات», which ends with ∎.
+- Optional `title` and `id` (a `<ref>` target). Boxed kinds do not break across pages; the box corners and the side bar follow the feel. Leave blank lines inside the tag.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+بلوک‌های ریاضی: `<theorem>`، `<lemma>`، `<definition>`، `<corollary>`، `<example>`، `<remark>` و `<proof>`؛ هر نوع شمارندهٔ خودش را دارد و `title` و `id` اختیاری است.
 
+- هفت نوع، هر کدام با شمارندهٔ خودش: `<theorem>` «قضیه»، `<lemma>` «لم»، `<definition>` «تعریف»، `<corollary>` «نتیجه»، `<example>` «مثال»، `<remark>` «نکته» (برچسب از زبان پیروی می‌کند) و `<proof>` «اثبات» که شماره ندارد و با ∎ پایان می‌یابد.
+- `title` و `id` (هدف `<ref>`) اختیاری‌اند. نوع‌های قاب‌دار بین دو صفحه نمی‌شکنند؛ گوشه‌ها و نوار کناری از حالت (feel) پیروی می‌کنند. داخل تگ خط خالی بگذارید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<theorem id="thm-main" title="Uniqueness of limits">
+
+A convergent sequence has exactly one limit.
+
+</theorem>
+
+<proof>
+
+Suppose it had two limits ...
+
+</proof>
+`````.text,
+    fa: `````md
+<theorem id="thm-main" title="یکتایی حد">
+
+حد یک دنبالهٔ همگرا یکتاست.
+
+</theorem>
+
+<proof>
+
+فرض کنید دو حد داشته باشد ...
+
+</proof>
+`````.text,
+  ),
+)

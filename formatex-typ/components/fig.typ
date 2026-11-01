@@ -265,3 +265,39 @@
   }
   doc
 }
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let fig-docs = (
+  en: (
+    about: `````md
+A numbered figure that holds an `<img>`, a `<cetz>` drawing, a `<lilaq>` plot or a mermaid diagram, with an optional `<caption>`. `id` makes it a target for `<ref>`; `<lof>` lists it.
+
+- `<fig>` holds an `<img>`, a `<cetz>` drawing, a `<lilaq>` plot or a ` ```mermaid ` block, plus an optional `<caption>` (Markdown inside it is not parsed). Numbering follows the caption's language: «شکل ۱» or "Figure 1".
+- `id` makes it a `<ref>` target; `<lof>` lists captioned figures. `align` (`center` default, `left`, `right`, `start`, `end`), `width`, `height` and `ratio` (`16/9`) size the content.
+- In a multi-column document `span="all"` stretches it across the columns.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+شکل شماره‌دار که یک `<img>`، رسم `<cetz>`، نمودار `<lilaq>` یا نمودار mermaid را نگه می‌دارد و `<caption>` اختیاری دارد. `id` آن را هدف `<ref>` می‌کند و `<lof>` فهرستش می‌کند.
+
+- `<fig>` یک `<img>`، رسم `<cetz>`، نمودار `<lilaq>` یا بلوک ` ```mermaid ` را نگه می‌دارد و `<caption>` اختیاری دارد (Markdown داخل آن خوانده نمی‌شود). شماره‌گذاری از زبان عنوان پیروی می‌کند: «شکل ۱» یا "Figure 1".
+- `id` آن را هدف `<ref>` می‌کند و `<lof>` شکل‌های دارای عنوان را فهرست می‌کند. `align` (پیش‌فرض `center`، `left`، `right`، `start`، `end`)، `width`، `height` و `ratio` (`16/9`) اندازهٔ محتوا را تعیین می‌کنند.
+- در سند چندستونه `span="all"` آن را روی همهٔ ستون‌ها می‌کشد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<fig id="fig-ocean" align="center" height="6cm" ratio="16/9">
+<img src="images/ocean.svg" alt="Ocean">
+<caption>Caption text.</caption>
+</fig>
+`````.text,
+    fa: `````md
+<fig id="fig-ocean" align="center" height="6cm" ratio="16/9">
+<img src="images/ocean.svg" alt="Ocean">
+<caption>متن عنوان.</caption>
+</fig>
+`````.text,
+  ),
+)

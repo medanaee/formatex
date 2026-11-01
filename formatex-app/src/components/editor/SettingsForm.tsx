@@ -100,7 +100,11 @@ function Control({ name, spec, current, write, format, extraValues, files }: Fie
   }
   if (spec.type === "path") return choose([...files].sort((a, b) => a.localeCompare(b)))
   if (spec.type === "color") return <ColorField value={current ?? ""} placeholder={spec.default} onChange={text} />
-  if (spec.type === "length") return <LengthField value={current ?? ""} placeholder={spec.default} onChange={text} />
+  if (spec.type === "length") {
+    // The page size is written in physical units only (the engine reads mm, cm, in and pt there)
+    const page = name === "page-width" || name === "page-height"
+    return <LengthField value={current ?? ""} placeholder={spec.default} onChange={text} defaultUnit={page ? "mm" : undefined} units={page ? PAGE_UNITS : undefined} />
+  }
   if (spec.type === "int" || spec.type === "number") {
     return (
       <Input
@@ -158,6 +162,8 @@ function shown(format: SettingsFormat, text: string, table: string, key: string)
  * A change rewrites that one line of the file, keeping the comments; a key that is not set shows the default, and a reset button
  * removes the key again. Keys the schema does not know stay in the source. `config.toml` and the front matter of a document both use it.
  */
+const PAGE_UNITS = ["mm", "cm", "in", "pt"] as const
+
 export function SettingsForm({ text, onChange, config, format, extraThemes, overrides, search = true, defaultClosed, stacked = false, side = false, flat = false, className }: SettingsFormProps) {
   const { t, i18n } = useTranslation()
   const entries = useEditorStore((state) => state.files)

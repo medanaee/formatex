@@ -27,5 +27,32 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let kbd-docs = (
+  en: (
+    about: `````md
+A key cap for keyboard shortcuts. Write the keys joined by `+`: `<kbd>Ctrl+S</kbd>`.
 
+- Each `+`-separated key is drawn as a key cap.
+- The whole shortcut stays left to right, so it reads "Ctrl + S" in a Persian sentence too.
+- It follows the theme and the feel's corner rounding.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+کلید صفحه‌کلید برای میان‌بُرها. کلیدها را با `+` به هم بچسبانید: `<kbd>Ctrl+S</kbd>`.
 
+- هر کلیدِ جداشده با `+` به شکل یک کلید صفحه‌کلید کشیده می‌شود.
+- کل میان‌بُر چپ‌به‌راست می‌ماند، پس در جملهٔ فارسی هم «Ctrl + S» خوانده می‌شود.
+- از تم و گردی گوشه‌های حالت (feel) پیروی می‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+Press <kbd>Ctrl+Shift+P</kbd> to open the palette.
+`````.text,
+    fa: `````md
+برای باز کردن پالت <kbd>Ctrl+Shift+P</kbd> را بزنید.
+`````.text,
+  ),
+)

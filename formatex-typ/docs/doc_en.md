@@ -294,15 +294,45 @@ Each theme defines `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`
 ### Page size
 
 ```toml
-page = "a4"   # a4 | mobile
+page = "desktop-a4"   # a desktop-* or mobile-* size, or custom
 ```
 
-| Size | Page | Use |
-|------|------|-----|
-| `a4` | 210 × 297 mm, default margins | Print and desktop reading |
-| `mobile` | 110 × 245 mm, 7 mm side margins; the header's `center` item is hidden | Reading on a phone: text fills the screen without zooming |
+Names start with `desktop-` for print and screen, and `mobile-` for pages made for a phone.
 
-Override per build with `--input page=mobile`, or per document with `page: mobile` in the front matter.
+| Size | Page |
+|------|------|
+| `desktop-a4` (default) | 210 × 297 mm |
+| `desktop-a3` | 297 × 420 mm |
+| `desktop-a4-landscape` | 297 × 210 mm |
+| `desktop-a5` | 148 × 210 mm |
+| `desktop-a6` | 105 × 148 mm |
+| `desktop-b4` | 250 × 353 mm |
+| `desktop-b5` | 176 × 250 mm |
+| `desktop-letter` | 8.5 × 11 in |
+| `desktop-legal` | 8.5 × 14 in |
+| `desktop-tabloid` | 11 × 17 in |
+| `desktop-square` | 210 × 210 mm |
+| `mobile-16-9` | 110 × 196 mm |
+| `mobile-18-9` | 110 × 220 mm |
+| `mobile-20-9` (like the old `mobile`) | 110 × 245 mm |
+| `mobile-21-9` | 110 × 257 mm |
+| `custom` | the size you give in `page-width` and `page-height` |
+
+The old names `a4` and `mobile` still work (they mean `desktop-a4` and `mobile-20-9`).
+
+A **phone page** (every `mobile-*` size, and a `custom` page narrower than 120 mm) gets the phone rules: 7 mm side margins (the `margin` setting is ignored), one column (`columns` is ignored), the header's `center` item is hidden, and the images of `<docheader>` go in a row above the titles. Text fills the screen without zooming.
+
+### Custom page size
+
+```toml
+page = "custom"
+page-width = "148mm"
+page-height = "210mm"
+```
+
+Each is a number with `mm`, `cm`, `in` or `pt` (a bare number is points), from 40 mm to 5000 mm. The defaults are 210 mm and 297 mm. A custom page narrower than 120 mm is a phone page.
+
+Override per build with `--input page=desktop-a5` (or `--input page=custom --input page-width=100mm --input page-height=200mm`), or per document with `page: desktop-a5` in the front matter.
 
 ### Margins
 
@@ -316,7 +346,7 @@ margin = "narrow"   # narrow | normal | wide
 | `normal` | about 25 mm (Typst's default) | about 25 mm |
 | `wide` | 35 mm | 30 mm |
 
-- Only for `a4`; the `mobile` page keeps its own small margins.
+- The values are shares of the page's shorter side, so on A4 they are exactly the numbers above and on other sizes they scale. Phone pages keep their own small margins.
 - Default `normal`. Override per document with `margin: wide` in the front matter, or per build with `--input margin=wide`.
 
 ### Scale
@@ -362,7 +392,7 @@ column-dir: rtl   # which column fills first
 - `<toc>`, `<lof>` and `<lot>` that use `break` stay one column, on their own pages. Lists written next to each other (only blank lines between) share those pages. Without `break` they flow in the columns like normal text.
 - The cover page stays one column, and `<docheader>` spans all columns at the top of its page.
 - Tables with `width=full` and full-width blocks take the width of one column.
-- The `mobile` page size always uses one column.
+- A phone page (`mobile-*`, or a narrow `custom` page) always uses one column.
 - Override per build with `--input columns=2`. Default `1`.
 
 ### Draft notes and answers (`todo`, `answers`) {#todo-answers-setting}
@@ -749,7 +779,7 @@ Put a `{...}` line directly above a table (a blank line in between is fine):
   ```
 
   - `width` then measures against the whole text width, so `width=full` fills the page from margin to margin.
-  - In a one-column document (or on the `mobile` page) `span` has no effect.
+  - In a one-column document (or on a phone page) `span` has no effect.
 - **Defaults for every table** come from `config.toml` (or a document's front matter):
 
   ```toml
@@ -1257,6 +1287,38 @@ lq.diagram(
 - **Inside `<fig>`** a plot behaves like a drawing: it supports `id`, `align` and a caption, and a plot wider than the line is shrunk to fit. On its own it is centered.
 - **Plot or drawing?** Lilaq draws data with real axes. For boxes, arrows and hand-placed shapes use `<cetz>`; for a quick bar, line or pie chart from a table use `<chart>`.
 - **Gotchas:** `range` takes a named step (`range(0, 10, step: 2)`), and `lq.place(x, y, ...)` uses data coordinates. Typst fetches the package on the first build, so that build needs internet access.
+
+### `<typ>`: Typst code or a Typst file
+
+`<typ>` puts Typst straight into the document. Write the Typst in a fenced code block inside the tag, or name a `.typ` file with `src`. Either way the result is set in place, as if the text of that file stood at that spot:
+
+````markdown
+<typ src="parts/intro.typ"></typ>
+
+<typ>
+
+```typ
+== A section written in Typst
+
+The accent is #text(fill: theme.accent)[this color].
+
+#include "parts/table.typ"
+```
+
+</typ>
+````
+
+| Attribute | Notes |
+|-----------|-------|
+| `src` | A Typst file, instead of the code block. A path starting with `/` or without one is taken from the project root, like `src` of `<img>` and `<cetz>`. |
+| `dir` | `auto` (default), `rtl` or `ltr`: the text direction of the result. `auto` leaves it to the document's rules. |
+
+- **Nested files work.** A file given as `src` is included by Typst itself, so the `#include "..."` and `#import "..."` lines inside it resolve as in any Typst project: relative to the file that holds them, at any depth (`parts/intro.typ` includes `deep/leaf.typ`, which includes `../more.typ`). Each file is set where it is included.
+- **A code block has no file of its own,** so its relative paths are read from the project root: `#include "parts/table.typ"` in a `<typ>` block finds `<project>/parts/table.typ`. Absolute paths (`/parts/x.typ`), packages (`@preview/...`) and URLs are left as written.
+- **Scope:** a code block sees `theme`, `zoom` and `feel` without importing them. Anything else it imports itself; `#import "/src/kit.typ": *` brings the whole kit of the engine (`theme`, `zoom`, `feel`, `tinted`, `panel`, `parse-length`, ...). A file given as `src` sees nothing by default, so start it with that import when it needs the theme.
+- **It is markup,** so `= headings`, lists, `#figure(...)`, `#table(...)` and the rest of Typst work, and the document's own rules apply to the result: headings join the numbering and the table of contents, text takes the theme, and paragraphs find their own direction.
+- **`#set` and `#show`** written inside a file or a block affect only that file or block.
+- **Errors** point at the line of the Typst code, with the file it is in. A missing file is a compile error that names it.
 
 ### Mermaid diagrams
 
@@ -2195,7 +2257,7 @@ For an answer key at the end of the document, set `answers = "end"` and add:
 | `id` | exercise | Target for `<ref>`: «تمرین ۱» / "Exercise 1" (or the `name` word). |
 | `correct` | choices | Number of the right option, counted from 1; several separated by commas (`"1,3"`). Persian digits work. |
 | `numbers` | choices | `letters` (default: «الف ب ج د» in RTL, a b c d in LTR) or `numbers` (۱ ۲ / 1 2). |
-| `cols` | choices | Number of columns. Default automatic: 4 when there are at least 4 options and they fit, else 2 if they fit, else 1, so options adapt to the `mobile` page. |
+| `cols` | choices | Number of columns. Default automatic: 4 when there are at least 4 options and they fit, else 2 if they fit, else 1, so options adapt to a phone page. |
 | `title` | answers | Title of the list. Default «پاسخ‌ها» / "Answers". |
 | `dir` | exercise, choices, answers | `auto` (default: from the title or the content), `rtl`, `ltr`. |
 
@@ -2339,6 +2401,7 @@ Three first steps:
 - **New color theme:** add an entry to `src/themes.typ` with all ten keys (`dark`, `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code-bg`, `code-stroke`), then set `theme = "<name>"`. Add it to the `--themes` default in `tools/build-all.mjs` if it should be part of full builds.
 - **New feel:** add an entry to `feels` in `src/core.typ` with the corner radii and the default fonts, then add it to the `--feels` default in `tools/build-all.mjs`.
 - **New component:** add a file `components/<name>.typ` that exports `<name>-tags = (tag: (attrs, body) => ...)`; run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it) and the tag is available, with no change to `main.typ`. It receives `(attrs, body)`, where `body` is already rendered content. Parent and child tags (like `<fig>` and `<caption>`) communicate through `tag(...)`, `untag(...)` and `find-tagged(...)`.
+- **Docs of a component:** every component also exports `#let <name>-docs = (en: (about: "...", more: "..."), fa: (about: "...", more: "..."), example: (en: "...", fa: "..."))`: what it is for and its key rules in Markdown (`about`, short; `more`, optional and longer), in both languages, and a usage example in Markdown. Write the long texts as raw blocks (`` `````md ... `````.text ``). `tools/gen-registry.mjs` stops when a built-in component has none; `tools/export-schema.mjs` writes them into `dist/tags.json` under `components` with the component's tags. The Skill page of the Formatex app builds one Markdown file for AI agents from them and from the schema.
 - **New code language badge:** extend `code-languages` and `code-language-aliases` in `src/core.typ`.
 
 The editor skill in `skills/typst-formatex-dev/` documents the internals in more detail (`reference.md`). `extending.md` there is the guide for adding themes, feels and components without breaking direction, alignment or other themes. Read it (or point an AI agent to it) before extending the template. Its first rule: everything new must fit all three feels, and `formal` stays square everywhere.

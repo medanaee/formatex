@@ -70,5 +70,50 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let code-docs = (
+  en: (
+    about: `````md
+A code listing with syntax highlighting: the code stands in a fenced block inside the tag, or comes from a project file with `src` (and a line range with `lines`). `highlight` marks lines; `caption` makes a numbered listing that `<lol>` lists.
 
+- Give the code in a fenced block inside the tag (leave blank lines around it), or `src="path"` with `lines="6-16"` for a range of a project file; the language comes from the fence or the file extension.
+- `highlight="9-10,15"` marks lines (numbers count in the file when `src` is used). `caption` + `id` make a numbered listing that `<lol>` lists and `<ref>` can point at.
+- A plain fenced block without the tag is highlighted too; `<code>` adds the line range, the highlight and the caption.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+فهرست کد با رنگ‌آمیزی نحو: کد در یک بلوک کد داخل تگ می‌آید یا با `src` از یک فایل پروژه (و بازهٔ خط‌ها با `lines`). `highlight` خط‌ها را برجسته می‌کند و `caption` آن را کدِ شماره‌دار می‌کند که `<lol>` فهرستش می‌کند.
 
+- کد را در یک بلوک کد داخل تگ بدهید (دورش خط خالی بگذارید)، یا با `src="path"` و `lines="6-16"` بازه‌ای از یک فایل پروژه؛ زبان از بلوک یا پسوند فایل می‌آید.
+- `highlight="9-10,15"` خط‌ها را برجسته می‌کند (با `src` شماره‌ها شمارهٔ خط فایل‌اند). `caption` و `id` یک کدِ شماره‌دار می‌سازند که `<lol>` فهرستش می‌کند و `<ref>` به آن اشاره می‌کند.
+- یک بلوک کد ساده بدون تگ هم رنگ‌آمیزی می‌شود؛ `<code>` بازهٔ خط، برجسته‌سازی و عنوان را اضافه می‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<code src="examples/sample.py" lines="6-16" highlight="9-10,15" caption="Fibonacci with a cache" id="code-fib"></code>
+
+<code highlight="2">
+
+```js
+const a = 1;
+const b = a + 1;
+```
+
+</code>
+`````.text,
+    fa: `````md
+<code src="examples/sample.py" lines="6-16" highlight="9-10,15" caption="Fibonacci with a cache" id="code-fib"></code>
+
+<code highlight="2">
+
+```js
+const a = 1;
+const b = a + 1;
+```
+
+</code>
+`````.text,
+  ),
+)

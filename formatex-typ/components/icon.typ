@@ -30,3 +30,31 @@
     ),
   ),
 )
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let icon-docs = (
+  en: (
+    about: `````md
+A Font Awesome icon inside a sentence, sized like the text, with `color` and `size`.
+
+- `name` is a Font Awesome icon name (required); `color` takes a preset, a Tailwind name or hex (default: the text color); `size` is `1em` by default; `solid="true"` picks the solid style.
+- The line height does not change, so a bigger icon never pushes the lines apart.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+یک آیکون Font Awesome میان جمله، هم‌اندازهٔ متن، با `color` و `size`.
+
+- `name` نام یک آیکون Font Awesome است (الزامی)؛ `color` رنگ آماده، نام Tailwind یا hex می‌گیرد (پیش‌فرض: رنگ متن)؛ `size` پیش‌فرض `1em` است؛ `solid="true"` سبک توپر را برمی‌گزیند.
+- ارتفاع خط عوض نمی‌شود، پس آیکون بزرگ‌تر خط‌ها را از هم دور نمی‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+Done <icon name="check" color="green" /> and a warning <icon name="triangle-exclamation" color="orange" size="1.3em" /> in one line.
+`````.text,
+    fa: `````md
+انجام شد <icon name="check" color="green" /> و این یک هشدار <icon name="triangle-exclamation" color="orange" size="1.3em" /> در همان خط.
+`````.text,
+  ),
+)

@@ -6,6 +6,7 @@ import { EditorPage } from "@/routes/EditorPage"
 import { LibraryPage } from "@/routes/LibraryPage"
 import { NotFoundPage } from "@/routes/NotFoundPage"
 import { SettingsPage } from "@/routes/SettingsPage"
+import { SkillPage } from "@/routes/SkillPage"
 
 const rootRoute = createRootRoute({
   component: AppShell,
@@ -38,13 +39,19 @@ const componentRoute = createRoute({
   component: ComponentsPage,
 })
 
+const skillRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/skill",
+  component: SkillPage,
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
   component: SettingsPage,
 })
 
-const routeTree = rootRoute.addChildren([libraryRoute, editorRoute, componentsRoute, componentRoute, settingsRoute])
+const routeTree = rootRoute.addChildren([libraryRoute, editorRoute, componentsRoute, componentRoute, skillRoute, settingsRoute])
 
 export const router = createRouter({
   routeTree,

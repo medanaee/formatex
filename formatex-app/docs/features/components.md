@@ -24,6 +24,8 @@ One Typst file, `components/<name>.typ`:
 )
 ```
 
+Also allowed: `<name>-docs = (en: (about: "..."), fa: (about: "..."), example: (en: "...", fa: "..."))`: what the tag is for (Markdown, both languages) and an example. The [Skill](skill.md) page builds a file for AI agents from it and from the schema; a component without it is described from its schema alone. The new-component template writes a starter.
+
 Also allowed: `<name>-rules(doc)` (show rules for the whole document; order with `// rules-order: N`) and `<name>-scope` (names for the Markdown scope). Schema entries: `kind`, `description`, `attrs` (`type`: enum, color, string, number, length, path, bool, int, id; `values`, `default`, `required`, `doc`), `children`, `scoped`. See the built-in components for examples.
 
 ## The screen

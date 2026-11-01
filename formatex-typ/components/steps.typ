@@ -92,5 +92,52 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let steps-docs = (
+  en: (
+    about: `````md
+Numbered steps hanging on a vertical line: `<steps>` holds `<step title="...">` items; a step may hold text, lists or code.
 
+- Each `<step title="...">` is a numbered marker on a vertical line; the body may hold text, lists or code (leave blank lines inside `<step>`). `start` sets the first number; `color` the hue (default: the theme's accent).
+- Markers sit on the start side (right in Persian). The look follows the feel: outlined squares in `formal`, tinted rounded squares in `standard`, round markers in `friendly`.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+مراحل شماره‌دار روی یک خط عمودی: `<steps>` چند `<step title="...">` دارد و هر مرحله می‌تواند متن، فهرست یا کد داشته باشد.
 
+- هر `<step title="...">` یک نشانهٔ شماره‌دار روی یک خط عمودی است؛ بدنه می‌تواند متن، فهرست یا کد باشد (داخل `<step>` خط خالی بگذارید). `start` شمارهٔ اول را تعیین می‌کند و `color` رنگ را (پیش‌فرض: رنگ تأکید تم).
+- نشانه‌ها سمت شروع‌اند (در فارسی راست). ظاهر از حالت (feel) پیروی می‌کند: مربع‌های توخالی در `formal`، مربع‌های گرد ته‌رنگ در `standard`، نشانهٔ گرد در `friendly`.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<steps>
+<step title="Collect the data">
+
+Body text, lists or code.
+
+</step>
+<step title="Clean it">
+
+Another step.
+
+</step>
+</steps>
+`````.text,
+    fa: `````md
+<steps>
+<step title="جمع‌آوری داده">
+
+متن، فهرست یا کد.
+
+</step>
+<step title="پاک‌سازی">
+
+مرحلهٔ بعد.
+
+</step>
+</steps>
+`````.text,
+  ),
+)

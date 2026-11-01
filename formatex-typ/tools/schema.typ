@@ -3,8 +3,9 @@
 //   options  the `{...}` option lines (src/lib/option-schema.typ)
 //   config   the keys of config.toml and of the front matter (src/lib/config-schema.typ); the values of `theme` are every theme
 //   themes   every theme with its colors as hex strings (src/themes.typ; the Formatex app adds the user's themes to that file)
+//   components  every component: its tags and its docs (what it is for in en and fa, and an example); the skill generator of the app reads them
 //   issues   things that disagree: a `children` entry that is not a tag, a `scoped` tag that no tag lists as a child
-#import "/components/_registry.typ": all-schemas
+#import "/components/_registry.typ": all-schemas, component-tags, component-docs
 #import "/src/lib/option-schema.typ": option-schemas
 #import "/src/lib/config-schema.typ": config-schemas
 #import "/src/themes.typ": themes
@@ -31,4 +32,19 @@
 #let config = (config: with-theme-values(config-schemas.config), "front-matter": with-theme-values(config-schemas.at("front-matter")))
 #let theme-data = themes.pairs().map(((name, t)) => (name, t.pairs().map(((key, value)) => (key, if type(value) == color { value.to-hex() } else { value })).to-dict())).to-dict()
 
-#metadata((tags: tags, options: option-schemas, config: config, themes: theme-data, issues: issues + scoped-orphans)) <schemas>
+#let components = component-tags.pairs().map(((name, names)) => (name, (tags: names, docs: component-docs.at(name, default: none)))).to-dict()
+
+// A component that has docs must give both languages and an example (the skill generator of the app reads them)
+#let docs-issues = component-docs.pairs().map(((name, d)) => {
+  let missing = ()
+  for lang in ("en", "fa") {
+    if d.at(lang, default: (:)).at("about", default: "").trim() == "" { missing.push(lang + ".about") }
+  }
+  for lang in ("en", "fa") {
+    let ex = d.at("example", default: (:))
+    if (if type(ex) == dictionary { ex.at(lang, default: "") } else { ex }).trim() == "" { missing.push("example." + lang) }
+  }
+  if missing.len() > 0 { "the docs of the component " + name + " lack " + missing.join(", ") } else { none }
+}).filter(x => x != none)
+
+#metadata((tags: tags, components: components, options: option-schemas, config: config, themes: theme-data, issues: issues + scoped-orphans + docs-issues)) <schemas>

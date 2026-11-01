@@ -148,5 +148,68 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let chat-docs = (
+  en: (
+    about: `````md
+A conversation with an AI assistant: `<user>` messages and `<ai>` replies inside one `<chat>`. Markdown, lists and code work inside a message.
 
+- `<user>` and `<ai>` take `name` and `icon` for one message. Defaults for the whole project live in `[chat]` of `config.toml`, or for one document in a `chat:` map of the front matter; attributes on the tag win.
+- Any Markdown works inside a message (paragraphs, lists, code, math). Leave blank lines inside `<chat>` and each message; text between messages is dropped.
+- An unknown attribute, `style` or color, or a `<chat>` with no messages is a compile error.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+گفتگو با یک دستیار هوش مصنوعی: پیام‌های `<user>` و پاسخ‌های `<ai>` داخل یک `<chat>`. Markdown، فهرست و کد داخل پیام کار می‌کنند.
 
+- `<user>` و `<ai>` برای یک پیام `name` و `icon` می‌گیرند. پیش‌فرض کل پروژه در `[chat]` فایل `config.toml` است و برای یک سند در نقشهٔ `chat:` در front matter؛ ویژگی روی تگ مقدم است.
+- هر Markdownی داخل پیام کار می‌کند (پاراگراف، فهرست، کد، ریاضی). داخل `<chat>` و هر پیام خط خالی بگذارید؛ متن میان پیام‌ها حذف می‌شود.
+- ویژگی، `style` یا رنگ ناشناخته، یا `<chat>` بدون پیام، خطای ساخت است.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<chat title="Literature review">
+
+<user>
+
+How should I start the literature review of my thesis?
+
+</user>
+
+<ai>
+
+Three first steps:
+
+1. Pull **keywords** from your research question.
+2. Search Google Scholar and keep the most cited papers.
+3. Export their references from Zotero as a `.bib` file.
+
+</ai>
+
+</chat>
+`````.text,
+    fa: `````md
+<chat title="مرور ادبیات">
+
+<user>
+
+برای مرور ادبیات پایان‌نامه‌ام از کجا شروع کنم؟
+
+</user>
+
+<ai>
+
+سه قدم اول:
+
+1. **کلیدواژه‌ها** را از سؤال پژوهش دربیاورید.
+2. در گوگل اسکالر جستجو کنید و مقاله‌های پراستناد را جدا کنید.
+3. منابع آن‌ها را از زوترو به شکل فایل `.bib` بگیرید.
+
+</ai>
+
+</chat>
+`````.text,
+  ),
+)

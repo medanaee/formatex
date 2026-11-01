@@ -33,3 +33,37 @@
     attrs: space-break-attrs,
   ),
 )
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let space-docs = (
+  en: (
+    about: `````md
+Vertical space and page breaks: `<v size="2cm" />` and `<pagebreak />`.
+
+- `<v size="2cm" />` leaves a vertical gap on its own line (`size` defaults to `1em`; `weak="true"` drops it at the top or bottom of a page).
+- `<pagebreak />` starts a new page; `to="odd"` / `to="even"` continues on the next odd or even page; `weak="true"` skips the break when the page is already empty.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+فاصلهٔ عمودی و شکستن صفحه: `<v size="2cm" />` و `<pagebreak />`.
+
+- `<v size="2cm" />` در یک خط فاصلهٔ عمودی می‌گذارد (`size` پیش‌فرض `1em`؛ `weak="true"` آن را بالا یا پایین صفحه حذف می‌کند).
+- `<pagebreak />` صفحهٔ جدید شروع می‌کند؛ `to="odd"` / `to="even"` در صفحهٔ فرد یا زوج بعدی ادامه می‌دهد؛ `weak="true"` اگر صفحه از قبل خالی است شکست نمی‌دهد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<v size="2cm" />
+
+<pagebreak />
+<pagebreak to="odd" />
+`````.text,
+    fa: `````md
+<v size="2cm" />
+
+<pagebreak />
+<pagebreak to="odd" />
+`````.text,
+  ),
+)

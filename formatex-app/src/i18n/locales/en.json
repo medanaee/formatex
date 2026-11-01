@@ -18,7 +18,8 @@
     "settings": "Settings",
     "toggleSidebar": "Toggle sidebar",
     "primary": "Main navigation",
-    "components": "Components"
+    "components": "Components",
+    "skill": "Skill"
   },
   "library": {
     "title": "Documents",
@@ -39,7 +40,7 @@
     "items_other": "{{count}} items",
     "actions": "Actions",
     "path": "Folder path",
-    "deleteFolderConfirm": "Delete the folder â€œ{{title}}â€‌? Its projects and folders move up one level.",
+    "deleteFolderConfirm": "Delete the folder “{{title}}”? Its projects and folders move up one level.",
     "exportZip": "Export as ZIP",
     "importZip": "Import ZIP",
     "zipFailed": "The ZIP could not be used",
@@ -134,7 +135,7 @@
     "selected_other": "{{count}} selected",
     "deleteMany_one": "Delete {{count}} item?",
     "deleteMany_other": "Delete {{count}} items?",
-    "dropInto": "Drop here to add to â€œ{{folder}}â€‌",
+    "dropInto": "Drop here to add to “{{folder}}”",
     "root": "the project"
   },
   "fonts": {
@@ -153,6 +154,37 @@
     "desktopNote": "System fonts are used automatically",
     "unavailable": "Fonts are managed in the app",
     "files": "Imported files"
+  },
+  "skill": {
+    "title": "Skill",
+    "size": "Size",
+    "minimal": "Minimal",
+    "compact": "Compact",
+    "standard": "Standard",
+    "full": "Full",
+    "minimalHint": "The rules and one line per tag.",
+    "compactHint": "Plus each tag's attributes and an example.",
+    "standardHint": "Plus what each tag is for, and its rules.",
+    "fullHint": "Everything: every note, every attribute described.",
+    "tokens": "~{{tokens}} tokens",
+    "stats": "{{chars}} characters, about {{tokens}} tokens",
+    "language": "Language",
+    "languageEn": "English",
+    "languageFa": "فارسی",
+    "languageBoth": "Both",
+    "components": "Components",
+    "all": "All",
+    "none": "None",
+    "group": {
+      "document": "Document",
+      "layout": "Layout",
+      "figures": "Figures and code",
+      "writing": "Writing",
+      "custom": "Your own"
+    },
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download SKILL.md"
   },
   "components": {
     "title": "Components",

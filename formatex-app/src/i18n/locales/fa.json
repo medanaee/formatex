@@ -18,7 +18,8 @@
     "settings": "تنظیمات",
     "toggleSidebar": "نمایش/پنهان‌کردن نوار کناری",
     "primary": "ناوبری اصلی",
-    "components": "کامپوننت‌ها"
+    "components": "کامپوننت‌ها",
+    "skill": "اسکیل"
   },
   "library": {
     "title": "سندها",
@@ -153,6 +154,37 @@
     "desktopNote": "فونت‌های سیستم خودکار استفاده می‌شوند",
     "unavailable": "فونت‌ها در برنامه مدیریت می‌شوند",
     "files": "فایل‌های افزوده‌شده"
+  },
+  "skill": {
+    "title": "اسکیل",
+    "size": "حجم",
+    "minimal": "حداقل",
+    "compact": "فشرده",
+    "standard": "استاندارد",
+    "full": "کامل",
+    "minimalHint": "قاعده‌ها و یک خط برای هر تگ.",
+    "compactHint": "به‌اضافهٔ ویژگی‌های هر تگ و یک مثال.",
+    "standardHint": "به‌اضافهٔ کاربرد هر تگ و قاعده‌هایش.",
+    "fullHint": "همه‌چیز: هر نکته و توضیح هر ویژگی.",
+    "tokens": "حدود {{tokens}} توکن",
+    "stats": "{{chars}} نویسه، حدود {{tokens}} توکن",
+    "language": "زبان",
+    "languageEn": "English",
+    "languageFa": "فارسی",
+    "languageBoth": "هر دو",
+    "components": "کامپوننت‌ها",
+    "all": "همه",
+    "none": "هیچ‌کدام",
+    "group": {
+      "document": "سند",
+      "layout": "چیدمان",
+      "figures": "شکل و کد",
+      "writing": "نوشتن",
+      "custom": "مال خودتان"
+    },
+    "copy": "کپی",
+    "copied": "کپی شد",
+    "download": "دانلود SKILL.md"
   },
   "components": {
     "title": "کامپوننت‌ها",

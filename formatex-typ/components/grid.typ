@@ -131,5 +131,54 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let grid-docs = (
+  en: (
+    about: `````md
+Columns: `<grid cols="N">` holds `<item>`s laid out in a grid; `span` makes an item wider. An item can hold any content, including `<box>` and figures.
 
+- `cols` sets the number of columns; `gap-x` / `gap-y` the spacing; `dir` the direction. Items fill row by row from the start side (top-right in RTL); an item that does not fit moves to the next row. `span="2"` on an `<item>` makes it wider.
+- By default a `<box>` or `<alert>` in an item fills its cell, so side-by-side boxes are equally tall. `width="auto" height="auto"` on the item keeps natural size, placed by `halign` and `valign`.
+- Leave blank lines inside `<item>`.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+ستون‌بندی: `<grid cols="N">` چند `<item>` را در یک شبکه می‌چیند و `span` یک آیتم را پهن‌تر می‌کند. هر آیتم می‌تواند هر محتوایی داشته باشد، از جمله `<box>` و شکل.
 
+- `cols` تعداد ستون را تعیین می‌کند؛ `gap-x` / `gap-y` فاصله را؛ `dir` جهت را. آیتم‌ها ردیف‌به‌ردیف از سمت شروع پر می‌شوند (بالا-راست در RTL)؛ آیتمی که جا نشود به ردیف بعد می‌رود. `span="2"` روی `<item>` آن را پهن‌تر می‌کند.
+- به‌طور پیش‌فرض `<box>` یا `<alert>` داخل آیتم تمام خانه را پر می‌کند، پس جعبه‌های کنار هم هم‌قدند. `width="auto" height="auto"` روی آیتم اندازهٔ طبیعی را نگه می‌دارد و با `halign` و `valign` جا می‌گیرد.
+- داخل `<item>` خط خالی بگذارید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<grid cols="3" gap-x="12pt" gap-y="12pt">
+<item span="2">
+
+Two columns wide.
+
+</item>
+<item>
+
+One column.
+
+</item>
+</grid>
+`````.text,
+    fa: `````md
+<grid cols="3" gap-x="12pt" gap-y="12pt">
+<item span="2">
+
+به پهنای دو ستون.
+
+</item>
+<item>
+
+یک ستون.
+
+</item>
+</grid>
+`````.text,
+  ),
+)

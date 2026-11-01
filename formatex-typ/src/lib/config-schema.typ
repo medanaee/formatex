@@ -26,12 +26,20 @@
     "Overall feel: corner rounding and the default fonts. formal: square, official. standard: slightly rounded. friendly: very rounded.",
     "حالت کلی: گردی گوشه‌ها و فونت‌های پیش‌فرض. formal: گوشهٔ تیز و رسمی. standard: کمی گرد. friendly: بسیار گرد و صمیمی.",
   )),
-  "page": (type: "enum", values: ("a4", "mobile"), default: "a4", doc: d(
-    "Page size: a4 for print, mobile (110 × 245 mm, small margins) for phones.",
-    "اندازهٔ صفحه: a4 برای چاپ، mobile (۱۱۰ × ۲۴۵ میلی‌متر با حاشیهٔ کم) برای موبایل.",
+  "page": (type: "enum", values: ("desktop-a4", "desktop-a3", "desktop-a4-landscape", "desktop-a5", "desktop-a6", "desktop-b4", "desktop-b5", "desktop-letter", "desktop-legal", "desktop-tabloid", "desktop-square", "mobile-16-9", "mobile-18-9", "mobile-20-9", "mobile-21-9", "custom"), default: "desktop-a4", doc: d(
+    "Page size. desktop-* are for print and screen (desktop-a4, desktop-a5, desktop-letter, ...); mobile-* are narrow pages for phones (110 mm wide, small margins, one column, no header center item). custom uses page-width and page-height; a custom page narrower than 120 mm gets the phone rules too. The old names a4 and mobile still work.",
+    "اندازهٔ صفحه. desktop-* برای چاپ و صفحه‌نمایش (desktop-a4، desktop-a5، desktop-letter و ...)؛ mobile-* صفحهٔ باریک برای موبایل (عرض ۱۱۰ میلی‌متر، حاشیهٔ کم، تک‌ستونه، بدون آیتم میانی هدر). custom از page-width و page-height می‌گیرد؛ صفحهٔ دلخواه باریک‌تر از ۱۲۰ میلی‌متر هم قاعده‌های موبایل را می‌گیرد. نام‌های قدیمی a4 و mobile هنوز کار می‌کنند.",
+  )),
+  "page-width": (type: "length", default: "210mm", doc: d(
+    "Width of a custom page (page = \"custom\"): a number with mm, cm, in or pt, such as 148mm. Between 40 mm and 5000 mm.",
+    "عرض صفحهٔ دلخواه (وقتی page = \"custom\")؛ عدد با mm، cm، in یا pt مثل 148mm. بین ۴۰ تا ۵۰۰۰ میلی‌متر.",
+  )),
+  "page-height": (type: "length", default: "297mm", doc: d(
+    "Height of a custom page (page = \"custom\"): a number with mm, cm, in or pt, such as 210mm. Between 40 mm and 5000 mm.",
+    "ارتفاع صفحهٔ دلخواه (وقتی page = \"custom\")؛ عدد با mm، cm، in یا pt مثل 210mm. بین ۴۰ تا ۵۰۰۰ میلی‌متر.",
   )),
   "margin": (type: "enum", values: ("narrow", "normal", "wide"), default: "normal", doc: d(
-    "Page margins on A4: narrow (15 mm sides), normal (about 25 mm), wide (35 mm). Ignored on the mobile page.",
+    "Page margins: narrow (15 mm sides on A4), normal (about 25 mm), wide (35 mm); on other sizes they scale with the page. Ignored on phone pages.",
     "حاشیهٔ صفحه در A4: narrow (۱۵ میلی‌متر)، normal (حدود ۲۵)، wide (۳۵). در صفحهٔ mobile نادیده گرفته می‌شود.",
   )),
   "scale": (type: "int", default: "100", doc: d(

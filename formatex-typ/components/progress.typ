@@ -106,5 +106,62 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let progress-docs = (
+  en: (
+    about: `````md
+Progress bars, star ratings and dot ratings from a Markdown list of `label: value` lines (`style` picks the look).
 
+- Put a Markdown list inside: one `label: value` item per row (the value is what follows the last colon; Persian digits work). A list item without `label: value`, a negative value or a `max` of zero is a compile error.
+- `style`: `bar` (default), `stars` or `dots`; `max` sets the top of the scale; `values="false"` hides the numbers; `color` takes a preset or hex. A single bar can be written `<progress value="62" color="pink">Overall progress</progress>`.
+- The fill grows from the start side (right in Persian). The look follows the feel: thin and square in `formal`, pill-shaped in `friendly`.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+نوار پیشرفت، امتیاز ستاره‌ای و امتیاز نقطه‌ای از یک فهرست Markdown با خط‌های `label: value` (`style` ظاهر را تعیین می‌کند).
 
+- یک فهرست Markdown داخلش بگذارید: هر ردیف یک آیتم `label: value` (مقدار آنچه بعد از آخرین دونقطه می‌آید؛ ارقام فارسی کار می‌کنند). آیتم بدون `label: value`، مقدار منفی یا `max` برابر صفر خطای ساخت است.
+- ‏`style`: ‏`bar` (پیش‌فرض)، `stars` یا `dots`؛ `max` سقف مقیاس را می‌دهد؛ `values="false"` عددها را پنهان می‌کند؛ `color` رنگ آماده یا hex می‌گیرد. یک نوار تنها را می‌توان `<progress value="62" color="pink">پیشرفت کلی</progress>` نوشت.
+- پر شدن از سمت شروع است (در فارسی راست). ظاهر از حالت (feel) پیروی می‌کند: باریک و تیز در `formal`، قرصی در `friendly`.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<progress>
+
+- Design: 100
+- Implementation: 70
+- Testing: 35
+
+</progress>
+
+<progress style="stars">
+
+- Typst: 4.5
+- LaTeX: 3
+
+</progress>
+
+<progress value="62" color="pink">Overall progress</progress>
+`````.text,
+    fa: `````md
+<progress>
+
+- طراحی: ۱۰۰
+- پیاده‌سازی: ۷۰
+- آزمون: ۳۵
+
+</progress>
+
+<progress style="stars">
+
+- تایپست: ۴٫۵
+- لاتک: ۳
+
+</progress>
+
+<progress value="62" color="pink">پیشرفت کلی</progress>
+`````.text,
+  ),
+)

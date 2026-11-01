@@ -16,11 +16,15 @@ theme = "paper"
 #   "friendly" very rounded, modern, casual   — Lexend + Pelak
 feel = "formal"
 
-# Page size: "a4" (print) or "mobile" (110 × 245 mm page with small margins for phones; header center item hidden)
-page = "a4"
+# Page size: "desktop-a4" (default), "desktop-a3", "desktop-a4-landscape", "desktop-a5", "desktop-a6", "desktop-b4", "desktop-b5",
+# "desktop-letter", "desktop-legal", "desktop-tabloid", "desktop-square", or for phones "mobile-16-9", "mobile-18-9", "mobile-20-9",
+# "mobile-21-9" (110 mm wide, small margins, one column, header center item hidden), or "custom" with page-width and page-height.
+# A custom page narrower than 120 mm gets the phone rules too. The old names "a4" and "mobile" still work.
+page = "desktop-a4"
+# page-width = "148mm"    # only with page = "custom": mm, cm, in or pt
+# page-height = "210mm"
 
-# Page margins on A4: "narrow" (15 mm sides), "normal" (about 25 mm), "wide" (35 mm sides).
-# Ignored on the mobile page size. Default: "normal"
+# Page margins: "narrow" (15 mm sides on A4), "normal" (about 25 mm), "wide" (35 mm sides); other sizes scale. Ignored on phone pages. Default: "normal"
 margin = "normal"
 
 # Size of everything on the page, in percent: text, headings, code, tables, paddings, corners

@@ -70,3 +70,41 @@
   }
   doc
 }
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let citations-docs = (
+  en: (
+    about: `````md
+Citations and the bibliography. `<cite key="...">` cites entries of a BibTeX file; `<bibliography>` lists the cited ones. Put `<bibliography>` once, at the end; a document with citations must have one. The `.bib` file is named in the front matter (`bibliography: file:`).
+
+- `<cite key="a">` or several keys `key="a, b"`; `page="p. 12"` adds a supplement; `form` is `normal` (default), `prose`, `author`, `year` or `full`.
+- `<bibliography>` lists only the cited entries. Put it once, at the end. Every key must exist in the `.bib` file, or the build fails.
+- The file, style and title are set in the front matter (`bibliography:` with `file:`, `style:` such as `ieee` or `apa`, `title:`, `dir:`); attributes on the tag override them.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+استناد و فهرست منابع. `<cite key="...">` به ورودی‌های یک فایل BibTeX استناد می‌دهد و `<bibliography>` فقط منابعِ استنادشده را فهرست می‌کند. `<bibliography>` را یک بار و در پایان بگذارید؛ سندی که استناد دارد باید آن را هم داشته باشد. فایل `.bib` در front matter نام برده می‌شود (`bibliography: file:`).
+
+- `<cite key="a">` یا چند کلید با `key="a, b"`؛ `page="ص. ۱۲"` توضیح تکمیلی می‌افزاید؛ `form` یکی از `normal` (پیش‌فرض)، `prose`، `author`، `year` یا `full` است.
+- `<bibliography>` فقط منابعِ استنادشده را فهرست می‌کند. یک بار و در پایان بگذارید. هر کلید باید در فایل `.bib` باشد، وگرنه ساخت شکست می‌خورد.
+- فایل، سبک و عنوان در front matter تعیین می‌شود (`bibliography:` با `file:`، `style:` مثل `ieee` یا `apa`، `title:` و `dir:`)؛ ویژگی‌های روی تگ بر آن‌ها مقدم‌اند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+Transformers are built on attention <cite key="vaswani2017attention"></cite>.
+Several sources <cite key="knuth1984texbook, vaswani2017attention"></cite>.
+With a page <cite key="knuth1984texbook" page="p. 12"></cite>.
+
+<bibliography></bibliography>
+`````.text,
+    fa: `````md
+ترنسفورمرها بر پایهٔ توجه‌اند <cite key="vaswani2017attention"></cite>.
+چند منبع <cite key="knuth1984texbook, vaswani2017attention"></cite>.
+با شماره صفحه <cite key="knuth1984texbook" page="ص. ۱۲"></cite>.
+
+<bibliography></bibliography>
+`````.text,
+  ),
+)

@@ -1,5 +1,5 @@
 #import "/src/kit.typ": *
-#import "/src/page.typ": page-name
+#import "/src/page.typ": is-phone
 
 // <docheader> > <main> (<l-img>, <r-img>, <title size="1|2|3">) + <info>. <main> is optional: its children
 // may sit directly in <docheader>. The old title / subtitle / subtitle2 attributes still work: they are
@@ -39,7 +39,7 @@
   }))
   if left-img == none and right-img == none { return title-block }
   // On the phone page the images go in a row of their own above the titles.
-  if page-name == "mobile" {
+  if is-phone {
     return layout(size => {
       let fit(img) = if img == none { none } else {
         let w = measure(img).width
@@ -206,5 +206,35 @@
     scoped: true,
     description: (en: "Ordinary Markdown below the titles (authors, affiliations, date, abstract); wrap it in <align> to center it", fa: "Markdown معمولی زیر عنوان‌ها (نویسندگان، وابستگی، تاریخ، چکیده)؛ برای وسط‌چین کردن داخل <align> بگذارید"),
     attrs: (:),
+  ),
+)
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let docheader-docs = (
+  en: (
+    about: `````md
+The title block at the top of a document: titles, side logos and an info area, optionally framed. For a simple header the attributes `title`, `subtitle` and `subtitle2` are enough; build it from `<main>`, `<title>`, `<l-img>`, `<r-img>` and `<info>` for more.
+
+- Shortcut: `title`, `subtitle`, `subtitle2` attributes (Markdown and math allowed) are `<title>` lines of size 1, 2, 3. For more, build it from tags.
+- Tags: `<main>` (the titles between the images; optional), `<title size="1|2|3" color>` (one line; size 1 is large and bold, 2 medium and muted, 3 small and gray), `<l-img>` / `<r-img>` (images at the physical left / right edge; `width`, `height`, `radius`), `<info>` (ordinary Markdown below the titles; wrap it in `<align>` to center it).
+- `border` (the sides: `lrtb`, `tb`, ...) and `fill="true"` frame and tint the header; `color` (any Tailwind name or hex) colors both, `border-color` and `fill-color` each alone; `radius` and `padding` fine-tune it.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+بلوک عنوان بالای سند: عنوان‌ها، لوگوهای کناری و ناحیهٔ اطلاعات، با قاب اختیاری. برای سربرگ ساده ویژگی‌های `title`، `subtitle` و `subtitle2` کافی است؛ برای بیشتر، آن را از `<main>`، `<title>`، `<l-img>`، `<r-img>` و `<info>` بسازید.
+
+- میان‌بُر: ویژگی‌های `title`، `subtitle` و `subtitle2` (Markdown و ریاضی مجاز) همان خط‌های `<title>` با اندازهٔ ۱، ۲ و ۳ هستند. برای بیشتر آن را از تگ‌ها بسازید.
+- تگ‌ها: `<main>` (عنوان‌های میان دو تصویر؛ اختیاری)، `<title size="1|2|3" color>` (یک خط؛ اندازهٔ ۱ بزرگ و پررنگ، ۲ متوسط و کم‌رنگ، ۳ کوچک و خاکستری)، `<l-img>` / `<r-img>` (تصویر لبهٔ فیزیکی چپ / راست؛ `width`، `height`، `radius`)، `<info>` (Markdown معمولی زیر عنوان‌ها؛ برای وسط‌چین کردن داخل `<align>` بگذارید).
+- ‏`border` (ضلع‌ها: `lrtb`، `tb` و ...) و `fill="true"` سربرگ را قاب و رنگ می‌دهند؛ `color` (هر نام Tailwind یا hex) هر دو را رنگ می‌کند و `border-color` و `fill-color` هر کدام را جدا؛ `radius` و `padding` آن را تنظیم می‌کنند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<docheader title="Main title" subtitle="Optional *subtitle*" subtitle2="Optional second subtitle, smaller"></docheader>
+`````.text,
+    fa: `````md
+<docheader title="عنوان اصلی" subtitle="زیرعنوان *اختیاری*" subtitle2="زیرعنوان دوم اختیاری، کوچک‌تر"></docheader>
+`````.text,
   ),
 )

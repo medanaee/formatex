@@ -136,5 +136,42 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let def-docs = (
+  en: (
+    about: `````md
+A defined term: a small badge inside a sentence (or a titled block with `mode="block"`) that points at an element or a text fragment by `id` and carries its definition.
 
+- `id` names the target (a heading, figure, table, equation, theorem, listing, diff, or a text fragment marked with `<span id>`); the title links to it like `<ref>`.
+- Inline (default) it is a small badge: icon, title, a colon and the text; `mode="block"` with a `title` makes a titled block. `color` takes a preset or hex.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+اصطلاح تعریف‌شده: یک برچسب کوچک میان جمله (یا یک بلوک عنوان‌دار با `mode="block"`) که با `id` به یک عنصر یا تکه‌ای از متن اشاره می‌کند و تعریفش را همراه دارد.
 
+- `id` هدف را نام می‌برد (تیتر، شکل، جدول، معادله، قضیه، کد، diff یا تکه‌ای از متن که با `<span id>` علامت خورده)؛ عنوان مثل `<ref>` به آن پیوند می‌دهد.
+- درون‌خطی (پیش‌فرض) یک برچسب کوچک است: آیکون، عنوان، دونقطه و متن؛ `mode="block"` با `title` یک بلوک عنوان‌دار می‌سازد. `color` رنگ آماده یا hex می‌گیرد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+Some call it <span id="span-ai">artificial intelligence</span> today.
+
+We use <def id="span-ai" color="teal">simulating human intelligence by computer systems</def>.
+
+<def id="span-ai" mode="block" title="Artificial intelligence" color="blue">
+Systems that act in ways that look intelligent.
+</def>
+`````.text,
+    fa: `````md
+امروز <span id="span-ai">هوش مصنوعی</span> را می‌شنوید.
+
+منظور ما <def id="span-ai" color="teal">شبیه‌سازی هوش انسان با سامانه‌های رایانه‌ای</def> است.
+
+<def id="span-ai" mode="block" title="هوش مصنوعی" color="blue">
+سامانه‌هایی که رفتارشان هوشمندانه به نظر می‌رسد.
+</def>
+`````.text,
+  ),
+)

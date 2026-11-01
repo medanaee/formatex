@@ -46,5 +46,32 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let badge-docs = (
+  en: (
+    about: `````md
+A small inline label (a pill, with an optional icon) for a status or a tag inside a sentence.
 
+- `color`: a color preset or hex; without it the badge is neutral gray.
+- `icon` adds a Font Awesome icon before the text; `size` is the text size (`1em` by default).
+- It follows the theme and the feel's corner rounding.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+یک برچسب کوچک درون‌خطی (قرصی شکل و با آیکون اختیاری) برای وضعیت یا برچسب میان جمله.
 
+- `color`: یک رنگ آماده یا hex؛ بدون آن برچسب خاکستری خنثی است.
+- `icon` یک آیکون Font Awesome پیش از متن می‌گذارد؛ `size` اندازهٔ متن است (پیش‌فرض `1em`).
+- از تم و گردی گوشه‌های حالت (feel) پیروی می‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<badge color="green" icon="circle-check">stable</badge> <badge color="yellow">beta</badge> <badge>neutral</badge>
+`````.text,
+    fa: `````md
+<badge color="green" icon="circle-check">پایدار</badge> <badge color="yellow">آزمایشی</badge> <badge>خنثی</badge>
+`````.text,
+  ),
+)

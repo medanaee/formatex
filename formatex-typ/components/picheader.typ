@@ -64,5 +64,30 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let picheader-docs = (
+  en: (
+    about: `````md
+A full-width picture header: an image with a gradient rising from the bottom, a large white title and an optional subtitle. Self-closing.
 
+- It is self-closing. `src` is the image, `title` and optional `subtitle` are set in white over a gradient rising from the bottom; `height` sets the band (for example `60mm`).
+- Title and subtitle follow the direction of the title's first letter. `margin-x="false"` / `margin-y="false"` let it bleed past the page margins (the header then covers the page header).
+`````.text,
+  ),
+  fa: (
+    about: `````md
+سربرگ تصویریِ تمام‌عرض: یک تصویر با گرادیان از پایین، عنوان سفید بزرگ و زیرعنوان اختیاری. بدون بدنه (خودبسته).
 
+- خودبسته است. `src` تصویر است، `title` و `subtitle` اختیاری با رنگ سفید روی گرادیانی از پایین چیده می‌شوند؛ `height` ارتفاع نوار را تعیین می‌کند (مثلاً `60mm`).
+- عنوان و زیرعنوان جهت اولین حرف عنوان را می‌گیرند. `margin-x="false"` / `margin-y="false"` اجازه می‌دهد از حاشیهٔ صفحه بیرون بزند (آن‌وقت سربرگ صفحه را می‌پوشاند).
+`````.text,
+  ),
+  example: (
+    en: `````md
+<picHeader src="images/ocean.svg" title="Title" subtitle="Optional subtitle" height="60mm" />
+`````.text,
+    fa: `````md
+<picHeader src="images/ocean.svg" title="عنوان" subtitle="زیرعنوان اختیاری" height="60mm" />
+`````.text,
+  ),
+)

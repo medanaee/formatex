@@ -152,5 +152,56 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let tree-docs = (
+  en: (
+    about: `````md
+A file and folder tree drawn from an indented listing in a fenced block (pasted `tree` output works). `caption` makes it a numbered figure.
 
+- Put a fenced code block (any language or none) inside the tag, with blank lines around it: one file or folder per line, nested by indentation (a tab counts as 4 spaces). A name ending in `/`, or with indented lines under it, is a folder. `name  # note` prints a muted note.
+- Pasted `tree` output works as is (`│`, `├──`, `└──`, or ASCII `|`, `+--`, `\--` count as indentation). `icons="false"` drops the file-type icons.
+- Drawn like a code block with connector lines, folder icons in the accent color and an icon per file type, always left to right. `caption` and `id` make it a numbered figure (listed by `<lof>`).
+`````.text,
+  ),
+  fa: (
+    about: `````md
+درخت فایل‌ها و پوشه‌ها که از یک فهرست تورفته در بلوک کد کشیده می‌شود (خروجی چسبانده‌شدهٔ `tree` هم کار می‌کند). `caption` آن را شکل شماره‌دار می‌کند.
 
+- یک بلوک کد (هر زبان یا بی‌زبان) داخل تگ بگذارید، با خط خالی دورش: هر خط یک فایل یا پوشه، با تورفتگی تودرتو (یک tab برابر ۴ فاصله). نامی که با `/` تمام شود، یا زیرش خط تورفته باشد، پوشه است. `name  # note` یادداشت کم‌رنگ چاپ می‌کند.
+- خروجی چسبانده‌شدهٔ `tree` همان‌طور کار می‌کند (`│`، `├──`، `└──` یا ASCII مثل `|`، `+--`، `\--` تورفتگی حساب می‌شوند). `icons="false"` آیکون نوع فایل را برمی‌دارد.
+- مثل بلوک کد با خط‌های اتصال، آیکون پوشه به رنگ تأکید و آیکون برای هر نوع فایل کشیده می‌شود، همیشه چپ‌به‌راست. `caption` و `id` آن را شکل شماره‌دار می‌کنند (`<lof>` فهرستش می‌کند).
+`````.text,
+  ),
+  example: (
+    en: `````md
+<tree caption="Project layout" id="fig-tree">
+
+```text
+formatex/
+  main.typ        # entry point
+  docs/
+    doc_en.md
+  images/
+    logo.png
+  references.bib
+```
+
+</tree>
+`````.text,
+    fa: `````md
+<tree caption="ساختار پروژه" id="fig-tree">
+
+```text
+formatex/
+  main.typ        # نقطهٔ ورود
+  docs/
+    doc_fa.md
+  images/
+    logo.png
+  references.bib
+```
+
+</tree>
+`````.text,
+  ),
+)

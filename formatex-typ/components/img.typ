@@ -34,5 +34,30 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let img-docs = (
+  en: (
+    about: `````md
+An image from a project file (`src`), with `alt`, `width`, `height` and `radius`. Use it on its own or inside `<fig>` to give it a caption and a number.
 
+- `src` is a path from the project root (an `images/` folder is the habit); SVG and raster images work. `alt` is the description, `width` / `height` are lengths or percentages, `radius` rounds the corners (default: the feel's).
+- Inside `<fig>` the image takes `align`, `ratio` and a caption.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+یک تصویر از فایل‌های پروژه (`src`) با `alt`، `width`، `height` و `radius`. تنها یا داخل `<fig>` به کار می‌رود تا عنوان و شماره بگیرد.
 
+- `src` مسیری از ریشهٔ پروژه است (معمولاً پوشهٔ `images/`)؛ SVG و تصویرهای نقطه‌ای کار می‌کنند. `alt` توضیح تصویر است، `width` / `height` طول یا درصدند و `radius` گوشه‌ها را گرد می‌کند (پیش‌فرض: مقدار حالت).
+- داخل `<fig>` تصویر `align`، `ratio` و عنوان می‌گیرد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<img src="images/ocean.svg" alt="Ocean" width="60%" radius="8">
+`````.text,
+    fa: `````md
+<img src="images/ocean.svg" alt="Ocean" width="60%" radius="8">
+`````.text,
+  ),
+)

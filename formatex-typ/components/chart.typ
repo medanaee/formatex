@@ -377,5 +377,58 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let chart-docs = (
+  en: (
+    about: `````md
+A bar, line, pie or donut chart drawn from a Markdown table inside the tag: the first column holds the categories, the header row the series names, every other column is one series. `caption` makes it a numbered figure.
 
+- Leave a blank line after the opening tag and before the closing tag, or the table is not parsed. `src="data.csv"` reads the same layout from a CSV file.
+- Types: `bar` (default; grouped by category with several series), `line` (one line with markers per series), `pie` / `donut` (exactly one value column, no negatives, a total above zero).
+- Numbers may use Persian digits, `٫` as the decimal point and thousands separators; an empty cell is a missing value. `values="true"` prints the numbers; `unit`, `x-title`, `y-title` and `colors` are optional.
+- The look follows the feel (sober palette and square bars in `formal`, colorful and rounded in `friendly`) and the theme; in RTL the categories run right to left and digits are Persian.
+`````.text,
+    more: `````md
+- Pie and donut slices of 22° or more show their percentage. `min` / `max` fix the value axis; `legend` shows or hides the legend; `width` / `height` size the chart; `colors` overrides the palette in every feel.
+- `formal`: shades of the theme's accent alternating with grays, square bars and markers, thin lines; `standard`: the colorful palette with slightly rounded shapes; `friendly`: rounded bars, round markers and thinner donut rings.
+- In an RTL chart the value axis sits on the right, `%` becomes `٪` and pie slices go counter-clockwise; labels keep their own direction. `dir="ltr"` forces the other layout.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+نمودار میله‌ای، خطی، دایره‌ای یا حلقه‌ای که از یک جدول Markdown داخل تگ کشیده می‌شود: ستون اول دسته‌ها، ردیف سرستون نام سری‌ها و هر ستون دیگر یک سری است. `caption` آن را شکل شماره‌دار می‌کند.
 
+- پس از تگ بازکننده و پیش از تگ بسته‌کننده یک خط خالی بگذارید، وگرنه جدول خوانده نمی‌شود. `src="data.csv"` همین ساختار را از یک فایل CSV می‌خواند.
+- نوع‌ها: `bar` (پیش‌فرض؛ با چند سری بر اساس دسته گروه می‌شود)، `line` (برای هر سری یک خط با نشانه)، `pie` / `donut` (دقیقاً یک ستون مقدار، بدون مقدار منفی و با مجموع بیشتر از صفر).
+- اعداد می‌توانند ارقام فارسی، `٫` برای اعشار و جداکنندهٔ هزارگان داشته باشند؛ خانهٔ خالی یعنی مقدار گم‌شده. `values="true"` عددها را چاپ می‌کند؛ `unit`، `x-title`، `y-title` و `colors` اختیاری‌اند.
+- ظاهر از حالت (feel) و تم پیروی می‌کند (پالت سنگین و میلهٔ تیز در `formal`، رنگارنگ و گرد در `friendly`)؛ در RTL دسته‌ها از راست به چپ می‌روند و ارقام فارسی‌اند.
+`````.text,
+    more: `````md
+- برش‌های pie و donut که ۲۲ درجه یا بیشتر باشند درصدشان را نشان می‌دهند. `min` / `max` محور مقدار را ثابت می‌کنند؛ `legend` راهنما را نشان یا پنهان می‌کند؛ `width` / `height` اندازهٔ نمودار را می‌دهند؛ `colors` پالت را در هر حالت (feel) عوض می‌کند.
+- ‏`formal`: سایه‌های رنگ تأکید تم به‌نوبت با خاکستری، میله و نشانهٔ تیز، خط باریک؛ `standard`: پالت رنگارنگ با شکل‌های کمی گرد؛ `friendly`: میلهٔ گرد، نشانهٔ گرد و حلقهٔ donut باریک‌تر.
+- در نمودار RTL محور مقدار سمت راست است، `%` به `٪` تبدیل می‌شود و برش‌های pie پادساعت‌گردند؛ برچسب‌ها جهت خودشان را نگه می‌دارند. `dir="ltr"` چیدمان دیگر را اجبار می‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<chart caption="Students admitted" id="fig-chart-bar" y-title="people" values="true">
+
+| Field | 1402 | 1403 | 1404 |
+|---|---|---|---|
+| Computer | 120 | 145 | 160 |
+| Electrical | 90 | 85 | 95 |
+
+</chart>
+`````.text,
+    fa: `````md
+<chart caption="تعداد دانشجویان ورودی" id="fig-chart-bar" y-title="نفر" values="true">
+
+| رشته | ۱۴۰۲ | ۱۴۰۳ | ۱۴۰۴ |
+|------|------|------|------|
+| کامپیوتر | ۱۲۰ | ۱۴۵ | ۱۶۰ |
+| برق | ۹۰ | ۸۵ | ۹۵ |
+
+</chart>
+`````.text,
+  ),
+)

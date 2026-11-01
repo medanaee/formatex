@@ -65,8 +65,9 @@
 
 #let conf(doc) = {
   set page(
-    ..page-sizes.at(page-name),
-    ..if page-name == "a4" { (margin: margin-sizes.at(margin-name)) },
+    width: page-size.width,
+    height: page-size.height,
+    margin: page-margin,
     columns: column-count,
     numbering: "1",
     number-align: center,

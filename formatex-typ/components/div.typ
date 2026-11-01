@@ -587,3 +587,83 @@
     ),
   ),
 )
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let div-docs = (
+  en: (
+    about: `````md
+A container styled with Tailwind-like classes in `tailwind="..."`: padding, margin, colors, text, rounding, borders, flex and gap. For cards and layouts that `<box>` is too simple for; use `<grid>` for columns.
+
+- `tailwind="..."` is a space-separated list of utility classes. A `<div>` fills the available width; nest `<div>`s for rows and columns. Flex is computed by the template and follows the direction: in Persian a row starts at the right.
+- One spacing step is `0.25em` of the surrounding text (`p-4` = `1em`); `[...]` takes any length (`p-[10pt]`, `w-[5cm]`). `dir="auto|rtl|ltr"` works as on `<grid>`.
+- Colors follow the theme (`bg-blue`, `bg-blue-200`, `bg-blue/20`, `text-muted`, `bg-accent`, `bg-[#e0efff]`). Variants: `dark:`, `light:`, `rtl:`, `ltr:`, `formal:`, `standard:`, `friendly:` (for example `friendly:rounded-xl`).
+- An unknown class is a compile error that names it. Grid classes (`grid-cols-*`) and shadows are not supported: use `<grid>`.
+`````.text,
+    more: `````md
+Classes (utilities as in Tailwind CSS):
+
+- Display: `block`, `flex`, `inline-block`, `inline-flex`, `hidden`. Flex: `flex-row`, `flex-row-reverse`, `flex-col`, `flex-wrap`, `justify-start|end|center|between|around|evenly`, `items-start|end|center|stretch|baseline`, `flex-1`, `flex-auto`, `flex-none`, `grow`, `shrink-0`, `basis-*`, `self-*`, `order-N`.
+- Gap and spacing: `gap-4`, `gap-x-2`, `space-x-N`, `space-y-N`, padding `p-4 px-2 py-1 pt- pb- ps- pe-`, margin `m-4 mx-auto my-2 mt- mb- ms- me-` (negative: `-mt-2`).
+- Size: `w-24`, `w-1/2`, `w-full`, `w-fit`, `h-32`, `max-w-md` (`xs` to `7xl`, `prose`).
+- Color: `bg-blue`, `bg-blue-200`, `bg-blue/20`, `bg-accent`, `bg-transparent`, `text-red-700`, `text-muted`, `border-blue`; `white` is the page color and `black` the text color.
+- Text: `text-xs` to `text-9xl`, `font-bold` (`thin` to `black`), `font-mono`, `italic`, `underline`, `line-through`, `leading-tight`, `tracking-wide`, `text-left|center|right|start|end|justify`.
+- Border and rounding: `border`, `border-2`, `border-t`, `border-x-2`, `border-dashed`, `border-dotted`, `rounded`, `rounded-lg`, `rounded-full`, `rounded-t-lg`, `rounded-[8pt]`; `overflow-hidden`.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+ظرفی که با کلاس‌های شبیه Tailwind در `tailwind="..."` قالب‌بندی می‌شود: فاصله، رنگ، متن، گردی گوشه، حاشیه، flex و gap. برای کارت و چیدمانی که `<box>` برایش ساده است؛ برای ستون‌بندی از `<grid>` استفاده کنید.
+
+- ‏`tailwind="..."` فهرستی از کلاس‌های کمکی است که با فاصله جدا می‌شوند. `<div>` تمام عرض را می‌گیرد؛ برای ردیف و ستون `<div>` را تودرتو کنید. flex را خود قالب حساب می‌کند و از جهت پیروی می‌کند: در فارسی ردیف از راست شروع می‌شود.
+- یک گام فاصله `0.25em` متن اطراف است (`p-4` برابر `1em`)؛ `[...]` هر طولی می‌گیرد (`p-[10pt]`، `w-[5cm]`). `dir="auto|rtl|ltr"` مثل `<grid>` کار می‌کند.
+- رنگ‌ها از تم پیروی می‌کنند (`bg-blue`، `bg-blue-200`، `bg-blue/20`، `text-muted`، `bg-accent`، `bg-[#e0efff]`). گونه‌ها: `dark:`، `light:`، `rtl:`، `ltr:`، `formal:`، `standard:`، `friendly:` (مثلاً `friendly:rounded-xl`).
+- کلاس ناشناخته خطای ساخت است که نامش را می‌آورد. کلاس‌های grid (`grid-cols-*`) و سایه پشتیبانی نمی‌شوند: از `<grid>` استفاده کنید.
+`````.text,
+    more: `````md
+کلاس‌ها (کلاس‌های کمکی مثل Tailwind CSS):
+
+- نمایش: `block`، `flex`، `inline-block`، `inline-flex`، `hidden`. flex: `flex-row`، `flex-row-reverse`، `flex-col`، `flex-wrap`، `justify-start|end|center|between|around|evenly`، `items-start|end|center|stretch|baseline`، `flex-1`، `flex-auto`، `flex-none`، `grow`، `shrink-0`، `basis-*`، `self-*`، `order-N`.
+- فاصله: `gap-4`، `gap-x-2`، `space-x-N`، `space-y-N`، padding به شکل `p-4 px-2 py-1 pt- pb- ps- pe-`، margin به شکل `m-4 mx-auto my-2 mt- mb- ms- me-` (منفی: `-mt-2`).
+- اندازه: `w-24`، `w-1/2`، `w-full`، `w-fit`، `h-32`، `max-w-md` (از `xs` تا `7xl` و `prose`).
+- رنگ: `bg-blue`، `bg-blue-200`، `bg-blue/20`، `bg-accent`، `bg-transparent`، `text-red-700`، `text-muted`، `border-blue`؛ `white` رنگ صفحه و `black` رنگ متن است.
+- متن: `text-xs` تا `text-9xl`، `font-bold` (از `thin` تا `black`)، `font-mono`، `italic`، `underline`، `line-through`، `leading-tight`، `tracking-wide`، `text-left|center|right|start|end|justify`.
+- حاشیه و گردی: `border`، `border-2`، `border-t`، `border-x-2`، `border-dashed`، `border-dotted`، `rounded`، `rounded-lg`، `rounded-full`، `rounded-t-lg`، `rounded-[8pt]`؛ `overflow-hidden`.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<div tailwind="p-4 bg-blue rounded-lg border border-blue">
+
+A padded blue card.
+
+</div>
+
+<div tailwind="flex items-center justify-between gap-4 p-3 border-b">
+
+<div tailwind="font-bold">Title</div>
+
+<div tailwind="text-sm text-muted">Details</div>
+
+<div tailwind="ml-auto px-2 bg-green rounded">New</div>
+
+</div>
+`````.text,
+    fa: `````md
+<div tailwind="p-4 bg-blue rounded-lg border border-blue">
+
+یک کارت آبی با فاصلهٔ داخلی.
+
+</div>
+
+<div tailwind="flex items-center justify-between gap-4 p-3 border-b">
+
+<div tailwind="font-bold">عنوان</div>
+
+<div tailwind="text-sm text-muted">جزئیات</div>
+
+<div tailwind="ml-auto px-2 bg-green rounded">جدید</div>
+
+</div>
+`````.text,
+  ),
+)

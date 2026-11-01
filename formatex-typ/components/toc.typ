@@ -71,5 +71,30 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let toc-docs = (
+  en: (
+    about: `````md
+The table of contents, built from the headings: put `<toc></toc>` where it should stand. `break="true"` gives it its own page; `depth` limits the levels; `pages="false"` drops page numbers.
 
+- `depth` limits the levels listed; `pages="false"` drops dot leaders and page numbers; `title` renames it; `dir` / `numbers` set the direction and digits of the entries.
+- `break` is `true` (own page), `before`, `after` or `false` (default).
+`````.text,
+  ),
+  fa: (
+    about: `````md
+فهرست مطالب که از تیترها ساخته می‌شود: `<toc></toc>` را همان‌جا بگذارید که باید باشد. `break="true"` صفحهٔ جدا به آن می‌دهد، `depth` سطح‌ها را محدود می‌کند و `pages="false"` شمارهٔ صفحه را برمی‌دارد.
 
+- `depth` تعداد سطح‌های فهرست‌شده را محدود می‌کند؛ `pages="false"` نقطه‌چین و شمارهٔ صفحه را برمی‌دارد؛ `title` نامش را عوض می‌کند؛ `dir` / `numbers` جهت و ارقام ورودی‌ها را تعیین می‌کنند.
+- ‏`break` یکی از `true` (صفحهٔ جدا)، `before`، `after` یا `false` (پیش‌فرض) است.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<toc break="true"></toc>
+`````.text,
+    fa: `````md
+<toc break="true"></toc>
+`````.text,
+  ),
+)

@@ -71,5 +71,40 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let alert-docs = (
+  en: (
+    about: `````md
+A colored callout with an icon, for notes, tips, warnings and dangers. `type` sets the color and the icon; the colors are tinted from the theme, so the callout reads on light and dark pages.
 
+- Types: `note` (purple), `info` (blue), `tip` (teal), `success` (green), `warning` (yellow), `danger` (red), `important` (pink). `color` and `icon` override the type's.
+- No `type`: a neutral gray callout with no icon unless `icon` is set.
+- Leave blank lines between the tag and its text. The icon sits on the start side (right in Persian).
+`````.text,
+  ),
+  fa: (
+    about: `````md
+کادر هشدار رنگی با آیکون، برای نکته، توصیه، هشدار و خطر. `type` رنگ و آیکون را تعیین می‌کند و رنگ‌ها از تم ساخته می‌شوند، پس هشدار روی صفحهٔ روشن و تیره خوانا می‌ماند.
 
+- نوع‌ها: `note` (بنفش)، `info` (آبی)، `tip` (سبزآبی)، `success` (سبز)، `warning` (زرد)، `danger` (قرمز)، `important` (صورتی). `color` و `icon` بر رنگ و آیکون نوع مقدم‌اند.
+- بدون `type`: هشدار خاکستریِ خنثی و بدون آیکون، مگر `icon` داده شود.
+- میان تگ و متنش خط خالی بگذارید. آیکون سمت شروع می‌نشیند (در فارسی راست).
+`````.text,
+  ),
+  example: (
+    en: `````md
+<alert type="warning">
+
+**Careful:** this deletes the data.
+
+</alert>
+`````.text,
+    fa: `````md
+<alert type="warning">
+
+**مراقب باشید:** این کار داده‌ها را پاک می‌کند.
+
+</alert>
+`````.text,
+  ),
+)

@@ -22,6 +22,7 @@ export function newComponentSource(name: string, kind: ComponentKind): string {
 //   ${name}-tags    the code of each tag: (attrs, body) => content
 //                   attrs: the attributes written on the tag (strings); body: what stands between <${name}> and </${name}>
 //   ${name}-schema  what autocomplete knows about the tag: its kind, a description and its attributes
+//   ${name}-docs    what the tag is for, in both languages, and an example: the Skill page of the app builds a file for AI agents from it
 #import "/src/kit.typ": *
 
 #let ${name}-tags = (
@@ -39,6 +40,15 @@ export function newComponentSource(name: string, kind: ComponentKind): string {
     // attrs: (
     //   "size": (type: "length", default: "1em", doc: (en: "Text size", fa: "اندازهٔ متن")),
     // ),
+  ),
+)
+
+#let ${name}-docs = (
+  en: (about: "What <${name}> is for, and the rules for using it (Markdown)."),
+  fa: (about: "<${name}> برای چیست و قاعده‌های به‌کار بردنش (Markdown)."),
+  example: (
+    en: "<${name}>Some text</${name}>",
+    fa: "<${name}>متنی</${name}>",
   ),
 )
 `

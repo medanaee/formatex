@@ -110,5 +110,40 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let letter-docs = (
+  en: (
+    about: `````md
+An official letter, Persian or English: the header fields come from attributes (`org`, `number`, `date`, `to`, `from`, `subject`, ...) and the body is the text of the letter.
 
+- Order on the page: the heading line, the logo and organisation (start side) with the number / date / attachment block (end side), a rule, to / from / subject, the greeting, the body, the closing, signature, signer and position, the copies.
+- Every attribute is optional and an empty one is left out; without `signature` some space stays above the signer's name for a handwritten one. Labels follow the letter's direction and each value keeps its own.
+- The body is ordinary Markdown; leave blank lines inside the tag.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+نامهٔ اداری فارسی یا انگلیسی: فیلدهای سربرگ از ویژگی‌ها می‌آیند (`org`، `number`، `date`، `to`، `from`، `subject` و ...) و بدنه متن نامه است.
 
+- ترتیب روی صفحه: خط عنوان، لوگو و سازمان (سمت شروع) با بلوک شماره / تاریخ / پیوست (سمت پایان)، یک خط، گیرنده / فرستنده / موضوع، سلام، بدنه، پایان‌نامه، امضا، نام و سمت امضاکننده، رونوشت‌ها.
+- هر ویژگی اختیاری است و ویژگی خالی حذف می‌شود؛ بدون `signature` بالای نام امضاکننده جایی برای امضای دستی می‌ماند. برچسب‌ها جهت نامه را دنبال می‌کنند و هر مقدار جهت خودش را نگه می‌دارد.
+- بدنه Markdown معمولی است؛ داخل تگ خط خالی بگذارید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<letter org="Example University" number="123/A/2026" date="October 10, 2026" attachment="None" to="Head of the Computer Engineering Department" from="Research Office" subject="Extension of the project deadline" greeting="Dear Dr. Rahimi," closing="Sincerely," signer="Dr. Maryam Ahmadi" signer-title="Vice President for Research" cc="Education Office; Archive">
+
+Because the laboratory equipment was delivered late, we kindly ask that the deadline of the student's undergraduate project be extended by two weeks.
+
+</letter>
+`````.text,
+    fa: `````md
+<letter heading="بسمه تعالی" org="دانشگاه نمونه" number="۱۲۳/الف/۱۴۰۵" date="۱۴۰۵/۰۷/۱۸" attachment="ندارد" to="مدیر محترم گروه مهندسی کامپیوتر" from="دبیرخانهٔ پژوهشی" subject="درخواست تمدید مهلت پروژه" closing="با تشکر" signer="دکتر مریم احمدی" signer-title="معاون پژوهشی" cc="معاونت آموزشی؛ بایگانی">
+
+احتراماً، به استحضار می‌رساند با توجه به تأخیر در تحویل تجهیزات آزمایشگاهی، خواهشمند است دستور فرمایید مهلت تحویل پروژهٔ کارشناسی دانشجو به مدت دو هفته تمدید شود.
+
+</letter>
+`````.text,
+  ),
+)

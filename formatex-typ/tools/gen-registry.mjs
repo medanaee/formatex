@@ -10,6 +10,9 @@
 //                                                              (a #show inside an imported file does not leak out)
 //   #let <name>-scope = (name: value)                          optional; merged into cmarker's scope
 //   #let <name>-schema = ( tag: (kind, description, attrs, ...) )  required for every tag; see src/lib/schema.typ
+//   #let <name>-docs = (en: (about, more?), fa: (about, more?), example: (en, fa))   required here (a user's own component may omit it):
+//                                                              what the component is for, in both languages, and a usage example;
+//                                                              exported with the schema, and what the app's skill generator reads
 // Rules run in ascending order of a comment line `// rules-order: N` (default 100).
 // Tag keys are read from the lines of the tags dictionary that sit at its first key's indentation;
 // a tag declared by two components stops the generator.
@@ -38,6 +41,8 @@ export function genRegistry(root) {
     const rules = new RegExp(`^#let\\s+${esc}-rules\\b`, "m").test(text)
     const scope = new RegExp(`^#let\\s+${esc}-scope\\b`, "m").test(text)
     const schema = new RegExp(`^#let\\s+${esc}-schema\\s*=`, "m").test(text)
+    const docs = new RegExp(`^#let\\s+${esc}-docs\\s*=`, "m").test(text)
+    if (!docs) throw new Error(`components/${file}: it must define #let ${name}-docs = (en: (about: ...), fa: (about: ...), example: (en: ..., fa: ...))`)
     const before = seen.size
     const order = Number(/^\/\/\s*rules-order:\s*(-?\d+)/m.exec(text)?.[1] ?? 100)
 
@@ -56,7 +61,7 @@ export function genRegistry(root) {
       }
     }
     if (seen.size > before && !schema) throw new Error(`components/${file}: it declares tags but has no #let ${name}-schema`)
-    comps.push({ name, rules, order, scope, schema })
+    comps.push({ name, rules, order, scope, schema, docs })
   }
 
   const join = (items) => ["(:)", ...items].join(" + ")
@@ -66,12 +71,17 @@ export function genRegistry(root) {
     if (c.rules) names.push(`${c.name}-rules`)
     if (c.scope) names.push(`${c.name}-scope`)
     if (c.schema) names.push(`${c.name}-schema`)
+    if (c.docs) names.push(`${c.name}-docs`)
     out.push(`#import "/components/${c.name}.typ": ${names.join(", ")}`)
   }
   out.push('#import "/src/lib/schema.typ": wrap-tags', "")
   out.push(`#let raw-tags = ${join(comps.map((c) => `${c.name}-tags`))}`)
   out.push(`#let all-schemas = ${join(comps.filter((c) => c.schema).map((c) => `${c.name}-schema`))}`)
   out.push("#let html-tags = wrap-tags(raw-tags, all-schemas)")
+  // The tags of each component, and its docs: what tools/schema.typ exports and the app's skill generator reads
+  const dict = (items) => (items.length ? `(${items.join(", ")})` : "(:)")
+  out.push(`#let component-tags = ${dict(comps.map((c) => `${c.name}: ${c.schema ? `${c.name}-schema.keys()` : "()"}`))}`)
+  out.push(`#let component-docs = ${dict(comps.filter((c) => c.docs).map((c) => `${c.name}: ${c.name}-docs`))}`)
   out.push(`#let scope-extras = ${join(comps.filter((c) => c.scope).map((c) => `${c.name}-scope`))}`, "")
   out.push("#let all-rules(doc) = {")
   for (const c of comps.filter((c) => c.rules).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))) out.push(`  show: ${c.name}-rules`)

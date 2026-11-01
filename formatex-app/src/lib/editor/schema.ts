@@ -23,6 +23,8 @@ export interface AttrSpec {
 export type TagKind = "block" | "inline" | "void"
 
 export interface TagSpec {
+  /** How the tag is written when that is not its lowercase key (`picHeader`). */
+  display?: string
   kind: TagKind
   description: LocalizedText
   attrs: Record<string, AttrSpec>
@@ -31,6 +33,20 @@ export interface TagSpec {
   /** Only meaningful inside a parent that lists it in `children` (<item> in <grid>). */
   scoped?: boolean
   parents?: string[]
+}
+
+/** What a component says about itself: what it is for in both languages, and a usage example (the engine's `<name>-docs`). */
+export interface ComponentDocs {
+  en: { about: string; more?: string }
+  fa: { about: string; more?: string }
+  /** Markdown that uses the component; one text for both languages, or one for each. */
+  example: string | { en: string; fa?: string }
+}
+
+/** A component of the library: the tags it answers to, and its docs when it has them. */
+export interface ComponentInfo {
+  tags: string[]
+  docs: ComponentDocs | null
 }
 
 export type OptionKind = "table" | "heading" | "list" | "equation" | "span"
@@ -56,6 +72,8 @@ export interface ConfigSchema {
 /** The engine's description of its tags and `{...}` option lines: `engine/tags.json`, written by `npm run engine:sync`. */
 export interface Schema {
   tags: Record<string, TagSpec>
+  /** The components (built-in and the user's) with their tags and docs. Older schemas do not have it. */
+  components?: Record<string, ComponentInfo>
   options: Record<OptionKind, OptionSpec>
   /** The settings files: `config.toml` and the YAML front matter of a document. */
   config?: { config: ConfigSchema; "front-matter": ConfigSchema }

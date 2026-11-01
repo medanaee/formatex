@@ -161,6 +161,7 @@ bibliography:
 | Flowchart, sequence, class, state, ER, pie diagram | ` ```mermaid ` block, alone or inside `<fig>` |
 | Custom drawing from code | `<cetz>` with a ` ```typ ` block, usually inside `<fig>` |
 | Data plot with real axes (lines, areas, scatter, bars) | `<lilaq>` with a ` ```typ ` block ending in `lq.diagram(...)`, usually inside `<fig>` |
+| Anything Typst can do, written in Typst, or a `.typ` file with its own nested `#include`s | `<typ>` with a ` ```typ ` block (markup), or `<typ src="parts/x.typ"></typ>` |
 | Folder / file structure (indented list or pasted `tree` output) | `<tree caption="...">` with a fenced code block |
 | Bar, line, pie or donut chart from numbers | `<chart type="..." caption="...">` with a Markdown table (or `src="data.csv"`) |
 | Side-by-side columns | `<grid cols="2">` + `<item>` |

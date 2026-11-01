@@ -326,5 +326,76 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let diff-docs = (
+  en: (
+    about: `````md
+A comparison of two versions of code or text, side by side or unified. Give `<before>` and `<after>` (aliases `<old>`, `<new>`) each with a fenced code block; inside a paragraph mark changes with `<del>` and `<ins>`.
 
+- Give exactly one `<before>` (or `<old>`) and one `<after>` (or `<new>`), each with a fenced code block or `src="file"` (leave blank lines inside). The changes are found automatically: do not mark lines with `+` / `-`; a `diff` patch is not accepted.
+- `mode="split"` (default) puts the two versions side by side with aligned rows; `mode="unified"` is one code block with old and new line numbers. `title` on `<before>` / `<after>` names the sides.
+- Inside a paragraph, `<del>old</del>` is a red struck-through label and `<ins>new</ins>` a green underlined one.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+مقایسهٔ دو نسخه از کد یا متن، کنار هم یا یکپارچه. `<before>` و `<after>` (با نام‌های دیگر `<old>` و `<new>`) را هر کدام با یک بلوک کد بدهید؛ درون پاراگراف تغییرها را با `<del>` و `<ins>` نشان بدهید.
 
+- دقیقاً یک `<before>` (یا `<old>`) و یک `<after>` (یا `<new>`) بدهید، هر کدام با بلوک کد یا `src="file"` (داخلشان خط خالی بگذارید). تغییرها خودکار پیدا می‌شوند: خط‌ها را با `+` / `-` علامت نزنید؛ patch با فرمت `diff` پذیرفته نمی‌شود.
+- `mode="split"` (پیش‌فرض) دو نسخه را کنار هم با ردیف‌های هم‌تراز می‌گذارد؛ `mode="unified"` یک بلوک کد با شمارهٔ خط قدیم و جدید است. `title` روی `<before>` / `<after>` نام هر طرف را می‌دهد.
+- درون پاراگراف `<del>قدیم</del>` برچسب قرمزِ خط‌خورده و `<ins>جدید</ins>` برچسب سبزِ زیرخط‌دار است.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<diff caption="Recursive vs iterative factorial" id="diff-fact">
+<before title="Recursive (old)">
+
+```python
+def fact(n):
+    if n <= 1:
+        return 1
+    return n * fact(n - 1)
+```
+
+</before>
+<after title="Iterative (new)">
+
+```python
+def fact(n):
+    res = 1
+    for i in range(2, n + 1):
+        res *= i
+    return res
+```
+
+</after>
+</diff>
+`````.text,
+    fa: `````md
+<diff caption="مقایسهٔ فاکتوریل بازگشتی و تکراری" id="diff-fact">
+<before title="بازگشتی (قدیم)">
+
+```python
+def fact(n):
+    if n <= 1:
+        return 1
+    return n * fact(n - 1)
+```
+
+</before>
+<after title="تکراری (جدید)">
+
+```python
+def fact(n):
+    res = 1
+    for i in range(2, n + 1):
+        res *= i
+    return res
+```
+
+</after>
+</diff>
+`````.text,
+  ),
+)

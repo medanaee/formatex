@@ -1,6 +1,6 @@
 [package]
 name = "formatex"
-version = "0.2.0"
+version = "0.3.0"
 description = "Formatex: write Markdown, get a typeset PDF"
 authors = ["Formatex"]
 license = ""

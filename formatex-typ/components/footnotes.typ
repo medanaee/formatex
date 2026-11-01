@@ -76,5 +76,38 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let footnotes-docs = (
+  en: (
+    about: `````md
+Footnotes: standard Markdown (`[^label]` and `[^label]: text`) or inline `<fn>` tags. Markers and entries pick their own direction and digits.
 
+- Standard Markdown: `[^label]` in the text and `[^label]: text` anywhere (continuation lines indented by 4 spaces). Inline: `<fn>note</fn>`, or on a word `<fn en="..."></fn>` / `<fn fa="..."></fn>` / `<fn text="...">word</fn>`.
+- Markers use Persian digits in RTL text and Latin in LTR; each note takes its own direction. `dir` (`rtl`, `ltr`, `auto`) forces one.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+پاورقی: Markdown استاندارد (`[^label]` و `[^label]: text`) یا تگ درون‌متنی `<fn>`. نشانه و متن هر پاورقی جهت و ارقام خودش را می‌گیرد.
 
+- Markdown استاندارد: `[^label]` در متن و `[^label]: text` هر جا (خط‌های ادامه با ۴ فاصله تورفته). درون‌خطی: `<fn>متن</fn>`، یا روی یک واژه `<fn en="..."></fn>` / `<fn fa="..."></fn>` / `<fn text="...">واژه</fn>`.
+- نشانه‌ها در متن RTL ارقام فارسی و در LTR لاتین‌اند؛ هر پاورقی جهت خودش را می‌گیرد. `dir` (‏`rtl`، `ltr`، `auto`) یکی را اجبار می‌کند.
+`````.text,
+  ),
+  example: (
+    en: `````md
+A standard footnote[^a] and an inline one<fn>Written in place.</fn>.
+
+[^a]: The text of the footnote.
+
+A term with its translation: <fn en="Artificial Intelligence">هوش مصنوعی</fn>.
+`````.text,
+    fa: `````md
+یک پاورقی استاندارد[^a] و یک پاورقی درون‌متنی<fn>همان‌جا نوشته شده.</fn>.
+
+[^a]: متن پاورقی.
+
+اصطلاحی با ترجمه‌اش: <fn en="Artificial Intelligence">هوش مصنوعی</fn>.
+`````.text,
+  ),
+)

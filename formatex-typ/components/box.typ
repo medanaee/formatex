@@ -32,5 +32,52 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let box-docs = (
+  en: (
+    about: `````md
+A styled container for any content, tinted from the theme. `color` sets the background (a preset name or hex); `border`, `border-color`, `radius` and `padding` fine-tune it. Boxes nest and can stand in a `<grid>`.
 
+- `color`: a preset (`blue`, `green`, ... the whole Tailwind palette; a shade like `blue-200` also works) or hex. The background is the hue mixed into the page color (about 10%, 16% on dark themes), so the same box fits every theme. An unknown name is a compile error.
+- `border` (width), `border-color`, `radius` (points, a plain number) and `padding` fine-tune it. Without `color` the box is transparent.
+- A box fills the available width and grows with its content; leave blank lines inside the tag.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+ظرف قالب‌دار برای هر محتوا، با ته‌رنگ از تم. `color` پس‌زمینه را تعیین می‌کند (نام رنگ آماده یا hex) و `border`، `border-color`، `radius` و `padding` آن را تنظیم می‌کنند. جعبه‌ها تودرتو می‌شوند و داخل `<grid>` می‌نشینند.
 
+- `color`: یک رنگ آماده (`blue`، `green` و ... همهٔ پالت Tailwind؛ سایه‌ای مثل `blue-200` هم کار می‌کند) یا hex. پس‌زمینه همان رنگ است که با رنگ صفحه ترکیب شده (حدود ۱۰٪، روی تم تیره ۱۶٪)، پس یک جعبه با هر تم می‌خواند. نام ناشناخته خطای ساخت است.
+- `border` (ضخامت)، `border-color`، `radius` (پوینت، فقط عدد) و `padding` آن را تنظیم می‌کنند. بدون `color` جعبه شفاف است.
+- جعبه تمام عرض را می‌گیرد و با محتوا بلند می‌شود؛ داخل تگ خط خالی بگذارید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<box color="blue">
+
+Content in a blue box that matches the theme.
+
+</box>
+
+<box color="#e0efff" border="1" border-color="#2b8cc4" radius="6" padding="10pt">
+
+Exact colors.
+
+</box>
+`````.text,
+    fa: `````md
+<box color="blue">
+
+محتوا در یک باکس آبی که با تم جور است.
+
+</box>
+
+<box color="#e0efff" border="1" border-color="#2b8cc4" radius="6" padding="10pt">
+
+رنگ‌های دقیق.
+
+</box>
+`````.text,
+  ),
+)

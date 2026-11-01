@@ -98,5 +98,52 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let todo-docs = (
+  en: (
+    about: `````md
+Draft notes for the writer, inline or as a block; the `todo` setting hides them all from the final PDF, and `<todos>` lists them in one place.
 
+- Three forms: inline (a small yellow label with a pin icon), on its own lines (a dashed full-width note, blank lines inside) and `type="figure"` (a dashed placeholder box for a figure that does not exist yet; `height` sets its size). `author` names who wrote it.
+- `<todos></todos>` lists every `<todo>` with page numbers and links.
+- `todo = "hide"` (in `config.toml`, front matter `todo: hide`, or `--input todo=hide`) removes every `<todo>` and the `<todos>` list from the final PDF.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+یادداشت‌های پیش‌نویس برای نویسنده، درون‌خطی یا بلوک؛ تنظیم `todo` همه را از PDF نهایی برمی‌دارد و `<todos>` همه را یک‌جا فهرست می‌کند.
 
+- سه شکل: درون‌خطی (برچسب کوچک زرد با آیکون سنجاق)، در خط‌های خودش (یادداشت تمام‌عرض با حاشیهٔ خط‌چین، با خط خالی در داخل) و `type="figure"` (جعبهٔ خط‌چین به‌جای شکلی که هنوز نیست؛ `height` اندازه‌اش را می‌دهد). `author` نویسنده را نام می‌برد.
+- ‏`<todos></todos>` همهٔ `<todo>`ها را با شمارهٔ صفحه و پیوند فهرست می‌کند.
+- ‏`todo = "hide"` (در `config.toml`، یا `todo: hide` در front matter، یا `--input todo=hide`) همهٔ `<todo>` و فهرست `<todos>` را از PDF نهایی برمی‌دارد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+This sentence <todo>add a source</todo> is unfinished, and <todo author="Ali">check the numbers</todo> too.
+
+<todo>
+
+Update this section with the results of the second experiment.
+
+</todo>
+
+<todo type="figure" height="90">Runtime comparison chart</todo>
+
+<todos></todos>
+`````.text,
+    fa: `````md
+این جمله <todo>منبع اضافه شود</todo> هنوز ناقص است و <todo author="علی">عددها بررسی شوند</todo> هم.
+
+<todo>
+
+این بخش باید با نتایج آزمایش دوم به‌روز شود.
+
+</todo>
+
+<todo type="figure" height="90">نمودار مقایسهٔ زمان اجرا</todo>
+
+<todos></todos>
+`````.text,
+  ),
+)

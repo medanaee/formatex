@@ -30,10 +30,15 @@ theme = "paper"
 #   friendly = very rounded, casual
 feel = "formal"
 
-# "a4" (print) or "mobile" (110 x 245 mm page for phones, one column, header center hidden)
-page = "a4"
+# desktop-a4 (default), desktop-a3, desktop-a4-landscape, desktop-a5, desktop-a6, desktop-b4, desktop-b5, desktop-letter,
+# desktop-legal, desktop-tabloid, desktop-square; for phones mobile-16-9, mobile-18-9, mobile-20-9, mobile-21-9
+# (110 mm wide, one column, header center hidden); or "custom" with page-width / page-height (mm, cm, in, pt).
+# A custom page narrower than 120 mm gets the phone rules too. Old names "a4" and "mobile" still work.
+page = "desktop-a4"
+# page-width = "148mm"
+# page-height = "210mm"
 
-# A4 margins: "narrow" (15 mm sides), "normal" (about 25 mm), "wide" (35 mm sides)
+# Page margins: "narrow" (15 mm sides), "normal" (about 25 mm), "wide" (35 mm sides)
 margin = "normal"
 
 # Size of everything on the page in percent; page size and margins stay. 90 = denser, 115 = larger.
@@ -102,11 +107,12 @@ width = "80%"          # widest bubble: % of the line or a length
 | `source` | file name | `doc_en.md` | The Markdown file that is compiled. Not allowed in front matter. |
 | `theme` | `paper`, `sepia`, `ocean`, `sage`, `midnight`, `nord`, `zinc`, `dracula` | `paper` | Page, text, heading and accent colors. |
 | `feel` | `formal`, `standard`, `friendly` | `formal` | Corner rounding of every element, table style, step markers, default fonts. `formal` is fully square and always uses a plain ruled header. |
-| `page` | `a4`, `mobile` | `a4` | Page size. |
-| `margin` | `narrow`, `normal`, `wide` | `normal` | A4 margins. Ignored for `mobile`. |
+| `page` | `desktop-a4`, `desktop-a3`, `desktop-a4-landscape`, `desktop-a5`, `desktop-a6`, `desktop-b4`, `desktop-b5`, `desktop-letter`, `desktop-legal`, `desktop-tabloid`, `desktop-square`, `mobile-16-9`, `mobile-18-9`, `mobile-20-9`, `mobile-21-9`, `custom` | `desktop-a4` | Page size. `mobile-*` and a `custom` page narrower than 120 mm are phone pages (one column, own margins, no header `center`). `a4` / `mobile` still work. |
+| `page-width`, `page-height` | length (`148mm`, `6in`, `420pt`) | `210mm`, `297mm` | Size of a `custom` page, 40–5000 mm. |
+| `margin` | `narrow`, `normal`, `wide` | `normal` | Page margins (scale with the page). Ignored on phone pages. |
 | `scale` | number (percent) | `100` | Scales text, spacing, corners and rules together. |
 | `dir` | `auto`, `rtl`, `ltr` | `auto` | Text direction. `auto`: each block follows its own first letter. `rtl` / `ltr`: everything is forced to that direction, English or Persian alike: paragraphs, headings (Persian digits in `rtl`), lists, tables (column order flips) and cells, quotes, captions and their label («شکل» / "Figure"), alerts, boxes, steps, badges, toc/lof/lot entries, the bibliography, and the header, footer and cover when their own `dir` is `auto`; also the column order when `column-dir = "auto"`. Code stays LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keep their own direction. Usually set in front matter (`dir: rtl`); for one part of a document use `<dir>` (components.md). |
-| `columns` | integer ≥ 1 | `1` | Text columns. The cover is always one column; `<docheader>` spans all columns; `mobile` forces 1. |
+| `columns` | integer ≥ 1 | `1` | Text columns. The cover is always one column; `<docheader>` spans all columns; a phone page forces 1. |
 | `column-dir` | `rtl`, `ltr`, `auto` | `auto` | Column order. Use `rtl` for Persian documents and `ltr` for English ones (set it in the front matter if the project default doesn't match). |
 | `[font] latin` / `persian` / `code` | font name | from the feel | Fonts. Latin is tried first for each character, then Persian. |
 | `[paragraph] justify` | `true` / `false` | `false` | Justified text. Tables and code are never justified. |
@@ -208,7 +214,7 @@ Placeholders in `start`, `center`, `end`:
 
 - `{section}` cells stay empty before the first section (e.g. on the contents page).
 - A cell made only of placeholders has no letters: set `digits: fa` for Persian digits.
-- `center` is hidden on the `mobile` page.
+- `center` is hidden on a phone page.
 
 ## Footer
 
@@ -293,7 +299,7 @@ Any heading can override `numbering`, `number-prefix`, `number-suffix`, `toc`, `
 | Persian thesis | `feel = "formal"`, `theme = "paper"`, heading numbering on, `[list] numbers = "fa"` (or `abjad` for item lists), cover in front matter, `<toc break="true">`, `<lof>`, `<lot break="after">`, `[paragraph] justify = true` |
 | Conference-style paper | `feel = "formal"`, `columns: 2`, `column-dir = "rtl"` (Persian), `<docheader>` instead of a cover, `span=all` on wide tables and `span="all"` on wide `<fig>` / `<grid>` / `<code>`, `scale` 85–95 |
 | Technical report / tutorial | `feel = "standard"`, header `style: band` or `line`, alerts and steps where useful |
-| Reading on a phone | `page = "mobile"` |
+| Reading on a phone | `page = "mobile-20-9"` |
 | Slides-like handout or casual notes | `feel = "friendly"`, any theme |
 
 Dark themes (`midnight`, `nord`, `zinc`, `dracula`) are for screen reading; use a light theme for print.

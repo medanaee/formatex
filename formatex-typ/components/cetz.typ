@@ -40,5 +40,68 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let cetz-docs = (
+  en: (
+    about: `````md
+A drawing made with CeTZ (Typst code) in a fenced code block, or from a file with `src`. The drawing functions (`line`, `circle`, `rect`, `content`, ...) are in scope without importing, and so is `theme`, so strokes stay visible on dark pages. Put it in `<fig>` for a numbered figure.
 
+- Scope without importing: every `cetz.draw` function (`line`, `rect`, `circle`, `arc`, `bezier`, `content`, `group`, `set-style`, ...), `cetz`, and the `theme` dictionary (`theme.fg`, `theme.bg`, `theme.accent`, `theme.heading`, `theme.muted`, `theme.rule`).
+- The code runs in Typst code mode: `let`, `for`, functions and `calc.*` work. Default strokes use `theme.fg`; use theme colors, not fixed hex, so drawings stay visible on dark pages.
+- LaTeX math works in labels (`[$B_r \times B_c$]`); each `content(...)` label takes the direction of its own first letter.
+- Inside `<fig>` a drawing behaves like an image (`id`, `align`, a caption; `height` and `width` are maximums, a wider drawing shrinks to the line). On its own it is centered at its natural size.
+`````.text,
+    more: `````md
+- Labels in boxes: a fixed `rect` with a `content` on top lets long text spill out. Let the label draw its own frame instead, which grows with the text: `content((0, 0), box(width: 3cm, align(center)[Label]), frame: "rect", padding: 0.2, fill: theme.bg, stroke: theme.rule, name: "bias")`; arrows can then use `"bias.north"`, `"bias.west"`, ...
+- Markdown habits in labels: `[**bold**]` is bold and `[page #03]` prints the `#`; a `#` starts code only before a name, `(`, `{` or `[`.
+- Giving the `<fig>` a `height` shrinks the whole drawing, text included: leave it out unless the drawing is too big.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+رسمی که با CeTZ (کد Typst) در یک بلوک کد، یا از یک فایل با `src` کشیده می‌شود. تابع‌های رسم (`line`، `circle`، `rect`، `content` و ...) بدون import در دسترس‌اند و `theme` هم هست، پس خط‌ها روی صفحهٔ تیره دیده می‌شوند. برای شکل شماره‌دار آن را در `<fig>` بگذارید.
 
+- در دسترس بدون import: همهٔ تابع‌های `cetz.draw` (`line`، `rect`، `circle`، `arc`، `bezier`، `content`، `group`، `set-style` و ...)، خود `cetz` و دیکشنری `theme` (`theme.fg`، `theme.bg`، `theme.accent`، `theme.heading`، `theme.muted`، `theme.rule`).
+- کد در حالت code مود Typst اجرا می‌شود: `let`، `for`، تابع و `calc.*` کار می‌کنند. خط‌های پیش‌فرض `theme.fg` را می‌گیرند؛ به‌جای hex ثابت از رنگ‌های تم استفاده کنید تا رسم روی صفحهٔ تیره دیده شود.
+- ریاضی LaTeX در برچسب‌ها کار می‌کند (`[$B_r \times B_c$]`)؛ هر برچسب `content(...)` جهت اولین حرف خودش را می‌گیرد.
+- داخل `<fig>` رسم مثل تصویر رفتار می‌کند (`id`، `align` و عنوان؛ `height` و `width` سقف‌اند و رسم پهن‌تر به پهنای خط کوچک می‌شود). تنها، با اندازهٔ طبیعی وسط می‌نشیند.
+`````.text,
+    more: `````md
+- برچسب در جعبه: یک `rect` ثابت با `content` روی آن اجازه می‌دهد متن بلند بیرون بزند. بگذارید برچسب خودش قاب بکشد تا با متن بزرگ شود: `content((0, 0), box(width: 3cm, align(center)[برچسب]), frame: "rect", padding: 0.2, fill: theme.bg, stroke: theme.rule, name: "bias")`؛ آن‌وقت پیکان‌ها می‌توانند `"bias.north"`، `"bias.west"` و ... را به کار ببرند.
+- عادت‌های Markdown در برچسب‌ها: `[**ضخیم**]` ضخیم است و `[page #03]` علامت `#` را چاپ می‌کند؛ `#` فقط پیش از نام، `(`، `{` یا `[` کد را شروع می‌کند.
+- اگر به `<fig>` `height` بدهید کل رسم، با متنش، کوچک می‌شود: مگر رسم بزرگ باشد آن را ندهید.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<fig id="fig-axes" height="4cm">
+<cetz unit="1cm">
+
+```typ
+line((-1.5, 0), (1.5, 0), mark: (end: ">"))
+line((0, -1.5), (0, 1.5), mark: (end: ">"))
+circle((0, 0), radius: 1, stroke: theme.accent)
+content((1.2, 1.2), [the point $P$])
+```
+
+</cetz>
+<caption>A circle on the axes.</caption>
+</fig>
+`````.text,
+    fa: `````md
+<fig id="fig-axes" height="4cm">
+<cetz unit="1cm">
+
+```typ
+line((-1.5, 0), (1.5, 0), mark: (end: ">"))
+line((0, -1.5), (0, 1.5), mark: (end: ">"))
+circle((0, 0), radius: 1, stroke: theme.accent)
+content((1.2, 1.2), [نقطهٔ $P$])
+```
+
+</cetz>
+<caption>یک دایره روی محورها.</caption>
+</fig>
+`````.text,
+  ),
+)

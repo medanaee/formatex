@@ -8,7 +8,7 @@ A short Persian research report: `config.toml`, `references.bib` and `report.md`
 source = "report.md"
 theme = "paper"
 feel = "formal"
-page = "a4"
+page = "desktop-a4"
 margin = "normal"
 scale = 100
 columns = 1

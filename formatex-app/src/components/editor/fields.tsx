@@ -92,7 +92,7 @@ export function splitLength(value: string): { amount: string; unit: string } | n
 }
 
 /** A length as a number and a unit, so the number cannot be written without one by mistake. Anything else stays editable as text. */
-export function LengthField({ value, onChange, placeholder, defaultUnit = "pt" }: { value: string; onChange: (value: string) => void; placeholder?: string; defaultUnit?: string }) {
+export function LengthField({ value, onChange, placeholder, defaultUnit = "pt", units = UNITS }: { value: string; onChange: (value: string) => void; placeholder?: string; defaultUnit?: string; units?: readonly string[] }) {
   const parts = splitLength(value)
   if (!parts) return <Input dir="ltr" value={value} aria-label="length" onChange={(event) => onChange(event.target.value)} className="h-8 text-xs" />
   const unit = parts.unit || defaultUnit
@@ -115,7 +115,7 @@ export function LengthField({ value, onChange, placeholder, defaultUnit = "pt" }
           <SelectValue />
         </SelectTrigger>
         <SelectContent><SelectGroup>
-          {UNITS.map((item) => (
+          {units.map((item) => (
             <SelectItem key={item} value={item} className="text-xs">
               {item}
             </SelectItem>

@@ -220,3 +220,10 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] More lines: colors and lengths (`parse-length` / `resolve-color` / `pick-hue` / `chart-number` take `attrs:`), `<div>` tailwind classes (`at:`), mermaid options (the fence line is marked), `[text]{...}` spans, settings in config.toml and the front matter (`setting-at` finds the key's line in the front matter, else in config.toml), and an id defined twice for `[text](#id)`
 - [ ] Still without a line: Typst's own `label occurs multiple times` for tags that are not `[text](#id)`, values given only as `--input`, a cell of a `<chart>` table (the `<chart>` line is given), and a new assert in a helper must take `attrs:` / `at:` like the others
 - [x] `formatex-typ/src/kit.typ`: one import for a component (the prelude and every helper library); all built-in components, the new-component template and the docs use it. A name defined in two libraries would silently win by order: keep them distinct
+
+## Skill for AI agents
+- [x] Every engine component exports `<name>-docs` (what it is for in en and fa, key rules, an example): written for all 38 components in `formatex-typ/components/`; `gen-registry.mjs` requires it, `tools/schema.typ` checks it and exports `components` (tags + docs) in `tags.json`; the registry of `components.rs` generates the same lines (tested against the engine's own)
+- [x] Skill page (`/skill`, side bar): size (minimal / compact / standard / full, with token counts), language (en / fa / both), the components to include, copy and download `SKILL.md`; `src/lib/skill/` generator and fixed text, tested
+- [x] The new-component template writes a `-docs` starter
+- [ ] Try the page in the desktop app (schema from `engine_schema`, so a user's own component with docs appears; `saveBytes` dialog) and read a generated skill with a real agent
+- [ ] The docs of a user's component are only as good as the user writes them: no check beyond "the file loads"

@@ -82,6 +82,8 @@ struct Parsed {
     rules: bool,
     scope: bool,
     schema: bool,
+    /// `<name>-docs`: what the component is for, in both languages, and an example (the skill generator reads it).
+    docs: bool,
     order: i32,
     tags: Vec<String>,
 }
@@ -122,6 +124,7 @@ fn parse(name: &str, text: &str) -> Parsed {
         rules: has("rules\\b"),
         scope: has("scope\\b"),
         schema: has("schema\\s*="),
+        docs: has("docs\\s*="),
         order,
         tags,
     }
@@ -151,6 +154,9 @@ fn generate_registry(entries: &[Entry]) -> String {
         if entry.parsed.schema {
             names.push(format!("{}-schema", entry.name));
         }
+        if entry.parsed.docs {
+            names.push(format!("{}-docs", entry.name));
+        }
         out += &format!("#import \"/components/{}.typ\": {}\n", entry.name, names.join(", "));
     }
     out += "#import \"/src/lib/schema.typ\": wrap-tags\n\n";
@@ -158,6 +164,13 @@ fn generate_registry(entries: &[Entry]) -> String {
     out += &format!("#let raw-tags = {}\n", join(entries.iter().map(|e| format!("{}-tags", e.name)).collect()));
     out += &format!("#let all-schemas = {}\n", join(entries.iter().filter(|e| e.parsed.schema).map(|e| format!("{}-schema", e.name)).collect()));
     out += "#let html-tags = wrap-tags(raw-tags, all-schemas)\n";
+    // The tags of each component and its docs: what `tools/schema.typ` exports and the skill generator reads
+    let dict = |items: Vec<String>| if items.is_empty() { "(:)".to_string() } else { format!("({})", items.join(", ")) };
+    out += &format!(
+        "#let component-tags = {}\n",
+        dict(entries.iter().map(|e| format!("{}: {}", e.name, if e.parsed.schema { format!("{}-schema.keys()", e.name) } else { "()".to_string() })).collect())
+    );
+    out += &format!("#let component-docs = {}\n", dict(entries.iter().filter(|e| e.parsed.docs).map(|e| format!("{}: {}-docs", e.name, e.name)).collect()));
     out += &format!("#let scope-extras = {}\n\n", join(entries.iter().filter(|e| e.parsed.scope).map(|e| format!("{}-scope", e.name)).collect()));
     out += "#let all-rules(doc) = {\n";
     let mut ruled: Vec<&Entry> = entries.iter().filter(|e| e.parsed.rules).collect();
@@ -523,11 +536,13 @@ mod tests {
     #[test]
     fn generates_the_registry_like_the_engine_script() {
         let entries = vec![
-            Entry { name: "alert".into(), parsed: parse("alert", "#let alert-tags = (\n  alert: 1,\n)\n#let alert-schema = (:)\n") },
+            Entry { name: "alert".into(), parsed: parse("alert", "#let alert-tags = (\n  alert: 1,\n)\n#let alert-schema = (:)\n#let alert-docs = (:)\n") },
             Entry { name: "lists".into(), parsed: parse("lists", "#let lists-tags = (:)\n#let lists-rules(doc) = doc\n#let lists-scope = (:)\n") },
         ];
         let registry = generate_registry(&entries);
-        assert!(registry.contains("#import \"/components/alert.typ\": alert-tags, alert-schema\n"));
+        assert!(registry.contains("#import \"/components/alert.typ\": alert-tags, alert-schema, alert-docs\n"));
+        assert!(registry.contains("#let component-tags = (alert: alert-schema.keys(), lists: ())\n"));
+        assert!(registry.contains("#let component-docs = (alert: alert-docs)\n"));
         assert!(registry.contains("#import \"/components/lists.typ\": lists-tags, lists-rules, lists-scope\n"));
         assert!(registry.contains("#let raw-tags = (:) + alert-tags + lists-tags\n"));
         assert!(registry.contains("#let all-schemas = (:) + alert-schema\n"));

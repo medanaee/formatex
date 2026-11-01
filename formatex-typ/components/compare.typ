@@ -73,5 +73,66 @@
   ),
 )
 
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let compare-docs = (
+  en: (
+    about: `````md
+Pros and cons side by side: `<pros>` and `<cons>` inside `<compare>`, each holding a Markdown list; `title` renames a side.
 
+- Every `<pros>` / `<cons>` is one column, in any order and number; columns get equal width and the tallest height. Text outside them is not shown. `title` renames a column.
+- List items get ✓ (pros) or ✗ (cons) instead of bullets. In RTL the columns mirror, so the first is on the right.
+- Leave blank lines inside `<compare>`, `<pros>` and `<cons>`. A `<compare>` without them is a compile error.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+مزایا و معایب کنار هم: `<pros>` و `<cons>` داخل `<compare>`، هر کدام با یک فهرست Markdown؛ `title` نام هر طرف را عوض می‌کند.
 
+- هر `<pros>` / `<cons>` یک ستون است، با هر ترتیب و تعداد؛ ستون‌ها عرض برابر و بلندی بلندترین را می‌گیرند. متن بیرون از آن‌ها نشان داده نمی‌شود. `title` نام ستون را عوض می‌کند.
+- آیتم‌های فهرست به‌جای نقطه ✓ (مزایا) یا ✗ (معایب) می‌گیرند. در RTL ستون‌ها آینه می‌شوند و ستون اول سمت راست است.
+- داخل `<compare>`، `<pros>` و `<cons>` خط خالی بگذارید. `<compare>` بدون آن‌ها خطای ساخت است.
+`````.text,
+  ),
+  example: (
+    en: `````md
+<compare>
+
+<pros>
+
+- Free and open source
+- Fast compilation
+- Full Persian support
+
+</pros>
+
+<cons title="Limitations">
+
+- Fewer packages than LaTeX
+- A new language to learn
+
+</cons>
+
+</compare>
+`````.text,
+    fa: `````md
+<compare>
+
+<pros>
+
+- رایگان و متن‌باز
+- کامپایل سریع
+- پشتیبانی کامل از فارسی
+
+</pros>
+
+<cons title="محدودیت‌ها">
+
+- بستهٔ کمتر از LaTeX
+- نیاز به یادگیری زبان تازه
+
+</cons>
+
+</compare>
+`````.text,
+  ),
+)

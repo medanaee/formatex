@@ -104,3 +104,41 @@
   }
   doc
 }
+
+// ---- docs: read by the skill generator of the app and exported with the schema (see docs/doc_en.md, Extending the template)
+#let links-docs = (
+  en: (
+    about: `````md
+Links and anchors: Markdown links and bare URLs open the web; `<a href="#id">` goes to a place in the document; `<span id>` and `<anchor id>` mark a target inside a paragraph.
+
+- Markdown links, bare `<https://...>` URLs and `<a href="https://...">` open the web (accent color, underlined, with a link icon). An empty `<a href="..."></a>` shows the address.
+- `<a href="#id">` goes to a place in the document (a heading `{#id}`, a figure, table, listing or equation id) like `<ref>`, without the icon.
+- `<span id="term">text</span>` (alias `<anchor>`, or `[text]{#term}`) marks a fragment as a target; `highlight="true|color"` adds a highlighter band.
+`````.text,
+  ),
+  fa: (
+    about: `````md
+پیوند و لنگر: پیوندهای Markdown و نشانی‌های خام وب را باز می‌کنند؛ `<a href="#id">` به جایی از سند می‌رود؛ `<span id>` و `<anchor id>` هدفی را میان پاراگراف علامت می‌زنند.
+
+- پیوندهای Markdown، نشانی‌های خام `<https://...>` و `<a href="https://...">` وب را باز می‌کنند (رنگ تأکید، زیرخط‌دار و با آیکون پیوند). `<a href="..."></a>` خالی خود نشانی را نشان می‌دهد.
+- `<a href="#id">` مثل `<ref>` به جایی از سند می‌رود (تیتر با `{#id}`، یا شناسهٔ شکل، جدول، کد یا معادله)، بدون آیکون.
+- ‏`<span id="term">متن</span>` (نام دیگر `<anchor>` یا `[متن]{#term}`) یک تکه را هدف می‌کند؛ `highlight="true|رنگ"` نوار هایلایت پشتش می‌گذارد.
+`````.text,
+  ),
+  example: (
+    en: `````md
+## Introduction {#intro}
+
+[Typst documentation](https://typst.app/docs) or <https://typst.app>
+<a href="https://github.com/typst/typst">The Typst repository</a>
+<a href="#intro">Back to the introduction</a>
+`````.text,
+    fa: `````md
+## مقدمه {#intro}
+
+[مستندات Typst](https://typst.app/docs) یا <https://typst.app>
+<a href="https://github.com/typst/typst">مخزن Typst</a>
+<a href="#intro">بازگشت به مقدمه</a>
+`````.text,
+  ),
+)
