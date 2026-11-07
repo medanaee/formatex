@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, Check, CircleAlert, FileDown, Files, Loader2, Pencil, Settings2 } from "lucide-react"
+import { ArrowLeft, Check, CircleAlert, FileDown, Files, Loader2, Pencil, RefreshCw, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { EditorMenus, PanelToggles } from "@/components/editor/EditorChrome"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,8 @@ import { SegmentedControl } from "@/components/ui/segmented-control"
 import type { DocumentItem } from "@/lib/db/types"
 import { MainFileMenu } from "@/components/editor/MainFileMenu"
 import { openProjectSettings } from "@/lib/editor/openSettings"
-import { isDesktopApp } from "@/lib/platform"
+import { isDesktopApp, isTauri } from "@/lib/platform"
+import { RemoteFilesMenu } from "./RemoteFilesMenu"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useLibraryStore } from "@/stores/useLibraryStore"
 
@@ -85,11 +86,15 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorTo
   const saveState = useEditorStore((state) => state.saveState)
   const exportStatus = useEditorStore((state) => state.exportStatus)
   const exportMessage = useEditorStore((state) => state.exportMessage)
+  const syncStatus = useEditorStore((state) => state.syncStatus)
+  const syncMessage = useEditorStore((state) => state.syncMessage)
   const renameDocument = useLibraryStore((state) => state.renameDocument)
 
   // In the desktop app the title bar carries the menus and the panel switches
   const ownChrome = !isDesktopApp()
   const exporting = exportStatus === "working"
+  const syncing = syncStatus === "working"
+  const syncTitle = syncStatus === "error" ? `${t("editor.syncFailed")}: ${syncMessage}` : syncStatus === "done" ? t("editor.synced", { count: Number(syncMessage) }) : t("editor.sync")
   const exportTitle = exportStatus === "error" ? `${t("editor.exportFailed")}: ${exportMessage}` : exportStatus === "done" ? t("editor.exported") : t("editor.export")
 
   return (
@@ -140,6 +145,15 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorTo
         <Button variant="ghost" size="icon-sm" onClick={() => void openProjectSettings()} title={t("editor.settings")} aria-label={t("editor.settings")}>
           <Settings2 />
         </Button>
+      )}
+      {isTauri() && (
+        // Files from the internet are downloaded once and kept; this downloads them again
+        <>
+          <Button variant="ghost" size="icon-sm" disabled={syncing} onClick={() => void useEditorStore.getState().syncRemote()} title={syncTitle} aria-label={t("editor.sync")}>
+            {syncing ? <Loader2 className="animate-spin" /> : syncStatus === "error" ? <CircleAlert className="text-destructive" /> : <RefreshCw />}
+          </Button>
+          <RemoteFilesMenu disabled={syncing} />
+        </>
       )}
       <Button size="sm" disabled={exporting} onClick={() => void useEditorStore.getState().exportPdf()} title={exportTitle} aria-label={t("editor.export")} className="ms-0.5 sm:ms-1">
         {exporting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : exportStatus === "error" ? <CircleAlert data-icon="inline-start" /> : <FileDown data-icon="inline-start" />}

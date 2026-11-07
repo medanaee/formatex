@@ -80,6 +80,8 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `src/lib.rs` | `run()`: plugins, commands, setup; `mobile_entry_point`. Desktop-only modules go behind `#[cfg(desktop)]`. |
 | `src/engine.rs` | The embedded engine (`engine/bundle`): which paths it owns, file lookup. |
 | `src/world.rs` | `ProjectWorld`: the Typst `World` (engine + project files + packages + fonts). |
+| `src/clipboard.rs` | The system clipboard for Paste in the file tree (desktop only, `clipboard-rs`): `clipboard_import` copies files and folders copied in the file manager into a project folder, `clipboard_image` gives a picture as PNG. |
+| `src/remote.rs` | Files from the internet: `.remote/` paths decoded to addresses, downloaded once into `.cache/` (`.formatex/.cache/` in a folder project), `remote_sync`; tests with a local server. |
 | `src/compile.rs` | Commands `compile_project`, `export_pdf`, `fonts_list`, `fonts_reload`; diagnostics; shared `Engine` state; tests that compile a real project. |
 | `src/components.rs` | The component library: built-in + user components, registry generation, schema computation, the `component_*` and `engine_schema` commands. |
 | `src/fonts.rs` | Font discovery: imported, system, embedded. |

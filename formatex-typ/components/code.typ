@@ -72,6 +72,7 @@ A code listing with syntax highlighting: the code stands in a fenced block insid
 
 - Give the code in a fenced block inside the tag (leave blank lines around it), or `src="path"` with `lines="6-16"` for a range of a project file; the language comes from the fence or the file extension.
 - `highlight="9-10,15"` marks lines (numbers count in the file when `src` is used). `caption` + `id` make a numbered listing that `<lol>` lists and `<ref>` can point at.
+- A fenced block in a language Typst does not know, or with no language, still gets a rough coloring (comments, strings, numbers, common keywords, `Types` and `calls(`); `text`, `txt`, `plain`, `console` and `output` stay uncolored.
 - A plain fenced block without the tag is highlighted too; `<code>` adds the line range, the highlight and the caption.
 `````.text,
   ),
@@ -81,6 +82,7 @@ A code listing with syntax highlighting: the code stands in a fenced block insid
 
 - کد را در یک بلوک کد داخل تگ بدهید (دورش خط خالی بگذارید)، یا با `src="path"` و `lines="6-16"` بازه‌ای از یک فایل پروژه؛ زبان از بلوک یا پسوند فایل می‌آید.
 - `highlight="9-10,15"` خط‌ها را برجسته می‌کند (با `src` شماره‌ها شمارهٔ خط فایل‌اند). `caption` و `id` یک کدِ شماره‌دار می‌سازند که `<lol>` فهرستش می‌کند و `<ref>` به آن اشاره می‌کند.
+- بلوک کدی که زبانش را Typst نمی‌شناسد (یا بی‌زبان) هم یک رنگ‌آمیزی تقریبی می‌گیرد (توضیح، رشته، عدد، کلیدواژه‌های رایج، `Type` و `call(`)؛ زبان‌های `text`، `txt`، `plain`، `console` و `output` بی‌رنگ می‌مانند.
 - یک بلوک کد ساده بدون تگ هم رنگ‌آمیزی می‌شود؛ `<code>` بازهٔ خط، برجسته‌سازی و عنوان را اضافه می‌کند.
 `````.text,
   ),

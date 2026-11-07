@@ -2,6 +2,7 @@
 #import "/src/core.typ": *
 #import "/src/page.typ": *
 #import "/src/lib/captioned.typ": caption-flag, captioned
+#import "/src/lib/code-fallback.typ": fallback-lines, needs-fallback
 
 // Display equations. "labelled": only those with `{#id}` get a number (main.typ sets
 // `equation-next` right before such an equation); "all": every one; "none": never.
@@ -167,6 +168,8 @@
         // Markdown fences often end with a newline, which would show as an empty numbered line.
         let lines = it.lines
         while lines.len() > 1 and lines.last().text.trim() == "" { lines = lines.slice(0, -1) }
+        // A language Typst cannot color (or none) still gets a rough coloring
+        if needs-fallback(it) { lines = fallback-lines(lines.map(l => l.text), theme.dark) }
         context {
           let opts = code-options.get()
           let first = opts.at("start", default: 1)

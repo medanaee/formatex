@@ -124,6 +124,28 @@ export async function compileProject(
 export const projectPreview = (projectId: string, main: string, overrides?: Record<string, string>, kind?: ProjectKind): Promise<string | null> => invoke<string | null>("project_preview", { projectId, main, overrides, kind })
 
 /** The PDF of the project. Rejects with the first error when it does not compile. */
+/** The result of the sync button: addresses downloaded again, and a message for each that could not be (its old copy stays). */
+export interface RemoteSyncReport {
+  updated: number
+  failed: string[]
+}
+
+/** Downloads again the files from the internet that the project has kept in its cache: all of them, or only `url`. */
+export const syncRemote = (projectId: string, url?: string): Promise<RemoteSyncReport> => invoke<RemoteSyncReport>("remote_sync", { projectId, url })
+
+/** One address the project keeps in its cache. */
+export interface RemoteItem {
+  url: string
+  size: number
+  /** A picture that can be shown small. */
+  image: boolean
+}
+
+export const listRemote = (projectId: string): Promise<RemoteItem[]> => invoke<RemoteItem[]>("remote_list", { projectId })
+
+/** The kept bytes of an address (never downloads). */
+export const remoteFile = async (projectId: string, url: string): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>("remote_file", { projectId, url }))
+
 export async function exportPdf(projectId: string, main: string, overrides?: Record<string, string>, kind?: ProjectKind): Promise<Uint8Array> {
   return new Uint8Array(await invoke<ArrayBuffer>("export_pdf", { projectId, main, overrides, kind }))
 }

@@ -2,11 +2,13 @@ import { useMemo, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { parseHeadings } from "@/lib/editor/outline"
+import { previewPlaceForLine } from "@/lib/editor/previewPlace"
 import { fileKindOf } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
+import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 
-/** The headings of the open Markdown file as a tree; a click puts the editor's cursor on the heading. */
+/** The headings of the open Markdown file as a tree; a click puts the editor's cursor on the heading and shows it in the preview. */
 export function OutlinePanel({ onOpen }: { onOpen?: () => void }) {
   const { t } = useTranslation()
   const path = useEditorStore((state) => state.activePath)
@@ -57,7 +59,12 @@ export function OutlinePanel({ onOpen }: { onOpen?: () => void }) {
               dir="auto"
               title={heading.title}
               onClick={() => {
-                if (path) void useEditorStore.getState().revealAt(path, heading.line, 1)
+                if (path) {
+                  void useEditorStore.getState().revealAt(path, heading.line, 1)
+                  // The preview goes to the heading too
+                  const place = text !== undefined ? previewPlaceForLine(path, text, heading.line, 0) : null
+                  if (place) usePreviewScrollStore.getState().show(place, true)
+                }
                 onOpen?.()
               }}
               className={cn("min-w-0 flex-1 truncate rounded px-1.5 py-1 text-start outline-none hover:bg-sidebar-accent focus-visible:bg-sidebar-accent", heading.level === top ? "font-semibold text-foreground" : "text-muted-foreground group-hover:text-foreground")}

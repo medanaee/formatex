@@ -47,6 +47,13 @@ impl FileLoader for Loader {
                 if let Some(bytes) = self.extra.lock().unwrap_or_else(|e| e.into_inner()).get(path) {
                     return Ok(Bytes::new(bytes.clone()));
                 }
+                // A file from the internet: from the project's cache, downloaded the first time (the engine writes the address as a path)
+                if let Some(url) = crate::remote::decode(path) {
+                    return match &self.root {
+                        Some(root) => crate::remote::fetch(root, &url).map(Bytes::new).map_err(|message| FileError::Other(Some(message.into()))),
+                        None => Err(FileError::NotFound(path.into())),
+                    };
+                }
                 if self.plain {
                     return match &self.project {
                         Some(project) => project.load(id.vpath()),

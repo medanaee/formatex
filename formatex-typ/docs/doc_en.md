@@ -1274,7 +1274,7 @@ A padded blue card.
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | Required. Path relative to the project root. URLs don't work, so download the image first. |
+| `src` | Required. Path relative to the project root, or an `https://` address. An address is downloaded the first time (in the desktop app) and kept in the project's `.cache` folder, so later compiles do not use the network; the sync button next to Export downloads them again. A file outside the project is written `file:///home/me/a.png` (`file:///C:/Users/me/a.png` on Windows; a path starting with `/` alone is still the project root): it is copied into the same cache, copied again when the original changes, and the kept copy is used when the original is gone. Only pictures and data files (json, yaml, toml, csv) can be read this way. The same works in `![](https://...)` and in `json()`, `yaml()`, `toml()`, `csv()` and `read()` inside a `{{ }}` block. |
 | `alt` | Alternative text. |
 | `width` | Size. |
 | `height` | Size. |

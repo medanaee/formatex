@@ -1,4 +1,5 @@
 #import "/src/prelude.typ": *
+#import "/src/lib/remote.typ": *
 
 
 // Child tags (<caption>, <item>) mark their content so the parent tag can collect them.
@@ -99,4 +100,4 @@
 
 // User paths are written relative to the project root, but Typst resolves a path
 // relative to the file that calls image()/read(), so component code roots them first.
-#let root-path(p) = if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
+#let root-path(p) = if is-remote(p) { remote-path(p) } else if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }

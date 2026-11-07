@@ -1,5 +1,7 @@
 import { create } from "zustand"
-import { CompilerUnavailableError, compileProject, exportPdf, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
+import { imageFolder, nextImageName, readableImage } from "@/lib/files/pastedImage"
+import { pasteSystemFiles } from "@/lib/files/systemClipboard"
+import { CompilerUnavailableError, compileProject, exportPdf, syncRemote, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { planSave, zipItems } from "@/lib/files/saveEntries"
 import { saveBytes } from "@/lib/files/saveFile"
@@ -16,6 +18,7 @@ import {
   parentOf,
   isReservedPath,
   RESERVED_ROOTS,
+  CACHE_DIRS,
   sourceOf,
   uniqueName,
   withSource,
@@ -64,6 +67,9 @@ interface EditorState {
   elapsedMs: number | null
   exportStatus: ExportStatus
   exportMessage: string | null
+  /** The sync of the files from the internet (the button beside Export). */
+  syncStatus: ExportStatus
+  syncMessage: string | null
   /** The place a click on a problem asked the editor to show. */
   reveal: RevealRequest | null
   /** The file the user last changed the text of; the preview follows it once rebuilt. */
@@ -92,6 +98,10 @@ interface EditorState {
   setClipboard: (paths: string[], mode: "copy" | "cut") => void
   /** Pastes the clipboard into a folder: a copy stays in the clipboard, a cut is moved once. */
   paste: (targetDir: string) => Promise<string[]>
+  /** Files and folders copied in the system's file manager, pasted into a folder of the project (desktop app). Returns their new paths. */
+  pasteSystemFiles: (targetDir: string) => Promise<string[]>
+  /** Keeps an image from the clipboard in the project's image folder as `image_<n>.<ext>`; returns its path (`null`: not an image Typst can read). */
+  addImage: (image: Blob) => Promise<string | null>
   importFiles: (parent: string, files: { name: string; data: Uint8Array }[]) => Promise<string[]>
   /** Adds files with the folders they come in (a dropped folder): `path` is relative to `parent`. Returns the new top-level paths. */
   importTree: (parent: string, files: { path: string; data: Uint8Array }[]) => Promise<string[]>
@@ -106,6 +116,8 @@ interface EditorState {
   /** Puts back the text the editor had before a text from disk replaced it (`dismiss`: keep what is there). */
   restoreReplaced: (path: string, restore: boolean) => void
   exportPdf: () => Promise<void>
+  /** Downloads the files from the internet that the project keeps in its cache again (all, or only `url`), then typesets. */
+  syncRemote: (url?: string) => Promise<void>
 }
 
 // Per-project machinery that does not belong in reactive state
@@ -342,6 +354,9 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         ok: output.ok,
         elapsedMs: output.elapsedMs,
       }))
+      // A compile that downloaded or copied a file made the cache folder: the file tree shows it
+      const { texts, files } = get()
+      if (!CACHE_DIRS.some((dir) => files.some((file) => file.path === dir)) && Object.values(texts).some((text) => /(https?|file):\/\//.test(text))) await refreshFiles()
     } catch (error) {
       if (current !== session) return
       if (error instanceof CompilerUnavailableError) set({ compileStatus: "unavailable" })
@@ -415,6 +430,8 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     elapsedMs: null,
     exportStatus: "idle",
     exportMessage: null,
+    syncStatus: "idle",
+    syncMessage: null,
     reveal: null,
     lastEdit: null,
     clipboard: null,
@@ -608,7 +625,41 @@ export const useEditorStore = create<EditorState>()((set, get) => {
       return copied
     },
 
-    setClipboard: (paths, mode) => set({ clipboard: paths.length ? { paths, mode } : null }),
+    setClipboard: (paths, mode) => {
+      set({ clipboard: paths.length ? { paths, mode } : null })
+      // The system clipboard is replaced too, so an image copied before this is not taken for newer than this copy
+      if (paths.length) void navigator.clipboard?.writeText(paths.join(" ")).catch(() => undefined)
+    },
+
+    pasteSystemFiles: async (targetDir) => {
+      const { projectId, kind } = get()
+      if (!projectId) return []
+      await flush()
+      const added = await pasteSystemFiles(projectId, targetDir, kind !== "typst")
+      if (added.length) {
+        await refreshFiles()
+        touch()
+        get().compile()
+      }
+      return added
+    },
+
+    addImage: async (image) => {
+      const { projectId } = get()
+      if (!fs || !projectId) return null
+      const readable = await readableImage(image)
+      if (!readable) return null
+      const inFolder = Boolean(useLibraryStore.getState().documents.find((doc) => doc.id === projectId)?.location) && get().kind !== "typst"
+      const folder = imageFolder(inFolder)
+      const taken = get().files.filter((file) => file.path.startsWith(`${folder}/`)).map((file) => file.path)
+      const path = joinPath(folder, nextImageName(taken, readable.ext))
+      await flush()
+      await fs.writeBytes(path, readable.data)
+      await refreshFiles()
+      touch()
+      get().compile()
+      return path
+    },
 
     paste: async (targetDir) => {
       const clipboard = get().clipboard
@@ -742,6 +793,19 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         set({ exportStatus: result.saved ? "done" : "idle", exportMessage: result.path ?? null })
       } catch (error) {
         set({ exportStatus: "error", exportMessage: String((error as Error)?.message ?? error) })
+      }
+    },
+
+    syncRemote: async (url) => {
+      const { projectId } = get()
+      if (!projectId) return
+      set({ syncStatus: "working", syncMessage: null })
+      try {
+        const report = await syncRemote(projectId, url)
+        set(report.failed.length ? { syncStatus: "error", syncMessage: report.failed.join(" · ") } : { syncStatus: "done", syncMessage: String(report.updated) })
+        get().compile()
+      } catch (error) {
+        set({ syncStatus: "error", syncMessage: String((error as Error)?.message ?? error) })
       }
     },
   }

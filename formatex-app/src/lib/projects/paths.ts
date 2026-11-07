@@ -8,6 +8,8 @@ export const FORMATEX_DIR = ".formatex"
 export const FORMATEX_CONFIG = `${FORMATEX_DIR}/config.toml`
 /** Folders of a user's folder the project never lists (their content is not part of the document). */
 export const IGNORED_DIRS = [".git", "node_modules"] as const
+/** Where files from the internet and from outside the project are kept: `.cache/`, or `.formatex/.cache/` in a folder project. */
+export const CACHE_DIRS = [".cache", `${FORMATEX_DIR}/.cache`] as const
 export const DEFAULT_MAIN_FILE = "main.md"
 
 export type FileKind = "markdown" | "toml" | "typst" | "text" | "code" | "image" | "pdf" | "font" | "binary"

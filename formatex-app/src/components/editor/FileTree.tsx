@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type MouseEvent } from "react"
 import {
   ChevronRight,
   ClipboardPaste,
@@ -23,8 +23,9 @@ import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { droppedEntries, readDropped } from "@/lib/files/droppedFiles"
-import { pickFiles } from "@/lib/files/saveFile"
+import { imageOnClipboard } from "@/lib/files/pastedImage"
 import { isTauri } from "@/lib/platform"
+import { pickFiles } from "@/lib/files/saveFile"
 import { revealFolder } from "@/lib/projects/storageMode"
 import { FileIcon } from "@/components/common/FileIcon"
 import { baseName, CODE_EXTENSIONS, CONFIG_FILE, FORMATEX_CONFIG, FORMATEX_DIR, fileKindOf, nameProblem, parentOf, type FsEntry } from "@/lib/projects"
@@ -122,6 +123,8 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   }
 
   // config.toml and .formatex belong to a Formatex project; in plain Typst they are only files, and only the main file is kept
+  /** The main file can be renamed (the project follows it, see `relocate`), so it is not locked for that. */
+  const protectedPath = (path: string) => (plainTypst ? false : path === CONFIG_FILE || path === FORMATEX_CONFIG || path === FORMATEX_DIR)
   const locked = (path: string) => (plainTypst ? path === mainFile && mainFile !== "" : path === CONFIG_FILE || path === FORMATEX_CONFIG || path === FORMATEX_DIR || path === mainFile)
   /** Selected paths that still exist (a rename or delete may have removed some). */
   const chosen = visible.filter((entry) => selected.has(entry.path)).map((entry) => entry.path)
@@ -173,15 +176,64 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   }
 
   const paste = async (folder: string) => {
+    // Files and folders copied in the system's file manager (desktop app)
+    const system = await store().pasteSystemFiles(folder)
+    if (system.length) {
+      setSelected(new Set(system))
+      return
+    }
+    // An image on the system clipboard is only copied into the project's image folder (copying files in the tree puts their names there instead)
+    if (!plainTypst) {
+      const image = await imageOnClipboard()
+      if (image) {
+        const path = await store().addImage(image)
+        if (path) setSelected(new Set([path]))
+        return
+      }
+    }
     const added = await store().paste(folder)
     if (added.length) setSelected(new Set(added))
+  }
+
+  const pasteSeen = useRef(false)
+
+  /**
+   * Ctrl + V with files or folders copied in the system's file manager: they are added to the selected folder (or the folder of the
+   * selected file, else the root), as in VS Code. A lone bitmap (a screenshot) and anything else goes the way of `paste`.
+   */
+  const onPaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("input, textarea, [role=dialog]")) return
+    pasteSeen.current = true
+    const data = event.clipboardData
+    const folder = targetFolder()
+    // The desktop app reads the clipboard natively, which also takes folders
+    if (isTauri()) {
+      event.preventDefault()
+      void paste(folder)
+      return
+    }
+    const files = Array.from(data.files)
+    // A screenshot is one image the browser names `image.png`; a file copied in the file manager has its own name
+    const bitmap = files.length === 1 && files[0].type.startsWith("image/") && files[0].name === "image.png"
+    event.preventDefault()
+    if (files.length === 0 || (bitmap && !plainTypst)) {
+      void paste(folder)
+      return
+    }
+    // The entries are taken now: they cannot be read after anything is awaited
+    const entries = droppedEntries(data)
+    void (async () => {
+      const dropped = await readDropped(entries)
+      if (dropped.length) setSelected(new Set(await store().importTree(folder, dropped)))
+    })()
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
     // A key typed into a dialog or a rename field is not for the tree
     if ((event.target as HTMLElement).closest("input, textarea, [role=dialog]")) return
     const mod = event.ctrlKey || event.metaKey
-    const key = event.key.toLowerCase()
+    // The letter of the physical key (`KeyV`), so Ctrl + V works on a Persian keyboard too, where `event.key` is "ر"
+    const key = /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : event.key.toLowerCase()
     if (mod && key === "a") {
       event.preventDefault()
       setSelected(new Set(visible.map((entry) => entry.path)))
@@ -189,15 +241,18 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
       event.preventDefault()
       store().setClipboard(chosen.filter((path) => key === "c" || !locked(path)), key === "c" ? "copy" : "cut")
     } else if (mod && key === "v") {
-      event.preventDefault()
-      void paste(targetFolder())
+      // The browser's own paste event follows (it carries files copied in the system's file manager); if none comes, paste from here
+      pasteSeen.current = false
+      window.setTimeout(() => {
+        if (!pasteSeen.current) void paste(targetFolder())
+      }, 80)
     } else if (event.key === "Delete" && chosen.some((path) => !locked(path))) {
       event.preventDefault()
       setDialog({ type: "delete", paths: chosen.filter((path) => !locked(path)) })
     } else if (event.key === "F2" && chosen.length === 1) {
       event.preventDefault()
       const entry = files.find((row) => row.path === chosen[0])
-      if (entry && !locked(entry.path)) setEditing({ type: "rename", path: entry.path })
+      if (entry && !protectedPath(entry.path)) setEditing({ type: "rename", path: entry.path })
     } else if (event.key === "Escape") {
       setSelected(new Set())
     }
@@ -246,7 +301,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   const rowFolder = (entry: FsEntry) => (entry.kind === "dir" ? entry.path : parentOf(entry.path))
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground select-none outline-none" tabIndex={0} onKeyDown={onKeyDown}>
+    <div className="relative flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground select-none outline-none" tabIndex={0} onKeyDown={onKeyDown} onPaste={onPaste}>
       <div className="flex h-7 shrink-0 items-center gap-0.5 border-b border-sidebar-border ps-3 pe-1">
         <span className="flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           {chosen.length > 1 ? t("files.selected", { count: chosen.length }) : t("editor.files")}
@@ -323,14 +378,14 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
               : []),
             { key: "copy", label: t("files.copy"), icon: <Copy />, onSelect: () => store().setClipboard(targetPaths, "copy") },
             { key: "cut", label: t("files.cut"), icon: <Scissors />, disabled: deletable.length === 0, onSelect: () => store().setClipboard(deletable, "cut") },
-            { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, disabled: !clipboard, onSelect: () => void paste(rowFolder(entry)) },
+            { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, onSelect: () => void paste(rowFolder(entry)) },
             { key: "save", label: t("files.save"), icon: <Download />, onSelect: () => void store().saveEntries(targetPaths) },
             ...(canReveal && !many ? ([{ key: "reveal", label: t("files.reveal"), icon: <FolderOpen />, onSelect: () => reveal(entry.path) }] as MenuAction[]) : []),
             "separator",
             ...(!many && !isDir && fileKindOf(entry.path) === (plainTypst ? "typst" : "markdown") && !isMain
               ? ([{ key: "main", label: t("files.setMain"), icon: <Star />, onSelect: () => store().setMainFile(entry.path) }] as MenuAction[])
               : []),
-            ...(!many && !locked(entry.path) ? ([{ key: "rename", label: t("files.rename"), icon: <Pencil />, onSelect: () => setEditing({ type: "rename", path: entry.path }) }] as MenuAction[]) : []),
+            ...(!many && !protectedPath(entry.path) ? ([{ key: "rename", label: t("files.rename"), icon: <Pencil />, onSelect: () => setEditing({ type: "rename", path: entry.path }) }] as MenuAction[]) : []),
             deletable.length === 0
               ? { key: "delete", label: t("files.delete"), icon: <Lock />, disabled: true, onSelect: () => undefined }
               : { key: "delete", label: t("files.delete"), icon: <Trash2 />, destructive: true, onSelect: () => setDialog({ type: "delete", paths: deletable }) },
@@ -416,7 +471,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                 { key: "newFolder", label: t("files.newFolder"), icon: <FolderPlus />, onSelect: () => startNew("newFolder", "") },
                 { key: "upload", label: t("files.upload"), icon: <Upload />, onSelect: () => void upload("") },
                 "separator",
-                { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, disabled: !clipboard, onSelect: () => void paste("") },
+                { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, onSelect: () => void paste("") },
                 ...(canReveal ? (["separator", { key: "reveal", label: t("files.reveal"), icon: <FolderOpen />, onSelect: () => reveal("") }] as MenuAction[]) : []),
               ]}
             />

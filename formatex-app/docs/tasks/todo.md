@@ -266,5 +266,7 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] File tree: Save (a file as it is, a folder or a selection as a ZIP), Show in File Explorer for folder projects, and dropping a folder from the computer (it was only files)
 - [ ] Try in the desktop app: Save on a file and a folder, Show in File Explorer on a file, a folder and the empty part, and dropping a folder (with sub-folders) from Explorer into the tree
 - [x] Lists: two blank lines end a list (engine `list-attrs`, editor `listSplit.ts`), tree guides drawn as exact lines, indent guides only on the first row of a wrapped line
+- [x] Outline click shows the heading in the preview; the main file can be renamed from the tree; images pasted from the clipboard go to `images/` (`.formatex/images/`) with a `<fig>` tag; files from the internet are downloaded once into `.cache/` with a sync button beside Export
+- [ ] Try in the desktop app: paste a screenshot in the editor, in the tree and from the Paste menu; an `https://` image in `<img>`, `![]()` and `{{ json() }}` offline after the first compile, the sync button; the outline click scrolling the preview; renaming the main file
 - [ ] Raw Typst preview feels slow in the desktop app: measured in release, the compile is about 320 ms cold and about 0 to 5 ms incremental, and an SVG page is about 400 KB (about 5 ms to make); next step is the time the preview footer shows, then rendering pages smaller or only the visible ones
 

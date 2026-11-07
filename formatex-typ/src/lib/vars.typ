@@ -9,6 +9,7 @@
 //
 // Imports only the settings schema (which imports nothing), so src/core.typ can use it before `config` exists.
 #import "/src/lib/config-schema.typ": config-schemas
+#import "/src/lib/remote.typ": is-remote, remote-path
 
 #let name-re = regex("^[\\p{L}_][\\p{L}\\p{N}_-]*$")
 #let keywords = ("if", "else", "for", "while", "in", "and", "or", "not", "let", "set", "show", "import", "include", "return", "break", "continue", "context", "true", "false", "none", "auto", "setting")
@@ -29,7 +30,7 @@
 } else { s }
 
 // Typst resolves a path from the file that runs it; the paths of the project are written from its root
-#let rooted-path(p) = if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
+#let rooted-path(p) = if is-remote(p) { remote-path(p) } else if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
 
 #let load-data(path, at) = {
   let ext = lower(path.split(".").last())

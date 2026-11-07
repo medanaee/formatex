@@ -18,6 +18,7 @@ import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
 import { indentGuides } from "@/lib/editor/indentGuides"
+import { pasteImage } from "@/lib/editor/pasteImage"
 import { surroundOnType } from "@/lib/editor/surround"
 import { tagFolding, tagFoldingKeymap } from "@/lib/editor/tagFolding"
 import { tagWrapOnType } from "@/lib/editor/tagWrap"
@@ -136,7 +137,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         surroundOnType,
         // A line behind every level of indentation, like VS Code
         indentGuides(),
-        fileKind === "markdown" ? [tagFolding(), variableMarks(), tagWrapOnType()] : [],
+        fileKind === "markdown" ? [tagFolding(), variableMarks(), tagWrapOnType(), pasteImage()] : [],
         EditorView.lineWrapping,
         dir.of(dirExtension(direction, fileKind)),
         EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),

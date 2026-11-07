@@ -3,6 +3,7 @@
 
 
 #import "src/lib/mitex.typ": mitex
+#import "src/lib/remote.typ": is-remote, remote-path
 #import "src/preprocess/pipeline.typ": preprocess
 #import "src/preprocess/mark-lines.typ": mark-lines
 #import "src/preprocess/evaluate.typ": evaluate-document
@@ -22,7 +23,7 @@
 #let marked-front = marked-source.match(front-matter-regex)
 #let source-body = if marked-front == none { marked-source } else { marked-source.slice(marked-front.end) }
 
-#let render-scope = (image: (source, ..args) => image(source, ..args), make-heading-numbering: make-heading-numbering, check-label: check-label, fx-mark: fx-mark) + scope-extras
+#let render-scope = (image: (source, ..args) => image(if is-remote(source) { remote-path(source) } else { source }, ..args), make-heading-numbering: make-heading-numbering, check-label: check-label, fx-mark: fx-mark) + scope-extras
 #let render-markdown(text) = cmarker.render(preprocess(text), math: mitex, scope: render-scope, html: html-tags)
 
 // A `{{ }}` that names a value of the page (PAGE, PAGES, SECTION, SECTION_NUMBER) runs here, when the pages are made, and its text is

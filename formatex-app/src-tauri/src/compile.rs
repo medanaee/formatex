@@ -706,6 +706,112 @@ Intro paragraph here.
     }
 
     #[test]
+    fn files_from_the_internet_are_downloaded_once_and_then_read_from_the_cache() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let hits = Arc::new(AtomicUsize::new(0));
+        let stop = Arc::new(AtomicBool::new(false));
+        let server = {
+            let (hits, stop) = (hits.clone(), stop.clone());
+            std::thread::spawn(move || {
+                for stream in listener.incoming() {
+                    if stop.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    let mut stream = stream.unwrap();
+                    let mut request = [0u8; 2048];
+                    let n = stream.read(&mut request).unwrap_or(0);
+                    hits.fetch_add(1, Ordering::SeqCst);
+                    let wanted = String::from_utf8_lossy(&request[..n]).to_string();
+                    let (kind, body) = if wanted.contains("/d.json") {
+                        ("application/json", "{\"title\": \"From the net\"}")
+                    } else {
+                        ("image/svg+xml", "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\"/></svg>")
+                    };
+                    let _ = write!(stream, "HTTP/1.1 200 OK
+Content-Type: {kind}
+Content-Length: {}
+Connection: close
+
+{body}", body.len());
+                }
+            })
+        };
+
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-remote-{}", std::process::id()));
+        let project = data_dir.join("documents").join("r");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        let engine = tests_engine(&data_dir);
+        let source = format!("![a](http://{address}/a.svg)
+
+<img src=\"http://{address}/b.svg?size=2\" width=\"3cm\">
+
+{{{{ json(\"http://{address}/d.json\").title }}}}
+");
+        // Files outside the project, written as file:/// addresses: copied into the cache, and kept when the original goes
+        let outside = data_dir.join("outside");
+        fs::create_dir_all(&outside).unwrap();
+        fs::write(outside.join("pic.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\"/></svg>").unwrap();
+        fs::write(outside.join("d.json"), "{\"title\": \"Local\"}").unwrap();
+        let local = |name: &str| {
+            let path = outside.join(name).to_string_lossy().replace('\\', "/");
+            format!("file:///{}", path.trim_start_matches('/'))
+        };
+        let source = format!("{source}
+![l]({})
+
+{{{{ json(\"{}\").title }}}}
+", local("pic.svg"), local("d.json"));
+        fs::write(project.join("main.md"), source).unwrap();
+        let first = compile(&engine, "r", "main.md", Inputs::new(), HashMap::new()).unwrap();
+        assert!(first.document.is_some(), "{:?}", first.diagnostics.iter().map(|d| d.message.clone()).collect::<Vec<_>>());
+        assert_eq!(hits.load(Ordering::SeqCst), 3);
+        assert!(project.join(".cache").is_dir());
+        // The next compile reads the cache: no request
+        let second = compile(&engine, "r", "main.md", Inputs::new(), HashMap::new()).unwrap();
+        assert!(second.document.is_some());
+        assert_eq!(hits.load(Ordering::SeqCst), 3);
+        // The originals are gone: the kept copies are used
+        fs::remove_file(outside.join("pic.svg")).unwrap();
+        fs::remove_file(outside.join("d.json")).unwrap();
+        let third = compile(&engine, "r", "main.md", Inputs::new(), HashMap::new()).unwrap();
+        assert!(third.document.is_some(), "{:?}", third.diagnostics.iter().map(|d| d.message.clone()).collect::<Vec<_>>());
+
+        stop.store(true, Ordering::SeqCst);
+        let _ = std::net::TcpStream::connect(address);
+        server.join().unwrap();
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    /// The example document of `docs/examples/external-files` (it needs the network: `cargo test -- --ignored`).
+    #[test]
+    #[ignore]
+    fn the_example_of_files_from_the_internet_and_outside_the_project_builds() {
+        let example = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/examples/external-files");
+        let outside = example.join("outside").canonicalize().unwrap();
+        let outside = outside.to_string_lossy().replace('\\', "/").trim_start_matches("//?/").to_string();
+        let source = fs::read_to_string(example.join("external-files.md"))
+            .unwrap()
+            .replace("D:/Uni/formatex/formatex-app/docs/examples/external-files/outside", outside.trim_start_matches('/'));
+        let data_dir = std::env::temp_dir().join(format!("formatex-test-example-{}", std::process::id()));
+        let project = data_dir.join("documents").join("e");
+        fs::create_dir_all(&project).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        fs::write(project.join("main.md"), source).unwrap();
+        let engine = tests_engine(&data_dir);
+        let output = compile(&engine, "e", "main.md", Inputs::new(), HashMap::new()).unwrap();
+        assert!(output.document.is_some(), "{:?}", output.diagnostics.iter().map(|d| d.message.clone()).collect::<Vec<_>>());
+        let kept = fs::read_dir(project.join(".cache")).unwrap().filter(|e| e.as_ref().unwrap().path().extension().is_some_and(|x| x == "url")).count();
+        assert_eq!(kept, 4, "two internet addresses and two local ones");
+        let _ = fs::remove_dir_all(data_dir);
+    }
+
+    #[test]
     fn refuses_paths_that_leave_the_project() {
         assert!(check_relative("main.md").is_ok());
         assert!(check_relative("docs/a.md").is_ok());

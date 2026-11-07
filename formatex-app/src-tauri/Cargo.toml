@@ -1,6 +1,6 @@
 [package]
 name = "formatex"
-version = "0.4.0"
+version = "0.5.0"
 description = "Formatex: write Markdown, get a typeset PDF"
 authors = ["Formatex"]
 license = ""
@@ -44,6 +44,10 @@ regex = "1"
 tauri-plugin-opener = "2.7.2"
 # Watching a project kept in a folder of the user's, so a change made outside the app shows in it
 notify = "8"
+
+# The system clipboard (files and pictures for the file tree's Paste item); desktop only
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+clipboard-rs = "0.3.5"
 
 # `tauri dev` builds without optimization, which makes Typst about ten times slower. Optimize Typst and the crates it spends its time in
 # (layout, text shaping, fonts, plugins) even in dev builds; everything else, and the app itself, stays quick to build.

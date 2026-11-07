@@ -1,3 +1,4 @@
+mod clipboard;
 mod compile;
 mod components;
 mod engine;
@@ -5,6 +6,7 @@ mod fonts;
 mod ide;
 mod links;
 mod packages;
+mod remote;
 mod themes;
 mod typ_blocks;
 mod watcher;
@@ -29,6 +31,11 @@ pub fn run() {
       watcher::project_unwatch,
       compile::fonts_list,
       compile::fonts_reload,
+      remote::remote_sync,
+      clipboard::clipboard_import,
+      clipboard::clipboard_image,
+      remote::remote_list,
+      remote::remote_file,
       components::components_list,
       components::component_source,
       components::component_save,
