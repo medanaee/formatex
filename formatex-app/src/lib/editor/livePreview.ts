@@ -1,3 +1,4 @@
+import { listStarts } from "./listSplit"
 import { ensureSyntaxTree } from "@codemirror/language"
 import { Facet, StateField, type EditorState, type Range } from "@codemirror/state"
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view"
@@ -30,7 +31,7 @@ export type ConfigureRequest =
     }
   | {
       kind: "option"
-      option: "heading" | "table" | "list"
+      option: "heading" | "table" | "list" | "equation"
       /** The `{...}` text (a heading) or line (a table, a list) to replace; with `missing`, where to insert one. */
       from: number
       to: number
@@ -147,10 +148,10 @@ class ChipWidget extends WidgetType {
  * end of the heading's line, or of the list's first line) that shows on hover.
  */
 class OptionsWidget extends WidgetType {
-  readonly option: "heading" | "list"
+  readonly option: "heading" | "list" | "equation"
   readonly raw: string
   readonly attrs: Attrs
-  constructor(option: "heading" | "list", raw: string, attrs: Attrs) {
+  constructor(option: "heading" | "list" | "equation", raw: string, attrs: Attrs) {
     super()
     this.option = option
     this.raw = raw
@@ -209,6 +210,35 @@ class CodeOptionsWidget extends WidgetType {
   }
 }
 
+/** A gear at the end of the first line of a paragraph that has no `<p>` around it: it wraps the paragraph in one on the first change. */
+class ParagraphOptionsWidget extends WidgetType {
+  readonly offset: number
+  readonly length: number
+  constructor(offset: number, length: number) {
+    super()
+    this.offset = offset
+    this.length = length
+  }
+  eq(other: ParagraphOptionsWidget) {
+    return other.offset === this.offset && other.length === this.length
+  }
+  toDOM(view: EditorView) {
+    const el = document.createElement("span")
+    el.className = "cm-lp-opts cm-lp-opts-hover"
+    el.append(
+      button(view, "p", (anchor) => {
+        const lineStart = view.state.doc.lineAt(view.posAtDOM(el)).from
+        const from = lineStart + this.offset
+        view.state.facet(liveConfigure)({ kind: "tag", name: "p", from, to: from, attrs: [], selfClosing: false, wrap: { from, to: from + this.length }, anchor })
+      }),
+    )
+    return el
+  }
+  ignoreEvent() {
+    return true
+  }
+}
+
 const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
 /** Bold, italic, code and math inside a table cell. */
@@ -251,26 +281,59 @@ const tableHooks: TableWidgetHooks = {
   source: (view, wrap) => placeCursor(view, wrap),
 }
 
+interface EquationOptions {
+  /** After the closing `$$`: where the `{...}` is, or would go. */
+  from: number
+  /** The end of what is replaced (the `{...}` and, when it is on the next line, that line). */
+  to: number
+  raw: string
+  attrs: Attrs
+}
+
 class MathWidget extends WidgetType {
-    readonly tex: string
+  readonly tex: string
   readonly display: boolean
   readonly raw: string
-  constructor(tex: string, display: boolean, raw: string) {
+  /** A display equation that stands alone has a gear (or the chip of its `{...}`). */
+  readonly options?: EquationOptions
+  constructor(tex: string, display: boolean, raw: string, options?: EquationOptions) {
     super()
     this.tex = tex
     this.display = display
     this.raw = raw
+    this.options = options
   }
   eq(other: MathWidget) {
-    return other.raw === this.raw
+    return other.raw === this.raw && other.options?.raw === this.options?.raw
   }
   toDOM(view: EditorView) {
     const el = document.createElement(this.display ? "div" : "span")
     el.className = this.display ? "cm-lp-math cm-lp-math-block" : "cm-lp-math"
+    const math = document.createElement("span")
     try {
-      el.innerHTML = katex.renderToString(this.tex, { displayMode: this.display, throwOnError: false })
+      math.innerHTML = katex.renderToString(this.tex, { displayMode: this.display, throwOnError: false })
     } catch {
-      el.textContent = this.raw
+      math.textContent = this.raw
+    }
+    el.append(math)
+    const options = this.options
+    if (options) {
+      const bar = document.createElement("span")
+      bar.className = options.raw ? "cm-lp-opts" : "cm-lp-opts cm-lp-opts-empty"
+      if (options.raw) {
+        const text = document.createElement("span")
+        text.className = "cm-lp-chip-attrs"
+        text.textContent = options.attrs.map(([key, value]) => (key === "id" ? `#${value}` : key)).join(" ")
+        bar.append(text)
+      }
+      bar.append(
+        button(view, "equation", (anchor) => {
+          // The widget stands where the `$$ ... $$` starts; its `{...}` (or the place for one) follows it
+          const after = view.posAtDOM(el) + this.raw.length
+          view.state.facet(liveConfigure)({ kind: "option", option: "equation", from: after, to: after + (options.to - options.from), missing: !options.raw, attrs: options.attrs, anchor })
+        }),
+      )
+      el.append(bar)
     }
     el.addEventListener("click", () => placeCursor(view, el))
     return el
@@ -459,9 +522,16 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
     if (overlaps(from, to) || touches(from, to)) continue
     const lineStart = doc.lineAt(from).from
     const lineEnd = doc.lineAt(to).to
-    const alone = text.slice(lineStart, from).trim() === "" && text.slice(to, lineEnd).trim() === ""
-    out.push(Decoration.replace({ widget: new MathWidget(match[1].trim(), true, match[0]), block: alone }).range(alone ? lineStart : from, alone ? lineEnd : to))
-    take(alone ? lineStart : from, alone ? lineEnd : to)
+    // `$$ ... $$ {#id}`: the options after the closing `$$` on its line, or alone on the next line
+    const sameLine = /^(\s*)(\{[^{}]*\})\s*$/.exec(text.slice(to, lineEnd))
+    const nextLine = !sameLine && text.slice(to, lineEnd).trim() === "" && doc.lineAt(lineEnd).number < doc.lines ? doc.line(doc.lineAt(lineEnd).number + 1) : null
+    const nextOptions = nextLine ? /^\s*(\{[^{}]*\})\s*$/.exec(nextLine.text) : null
+    const alone = text.slice(lineStart, from).trim() === "" && (text.slice(to, lineEnd).trim() === "" || sameLine !== null)
+    const optionsText = sameLine ? sameLine[2] : nextOptions ? nextOptions[1] : ""
+    const rangeEnd = alone ? (nextOptions && nextLine ? nextLine.to : lineEnd) : to
+    const options = alone ? { from: to, to: rangeEnd, raw: optionsText, attrs: optionsText ? parseOptions(optionsText.slice(1, -1)) : [] } : undefined
+    out.push(Decoration.replace({ widget: new MathWidget(match[1].trim(), true, match[0], options), block: alone }).range(alone ? lineStart : from, alone ? rangeEnd : to))
+    take(alone ? lineStart : from, alone ? rangeEnd : to)
   }
   for (const match of masked.matchAll(/(?<![\\$])\$(?![\s$])([^$\n]+?)(?<![\s\\])\$(?!\$)/g)) {
     const from = match.index
@@ -515,6 +585,14 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
         }
       } else if (name === "ListMark" && /^[-*+]$/.test(text.slice(from, to)) && !lineTouched(from)) {
         out.push(Decoration.replace({ widget: new BulletWidget() }).range(from, to))
+      } else if (name === "Paragraph" && node.node.parent?.name === "Document" && !lineTouched(from)) {
+        // Body text: a gear (on hover) wraps it in a <p>. Not what is no paragraph of the text: a tag or an option line, a list written
+        // with Persian digits, a `{{ }}`, an equation
+        const first = doc.lineAt(from)
+        const before = text.slice(0, from)
+        const insideP = before.lastIndexOf("<p") > before.lastIndexOf("</p>") && /^<p[\s>]/.test(before.slice(before.lastIndexOf("<p")))
+        const special = /^\s*(?:[{<]|\$\$|[۰-۹٠-٩]+[.)]\s)/.test(first.text)
+        if (!insideP && !special && !overlaps(first.to, first.to)) out.push(Decoration.widget({ widget: new ParagraphOptionsWidget(from - first.from, to - from), side: 1 }).range(first.to))
       } else if (name === "Blockquote") {
         for (let n = doc.lineAt(from).number; n <= doc.lineAt(to).number; n++) out.push(Decoration.line({ class: "cm-lp-quote" }).range(doc.line(n).from))
       } else if (name === "QuoteMark" && !lineTouched(from)) {
@@ -527,18 +605,38 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
         if (!/<code[^>]*>\s*$/.test(above)) out.push(Decoration.widget({ widget: new CodeOptionsWidget(to - from), side: 1 }).range(first.to))
         return false
       } else if ((name === "BulletList" || name === "OrderedList") && node.node.parent?.name === "Document") {
-        // The `{...}` line directly above the list, as a chip; without one, a gear on the first line
-        const first = doc.lineAt(from)
-        const above = first.number > 1 ? doc.line(first.number - 1) : null
-        const found = above ? /^\s*\{([^{}]*)\}\s*$/.exec(above.text) : null
-        if (above && found) {
-          if (!lineTouched(above.from) && !overlaps(above.from, above.to)) out.push(Decoration.replace({ widget: new OptionsWidget("list", above.text, parseOptions(found[1])) }).range(above.from, above.to))
-        } else if (!overlaps(first.to, first.to)) {
-          out.push(Decoration.widget({ widget: new OptionsWidget("list", "", []), side: 1 }).range(first.to))
+        // The `{...}` line directly above each list, as a chip; without one, a gear on its first line. Two blank lines or more start another list
+        for (const start of listStarts(doc, doc.lineAt(from).number, doc.lineAt(to).number)) {
+          const first = doc.line(start)
+          const above = first.number > 1 ? doc.line(first.number - 1) : null
+          const found = above ? /^\s*\{([^{}]*)\}\s*$/.exec(above.text) : null
+          if (above && found) {
+            if (!lineTouched(above.from) && !overlaps(above.from, above.to)) out.push(Decoration.replace({ widget: new OptionsWidget("list", above.text, parseOptions(found[1])) }).range(above.from, above.to))
+          } else if (!overlaps(first.to, first.to)) {
+            out.push(Decoration.widget({ widget: new OptionsWidget("list", "", []), side: 1 }).range(first.to))
+          }
         }
       }
     },
   })
+
+  // Lists written with Persian or Arabic digits (`۱.`) are paragraphs to the Markdown parser but lists to the engine: they get the same gear
+  const digitItem = /^\s{0,3}[۰-۹٠-٩]+[.)]\s/
+  for (let n = 1; n <= doc.lines; n++) {
+    const line = doc.line(n)
+    if (!digitItem.test(line.text) || (n > 1 && digitItem.test(doc.line(n - 1).text))) continue
+    if (taken.some(([x, y]) => line.from >= x && line.to <= y)) continue
+    let inside = false
+    for (let node = tree?.resolveInner(line.from, 1) ?? null; node; node = node.parent) if (/Code|Comment|HTML|Table|List/.test(node.name)) inside = true
+    if (inside) continue
+    const above = n > 1 ? doc.line(n - 1) : null
+    const found = above ? /^\s*\{([^{}]*)\}\s*$/.exec(above.text) : null
+    if (above && found) {
+      if (!lineTouched(above.from) && !overlaps(above.from, above.to)) out.push(Decoration.replace({ widget: new OptionsWidget("list", above.text, parseOptions(found[1])) }).range(above.from, above.to))
+    } else if (!overlaps(line.to, line.to)) {
+      out.push(Decoration.widget({ widget: new OptionsWidget("list", "", []), side: 1 }).range(line.to))
+    }
+  }
 
   return Decoration.set(out, true)
 }
@@ -612,8 +710,10 @@ const liveTheme = EditorView.theme({
   },
   ".cm-lp-gear:hover": { backgroundColor: "var(--accent)", color: "var(--foreground)" },
   ".cm-lp-opts": { display: "inline-flex", alignItems: "center", gap: "2px", marginInlineStart: "6px", verticalAlign: "middle" },
-  ".cm-lp-opts-empty": { opacity: "0" },
-  ".cm-line:hover .cm-lp-opts-empty": { opacity: "1" },
+  // The gear is always there, quiet until the line is looked at; a plain paragraph's only shows when it is
+  ".cm-lp-opts-empty": { opacity: "0.5" },
+  ".cm-lp-opts-hover": { opacity: "0" },
+  ".cm-line:hover .cm-lp-opts-empty, .cm-line:hover .cm-lp-opts-hover": { opacity: "1" },
 
 
   ".cm-lp-math": { cursor: "text" },

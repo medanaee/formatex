@@ -21,6 +21,29 @@
     "components": "کامپوننت‌ها",
     "skill": "اسکیل"
   },
+  "kind": {
+    "title": "نوع پروژه",
+    "formatex": "فرمتکس",
+    "typst": "Raw Typst",
+    "formatexHint": "Markdown با کامپوننت‌ها، تم‌ها و تنظیمات آماده",
+    "typstHint": "Typst ساده: فقط خود کامپایلر، بدون هیچ چیز اضافه",
+    "mainFile": "فایل اصلی",
+    "noMain": "بدون فایل اصلی",
+    "chooseMain": "برای دیدن سند، فایل اصلی را انتخاب کنید",
+    "badge": "Typst",
+    "toFormatex": "تبدیل به فرمتکس",
+    "toTypst": "تبدیل به Raw Typst"
+  },
+  "external": {
+    "changed": "این فایل بیرون از اپ تغییر کرد و متن اینجا هم عوض شده است.",
+    "load": "بارگذاری نسخهٔ جدید",
+    "keep": "نگه‌داشتن نسخهٔ من",
+    "sizes": "(نسخهٔ شما: {{mine}} خط، روی دیسک: {{outside}} خط)",
+    "empty": "فایل روی دیسک خالی است.",
+    "replaced": "متن این فایل با نسخهٔ روی دیسک، که خیلی کوتاه‌تر است، عوض شد.",
+    "restore": "برگرداندن نسخهٔ من",
+    "dismiss": "همین بماند"
+  },
   "library": {
     "title": "سندها",
     "new": "سند جدید",
@@ -128,6 +151,8 @@
       "reserved": "این نام متعلق به موتور است",
       "exists": "فایلی با این نام هست"
     },
+    "save": "ذخیره…",
+    "reveal": "نمایش در فایل اکسپلورر",
     "copy": "کپی",
     "cut": "برش",
     "paste": "چسباندن",
@@ -171,7 +196,8 @@
     "language": "زبان",
     "languageEn": "English",
     "languageFa": "فارسی",
-    "languageBoth": "هر دو",
+    "writing": "نوشتن سند",
+    "building": "ساختن کامپوننت",
     "components": "کامپوننت‌ها",
     "all": "همه",
     "none": "هیچ‌کدام",
@@ -262,11 +288,15 @@
     "empty": "تگی نیست"
   },
   "options": {
+    "condition": "شرط",
+    "conditionOn": "انتخاب مقدار با شرط",
+    "conditionOff": "بازگشت به مقدار ثابت",
     "default": "پیش‌فرض",
     "unset": "تنظیم نشده",
     "none": "این مورد تنظیمی ندارد",
     "heading": "تیتر",
     "table": "جدول",
+    "equation": "معادله",
     "list": "ظ„غŒط³طھ",
     "code": "کد"
   },
@@ -308,6 +338,27 @@
   "config": {
     "search": "جستجو در تنظیمات",
     "general": "عمومی",
+    "components": "کامپوننت‌ها",
+    "addComponent": "افزودن فایل کامپوننت",
+    "removeComponent": "برداشتن از فهرست",
+    "noComponentFiles": "فایل .typ دیگری در این پروژه نیست",
+    "noComponents": "فایل کامپوننتی فهرست نشده",
+    "componentMissing": "این فایل در پروژه نیست",
+    "componentsRaw": "این فهرست در چند خط نوشته شده؛ در متن تغییرش دهید",
+    "variables": "متغیرها",
+    "addVariable": "افزودن متغیر",
+    "removeVariable": "حذف متغیر",
+    "variableName": "نام",
+    "variableType": "نوع",
+    "variableAuto": "از روی مقدار",
+    "variableValues": "مقدارهای مجاز، جداشده با ویرگول (خالی: هر مقداری)",
+    "variableMin": "کمترین",
+    "variableMax": "بیشترین",
+    "noVariables": "هنوز متغیری نیست",
+    "variableBlock": "در چند خط نوشته شده؛ در متن تغییرش دهید",
+    "variableBad": "نام از حرف، رقم، - و _ است",
+    "variableTaken": "متغیری با این نام هست",
+    "variableAllowed": "مقدارهای مجاز",
     "reset": "بازگشت به پیش‌فرض"
   },
   "menu": {
@@ -351,7 +402,9 @@
     "failed": "انتقال پروژه انجام نشد: {{message}}",
     "missing": "فولدر پروژه پیدا نشد: {{path}}",
     "pickAgain": "انتخاب دوبارهٔ فولدر",
-    "removeFromLibrary": "حذف از کتابخانه"
+    "removeFromLibrary": "حذف از کتابخانه",
+    "localHint": "فایل‌ها داخل خود اپ می‌مانند",
+    "folderHint": "در پوشه‌ای که از قبل دارید کار کنید"
   },
   "overrides": {
     "mark": "توسط سند بازنویسی شده است",

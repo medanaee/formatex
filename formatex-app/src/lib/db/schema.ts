@@ -31,6 +31,8 @@ const MIGRATIONS: string[][] = [
   ],
   // 4: a project can keep its files in a folder of the user's (NULL = the app's own storage)
   [`ALTER TABLE documents ADD COLUMN location TEXT`],
+  // 5: a project is a Formatex project or plain Typst
+  [`ALTER TABLE documents ADD COLUMN kind TEXT NOT NULL DEFAULT 'formatex'`],
 ]
 
 export const SCHEMA_VERSION = MIGRATIONS.length

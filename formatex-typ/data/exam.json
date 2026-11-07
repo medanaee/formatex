@@ -1,0 +1,8 @@
+{
+  "title": "Midterm",
+  "questions": [
+    { "text": "What is 2 + 2?", "score": 2, "level": 1 },
+    { "text": "Prove that the square root of 2 is irrational.", "score": 5, "level": 3 },
+    { "text": "Differentiate x^2.", "score": 3, "level": 2 }
+  ]
+}

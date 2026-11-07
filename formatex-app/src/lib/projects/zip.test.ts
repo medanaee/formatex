@@ -24,7 +24,9 @@ describe("reading a zip", () => {
   it("leaves out engine paths and unsafe paths, and refuses a zip with nothing left", () => {
     const zip = zipSync({ "main.md": strToU8("# A"), "src/core.typ": strToU8("x"), "components/a.typ": strToU8("x"), "../evil.md": strToU8("x") })
     expect(readProjectZip(zip, "T").files.map((f) => f.path)).toEqual(["main.md"])
-    expect(() => readProjectZip(zipSync({ "src/core.typ": strToU8("x") }), "T")).toThrow()
+    expect(() => readProjectZip(zipSync({ "../evil.md": strToU8("x"), "__MACOSX/a": strToU8("x") }), "T")).toThrow()
+    // A zip of Typst files alone is a plain Typst project, where `src/` is an ordinary folder
+    expect(readProjectZip(zipSync({ "src/core.typ": strToU8("x") }), "T")).toMatchObject({ kind: "typst" })
   })
 })
 
@@ -57,3 +59,39 @@ describe("export and import", () => {
     expect(await (await openProjectFs("zip-dst2")).readText("config.toml")).toBe('source = "b.md"\ntheme = "nord"\n')
   })
 })
+
+describe("a plain Typst project in a zip", () => {
+  it("is exported with what it is, and comes back as plain Typst with its main file", async () => {
+    const fs = await openProjectFs("typst-a")
+    await fs.writeText("main.typ", '#import "template.typ": template\n')
+    await fs.writeText("template.typ", "#let template(doc) = doc\n")
+    await fs.writeText("src/part.typ", "= Part\n")
+    const zip = await exportProjectZip("typst-a", "My Typst", "main.typ", "typst")
+    const project = readProjectZip(zip, "T")
+    expect(project).toMatchObject({ title: "My Typst", kind: "typst", mainFile: "main.typ" })
+    // No name is reserved without the engine: main.typ and src/ stay
+    expect(project.files.map((f) => f.path).sort()).toEqual(["main.typ", "src/part.typ", "template.typ"])
+  })
+
+  it("writes only its files: no config.toml is made", async () => {
+    const project = readProjectZip(zipSync({ "main.typ": strToU8("Hello"), "formatex-project.json": strToU8(JSON.stringify({ version: 1, title: "X", mainFile: "main.typ", kind: "typst" })) }), "T")
+    await writeImportedProject("typst-b", project)
+    const fs = await openProjectFs("typst-b")
+    expect(await fs.readText("main.typ")).toBe("Hello")
+    expect(await fs.exists("config.toml")).toBe(false)
+  })
+
+  it("keeps no main file when the zip names none that exists", () => {
+    const zip = zipSync({ "a.typ": strToU8("x"), "formatex-project.json": strToU8(JSON.stringify({ version: 1, title: "X", mainFile: "", kind: "typst" })) })
+    expect(readProjectZip(zip, "T")).toMatchObject({ kind: "typst", mainFile: "" })
+  })
+
+  it("takes a zip of Typst files with no manifest and no Markdown for plain Typst, and any other zip for Formatex", () => {
+    expect(readProjectZip(zipSync({ "main.typ": strToU8("x"), "lib.typ": strToU8("y") }), "T")).toMatchObject({ kind: "typst", mainFile: "main.typ" })
+    expect(readProjectZip(zipSync({ "main.md": strToU8("# A"), "x.typ": strToU8("y") }), "T").kind).toBe("formatex")
+    // A zip made before kinds had none in its manifest
+    const old = zipSync({ "main.md": strToU8("# A"), "formatex-project.json": strToU8(JSON.stringify({ version: 1, title: "Old", mainFile: "main.md" })) })
+    expect(readProjectZip(old, "T")).toMatchObject({ kind: "formatex", title: "Old" })
+  })
+})
+

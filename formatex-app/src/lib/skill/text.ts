@@ -1,19 +1,45 @@
 import type { SkillLevel } from "@/lib/skill/generate"
 
-/** The two languages of the fixed text of a skill. A skill that carries both languages in its reference uses English here. */
+/** The two languages of a skill. */
 export type FixedLanguage = "en" | "fa"
 
 const NAME = "formatex"
 
 const DESCRIPTION = {
-  en: "Writes and edits documents for Formatex, an app that typesets Markdown with HTML-like components into an exact bilingual Persian and English PDF. Use it whenever a task touches a Formatex project: the main Markdown file, config.toml, front matter, components (tags), references, citations, figures, tables, lists, themes or direction.",
-  fa: "برای نوشتن و ویرایش سند در فرمتکس (Formatex) به کار می‌رود، برنامه‌ای که Markdown را با کامپوننت‌های شبیه HTML به یک PDF دقیق فارسی و انگلیسی تبدیل می‌کند. هر وقت کاری به یک پروژهٔ فرمتکس مربوط شد از آن استفاده کنید: فایل اصلی Markdown، config.toml، front matter، کامپوننت‌ها (تگ‌ها)، ارجاع، استناد، شکل، جدول، فهرست، تم یا جهت متن.",
+  writing: {
+    en: "Writes and edits documents for Formatex, an app that typesets Markdown with HTML-like components into an exact bilingual Persian and English PDF. Use it whenever a task touches a Formatex project: the main Markdown file, config.toml, front matter, components (tags), references, citations, figures, tables, lists, themes or direction.",
+    fa: "برای نوشتن و ویرایش سند در فرمتکس (Formatex) به کار می‌رود، برنامه‌ای که Markdown را با کامپوننت‌های شبیه HTML به یک PDF دقیق فارسی و انگلیسی تبدیل می‌کند. هر وقت کاری به یک پروژهٔ فرمتکس مربوط شد از آن استفاده کنید: فایل اصلی Markdown، config.toml، front matter، کامپوننت‌ها (تگ‌ها)، ارجاع، استناد، شکل، جدول، فهرست، تم یا جهت متن.",
+  },
+  building: {
+    en: "Builds your own components (tags) for a Formatex project: Typst files that define tags, their optional schema and docs, and how the project declares them. Use it when a task asks for a new tag or changes a component file.",
+    fa: "کامپوننت (تگ) دلخواه برای یک پروژهٔ فرمتکس می‌سازد: فایل‌های Typst که تگ تعریف می‌کنند، schema و docs اختیاری آن‌ها و راهی که پروژه آن‌ها را معرفی می‌کند. وقتی کاری تگ تازه می‌خواهد یا فایل کامپوننت را عوض می‌کند از آن استفاده کنید.",
+  },
 } as const
 
-/** The front matter that makes the file a skill, and the title. */
-export function skillHead(language: FixedLanguage): string {
-  const title = language === "fa" ? "# نوشتن سند در فرمتکس" : "# Writing documents in Formatex"
-  return `---\nname: ${NAME}\ndescription: ${DESCRIPTION[language]}\n---\n\n${title}\n`
+/** Which sections a skill holds. */
+export interface SkillParts {
+  writing: boolean
+  building: boolean
+}
+
+const TITLE = {
+  writing: { en: "# Writing documents in Formatex", fa: "# نوشتن سند در فرمتکس" },
+  building: { en: "# Building Formatex components", fa: "# ساختن کامپوننت در فرمتکس" },
+  both: { en: "# Formatex", fa: "# فرمتکس" },
+} as const
+
+/** The front matter that makes the file a skill, and the title. The language is that of the first section the file holds. */
+export function skillHead(language: FixedLanguage, parts: SkillParts): string {
+  const kinds = (["writing", "building"] as const).filter((kind) => parts[kind])
+  const description = kinds.map((kind) => DESCRIPTION[kind][language]).join(" ")
+  const title = kinds.length === 2 ? TITLE.both[language] : TITLE[kinds[0] ?? "writing"][language]
+  return `---
+name: ${NAME}
+description: ${description}
+---
+
+${title}
+`
 }
 
 const INTRO_EN = `You write the **content** of a Formatex document: one Markdown file (with a YAML front matter block on top) and, when asked, the project's \`config.toml\`. Formatex turns them into a typeset PDF, Persian and English side by side, right to left and left to right. You never touch how the typesetting works; you only use what this skill lists. **Use only the tags, attributes, settings and values listed here. Do not invent any.**

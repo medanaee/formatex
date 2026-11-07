@@ -5,6 +5,7 @@ import {
   Copy,
   Download,
   FilePlus,
+  FolderOpen,
   FolderPlus,
   Lock,
   MoreHorizontal,
@@ -16,30 +17,35 @@ import {
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
+import { ActionItems, type MenuAction } from "@/components/common/ActionItems"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { droppedEntries, readDropped } from "@/lib/files/droppedFiles"
 import { pickFiles } from "@/lib/files/saveFile"
+import { isTauri } from "@/lib/platform"
+import { revealFolder } from "@/lib/projects/storageMode"
 import { FileIcon } from "@/components/common/FileIcon"
 import { baseName, CODE_EXTENSIONS, CONFIG_FILE, FORMATEX_CONFIG, FORMATEX_DIR, fileKindOf, nameProblem, parentOf, type FsEntry } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
+import { useLibraryStore } from "@/stores/useLibraryStore"
 
 const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "pdf", "csv", "json", "bib", "txt", "md", "toml", "typ", ...CODE_EXTENSIONS]
 /** What a drag carries between rows of the tree. */
 const DRAG_TYPE = "application/x-formatex-paths"
 
-type Dialog =
-  | { type: "newFile"; parent: string }
-  | { type: "newFolder"; parent: string }
-  | { type: "rename"; entry: FsEntry }
-  | { type: "delete"; paths: string[] }
-  | null
+type Dialog = { type: "delete"; paths: string[] } | null
+
+/** What is being typed in the tree itself, as in VS Code: a new file or folder in a folder, or the new name of an entry. */
+type Editing = { type: "newFile" | "newFolder"; parent: string } | { type: "rename"; path: string } | null
 
 /**
  * The files of the project, like Overleaf's. Click opens; Ctrl / Cmd + click toggles and Shift + click selects a range.
  * Drag rows onto a folder to move them (hold Ctrl / Alt to copy), and drop files from the computer to add them.
- * Ctrl + C / X / V copy, cut and paste; Delete removes the selection; F2 renames; Ctrl + A selects all.
+ * Ctrl + C / X / V copy, cut and paste; Delete removes the selection; F2 renames; Ctrl + A selects all. A new file, a new folder
+ * and a rename are typed in the row itself (Enter keeps the name, Escape drops it); only a delete asks.
  * Sits at the start edge of the editor (the right in Persian).
  */
 export function FileTree({ onOpen }: { /** Called after a file is chosen (a phone closes the drawer). */ onOpen?: () => void }) {
@@ -47,10 +53,21 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
   const files = useEditorStore((state) => state.files)
   const activePath = useEditorStore((state) => state.activePath)
   const mainFile = useEditorStore((state) => state.mainFile)
+  const plainTypst = useEditorStore((state) => state.kind) === "typst"
   const clipboard = useEditorStore((state) => state.clipboard)
   const store = useEditorStore.getState
 
   const projectId = useEditorStore((state) => state.projectId)
+  // A project kept in a folder of the user's: its files can be shown in the file manager
+  const location = useLibraryStore((state) => state.documents.find((doc) => doc.id === projectId)?.location) ?? null
+  const canReveal = isTauri() && location !== null
+  const reveal = (path: string) => {
+    if (location === null) return
+    const separator = location.includes("\\") ? "\\" : "/"
+    // A folder project keeps its config.toml in `.formatex/`
+    const real = !plainTypst && path === CONFIG_FILE ? FORMATEX_CONFIG : path
+    void revealFolder(path === "" ? location : `${location.replace(/[\\/]+$/, "")}${separator}${real.split("/").join(separator)}`)
+  }
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // Every folder starts closed when a project is opened (the folders are known only once its files are listed)
   const closedFor = useRef<string | null>(null)
@@ -60,6 +77,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
     setCollapsed(new Set(files.filter((entry) => entry.kind === "dir").map((entry) => entry.path)))
   }, [projectId, files])
   const [dialog, setDialog] = useState<Dialog>(null)
+  const [editing, setEditing] = useState<Editing>(null)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const anchor = useRef<string | null>(null)
   /** The folder a drag is over (`""` is the root). */
@@ -83,7 +101,28 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
     [files, collapsed]
   )
 
-  const locked = (path: string) => path === CONFIG_FILE || path === FORMATEX_CONFIG || path === FORMATEX_DIR || path === mainFile
+  /** The rows to draw: the entries, and a row for the name being typed when something new is made (right under its folder). */
+  const rows = useMemo(() => {
+    const list: ({ entry: FsEntry } | { draft: "newFile" | "newFolder"; parent: string })[] = visible.map((entry) => ({ entry }))
+    if (editing && editing.type !== "rename") {
+      const at = editing.parent === "" ? -1 : list.findIndex((row) => "entry" in row && row.entry.path === editing.parent)
+      list.splice(at + 1, 0, { draft: editing.type, parent: editing.parent })
+    }
+    return list
+  }, [visible, editing])
+
+  /** Starts typing a new file or folder in `parent`: the folder opens so the row shows. */
+  const startNew = (type: "newFile" | "newFolder", parent: string) => {
+    setCollapsed((previous) => {
+      const next = new Set(previous)
+      next.delete(parent)
+      return next
+    })
+    setEditing({ type, parent })
+  }
+
+  // config.toml and .formatex belong to a Formatex project; in plain Typst they are only files, and only the main file is kept
+  const locked = (path: string) => (plainTypst ? path === mainFile && mainFile !== "" : path === CONFIG_FILE || path === FORMATEX_CONFIG || path === FORMATEX_DIR || path === mainFile)
   /** Selected paths that still exist (a rename or delete may have removed some). */
   const chosen = visible.filter((entry) => selected.has(entry.path)).map((entry) => entry.path)
   /** Where a paste or an upload lands: the selected folder, else the folder of the selected file, else the root. */
@@ -158,7 +197,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
     } else if (event.key === "F2" && chosen.length === 1) {
       event.preventDefault()
       const entry = files.find((row) => row.path === chosen[0])
-      if (entry) setDialog({ type: "rename", entry })
+      if (entry && !locked(entry.path)) setEditing({ type: "rename", path: entry.path })
     } else if (event.key === "Escape") {
       setSelected(new Set())
     }
@@ -195,10 +234,11 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
       if (done.length) setSelected(new Set(done))
       return
     }
-    // Files from the computer
-    const dropped = await Promise.all([...event.dataTransfer.files].map(async (file) => ({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) })))
+    // Files and folders from the computer. The entries of the drop are taken now: they cannot be read after anything is awaited
+    const entries = droppedEntries(event.dataTransfer)
+    const dropped = await readDropped(entries)
     if (dropped.length) {
-      const added = await store().importFiles(folder, dropped)
+      const added = await store().importTree(folder, dropped)
       setSelected(new Set(added))
     }
   }
@@ -211,10 +251,10 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
         <span className="flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           {chosen.length > 1 ? t("files.selected", { count: chosen.length }) : t("editor.files")}
         </span>
-        <Button variant="ghost" size="icon-xs" onClick={() => setDialog({ type: "newFile", parent: targetFolder() })} title={t("files.newFile")} aria-label={t("files.newFile")}>
+        <Button variant="ghost" size="icon-xs" onClick={() => startNew("newFile", targetFolder())} title={t("files.newFile")} aria-label={t("files.newFile")}>
           <FilePlus />
         </Button>
-        <Button variant="ghost" size="icon-xs" onClick={() => setDialog({ type: "newFolder", parent: targetFolder() })} title={t("files.newFolder")} aria-label={t("files.newFolder")}>
+        <Button variant="ghost" size="icon-xs" onClick={() => startNew("newFolder", targetFolder())} title={t("files.newFolder")} aria-label={t("files.newFolder")}>
           <FolderPlus />
         </Button>
         <Button variant="ghost" size="icon-xs" onClick={() => void upload(targetFolder())} title={t("files.upload")} aria-label={t("files.upload")}>
@@ -223,7 +263,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
       </div>
 
       <ul
-        className={cn("min-h-0 flex-1 overflow-y-auto py-0.5", dropTarget === "" && "bg-sidebar-accent/40")}
+        className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto py-0.5", dropTarget === "" && "bg-sidebar-accent/40")}
         role="tree"
         aria-multiselectable="true"
         onDragOver={(event) => dragOver(event, "")}
@@ -233,7 +273,36 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
         onClick={(event) => event.target === event.currentTarget && setSelected(new Set())}
       >
         {visible.length === 0 && <li className="p-4 text-center text-xs text-muted-foreground">{t("files.empty")}</li>}
-        {visible.map((entry) => {
+        {rows.map((row) => {
+          if ("draft" in row) {
+            const depth = row.parent === "" ? 0 : row.parent.split("/").length
+            return (
+              <li key="__draft__" role="treeitem" aria-selected>
+                <div className="flex h-6 items-center gap-1 pe-1 text-xs pointer-coarse:h-9" style={{ paddingInlineStart: `${depth * 10 + 6}px` }}>
+                  <span className="w-3 shrink-0" />
+                  <FileIcon path={row.draft === "newFolder" ? "folder" : "file.md"} kind={row.draft === "newFolder" ? "dir" : "file"} size={16} />
+                  <InlineName
+                    initial=""
+                    parent={row.parent}
+                    existing={new Set(files.map((file) => file.path))}
+                    markdownByDefault={row.draft === "newFile"}
+                    label={row.draft === "newFile" ? t("files.newFile") : t("files.newFolder")}
+                    placeholder={row.draft === "newFile" ? t("files.namePlaceholder") : t("files.folderPlaceholder")}
+                    onCancel={() => setEditing(null)}
+                    onSubmit={async (name) => {
+                      setEditing(null)
+                      if (row.draft === "newFile") {
+                        await store().createFile(row.parent, name)
+                        onOpen?.()
+                      } else await store().createFolder(row.parent, name)
+                    }}
+                  />
+                </div>
+              </li>
+            )
+          }
+          const entry = row.entry
+          const renaming = editing?.type === "rename" && editing.path === entry.path
           const depth = entry.path.split("/").length - 1
           const isDir = entry.kind === "dir"
           const isOpen = isDir && !collapsed.has(entry.path)
@@ -243,10 +312,36 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
           const many = isSelected && chosen.length > 1
           const targetPaths = many ? chosen : [entry.path]
           const deletable = targetPaths.filter((path) => !locked(path))
+          const actions: MenuAction[] = [
+            ...(isDir && !many
+              ? ([
+                  { key: "newFile", label: t("files.newFile"), icon: <FilePlus />, onSelect: () => startNew("newFile", entry.path) },
+                  { key: "newFolder", label: t("files.newFolder"), icon: <FolderPlus />, onSelect: () => startNew("newFolder", entry.path) },
+                  { key: "upload", label: t("files.upload"), icon: <Upload />, onSelect: () => void upload(entry.path) },
+                  "separator",
+                ] as MenuAction[])
+              : []),
+            { key: "copy", label: t("files.copy"), icon: <Copy />, onSelect: () => store().setClipboard(targetPaths, "copy") },
+            { key: "cut", label: t("files.cut"), icon: <Scissors />, disabled: deletable.length === 0, onSelect: () => store().setClipboard(deletable, "cut") },
+            { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, disabled: !clipboard, onSelect: () => void paste(rowFolder(entry)) },
+            { key: "save", label: t("files.save"), icon: <Download />, onSelect: () => void store().saveEntries(targetPaths) },
+            ...(canReveal && !many ? ([{ key: "reveal", label: t("files.reveal"), icon: <FolderOpen />, onSelect: () => reveal(entry.path) }] as MenuAction[]) : []),
+            "separator",
+            ...(!many && !isDir && fileKindOf(entry.path) === (plainTypst ? "typst" : "markdown") && !isMain
+              ? ([{ key: "main", label: t("files.setMain"), icon: <Star />, onSelect: () => store().setMainFile(entry.path) }] as MenuAction[])
+              : []),
+            ...(!many && !locked(entry.path) ? ([{ key: "rename", label: t("files.rename"), icon: <Pencil />, onSelect: () => setEditing({ type: "rename", path: entry.path }) }] as MenuAction[]) : []),
+            deletable.length === 0
+              ? { key: "delete", label: t("files.delete"), icon: <Lock />, disabled: true, onSelect: () => undefined }
+              : { key: "delete", label: t("files.delete"), icon: <Trash2 />, destructive: true, onSelect: () => setDialog({ type: "delete", paths: deletable }) },
+          ]
           return (
             <li key={entry.path} role="treeitem" aria-expanded={isDir ? isOpen : undefined} aria-selected={isSelected}>
+              <ContextMenu>
+              <ContextMenuTrigger asChild>
               <div
                 draggable
+                onContextMenu={() => !selected.has(entry.path) && setSelected(new Set([entry.path]))}
                 onDragStart={(event) => dragStart(event, entry)}
                 onDragEnd={() => setDropTarget(null)}
                 onDragOver={(event) => dragOver(event, rowFolder(entry))}
@@ -260,16 +355,34 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                 )}
                 style={{ paddingInlineStart: `${depth * 10 + 6}px` }}
               >
-                <button type="button" onClick={(event) => void clickRow(event, entry)} className="flex h-full min-w-0 flex-1 items-center gap-1 text-start outline-none focus-visible:underline">
-                  {isDir ? (
-                    <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground transition-transform", isOpen ? "rotate-90" : "rtl:rotate-180")} />
-                  ) : (
-                    <span className="w-3 shrink-0" />
-                  )}
-                  <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
-                  <span dir="auto" className="truncate">{baseName(entry.path)}</span>
-                  {isMain && <Star className="size-3 shrink-0 fill-current text-muted-foreground" aria-label={t("files.main")} />}
-                </button>
+                {renaming ? (
+                  <div className="flex h-full min-w-0 flex-1 items-center gap-1">
+                    {isDir ? <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground", isOpen ? "rotate-90" : "rtl:rotate-180")} /> : <span className="w-3 shrink-0" />}
+                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
+                    <InlineName
+                      initial={baseName(entry.path)}
+                      parent={parentOf(entry.path)}
+                      existing={new Set(files.map((file) => file.path).filter((path) => path !== entry.path))}
+                      label={t("files.rename")}
+                      onCancel={() => setEditing(null)}
+                      onSubmit={async (name) => {
+                        setEditing(null)
+                        await store().rename(entry.path, name)
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <button type="button" onClick={(event) => void clickRow(event, entry)} className="flex h-full min-w-0 flex-1 items-center gap-1 text-start outline-none focus-visible:underline">
+                    {isDir ? (
+                      <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground transition-transform", isOpen ? "rotate-90" : "rtl:rotate-180")} />
+                    ) : (
+                      <span className="w-3 shrink-0" />
+                    )}
+                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
+                    <span dir="auto" className="truncate">{baseName(entry.path)}</span>
+                    {isMain && <Star className="size-3 shrink-0 fill-current text-muted-foreground" aria-label={t("files.main")} />}
+                  </button>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -278,55 +391,37 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-48">
-                    {isDir && !many && (
-                      <>
-                        <DropdownMenuItem onSelect={() => setDialog({ type: "newFile", parent: entry.path })}>
-                          <FilePlus /> {t("files.newFile")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setDialog({ type: "newFolder", parent: entry.path })}>
-                          <FolderPlus /> {t("files.newFolder")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => void upload(entry.path)}>
-                          <Upload /> {t("files.upload")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    <DropdownMenuItem onSelect={() => store().setClipboard(targetPaths, "copy")}>
-                      <Copy /> {t("files.copy")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled={deletable.length === 0} onSelect={() => store().setClipboard(deletable, "cut")}>
-                      <Scissors /> {t("files.cut")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled={!clipboard} onSelect={() => void paste(rowFolder(entry))}>
-                      <ClipboardPaste /> {t("files.paste")}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {!many && !isDir && fileKindOf(entry.path) === "markdown" && !isMain && (
-                      <DropdownMenuItem onSelect={() => store().setMainFile(entry.path)}>
-                        <Star /> {t("files.setMain")}
-                      </DropdownMenuItem>
-                    )}
-                    {!many && (
-                      <DropdownMenuItem onSelect={() => setDialog({ type: "rename", entry })}>
-                        <Pencil /> {t("files.rename")}
-                      </DropdownMenuItem>
-                    )}
-                    {deletable.length === 0 ? (
-                      <DropdownMenuItem disabled>
-                        <Lock /> {t("files.delete")}
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem variant="destructive" onSelect={() => setDialog({ type: "delete", paths: deletable })}>
-                        <Trash2 /> {t("files.delete")}
-                      </DropdownMenuItem>
-                    )}
+                    <ActionItems actions={actions} kind="dropdown" />
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="min-w-48">
+                <ActionItems actions={actions} kind="context" />
+              </ContextMenuContent>
+              </ContextMenu>
             </li>
           )
         })}
+        {/* The empty part under the rows: a right click here is for the project's root */}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <li role="none" className="min-h-6 flex-1" onClick={() => setSelected(new Set())} />
+          </ContextMenuTrigger>
+          <ContextMenuContent className="min-w-48">
+            <ActionItems
+              kind="context"
+              actions={[
+                { key: "newFile", label: t("files.newFile"), icon: <FilePlus />, onSelect: () => startNew("newFile", "") },
+                { key: "newFolder", label: t("files.newFolder"), icon: <FolderPlus />, onSelect: () => startNew("newFolder", "") },
+                { key: "upload", label: t("files.upload"), icon: <Upload />, onSelect: () => void upload("") },
+                "separator",
+                { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, disabled: !clipboard, onSelect: () => void paste("") },
+                ...(canReveal ? (["separator", { key: "reveal", label: t("files.reveal"), icon: <FolderOpen />, onSelect: () => reveal("") }] as MenuAction[]) : []),
+              ]}
+            />
+          </ContextMenuContent>
+        </ContextMenu>
       </ul>
 
       {dropTarget !== null && (
@@ -340,80 +435,96 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
         </div>
       )}
 
-      <NameDialog dialog={dialog} onClose={() => setDialog(null)} onOpen={onOpen} />
       <DeleteDialog dialog={dialog} onClose={() => setDialog(null)} />
     </div>
   )
 }
 
-function NameDialog({ dialog, onClose, onOpen }: { dialog: Dialog; onClose: () => void; onOpen?: () => void }) {
+interface InlineNameProps {
+  /** The text to start from: empty for something new, the current name for a rename. */
+  initial: string
+  /** The folder the name is in, and the paths that exist (the entry being renamed left out), to check the name. */
+  parent: string
+  existing: ReadonlySet<string>
+  /** A new file without an extension is a Markdown file. */
+  markdownByDefault?: boolean
+  label: string
+  placeholder?: string
+  onSubmit: (name: string) => void | Promise<void>
+  onCancel: () => void
+}
+
+/**
+ * The name of a new entry, or of a rename, typed in the row of the tree. Enter (or leaving the field with a good name) keeps it,
+ * Escape (or leaving it empty or unchanged) drops it; a name that cannot be used is shown in red under the field.
+ */
+function InlineName({ initial, parent, existing, markdownByDefault = false, label, placeholder, onSubmit, onCancel }: InlineNameProps) {
   const { t } = useTranslation()
-  const files = useEditorStore((state) => state.files)
-  const [name, setName] = useState("")
-  const [shownFor, setShownFor] = useState<Dialog>(null)
+  const [name, setName] = useState(initial)
+  const input = useRef<HTMLInputElement>(null)
+  const finished = useRef(false)
+  const born = useRef(0)
 
-  const relevant = dialog && dialog.type !== "delete" ? dialog : null
-  // Start each opening with the right text: empty for new things, the current name for a rename
-  if (relevant !== shownFor) {
-    setShownFor(relevant)
-    setName(relevant?.type === "rename" ? baseName(relevant.entry.path) : "")
-  }
-  if (!relevant) return null
+  // The name is selected without its extension, so a rename keeps `.md`
+  useEffect(() => {
+    const field = input.current
+    if (!field) return
+    born.current = performance.now()
+    field.focus()
+    const dot = initial.lastIndexOf(".")
+    field.setSelectionRange(0, dot > 0 ? dot : initial.length)
+  }, [initial])
 
-  const parent = relevant.type === "rename" ? parentOf(relevant.entry.path) : relevant.parent
-  const existing = new Set(files.map((file) => file.path))
-  if (relevant.type === "rename") existing.delete(relevant.entry.path)
   const typed = name.trim()
-  // A new file without an extension is a Markdown file
-  const finalName = relevant.type === "newFile" && typed && !typed.includes(".") ? `${typed}.md` : typed
-  const problem = typed ? nameProblem(finalName, parent, existing) : null
+  const finalName = markdownByDefault && typed && !typed.includes(".") ? `${typed}.md` : typed
+  const plain = useEditorStore((state) => state.kind) === "typst"
+  const problem = typed && finalName !== initial ? nameProblem(finalName, parent, existing, plain) : null
 
-  const submit = async () => {
-    if (!typed || problem) return
-    const store = useEditorStore.getState()
-    if (relevant.type === "newFile") {
-      await store.createFile(parent, finalName)
-      onOpen?.()
-    } else if (relevant.type === "newFolder") await store.createFolder(parent, finalName)
-    else await store.rename(relevant.entry.path, finalName)
-    onClose()
+  const finish = (keep: boolean) => {
+    if (finished.current) return
+    if (keep && typed && finalName !== initial) {
+      // A name that cannot be used keeps the field open; leaving it drops the name
+      if (problem) return
+      finished.current = true
+      void onSubmit(finalName)
+      return
+    }
+    finished.current = true
+    onCancel()
   }
-
-  const title = relevant.type === "newFile" ? t("files.newFile") : relevant.type === "newFolder" ? t("files.newFolder") : t("files.rename")
 
   return (
-    <ResponsiveDialog
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={title}
-      footer={
-        <>
-          <Button variant="outline" size="lg" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button size="lg" disabled={!typed || problem !== null} onClick={() => void submit()}>
-            {relevant.type === "rename" ? t("common.save") : t("common.create")}
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-1.5">
-        <Input
-          dir="auto"
-          autoFocus
-          value={name}
-          placeholder={relevant.type === "newFile" ? t("files.namePlaceholder") : relevant.type === "newFolder" ? t("files.folderPlaceholder") : undefined}
-          aria-label={t("files.name")}
-          aria-invalid={problem !== null}
-          onChange={(event) => setName(event.target.value)}
-          onKeyDown={(event) => event.key === "Enter" && void submit()}
-          className="h-10"
-        />
-        <p className={cn("h-4 text-xs", problem ? "text-destructive" : "text-transparent")} role={problem ? "alert" : undefined}>
-          {problem ? t(`files.problem.${problem}`) : "."}
+    <div className="relative min-w-0 flex-1">
+      <Input
+        ref={input}
+        dir="auto"
+        value={name}
+        placeholder={placeholder}
+        aria-label={label}
+        aria-invalid={problem !== null}
+        onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => {
+          event.stopPropagation()
+          if (event.key === "Enter") finish(true)
+          else if (event.key === "Escape") finish(false)
+        }}
+        onBlur={(event) => {
+          // The menu that started a new file gives the focus back to its button as it closes: the field takes it again
+          if (event.timeStamp - born.current < 400) return void requestAnimationFrame(() => input.current?.focus())
+          if (problem) {
+            finished.current = true
+            onCancel()
+          } else finish(true)
+        }}
+        // Looks like the row's own text (same size and place, no box); only a continuous line under it shows that it is being edited
+        className={cn("h-full w-full rounded-none border-0! bg-transparent! p-0 text-xs shadow-[inset_0_-1px_0_0_var(--info)]! ring-0! outline-none focus-visible:border-0! focus-visible:ring-0! aria-invalid:border-0! aria-invalid:ring-0! dark:bg-transparent! md:text-xs pointer-coarse:text-[13px]", problem && "text-destructive shadow-[inset_0_-1px_0_0_var(--destructive)]!")}
+      />
+      {problem && (
+        <p role="alert" className="absolute start-0 top-full mt-0.5 max-w-full rounded-sm border border-destructive bg-popover px-1.5 py-0.5 text-[11px] whitespace-normal text-destructive">
+          {t(`files.problem.${problem}`)}
         </p>
-      </div>
-    </ResponsiveDialog>
+      )}
+    </div>
   )
 }
 

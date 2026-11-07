@@ -5,7 +5,12 @@
 //   themes   every theme with its colors as hex strings (src/themes.typ; the Formatex app adds the user's themes to that file)
 //   components  every component: its tags and its docs (what it is for in en and fa, and an example); the skill generator of the app reads them
 //   issues   things that disagree: a `children` entry that is not a tag, a `scoped` tag that no tag lists as a child
-#import "/components/_registry.typ": all-schemas, component-tags, component-docs
+#import "/components/_registry.typ": all-schemas as built-in-schemas, component-tags as built-in-component-tags, component-docs as built-in-component-docs
+// The components of the project itself (the `components` setting): a tag has autocomplete when its file gives a schema
+#import "/src/lib/local-components.typ": local-schemas, local-components, local-docs
+#let all-schemas = built-in-schemas + local-schemas
+#let component-tags = built-in-component-tags + local-components.pairs().map(((label, c)) => (label, c.tags)).to-dict()
+#let component-docs = built-in-component-docs + local-docs
 #import "/src/lib/option-schema.typ": option-schemas
 #import "/src/lib/config-schema.typ": config-schemas
 #import "/src/themes.typ": themes
@@ -32,10 +37,15 @@
 #let config = (config: with-theme-values(config-schemas.config), "front-matter": with-theme-values(config-schemas.at("front-matter")))
 #let theme-data = themes.pairs().map(((name, t)) => (name, t.pairs().map(((key, value)) => (key, if type(value) == color { value.to-hex() } else { value })).to-dict())).to-dict()
 
-#let components = component-tags.pairs().map(((name, names)) => (name, (tags: names, docs: component-docs.at(name, default: none)))).to-dict()
+#let components = component-tags.pairs().map(((name, names)) => (name, (
+  // `file` is the project file of a component of the project; the tags it gives no schema for are left out (no autocomplete)
+  tags: names.filter(n => n in all-schemas),
+  docs: component-docs.at(name, default: none),
+  ..if name in local-components { (file: local-components.at(name).file) },
+))).to-dict()
 
 // A component that has docs must give both languages and an example (the skill generator of the app reads them)
-#let docs-issues = component-docs.pairs().map(((name, d)) => {
+#let docs-issues = built-in-component-docs.pairs().map(((name, d)) => {
   let missing = ()
   for lang in ("en", "fa") {
     if d.at(lang, default: (:)).at("about", default: "").trim() == "" { missing.push(lang + ".about") }

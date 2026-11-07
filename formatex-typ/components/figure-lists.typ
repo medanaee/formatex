@@ -9,14 +9,18 @@
 
   show outline.entry: it => context {
     let el = it.element
-    if el.caption == none { return none }
-    let caption = el.caption.body
-    let entry-rtl = content-dir(caption) != ltr
+    // A figure may have a number only, a caption only, or both; a figure with neither is not listed
+    let caption = if el.caption == none { [] } else { el.caption.body }
+    let has-caption = caption != []
+    if el.numbering == none and not has-caption { return none }
+    let entry-rtl = content-dir(if has-caption { caption } else { el.supplement }) != ltr
     let entry-dir = if d == "rtl" { rtl } else if d == "ltr" { ltr } else if entry-rtl { rtl } else { ltr }
     let fa-digits = if nums == "auto" { entry-rtl } else { nums == "rtl" }
     set text(dir: entry-dir)
     // Isolates keep a caption's own direction inside a forced-direction list.
-    let isolated = [#if entry-rtl { "\u{2067}" } else { "\u{2066}" }#reference-text(el, fa-digits): #caption#"\u{2069}"]
+    let number = if el.numbering != none { reference-text(el, fa-digits) }
+    let shown = if number != none and has-caption [#number: #caption] else if number != none { number } else { caption }
+    let isolated = [#if entry-rtl { "\u{2067}" } else { "\u{2066}" }#shown#"\u{2069}"]
     let line = if pages { [#isolated #box(width: 1fr, it.fill) #page-digits(el, fa-digits)] } else { isolated }
     link(el.location(), block(width: 100%, line))
   }
@@ -77,7 +81,7 @@
     about: `````md
 Automatic lists of figures (`<lof>`), tables (`<lot>`) and code listings (`<lol>`), built from the captions in the document, with page numbers.
 
-- `<lof>` lists every `<fig>`, `<tree>` and `<chart>` that has a caption; `<lot>` every table with a caption (`{caption="..."}` above it); `<lol>` every `<code>` with a caption. Things without a caption are not listed.
+- `<lof>` lists every `<fig>`, `<tree>` and `<chart>` that has a number or a caption; `<lot>` every table that has one (`{caption="..."}` above it); `<lol>` every `<code>` that has one. An entry reads «شکل ۱: توضیح», «شکل ۱» (number only) or «توضیح» (caption only). `lof="false"` on a figure, `lot="false"` on a table and `lol="false"` on a listing leave it out.
 - `dir`, `numbers`, `title`, `pages="false"` (captions only) and `break` (`true`, `before`, `after`) are the options; each entry keeps its caption's own direction. Use `break="after"` on the last list to keep the lists on one page.
 `````.text,
   ),
@@ -85,7 +89,7 @@ Automatic lists of figures (`<lof>`), tables (`<lot>`) and code listings (`<lol>
     about: `````md
 فهرست خودکار شکل‌ها (`<lof>`)، جدول‌ها (`<lot>`) و کدها (`<lol>`) که از عنوان‌های (caption) سند ساخته می‌شود، با شمارهٔ صفحه.
 
-- `<lof>` هر `<fig>`، `<tree>` و `<chart>` دارای عنوان را فهرست می‌کند؛ `<lot>` هر جدول دارای عنوان را (`{caption="..."}` بالای جدول)؛ `<lol>` هر `<code>` دارای عنوان را. چیزهای بدون عنوان فهرست نمی‌شوند.
+- `<lof>` هر `<fig>`، `<tree>` و `<chart>` دارای شماره یا عنوان را فهرست می‌کند؛ `<lot>` هر جدول دارای آن را (`{caption="..."}` بالای جدول)؛ `<lol>` هر `<code>` دارای آن را. هر ورودی «شکل ۱: توضیح»، «شکل ۱» (فقط شماره) یا «توضیح» (فقط عنوان) است. `lof="false"` روی شکل، `lot="false"` روی جدول و `lol="false"` روی کد آن را بیرون می‌گذارد.
 - گزینه‌ها: `dir`، `numbers`، `title`، `pages="false"` (فقط عنوان‌ها) و `break` (`true`، `before`، `after`)؛ هر ورودی جهت عنوان خودش را نگه می‌دارد. روی آخرین فهرست `break="after"` بگذارید تا فهرست‌ها در یک صفحه بمانند.
 `````.text,
   ),

@@ -191,7 +191,7 @@ cover:
 - **Merging:**
   - The front matter is merged over `config.toml`: tables are merged key by key, and anything else is replaced.
   - For example, `font: {latin: Lexend}` changes only the Latin font and keeps `config.toml`'s other font settings.
-  - The same goes for `heading:`: any of its keys (`numbering`, `number-suffix`, `underline`, `fill`, `max-level`, `color`) can be set for one document, and the rest come from `config.toml`. An empty value (`color:`) means the default.
+  - The same goes for `heading:`: any of its keys (`numbering`, `number-suffix`, `max-numbering-level`, `underline`, `fill`, `max-level`, `color`) can be set for one document, and the rest come from `config.toml`. An empty value (`color:`) means the default.
 - **Turning parts on:** a document gets a header only if it has a `header:` table, and a cover only if it has a `cover:` table. Inside either one, `enabled: false` turns it off again.
 - **Not printed:** the front matter is stripped before rendering. A document without front matter simply has no header and no cover.
 - **Quoting:**
@@ -213,6 +213,7 @@ number-suffix = "."   # text after the number
 
 - `number-prefix`: text before the number: `"("` with `number-suffix = ")"` gives «(۱) مقدمه». Default `""`. Like the suffix, only the headings themselves show it.
 - `number-suffix`: `""` gives «۱ مقدمه», `"."` gives «۱. مقدمه», `" -"` gives «۱ - مقدمه». Default `""`. It applies to the headings themselves; the table of contents, `<ref>` and the page header's `{section-number}` show the bare number.
+- `max-numbering-level`: the deepest level that gets a number. `max-numbering-level = 2` numbers `#` and `##` and leaves `###` and below without a number (also in the table of contents and in `<ref>`). Levels count from the document's top heading. Default `6`.
 - The old top-level `heading-numbering = true` still works when `[heading] numbering` is not set.
 - Headings start at `##`. Numbering skips the unused level, so headings are numbered `1` and `1.1`, not `0.1`.
 - Numbering is continuous across the document.
@@ -400,6 +401,7 @@ column-dir: rtl   # which column fills first
 ```toml
 todo = "show"      # show | hide
 answers = "show"   # show | hide | end
+exercise-toc = false   # true: exercise titles in the table of contents
 ```
 
 | Key | Value | Effect |
@@ -411,6 +413,7 @@ answers = "show"   # show | hide | end
 | | `end` | Nothing under the questions; `<answers></answers>` prints all answers together («پاسخ‌ها» / "Answers"). |
 
 - Both are top-level keys: in `config.toml` put them before any `[table]`.
+- `exercise-toc = true` lists the title of every `<exercise>` in the `<toc>`; one question can say `toc="false"` (or, when the setting is off, `toc="true"`), and `answers="..."` on a question overrides `answers` for it.
 - Override per document in the front matter (`answers: hide`) or per build with `--input todo=hide` / `--input answers=end`. One source then gives the draft, the final version, the question sheet and the answer key.
 - Any other value is a compile error.
 
@@ -442,7 +445,7 @@ The feel sets the default corner rounding of every rounded element, and the defa
 | `<progress>` | Thin square bars with an outlined track, square dots | Slightly rounded bars and dots | Thicker pill-shaped bars, round dots |
 | `<compare>` columns | No fill, a colored rule above each column, plain ✓ / ✗ | Tinted panels with a thin border | Stronger tint, no border, larger corners, circled ✓ / ✗ |
 | `<letter>` | Plain labels, plain rule, number block without a frame | Number block in a thin frame, accent labels | Tinted number block, thicker rounded rule |
-| `<exercise>` | No frame; bold head in the heading color, ending with a period | Light accent-tinted card | The same card, rounder |
+| `<exercise>` | No frame; bold head in the heading color, ending with a period | Light card tinted with the secondary color | The same card, rounder |
 | `<choices>` markers | Plain text: "a)" | Letter in a small rounded square | Letter in a circle |
 | Fonts | New Computer Modern + XB Niloofar | Inter + IRANSans | Lexend + Pelak |
 
@@ -510,6 +513,32 @@ frame = true
 ```
 
 Defaults for every `<chat>`: look, names, icons, colors, frame and bubble width. Each key is described in <a href="#chat-section">Chat</a>. Override per document with a `chat:` map in the front matter; attributes on a `<chat>` tag win over both.
+
+### Captions and numbering (`[figure]`, `[table]`, `[code]`, `[list]`)
+
+A figure, a table, a code listing and a list can carry a **number** («شکل ۱»), a **caption**, or both; the two are independent:
+
+| | Reads |
+| --- | --- |
+| number only | «شکل ۱» |
+| caption only | «توضیح» |
+| both | «شکل ۱: توضیح» |
+
+```toml
+[figure]
+numbering = true             # every figure is numbered (the default)
+caption-position = "below"   # above | below
+
+[table]
+numbering = false            # default: off
+caption-position = "above"
+```
+
+- **`numbering`** per kind: `[figure]` is on by default (a figure is numbered with or without a caption); `[table]`, `[code]` and `[list]` are off by default. With a kind's `numbering` on, an item gets a number **as soon as it has a caption**; with it off it gets the caption only. Each item overrides it: `numbering="true"` on a table (even without a caption: «جدول ۱» alone) or `numbering="false"` on one figure.
+- **`caption-position`** (`above` / `below`) per kind, and per item with the same name. Defaults: figures and lists below, tables and code above.
+- **Where to write it:** `<fig numbering="false" caption-position="above" lof="false">` (the caption is a `<caption>` tag inside); `<code caption="..." numbering="true" lol="false">`; for a table and a list the `{...}` line above it: `{caption="..." numbering=true caption-position=below lot=false}`.
+- **In the lists:** `<lof>`, `<lot>` and `<lol>` list every figure, table and listing that has a number or a caption, as «شکل ۱: توضیح», «شکل ۱» or «توضیح». `lof="false"` (figure), `lot=false` (table) or `lol="false"` (code) leaves one out; lists of items (`[list]`) have no list of their own.
+- `<ref>` to a numbered item prints «شکل ۱»; to one with a caption only, the caption.
 
 ### Page header (front matter)
 
@@ -609,6 +638,67 @@ bibliography:
 - Every key is optional. Without them: `examples/references.bib`, `ieee`, «منابع», and the document's `dir` (`auto` unless forced).
 - Attributes on the `<bibliography>` tag override them.
 - Only the main file's front matter counts, as with the header.
+
+### Variables and code (`vars`, `var-types`, `{{ }}`) {#vars-section}
+
+Define values once, then print them, test them, or build parts of the document with them. The values are `vars` in the front matter (or `[vars]` in `config.toml` for every document of the project); the rules of a variable are `var-types`:
+
+```yaml
+vars:
+  course: "Calculus 1"
+  year: 1405
+  draft: true
+  audience: teacher
+  level: 2
+  width: 12em
+  exam: data/exam.json            # a data file
+var-types:
+  audience: [student, teacher, parent]   # a list: the values it may have
+  level: { min: 1, max: 3 }              # the range of a number
+  width: length                          # a type: bool, number, length, color, markdown, json
+  exam: json                             # a file (.json .yaml .toml .csv); an object written here is the data itself
+```
+
+- A variable with no rule is what it looks like (a number, true / false, a text). A value outside its rule is an error with its line.
+- `--input var.audience=teacher` overrides a value for one build (the same file for another reader), and is read by its rule.
+- `title`, `subtitle`, `author`, `date` and the other keys of `cover` can always be read, and so can every setting as `setting.theme`, `setting.chat.frame`... (what is written, else the default; `--input theme=...` counts).
+
+**`{{ code }}` is Typst.** It can stand in the text and in the value of any attribute (and in the texts of the settings, `cover.title: "{{ course }}"`):
+
+```markdown
+# {{ course }}, term {{ year }}
+<alert type="{{ if draft { 'warning' } else { 'info' } }}" title="{{ course }}">
+Level {{ level }} of {{ calc.pow(2, level) }}.
+</alert>
+```
+
+A name that is not a variable is an error; `let`, `if` / `else if` / `else`, `for`, lists `(1, 2)`, tables `(a: 1)`, `json("data/x.json")`, `upper(...)` and the rest of Typst are there. Typst has only double quotes, so inside an attribute written with them use single quotes (`'warning'`): they are read as text. `\{{` prints `{{`. Code (fenced and inline), math, comments and `<typ>` blocks are left alone.
+
+**Markdown goes in `[ ... ]`.** It is Markdown, not Typst markup: tags, headings, lists and `{{ }}` of its own can stand in it, to any depth. A part that is not chosen is not in the document at all: its headings take no number, its `<include>` is not read.
+
+```markdown
+{{
+  if audience == "teacher" [
+    ## Answer key
+
+    * Level {{ level }}: see the last page.
+  ] else if audience == "parent" [
+    ## For parents
+  ] else [ Good luck! ]
+}}
+
+{{
+  for q in exam.questions [
+    1. {{ q.text }} ({{ q.score }} marks)
+  ]
+}}
+```
+
+An unmatched bracket in the text is written `\[` or `\]`. A `{{ }}` alone on its lines gives a block (with a blank line around it); anywhere else it gives one line of text.
+
+**Local variables and changing variables.** `let x = ...` makes a variable that lives in that `{{ }}`. `n += 1` or `level = 3` on a variable of `vars` changes it for the `{{ }}`s that follow, in the order of the document (the rules are checked again after it), and prints nothing. The header, the footer and the cover are set before the text and see the values as they were written.
+
+**Values of the page.** `PAGE`, `PAGES`, `SECTION` and `SECTION_NUMBER` are known only when the pages are made. A `{{ }}` that names one runs then, not when the text is read: `Page {{ PAGE }} of {{ PAGES }}`, `{{ if PAGE == 1 [ **first page** ] else [ later ] }}`. Because of that it cannot change variables, cannot stand in the attribute of a tag, and should give text (a heading made there is not numbered or listed). A name in capitals is for these values, so a variable cannot be named that way. The `<typ>` tag sees `vars` and `setting` as they are written.
 
 ---
 
@@ -793,7 +883,7 @@ Put a `{...}` line directly above a table (a blank line in between is fine):
 - **Full-width columns** are sized like a browser does:
   - If the content fits, every column grows in proportion to its natural width.
   - Otherwise narrow columns keep their width, and wide ones share the rest and wrap.
-- **Numbering:** a table with a `caption` or an `#id` becomes a numbered table. The label follows the caption's language: «جدول ۱» or "Table 1". `<ref to="tbl-fonts">` prints «جدول ۱» or "Table 1", following the surrounding paragraph's language.
+- **Numbering and caption:** `caption` gives the table a caption; whether it also gets a number («جدول ۱») follows `[table] numbering` (off by default) and `numbering` on the table. See *Captions and numbering*. `<ref to="tbl-fonts">` prints «جدول ۱» or "Table 1" for a numbered table, following the surrounding paragraph's language.
 - **Syntax:**
   - Options are space-separated `key=value` pairs, in any order.
   - Markdown inside `caption` is not parsed.
@@ -801,6 +891,8 @@ Put a `{...}` line directly above a table (a blank line in between is fine):
 - **Ignored lines:** a `{...}` line that isn't followed by a table or a list (see <a href="#lists-section">Lists</a>), or that is inside a fenced code block, is left as normal text.
 
 ### Lists {#lists-section}
+
+**Two lists in a row:** a blank line does not end a list in Markdown, but two blank lines or more followed by an item of the same depth do: that is a list of its own. It gets its own settings, so a `{guides=tree}` line above the first list does not reach the second.
 
 Bulleted (`-`, `*`, `+`) and numbered (`1.`, `1)`) lists work as in any Markdown. Numbered items can also be written with Persian digits: `۱.` or `۲)` (Arabic-Indic `١` too) make a real numbered list, exactly like `1.`:
 
@@ -828,6 +920,7 @@ prefix = ""                   # text before the number
 suffix = "."                  # text after the number
 marker = "disc,circle,dash"   # bullets, one per nesting level
 indent = "1em"                # extra indent of every list
+guides = "none"                # lines between the levels of bulleted lists: none | line | tree
 ```
 
 | Key | Values | Default |
@@ -837,6 +930,8 @@ indent = "1em"                # extra indent of every list
 | `suffix` | Text right after the number: `"."` → «۱.», `")"` → «۱)», `"-"`, `":"`, or `""` for none | `"."` |
 | `marker` | Bullet of unnumbered lists: a character (`"•"`, `"–"`, `"★"`) or a name: `disc` •, `circle` ◦, `square` ▪, `dash` –, `triangle` ‣, `arrow` →, `check` ✓, `star` ★, `none`. Comma-separated values give one bullet per nesting level: `"disc,circle,dash"`. | Typst's (• ‣ –) |
 | `indent` | Extra indent of every list: `"1.5em"`, `"5mm"`, or a bare number in points | none |
+| `marker` note | Every marker gets a box of the same width, so each level of a nested list steps in by the same amount whichever marker (`•`, `‣`, `–`) it has. | |
+| `guides` | Lines between the levels of a bulleted list: `none`, `line` (one line down the side of each nested level, with no bullets) or `tree` (the same line with a branch to every item, like a folder tree). The top level has none, and numbered lists are not changed. A list sets its own with `{guides=tree}`, even `{guides=none}` when the document turns them on. | `none` |
 
 - `numbers`, `prefix` and `suffix` apply to every nesting level.
 - Override them per document in front matter, key by key; the other keys keep their `config.toml` values:
@@ -858,10 +953,10 @@ indent = "1em"                # extra indent of every list
 |--------|--------|
 | `numbers`, `prefix`, `suffix`, `marker`, `indent` | As in `[list]`, for this list and the lists nested in it. |
 | `start` | Numbered lists only: the first number. `start=3` starts at «۳.», "c.", «ج», ... |
-| `caption` | A numbered caption, centered below the list: «فهرست ۱: ...» / "List 1: ...". Quote it if it has spaces; Markdown inside it is not parsed. |
+| `caption` | A caption, centered under the list (`caption-position` moves it); with `numbering` on it follows the number: «فهرست ۱: ...» / "List 1: ...". Quote it if it has spaces; Markdown inside it is not parsed. |
 | `#id` | Target for `<ref>`. Numbers the list even without a caption. |
 
-- **Numbered lists:** with `caption` or `#id` the list becomes a numbered block like a figure. The list stays on the start side and may break across pages; the label follows the caption's language. `<ref to="list-steps">` prints «فهرست ۱» or "List 1", following the surrounding paragraph's language.
+- **Captioned lists:** `caption` gives the list a caption under it; whether it also gets a number («فهرست ۱») follows `[list] numbering` (off by default) and `numbering` on the list. The list stays on the start side and may break across pages. `<ref to="list-steps">` prints «فهرست ۱» or "List 1" for a numbered list, following the surrounding paragraph's language.
 - **Extent:** the options cover the list up to the first line after a blank line that is neither indented nor a list item. A list that follows after only a blank line merges into it and gets the same options.
 - **Errors:** unknown options are compile errors, and so is `start` on a bulleted list. Inside fenced code blocks the line is left alone.
 
@@ -1239,7 +1334,7 @@ content((1.2, 1.2), [نقطهٔ $P$])
   - Every `cetz.draw` function is available without importing: `line`, `rect`, `circle`, `arc`, `bezier`, `content`, `grid`, `group`, `set-style`, and so on.
   - `cetz` itself and the active `theme` dictionary are available too: `theme.fg`, `theme.bg`, `theme.accent`, `theme.heading`, `theme.muted`, `theme.rule`.
 - **Code** runs in Typst code mode, so `let`, `for`, functions, `calc.*`, math (`$...$`) and `text(...)[...]` all work.
-- **LaTeX math in labels:** write math in drawings the same way as in the text, `[کاشی‌های $B_r \times B_c$]` or `content((0, 0), $\frac{a}{b}$)`. Math that contains `\` or `{` is converted from LaTeX automatically; simple math such as `$x^2$` or `$P$` is the same in both syntaxes. A `$` inside a string or a comment, or written as `\$` in text, is left alone.
+- **LaTeX math in labels:** write math in drawings the same way as in the text, `[کاشی‌های $B_r \times B_c$]` or `content((0, 0), $\frac{a}{b}$)`. Math that contains `\` or `{` is converted from LaTeX automatically; simple math such as `$x^2$` or `$P$` is the same in both syntaxes. A string that is nothing but a formula (`"$x_{n-1}$"`, a habit from other tools) is the formula too, not text with dollar signs. Any other `$` inside a string or a comment, or written as `\$` in text, is left alone.
 - **Markdown habits in labels:** `[**bold**]` is bold and `[page #03]` prints the `#`. A `#` starts code only before a name, `(`, `{` or `[` (`[#text(fill: theme.accent)[...]]`).
 - **Labels in boxes:** a fixed `rect` with a `content` on top lets long text spill out. Let the label draw its own frame instead, which grows with the text: `content((0, 0), box(width: 3cm, align(center)[جمع سوگیری]), frame: "rect", padding: 0.2, fill: theme.bg, stroke: theme.rule, name: "bias")`. Arrows can then use `"bias.north"`, `"bias.west"`, ... Giving the `<fig>` a `height` shrinks the whole drawing, text included, so leave it out unless the drawing is too big.
 - **Theme-aware:**
@@ -1628,6 +1723,29 @@ A taller box that sets the row height.
 </grid>
 ```
 
+### `<p>`: a paragraph with its own look
+
+`<p>` gives a paragraph (or several) a look of its own. Put a blank line after the opening tag and before the closing one:
+
+```markdown
+<p size="14pt" align="center" weight="bold" color="accent">
+
+A centered, larger, bold line in the accent color.
+
+</p>
+
+<p line-spacing="170" indent="1.5em" justify="true">
+
+A paragraph with airy lines and an indented first line.
+
+</p>
+```
+
+- Text: `font` (the document's fonts stay as fallbacks), `size` (`14pt`, `1.2em`, `120%` of the size around it), `weight` (`thin` … `bold` … `black`), `color` (a preset, `accent` or hex) and `dir`.
+- Layout: `align` (`start`, `end`, `center`, `left`, `right`), `justify`, `indent` (first line) and `above` / `below` (space around it).
+- Spacing: `line-spacing`, `letter-spacing` and `word-spacing`, in percent, like `[paragraph]` in `config.toml`; each overrides it for this paragraph.
+- What is left out comes from the document. In the app's visual view every paragraph has a gear: the first setting wraps the paragraph in a `<p>`.
+
 ### `<align>`: horizontal alignment
 
 Aligns everything inside it. Without an attribute it centers:
@@ -1803,7 +1921,10 @@ const b = a + 1;
 | `lang` | Highlighting language. Default: the file extension, or the fence language. |
 | `lines` | `10-20`: show only these lines. Line numbers keep the file's numbering. |
 | `highlight` | `3`, `3,7-9`: lines drawn with a tinted band. Uses the shown line numbers. |
-| `caption` | Numbered caption above the code: «کد ۱: ...» / "Listing 1: ...". Not parsed as Markdown. |
+| `caption` | Caption of the code, above it by default; with `numbering` on it follows the number: «کد ۱: ...» / "Listing 1: ...". Not parsed as Markdown. |
+| `numbering` | `true` / `false`: number the listing («کد ۱»). Default: `[code] numbering` (off). |
+| `caption-position` | `above` / `below`. Default: `[code] caption-position` (`above`). |
+| `lol` | `false` leaves the listing out of `<lol>`. |
 | `id` | Target for `<ref>`. Gives a number even without a caption. |
 | `span` | `column` (default) or `all`. In a multi-column document, `all` puts the listing across all columns, at the top or bottom of a page; useful for wide code. No effect with one column. |
 
@@ -1932,6 +2053,25 @@ Upgraded from <del>v1.4 (legacy)</del> to <ins>v2.0 (optimized)</ins>.
 - `color` takes a <a href="#color-presets">preset</a>, Tailwind name or hex; without it the icon takes the color of the surrounding text.
 - `size` is `1em` by default (the size of the text); `solid="true"` picks the solid style.
 - The line height does not change, so a bigger icon never pushes the lines apart.
+
+### `<hr>`: a line across the text
+
+`<hr />` draws a line across the text, in a style and color of your choice:
+
+```markdown
+<hr />
+<hr style="dashed" color="red" />
+<hr style="double" width="50%" color="#1d4ed8" thickness="1.5pt" />
+<hr style="wavy" color="teal" />
+```
+
+- `style`: `solid` (default), `dashed`, `dotted`, `dash-dot`, `double` or `wavy`.
+- `color`: a preset (`blue`, `red`...), `accent` or a hex color; by default the theme's rule color.
+- `width` of the line (`60%`, `5cm`; default `100%`), `thickness` (default `1pt`) and `gap`, the space above and below it (default `0.8em`).
+
+### `<digit>`: digits in one kind
+
+`<digit type="fa">Room 12, ۳۴ and ٥٦</digit>` shows every digit inside in the kind the tag names, whichever kind it was written in: `fa` Persian ۰۱۲۳ (default), `ar` Arabic ٠١٢٣ or `en` English 0123. It works on all the text inside (paragraphs, lists, tables, other tags); digits in math and in code blocks are left as they are.
 
 ### `<v>` + `<pagebreak>`: vertical space and page break
 
@@ -2255,6 +2395,8 @@ For an answer key at the end of the document, set `answers = "end"` and add:
 | `points` | exercise | Score on the end side of the head: "2 points", "1 point" («۲ نمره» in Persian). |
 | `name` | exercise | Replaces the word «تمرین» / "Exercise", e.g. `name="سؤال"`. The number still comes from the same counter. |
 | `id` | exercise | Target for `<ref>`: «تمرین ۱» / "Exercise 1" (or the `name` word). |
+| `answers` | exercise | `show`, `hide` or `end`: what happens to the answers of **this** question, instead of the document's `answers` setting. |
+| `toc` | exercise | `true`: the title of this question is listed in the table of contents like a first-level heading; `false`: not. Default: the `exercise-toc` setting (`false`). |
 | `correct` | choices | Number of the right option, counted from 1; several separated by commas (`"1,3"`). Persian digits work. |
 | `numbers` | choices | `letters` (default: «الف ب ج د» in RTL, a b c d in LTR) or `numbers` (۱ ۲ / 1 2). |
 | `cols` | choices | Number of columns. Default automatic: 4 when there are at least 4 options and they fit, else 2 if they fit, else 1, so options adapt to a phone page. |
@@ -2262,12 +2404,14 @@ For an answer key at the end of the document, set `answers = "end"` and add:
 | `dir` | exercise, choices, answers | `auto` (default: from the title or the content), `rtl`, `ltr`. |
 
 - **Numbering:** all exercises share one counter, in document order; the word and digits follow the exercise's direction.
+- **The title of a question** («تمرین ۱.», with its `title`) is set at 1.2 times the size of the text. With `toc="true"` (or `exercise-toc = true` for every question) it is also listed in the `<toc>` like a first-level heading: at the top level of the list, with the other first-level headings, without a number.
+- **Answers of one question:** `answers="show"`, `"hide"` or `"end"` on an `<exercise>` overrides the document's setting for that question, so one answer can stay under its question, another be left out and a third be sent to the end. `<answers></answers>` lists the questions that went to the end, whatever the setting of the document is (it prints nothing when none did).
 - **`<choices>`:** one option per list item (bulleted or numbered). It also works outside an exercise, but then it isn't added to `<answers>`.
 - **Answers** depend on the <a href="#todo-answers-setting">`answers` setting</a>:
-  - `show` (default): each `<answer>` under its question, in a green-tinted box (in `formal` a dashed rule and a muted «پاسخ» / "Answer" label); the correct option is highlighted with a green marker and bold text.
+  - `show` (default): each `<answer>` under its question, in green (in `formal` a dashed rule and a muted «پاسخ» / "Answer" label; in `standard` the card goes on in green: a deeper band with the word and a check icon, the width of the card like the title's, and the answer on lighter green under it; in `friendly` a green box with the same little room around it as the title's, round in every corner); the correct option is highlighted with a green marker and bold text.
   - `hide`: no answers, no highlights: a question sheet.
   - `end`: nothing under the questions; `<answers></answers>` lists one entry per exercise: «تمرین ۱.» / "Exercise 1." followed by its answers, and for `<choices correct>` «گزینهٔ ج» / "Option c". An exercise with both gets one entry. In `show` and `hide`, `<answers>` prints nothing.
-- **Look follows the feel:** `formal` no frame, the head bold in the heading color with a trailing period, options marked with plain text ("a)"); `standard` a light accent-tinted card, option letters in small rounded squares; `friendly` the same card with rounder corners, option letters in circles.
+- **Look follows the feel:** `formal` no frame but a thin rule under the question (and its answer) with a little room below it, the head bold in the heading color with a trailing period and a rule under it like the one under a heading, options marked with plain text ("a)"); `standard` a light accent-tinted card whose title is a deeper band the width of the card (touching its top and both sides, with the card's own corner radius at the top), option letters in small rounded squares; `friendly` the same card with the title in a box that has only a little room around it (its top corners follow the card's, its bottom ones are slightly round), with rounder corners, option letters in circles.
 - Leave blank lines inside `<exercise>`, `<choices>` and `<answer>`. A `<choices>` without a list is a compile error.
 
 ### `<chat>` + `<user>` + `<ai>`: chat with an AI {#chat-section}
@@ -2390,16 +2534,47 @@ Three first steps:
 | Compile error on a `{...}` line above a list | An unknown list option, or `start` on a bulleted list. |
 | Compile error on `<chat>` | An unknown attribute, `style` or color name, or no `<user>` / `<ai>` message inside. |
 | Compile error on `<progress>` | A list item that isn't `label: value`, or no list and no `value`. |
-| `<answers>` prints nothing | The `answers` setting isn't `end`. |
+| `<answers>` prints nothing | No question sent its answer to the end: neither the `answers` setting nor an `answers="end"` on an `<exercise>` says `end`. |
 | Draft notes still in the final PDF | Set `todo = "hide"` (or `--input todo=hide`). |
 | `os error 1224` when compiling | The PDF is open in a viewer that locks it; close it or write to another file. |
 
 ---
 
+## Your own components
+
+A project can have components of its own: Typst files that define new tags, used in the Markdown like the built-in ones.
+
+```toml
+# config.toml (every document), or the front matter of one document: the lists are added together
+components = ["notes.typ", "extras/stamps.typ"]
+```
+
+- The files are listed the way files are imported. A path is relative to the project folder, and a file can be **anywhere** in it; a single path or paths separated by commas are accepted too. Not under `main.typ`, `src/`, `components/` or `tools/`: those belong to the engine.
+- A file can define **any number of tags**, related or not, and **its name means nothing**: `a.typ` can hold the tags `b` and `c`, `y.typ` the tags `n` and `m`. A project can list any number of files.
+- What the file defines decides the rest. Every `#let <x>-tags = (tag: (attrs, body) => content, ...)` gives tags (`<x>` is any label). `#let <x>-schema = ("tag": (kind, description, attrs), ...)` is **optional**: with it the app completes the tag and its attributes and the engine checks them (an enum value, a bool, a number, a required attribute); without it the tag works and its attributes are not checked. `#let <x>-docs` is optional too (the same shape as the docs of the built-in components); the Skill page of the app uses it. A schema belongs to a tag by the tag's **name**, not by `<x>` or by the file.
+- A tag name is lowercase letters, digits and `-`, starting with a letter. A tag that is built in, or defined by another file, is an error that names both files.
+- The file starts with `#import "/src/kit.typ": *`, which is the whole API a component may rely on: `theme` (the colors of the theme: `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code-bg`, `code-stroke`, and `theme.dark`), `zoom` (the scale), `feel` (corner rounding), `parse-length`, `resolve-color`, `tinted`, `panel`, `root-path`, `plain-text`, `at-of`, `setting-prefix` and the helpers named in `src/kit.typ`. Never write a fixed color or size: use `theme`, `zoom` and `em`, so the component follows the theme of every document.
+- Typst has **only double-quoted strings**: `'text'` is a syntax error. The `example:` of a `-docs` holds tags with quoted attributes, so escape the quotes (`"<note kind=\"tip\">x</note>"`) or use a raw block. Persian digits and `٪` are valid only in strings and content, never in code.
+- A mistake the component finds in the document is reported with `assert(..., message: at-of(attrs) + "...")`. The app shows an error raised inside a component **twice**: on the line of the tag in the Markdown file, and on the line of the code in the component file. A file listed in `components` that does not exist is reported on `config.toml`.
+- The files are loaded when the document is built, so the project compiles with plain `typst compile` as well; the app only adds autocomplete and the error lines.
+
+```typst
+#import "/src/kit.typ": *
+
+#let note-tags = (
+  note: (attrs, body) => block(width: 100%, inset: 8pt * zoom, fill: theme.secondary, radius: 4pt * zoom, body),
+  stamp: (attrs, body) => text(size: parse-length(attrs.at("size", default: "1em"), attrs: attrs), fill: theme.accent, weight: "bold", body),
+)
+#let note-schema = (
+  "stamp": (kind: "inline", description: (en: "A bold accent word", fa: "واژهٔ پررنگ"), attrs: ("size": (type: "length", default: "1em", doc: (en: "Text size", fa: "اندازهٔ متن")))),
+)
+```
+
 ## Extending the template
 
 - **New color theme:** add an entry to `src/themes.typ` with all ten keys (`dark`, `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code-bg`, `code-stroke`), then set `theme = "<name>"`. Add it to the `--themes` default in `tools/build-all.mjs` if it should be part of full builds.
 - **New feel:** add an entry to `feels` in `src/core.typ` with the corner radii and the default fonts, then add it to the `--feels` default in `tools/build-all.mjs`.
+- **Components of one project:** list Typst files in `components` (see [Your own components](#your-own-components)); no change to the engine.
 - **New component:** add a file `components/<name>.typ` that exports `<name>-tags = (tag: (attrs, body) => ...)`; run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it) and the tag is available, with no change to `main.typ`. It receives `(attrs, body)`, where `body` is already rendered content. Parent and child tags (like `<fig>` and `<caption>`) communicate through `tag(...)`, `untag(...)` and `find-tagged(...)`.
 - **Docs of a component:** every component also exports `#let <name>-docs = (en: (about: "...", more: "..."), fa: (about: "...", more: "..."), example: (en: "...", fa: "..."))`: what it is for and its key rules in Markdown (`about`, short; `more`, optional and longer), in both languages, and a usage example in Markdown. Write the long texts as raw blocks (`` `````md ... `````.text ``). `tools/gen-registry.mjs` stops when a built-in component has none; `tools/export-schema.mjs` writes them into `dist/tags.json` under `components` with the component's tags. The Skill page of the Formatex app builds one Markdown file for AI agents from them and from the schema.
 - **New code language badge:** extend `code-languages` and `code-language-aliases` in `src/core.typ`.

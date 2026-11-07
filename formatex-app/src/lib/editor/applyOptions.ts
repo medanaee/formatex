@@ -12,7 +12,7 @@ export interface Edit {
  * while you keep changing fields, so its place in the text has to follow its own edits).
  *
  * - a tag: its opening tag is rewritten;
- * - a heading: the ` {...}` at the end of the line is rewritten, added or removed;
+ * - a heading, or an equation: the ` {...}` at the end of the line is rewritten, added or removed;
  * - a table or a list: the `{...}` line above it is rewritten, added (as a new line) or removed with its line break;
  * - a fenced code block without a <code> tag: the tag is wrapped around it on the first change.
  */
@@ -35,7 +35,7 @@ export function editFor(request: ConfigureRequest, attrs: Attrs, docLength: numb
     return { edit: { from: request.from, to: request.to, insert }, next: { ...request, attrs, to: request.from + insert.length } }
   }
   const options = serializeOptions(attrs)
-  if (request.option === "heading") {
+  if (request.option === "heading" || request.option === "equation") {
     const insert = options ? ` ${options}` : ""
     return {
       edit: { from: request.from, to: request.missing ? request.from : request.to, insert },

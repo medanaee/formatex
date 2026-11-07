@@ -37,6 +37,16 @@ describe("SqliteRepository", () => {
     expect(all[0]).toMatchObject({ title: "Renamed", mainFile: "docs/report.md", createdAt: 1, updatedAt: 30 })
   })
 
+  it("keeps what a project is, and no main file for a plain Typst project that has none", async () => {
+    await repo.saveDocument(doc("a", 1))
+    await repo.saveDocument(doc("t", 2, { kind: "typst", mainFile: "" }))
+    const all = await repo.loadDocuments()
+    expect(all.find((d) => d.id === "a")).toMatchObject({ kind: "formatex", mainFile: "main.md" })
+    expect(all.find((d) => d.id === "t")).toMatchObject({ kind: "typst", mainFile: "" })
+    await repo.saveDocument(doc("t", 3, { kind: "formatex", mainFile: "main.md" }))
+    expect((await repo.loadDocuments()).find((d) => d.id === "t")).toMatchObject({ kind: "formatex" })
+  })
+
   it("keeps Persian text intact", async () => {
     await repo.saveDocument(doc("fa", 1, { title: "گزارش آزمایشگاه", mainFile: "گزارش.md" }))
     expect((await repo.loadDocuments())[0]).toMatchObject({ title: "گزارش آزمایشگاه", mainFile: "گزارش.md" })

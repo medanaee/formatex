@@ -99,6 +99,7 @@ function TableTool({ run }: { run: (rows: number, columns: number) => void }) {
 export function FormatBar() {
   const { t } = useTranslation()
   const activePath = useEditorStore((state) => state.activePath)
+  const plainTypst = useEditorStore((state) => state.kind) === "typst"
   const view = useEditorViewStore((state) => state.view)
   const canUndo = useEditorViewStore((state) => state.canUndo)
   const canRedo = useEditorViewStore((state) => state.canRedo)
@@ -110,7 +111,7 @@ export function FormatBar() {
   const configVisual = useSettingsStore((state) => state.configVisual)
   const setConfigVisual = useSettingsStore((state) => state.setConfigVisual)
 
-  if (!activePath) return null
+  if (!activePath || plainTypst) return null
   const isConfig = activePath === CONFIG_FILE
   // config.toml as a settings screen has no editor behind it: its bar is only the switch back to the source
   const modeSwitch = (on: boolean, set: (next: boolean) => void) => (

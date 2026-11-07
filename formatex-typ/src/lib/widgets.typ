@@ -1,25 +1,17 @@
 #import "/src/prelude.typ": *
 #import "/src/lib/basics.typ": *
+#import "/src/lib/captioned.typ": caption-flag, captioned
 
 // caption / id on <tree> and <chart>: a numbered figure like <fig> («شکل ۱» / "Figure 1", listed in <lof>).
 #let caption-figure(attrs, tag-name, it) = {
   let caption = attrs.at("caption", default: none)
   let id = attrs.at("id", default: none)
-  span-columns(attrs, tag-name, if caption == none and id == none { it } else {
-    context {
-      let detected = if caption != none { content-dir(caption) }
-      let d = if detected == none { last-dir.get() } else { detected }
-      set text(dir: d)
-      let fig = figure(
-        it,
-        kind: image,
-        caption: caption,
-        supplement: if d == rtl [شکل] else [Figure],
-        numbering: n => numbering(if d == rtl { "۱" } else { "1" }, n),
-      )
-      if id != none [#fig#label(id)] else { fig }
-    }
-  })
+  span-columns(attrs, tag-name, captioned(
+    "figure", image, "شکل", "Figure", it,
+    caption: caption, id: id,
+    numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
+    listed: caption-flag(attrs, "lof") != false,
+  ))
 }
 
 // "۱٬۲۵۰٫۵", "1,250.5", "35%" -> float; an empty cell is a missing value.

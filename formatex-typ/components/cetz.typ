@@ -48,7 +48,7 @@ A drawing made with CeTZ (Typst code) in a fenced code block, or from a file wit
 
 - Scope without importing: every `cetz.draw` function (`line`, `rect`, `circle`, `arc`, `bezier`, `content`, `group`, `set-style`, ...), `cetz`, and the `theme` dictionary (`theme.fg`, `theme.bg`, `theme.accent`, `theme.heading`, `theme.muted`, `theme.rule`).
 - The code runs in Typst code mode: `let`, `for`, functions and `calc.*` work. Default strokes use `theme.fg`; use theme colors, not fixed hex, so drawings stay visible on dark pages.
-- LaTeX math works in labels (`[$B_r \times B_c$]`); each `content(...)` label takes the direction of its own first letter.
+- LaTeX math works in labels (`[$B_r \times B_c$]`, or bare: `$x_{n-1}$`); a string that is nothing but a formula (`"$x_{n-1}$"`) is the formula too, not text with dollar signs. Each `content(...)` label takes the direction of its own first letter.
 - Inside `<fig>` a drawing behaves like an image (`id`, `align`, a caption; `height` and `width` are maximums, a wider drawing shrinks to the line). On its own it is centered at its natural size.
 `````.text,
     more: `````md
@@ -63,7 +63,7 @@ A drawing made with CeTZ (Typst code) in a fenced code block, or from a file wit
 
 - در دسترس بدون import: همهٔ تابع‌های `cetz.draw` (`line`، `rect`، `circle`، `arc`، `bezier`، `content`، `group`، `set-style` و ...)، خود `cetz` و دیکشنری `theme` (`theme.fg`، `theme.bg`، `theme.accent`، `theme.heading`، `theme.muted`، `theme.rule`).
 - کد در حالت code مود Typst اجرا می‌شود: `let`، `for`، تابع و `calc.*` کار می‌کنند. خط‌های پیش‌فرض `theme.fg` را می‌گیرند؛ به‌جای hex ثابت از رنگ‌های تم استفاده کنید تا رسم روی صفحهٔ تیره دیده شود.
-- ریاضی LaTeX در برچسب‌ها کار می‌کند (`[$B_r \times B_c$]`)؛ هر برچسب `content(...)` جهت اولین حرف خودش را می‌گیرد.
+- ریاضی LaTeX در برچسب‌ها کار می‌کند (`[$B_r \times B_c$]` یا بدون کروشه: `$x_{n-1}$`)؛ رشته‌ای که فقط یک فرمول است (`"$x_{n-1}$"`) هم فرمول حساب می‌شود، نه متنی با علامت دلار. هر برچسب `content(...)` جهت اولین حرف خودش را می‌گیرد.
 - داخل `<fig>` رسم مثل تصویر رفتار می‌کند (`id`، `align` و عنوان؛ `height` و `width` سقف‌اند و رسم پهن‌تر به پهنای خط کوچک می‌شود). تنها، با اندازهٔ طبیعی وسط می‌نشیند.
 `````.text,
     more: `````md

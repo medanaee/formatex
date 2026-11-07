@@ -25,7 +25,12 @@ use crate::engine;
 /// - the other engine files (`main.typ`, `src/`, `tools/`) are embedded in the app and cannot be shadowed,
 /// - every other path of the project root is a file of the user's project folder (none for a probe),
 /// - `@preview/...` paths are packages.
+///
+/// A **plain** world (a project that is plain Typst) has none of the engine: only the editor's unsaved texts, the files of the project
+/// and the packages, so the Typst compiler sees the project and nothing else.
 struct Loader {
+    /// Plain Typst: no engine, no component library, no themes, no `config.toml` of the app.
+    plain: bool,
     project: Option<FsRoot>,
     /// The project's folder on disk; a project kept in a folder of the user's (`.formatex/config.toml` exists) reads its `config.toml` from there.
     root: Option<PathBuf>,
@@ -41,6 +46,12 @@ impl FileLoader for Loader {
                 let path = id.vpath().get_without_slash();
                 if let Some(bytes) = self.extra.lock().unwrap_or_else(|e| e.into_inner()).get(path) {
                     return Ok(Bytes::new(bytes.clone()));
+                }
+                if self.plain {
+                    return match &self.project {
+                        Some(project) => project.load(id.vpath()),
+                        None => Err(FileError::NotFound(path.into())),
+                    };
                 }
                 if path.starts_with("components/") {
                     return self
@@ -83,12 +94,33 @@ pub struct ProjectWorld {
     time: Time,
     entry: String,
     extra: Arc<Mutex<HashMap<String, Vec<u8>>>>,
+    /// The project's folder on disk (`None` for a probe).
+    root: Option<PathBuf>,
 }
 
 impl ProjectWorld {
     /// `project_dir` is the user's project folder (`None` for a probe); `entry` is the file to compile; `inputs` become
     /// `sys.inputs` (the engine reads `source` from it); `extra` are files served before anything else.
     pub fn new(
+        project_dir: Option<PathBuf>,
+        entry: &str,
+        packages: Arc<SystemPackages>,
+        fonts: Arc<FontStore>,
+        components: Arc<ComponentLibrary>,
+        inputs: &HashMap<String, String>,
+        extra: HashMap<String, Vec<u8>>,
+    ) -> Self {
+        Self::build(false, project_dir, entry, packages, fonts, components, inputs, extra)
+    }
+
+    /// The world of a project that is plain Typst: `entry` is a file of the project, there are no `sys.inputs`, and nothing of the engine.
+    pub fn plain(project_dir: Option<PathBuf>, entry: &str, packages: Arc<SystemPackages>, fonts: Arc<FontStore>, components: Arc<ComponentLibrary>, extra: HashMap<String, Vec<u8>>) -> Self {
+        Self::build(true, project_dir, entry, packages, fonts, components, &HashMap::new(), extra)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build(
+        plain: bool,
         project_dir: Option<PathBuf>,
         entry: &str,
         packages: Arc<SystemPackages>,
@@ -105,10 +137,11 @@ impl ProjectWorld {
         Self {
             library: LazyHash::new(Library::builder().with_inputs(dict).build()),
             fonts,
-            files: FileStore::new(Loader { project: project_dir.clone().map(FsRoot::new), root: project_dir, packages, components, extra: extra.clone() }),
+            files: FileStore::new(Loader { plain, project: project_dir.clone().map(FsRoot::new), root: project_dir.clone(), packages, components, extra: extra.clone() }),
             time: Time::system(),
             entry: entry.to_string(),
             extra,
+            root: project_dir,
         }
     }
 
@@ -120,9 +153,45 @@ impl ProjectWorld {
         self.time.reset();
     }
 
+    /// The file of the project at a project-relative path (with `/`).
+    pub fn project_file(path: &str) -> Option<FileId> {
+        VirtualPath::new(path).ok().map(|virtual_path| RootedPath::new(VirtualRoot::Project, virtual_path).intern())
+    }
+
     /// The project-relative path of a file, for messages (`None` for package files).
     pub fn display_path(id: FileId) -> Option<String> {
         matches!(id.root(), VirtualRoot::Project).then(|| id.vpath().get_without_slash().to_string())
+    }
+}
+
+impl typst_ide::IdeWorld for ProjectWorld {
+    fn upcast(&self) -> &dyn World {
+        self
+    }
+
+    /// The files of the project, so a path inside `image("...")` or `#include "..."` can be completed.
+    fn files(&self) -> Vec<FileId> {
+        let Some(root) = self.root.as_ref() else { return Vec::new() };
+        let mut out = Vec::new();
+        let mut stack = vec![root.clone()];
+        while let Some(dir) = stack.pop() {
+            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().into_owned();
+                if path.is_dir() {
+                    if !matches!(name.as_str(), ".git" | "node_modules" | ".formatex") {
+                        stack.push(path);
+                    }
+                } else if let Ok(inside) = path.strip_prefix(root) {
+                    let relative = inside.to_string_lossy().replace('\\', "/");
+                    if let Ok(virtual_path) = VirtualPath::new(&relative) {
+                        out.push(RootedPath::new(VirtualRoot::Project, virtual_path).intern());
+                    }
+                }
+            }
+        }
+        out
     }
 }
 

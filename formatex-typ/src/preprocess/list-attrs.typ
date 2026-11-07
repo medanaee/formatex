@@ -12,7 +12,8 @@
 // `{numbers=abjad suffix=")" marker=dash indent=2em start=3 caption="..." #id}` alone on a line,
 // right above a list -> the list wrapped in `#list-block(opts)[ ... ]`. `start` rewrites the
 // first number (Markdown takes the start from it). The list ends at the first line that is
-// not indented, not an item, and comes after a blank line. Fenced code is skipped.
+// not indented, not an item, and comes after a blank line, or at an item of the list's own depth that
+// comes after two blank lines or more (that is a list of its own). Fenced code is skipped.
 #let list-attrs(src) = {
   let lines = src.split("\n")
   let item = list-attrs-re-1
@@ -51,11 +52,18 @@
     }
     let end = j + 1
     let after-blank = false
+    let blanks = 0
+    let margin = first.len() - first.trim(at: start).len()
     while end < lines.len() {
       let l = lines.at(end)
-      if l.trim() == "" { after-blank = true }
-      else if l.match(list-attrs-re-5) != none or l.match(item) != none { after-blank = false }
-      else if after-blank { break }
+      if l.trim() == "" { after-blank = true; blanks += 1 }
+      else {
+        // Two blank lines or more, then an item that is not indented deeper than the list: a list of its own (it has no options of this list)
+        if blanks >= 2 and l.match(item) != none and l.len() - l.trim(at: start).len() <= margin { break }
+        blanks = 0
+        if l.match(list-attrs-re-5) != none or l.match(item) != none { after-blank = false }
+        else if after-blank { break }
+      }
       end += 1
     }
     out.push("<!--raw-typst #list-block(" + repr(opts) + ")[ -->")

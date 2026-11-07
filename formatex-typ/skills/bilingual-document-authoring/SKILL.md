@@ -184,6 +184,7 @@ bibliography:
 | List with other numbers (abjad, words, Roman), a caption or an id | `{numbers=... caption="..." #id}` line above the list |
 | Definition, theorem, lemma, corollary, example, remark, proof | `<definition>`, `<theorem>`, `<lemma>`, `<corollary>`, `<example>`, `<remark>`, `<proof>` |
 | Split a long document into files | `<include src="chapters/x.md"></include>` |
+| One source for several readers, or a value used in many places | `vars:` (values) and `var-types:` (rules: `audience: [student, teacher]`) in the front matter, then Typst in `{{ ... }}`: `{{ audience }}`, `{{ if draft { "Draft" } else { "Final" } }}`, and Markdown in `[ ... ]`: `{{ if audience == "teacher" [ ## Key ] else [ Hi ] }}` |
 
 ## Final checklist
 

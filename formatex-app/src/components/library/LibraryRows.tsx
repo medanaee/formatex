@@ -1,7 +1,7 @@
 import { useRef, useState } from "react"
 import { ChevronRight, CornerLeftUp, FileText, Folder, FolderOpen, MoreVertical } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { StorageBadge } from "@/components/library/StorageBadge"
+import { KindBadge, StorageBadge } from "@/components/library/StorageBadge"
 import { Button } from "@/components/ui/button"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -119,6 +119,7 @@ function Row({ row, tree, expanded, onToggle, onOpenFolder, onOpenDoc, folderAct
               <span className="min-w-0">
                 <span dir="auto" className={cn("flex items-center gap-1.5 truncate", isFolder && "font-semibold")}>
                   <span className="min-w-0 truncate">{name}</span>
+                  {!isFolder && <KindBadge kind={row.doc.kind} />}
                   {!isFolder && <StorageBadge location={row.doc.location} />}
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground sm:hidden">{isFolder ? items : updated}</span>

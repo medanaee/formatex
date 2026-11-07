@@ -9,6 +9,7 @@
 //   colors      `resolve-color`, `tinted`, `panel`
 //   widgets     `chart-number`, `pick-hue`, `flag-attr`, ...
 //   refs        references, figure lists, page breaks, `list-pages-on`
+//   captioned   `captioned`: figures, tables, code and lists with a number and / or a caption
 //   lists       `list-block`, `list-style`, numbering
 //   mitex       LaTeX math
 //   latex-code  LaTeX code blocks for `<cetz>` / `<lilaq>`
@@ -20,6 +21,7 @@
 #import "/src/lib/colors.typ": *
 #import "/src/lib/widgets.typ": *
 #import "/src/lib/refs.typ": *
+#import "/src/lib/captioned.typ": *
 #import "/src/lib/lists.typ": *
 #import "/src/lib/mitex.typ": *
 #import "/src/lib/latex-code.typ": *

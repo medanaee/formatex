@@ -125,6 +125,8 @@ A missing key is not caught where you define the theme; it fails later deep insi
 
 ## Adding a component
 
+> A component that belongs to one project needs none of this: list its file in `components` (config.toml or front matter) and write `<x>-tags` / `<x>-schema` / `<x>-docs` in it; see `src/lib/local-components.typ` and "Your own components" in `docs/doc_en.md`. Everything below is for components of the template itself.
+
 ### Registration
 
 - Create `components/<name>.typ`, then run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it). Nothing in `main.typ` changes.
@@ -222,6 +224,9 @@ Each of these has broken this template before:
 - **`context` is required** for `measure`, `query`, `state.get()`, `counter.get()`, `here()`, and for reading `text.dir`.
 - **Show rules and recursion.** A `show table` rule that rebuilds the table triggers itself again; guard it (see `table-has-widths`).
 - **Trailing breaks.** Markdown bodies often end with `parbreak` / spaces; strip them when something must follow the last line (the proof's ∎, code's empty last line).
+- **Strings are double-quoted only.** `'text'` is not Typst ("the character `'` is not valid in code", then dozens of follow-up errors). A string holding attribute quotes escapes them (`"<x a=\"1\">"`) or is a raw block (`` `<x a="1">`.text ``); the `example:` of a `-docs` is where this goes wrong. Persian digits and `٪` are valid only inside strings and content, never in code; `75%` is a ratio, `"75%"` a string; a one-item array is `(x,)`.
+- **`em` vs `pt`.** `parse-length` can return an `em` length, and `1.8em > 3pt` fails ("cannot compare 1.8em with 3pt"). Resolve it in a `context { }` with `.to-absolute()` before comparing or adding it to other lengths.
+- **Arguments are per function.** `clip` is an argument of `block` / `box`, not of `rect` ("unexpected argument: clip").
 - **Parallel edits and compiles.** If you edit and compile in the same batch of tool calls, the compile may see the old file. Compile after the edits finish.
 
 ---

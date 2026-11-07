@@ -2,9 +2,12 @@ mod compile;
 mod components;
 mod engine;
 mod fonts;
+mod ide;
 mod links;
 mod packages;
 mod themes;
+mod typ_blocks;
+mod watcher;
 mod world;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,6 +22,11 @@ pub fn run() {
       compile::export_pdf,
       compile::project_preview,
       compile::project_set_root,
+      watcher::project_watch,
+      ide::typst_complete,
+      ide::typst_jump_from_click,
+      ide::typst_jump_to_cursor,
+      watcher::project_unwatch,
       compile::fonts_list,
       compile::fonts_reload,
       components::components_list,
@@ -27,6 +35,7 @@ pub fn run() {
       components::component_delete,
       components::component_set_enabled,
       components::engine_schema,
+      components::project_schema,
       components::themes_set,
     ]);
 
@@ -45,6 +54,12 @@ pub fn run() {
       tauri::Manager::manage(app, engine);
       Ok(())
     })
-    .run(tauri::generate_context!())
-    .expect("error while building tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while building tauri application")
+    .run(|_app, event| {
+      // Folders that are watched are let go of before the process ends, so no directory handle is left with a read waiting on it
+      if let tauri::RunEvent::Exit = event {
+        watcher::stop_all();
+      }
+    });
 }

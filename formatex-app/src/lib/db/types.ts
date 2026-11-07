@@ -2,11 +2,19 @@
  * A project of the library. Its files (config.toml, Markdown, images) live in `$APPDATA/documents/<id>/`; this row holds what
  * the library shows and which Markdown file is typeset.
  */
+/** What a project is: a Formatex project (Markdown and `config.toml`, typeset by the engine) or plain Typst (the Typst compiler alone). */
+export type ProjectKind = "formatex" | "typst"
+
 export interface DocumentItem {
   id: string
   title: string
-  /** Project-relative path of the Markdown file that is typeset and exported. */
+  /**
+   * Project-relative path of the file that is typeset and exported: a Markdown file in a Formatex project (also named by `source` in
+   * its `config.toml`), a `.typ` file in a plain Typst project, where `""` is none chosen yet.
+   */
   mainFile: string
+  /** Missing means `formatex` (projects made before the kind existed). */
+  kind?: ProjectKind
   /** The folder of the library the project is in; none (or null) means the top level. */
   parentId?: string | null
   /** Absolute path of the folder the project's files live in (a folder the user opened); none (or null) means the app's own storage. */

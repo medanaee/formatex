@@ -7,6 +7,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
 import { insertLink, insertText, toggleWrap } from "@/lib/editor/format"
 import { previewPlaceForLine } from "@/lib/editor/previewPlace"
+import { typstPlaceForOffset } from "@/lib/editor/typstIde"
 import { desktopOs, hasFinePointer } from "@/lib/platform"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
@@ -36,15 +37,17 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
   }
 
   const hasPages = useEditorStore((state) => state.pages.length > 0)
+  const plainTypst = useEditorStore((state) => state.kind) === "typst"
 
   /** Shows the place of the last press in the typeset pages: the preview scrolls to it and marks it (on a narrow screen it comes up). */
-  const goToPreview = () => {
-    const { activePath, texts } = useEditorStore.getState()
+  const goToPreview = async () => {
+    const { activePath, texts, kind } = useEditorStore.getState()
     const source = activePath ? texts[activePath] : undefined
     if (!view || !activePath || source === undefined) return
     const position = (point.current && view.posAtCoords(point.current)) ?? view.state.selection.main.head
     const line = view.state.doc.lineAt(position)
-    const place = previewPlaceForLine(activePath, source, line.number, position - line.from)
+    // Plain Typst: Typst itself says where the text was typeset; Formatex: the engine's markers
+    const place = kind === "typst" ? await typstPlaceForOffset(activePath, position) : previewPlaceForLine(activePath, source, line.number, position - line.from)
     if (!place) return
     // A hidden preview comes up first: its panel on a wide window, its tab on a narrow one
     if (!useSettingsStore.getState().panels.preview) useSettingsStore.getState().setPanel("preview", true)
@@ -95,6 +98,14 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
         <ContextMenuItem onSelect={run(selectAll)}>
           <TextSelect /> {t("menu.selectAll")} <ContextMenuShortcut>{mod}A</ContextMenuShortcut>
         </ContextMenuItem>
+        {plainTypst && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem disabled={!hasPages} onSelect={() => void goToPreview()}>
+              <LocateFixed /> {t("menu.goToPreview")}
+            </ContextMenuItem>
+          </>
+        )}
         {markdown && (
           <>
             <ContextMenuSeparator />
@@ -119,7 +130,7 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
               <Tags /> {t("format.tag")}
             </ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem disabled={!hasPages} onSelect={goToPreview}>
+            <ContextMenuItem disabled={!hasPages} onSelect={() => void goToPreview()}>
               <LocateFixed /> {t("menu.goToPreview")}
             </ContextMenuItem>
           </>

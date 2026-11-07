@@ -227,3 +227,44 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] The new-component template writes a `-docs` starter
 - [ ] Try the page in the desktop app (schema from `engine_schema`, so a user's own component with docs appears; `saveBytes` dialog) and read a generated skill with a real agent
 - [ ] The docs of a user's component are only as good as the user writes them: no check beyond "the file loads"
+
+## Page sizes and project components
+- [x] Page sizes in the engine: `desktop-*` and `mobile-*` names, `custom` with `page-width` / `page-height` (a `length` field in the settings form); a custom page under 120 mm gets the phone rules (one column, own margins, no header center); `a4` / `mobile` still work
+- [x] Skill page: two sections (writing documents, building components), each on / off with its own size and language; the `both` language is gone; `buildText.ts` and a test that the documented kit names exist in the engine
+- [x] Components of one project: the `components` setting lists `.typ` files (any number of tags per file, any name); `local-components.typ` in the engine loads them, `project_schema` gives autocomplete, `convert_all` shows an error in both files
+- [ ] Try in the desktop app: a project with `components`, autocomplete for a tag with a schema, an error raised in a component (two diagnostics), the Skill page's building section
+- [x] The settings form has a Components section (config.toml and front matter): list, tags of each file, add from the project's `.typ` files, remove, missing-file warning
+- [x] The file tree creates and renames in place (an inline field in the row), as in VS Code; only delete asks
+- [ ] Try in the desktop app: new file / folder / rename in the tree (focus after the menu closes, a phone), and the Components section
+- [x] The cursor entering an attribute value opens the list of its values to switch to (`completeValue`)
+- [x] Project kinds: Formatex or Raw Typst ([features/project-kinds.md](../features/project-kinds.md)): `kind` in the library, a plain Typst compile (no engine), the new-project dialog with the kind, the switch from the library and the File menu
+- [x] ZIP export / import keep the project kind (manifest `kind`), and a plain Typst import keeps `main.typ` and `src/`
+- [x] Submenus of the dropdown menus are drawn in a portal, so a parent menu no longer cuts them off (the File menu's Main file and Project type)
+- [x] Plain Typst tools: completions, click in the preview to the text, go to here in preview, follow typing (`typst-ide`, new dependency; `ide.rs`)
+- [x] A mistake in the Typst of a `<typ>` block is shown on its own line of the Markdown file (`src-tauri/src/typ_blocks.rs`): Typst reports evaluated text at the engine's `eval`, so the app builds each block alone, as a small file with the kit, and turns its line into a Markdown line; a `<typ src>` file that is missing is told on its tag; a mistake inside a `src` file is named by Typst itself. At most 40 blocks are tried per failed build, and only a build that failed at `components/typ.typ` is looked at
+- [x] Editor: tags fold and unfold (marker, keys); a bracket or quote typed over a selection wraps it (`tagFolding.ts`, `surround.ts`)
+- [ ] Try in the desktop app: the fold markers next to line numbers in both directions, and a long document with many tags
+- [x] Engine: a CeTZ label written as a string that is only a formula (`"$x_{n-1}$"`) is the formula (`latex-in-code`)
+- [ ] Plain Typst: tooltips and go to definition; completions of package names; try it all in the desktop app (a long document, Persian text, an imported file)
+- [ ] Raw Typst: try it in the desktop app (the dialog on a phone, a folder of `.typ` files)
+- [ ] A screen listing every component of the project (library and project) in one place
+- [x] The file tree has a right-click menu on a row (the same actions as its three-dot menu, built once by `ActionItems`) and on the empty part under the rows (new file / folder, upload, paste in the root)
+- [x] Folder projects are live: the folder is watched (`watcher.rs`, new dependency `notify` 8), the list of files and the open files follow a change made outside the app, with a bar when both sides changed
+- [x] Live folder safety: the editor's own writes are no longer taken for changes from outside (a false conflict could load a half-written or empty read), reads must agree twice, and a loss-like replacement can be undone with "Restore mine"
+- [ ] Try the live folder in the desktop app: save a file from another editor, add and remove files, a git checkout of a branch, a change while typing (the bar)
+- [x] Variables and code: `vars` (values) and `var-types` (rules: a list, `{ min, max }`, a type, json / data files) in the front matter or `[vars]`, and `{{ code }}` that is real Typst (`eval`) in the text, attribute values and the strings of the settings; `[ ... ]` is Markdown (with tags and `{{ }}` inside, to any depth); `let`, `if`, `for`, `json()`; `n += 1` changes a variable for what follows (includes see it); `PAGE`, `PAGES`, `SECTION`, `SECTION_NUMBER` run when the pages are made; `<if>` is gone (engine: `vars.typ`, `expr.typ`, `evaluate.typ`; a Rust test compiles one)
+- [x] Editor for variables: colors for `{{ }}` over several lines (code, printed names, the values of the page), folding, autocomplete (variables, `setting.*` from the schema, quoted values after `==`), a *Variables* section in the settings screen (value + rule popover, `var-types`), an `fx` button on every attribute in the tag popover
+- [ ] Try the variables in the desktop app: the colors in a long `{{ }}`, the Variables section in config.toml and in the front matter, the `fx` button in the tag popover, `PAGE` in a document, a data file, a build option for `var.name`
+- [ ] Variables: errors of the Typst a `{{ }}` runs (a wrong type, a missing method) have no line (Typst cannot catch an error of `eval`); only names, brackets, rules and enum typos do. `<typ>` sees the variables as written, not as a `{{ }}` changed them. Rename a variable and completion of the keys of `var-types` are not done
+- [x] Captions and numbering (engine): `[figure]`, `[table]`, `[code]`, `[list]` get `numbering` and `caption-position`; a figure is numbered by default, the others get a number as soon as they have a caption when their `numbering` is on; `numbering`, `caption-position` and `lof` / `lot` / `lol` per item; number only «شکل ۱», caption only, or «شکل ۱: توضیح»; one helper (`src/lib/captioned.typ`) for `<fig>`, tree, chart, tables, `<code>` and lists
+- [x] `<p>` tag (font, size, weight, color, align, justify, line / letter / word spacing, indent, above / below, dir); `<hr>` with six line styles; `<digit>`; `[heading] max-numbering-level`
+- [x] Comment fix: a `-->` inside a fenced block in a comment no longer ends it
+- [x] Visual: the gear is always visible (headings, lists, equations, code, tables), `۱.` lists have it, display equations have a gear / `{#id}` chip, plain paragraphs have a gear on hover that wraps them in a `<p>`; typing `<` over a selection writes a tag around it with a linked closing name
+- [ ] Try in the desktop app: the captions of every kind, `<p>` from the paragraph gear, `<` over a selection (a multi-line one, completion in the name), the equation gear, and a long comment with a code block in it
+- [x] Bulleted lists: `guides = none | line | tree` (`[list]` and `{guides=...}` per list); every marker has the same width, so the levels of a nested list step by equal amounts (they did not: a bullet, a triangle and a dash are not equally wide)
+- [x] Editor: indent guides behind every level of indentation
+- [x] File tree: Save (a file as it is, a folder or a selection as a ZIP), Show in File Explorer for folder projects, and dropping a folder from the computer (it was only files)
+- [ ] Try in the desktop app: Save on a file and a folder, Show in File Explorer on a file, a folder and the empty part, and dropping a folder (with sub-folders) from Explorer into the tree
+- [x] Lists: two blank lines end a list (engine `list-attrs`, editor `listSplit.ts`), tree guides drawn as exact lines, indent guides only on the first row of a wrapped line
+- [ ] Raw Typst preview feels slow in the desktop app: measured in release, the compile is about 320 ms cold and about 0 to 5 ms incremental, and an SVG page is about 400 KB (about 5 ms to make); next step is the time the preview footer shows, then rendering pages smaller or only the visible ones
+

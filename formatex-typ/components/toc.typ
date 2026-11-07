@@ -24,9 +24,8 @@
         let min-level = calc.min(..query(heading.where(outlined: true)).map(h => h.level))
         let indent = (it.level - min-level) * 1.5em
         set text(dir: entry-dir)
-        let number = if it.element.numbering != none [
-          #heading-number(counter(heading).at(it.element.location()), fa-digits)#h(0.5em)
-        ]
+        let entry-number = if it.element.numbering != none { heading-number(counter(heading).at(it.element.location()), fa-digits) }
+        let number = if entry-number != none [#entry-number#h(0.5em)]
         // Unicode isolates keep each title's own direction inside a forced-direction line.
         let isolate(x) = [#if entry-rtl { "\u{2067}" } else { "\u{2066}" }#x#"\u{2069}"]
         let entry-text = if nums == "auto" { isolate[#number#it.body()] } else [#number#isolate(it.body())]

@@ -1,6 +1,7 @@
 // `conf`, the document show rule: equations, code, tables, headings, quotes, footnotes and the page setup.
 #import "/src/core.typ": *
 #import "/src/page.typ": *
+#import "/src/lib/captioned.typ": caption-flag, captioned
 
 // Display equations. "labelled": only those with `{#id}` get a number (main.typ sets
 // `equation-next` right before such an equation); "all": every one; "none": never.
@@ -245,8 +246,6 @@
     set text(weight: "bold", fill: theme.heading)
     it
   }
-  show figure.where(kind: table): set figure.caption(position: top)
-  show figure.where(kind: raw): set figure.caption(position: top)
 
   set math.equation(numbering: if equation-mode == "all" { equation-numbering } else { none })
   // In "labelled" mode an equation preceded by `equation-next` is rebuilt with a number.
@@ -318,18 +317,14 @@
       }
       let caption = opts.at("caption", default: none)
       let id = opts.at("id", default: none)
-      let placed = if caption == none and id == none { framed } else {
-        let detected = if caption != none { content-dir(caption) }
-        let d = if detected == none { last-dir.get() } else { detected }
-        set text(dir: d)
-        let fig = figure(
-          framed,
-          kind: table,
-          caption: caption,
-          supplement: if d == rtl [جدول] else [Table],
-          numbering: n => numbering(if d == rtl { "۱" } else { "1" }, n),
-        )
-        block(width: if full { 100% } else { auto }, if id != none [#fig#label(id)] else { fig })
+      let fig = captioned(
+        "table", table, "جدول", "Table", framed,
+        caption: caption, id: id,
+        numbering: caption-flag(opts, "numbering"), position: opts.at("caption-position", default: none),
+        listed: caption-flag(opts, "lot") != false,
+      )
+      let placed = if caption == none and id == none and caption-flag(opts, "numbering") != true { framed } else {
+        block(width: if full { 100% } else { auto }, fig)
       }
       let aligned = align(align-names.at(a), placed)
       if spanning and not (full and table-has-widths(it)) { float-wide(aligned) } else { aligned }

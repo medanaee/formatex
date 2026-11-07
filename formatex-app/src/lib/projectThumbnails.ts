@@ -23,8 +23,9 @@ export function requestThumbnail(doc: DocumentItem): Promise<string | null> {
     let url: string | null = null
     try {
       // The file the project's config.toml names; a project that names none has no page to show
-      const main = await projectMainFile(doc.id)
-      const svg = main ? await projectPreview(doc.id, main) : null
+      // (a plain Typst project keeps its main file in the library)
+      const main = doc.kind === "typst" ? doc.mainFile : await projectMainFile(doc.id)
+      const svg = main ? await projectPreview(doc.id, main, undefined, doc.kind) : null
       if (svg) url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }))
     } catch {
       url = null

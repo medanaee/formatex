@@ -21,6 +21,29 @@
     "components": "Components",
     "skill": "Skill"
   },
+  "kind": {
+    "title": "Project type",
+    "formatex": "Formatex",
+    "typst": "Raw Typst",
+    "formatexHint": "Markdown with ready-made components, themes and settings",
+    "typstHint": "Plain Typst: the compiler alone, nothing added",
+    "mainFile": "Main file",
+    "noMain": "No main file",
+    "chooseMain": "Choose the main file to see the document",
+    "badge": "Typst",
+    "toFormatex": "Change to Formatex",
+    "toTypst": "Change to Raw Typst"
+  },
+  "external": {
+    "changed": "This file was changed outside the app, and so was the text here.",
+    "load": "Load the new one",
+    "keep": "Keep mine",
+    "sizes": "(yours: {{mine}} lines, on disk: {{outside}} lines)",
+    "empty": "The file on disk is empty.",
+    "replaced": "The text of this file was replaced by the one on disk, which is much shorter.",
+    "restore": "Restore mine",
+    "dismiss": "Keep this"
+  },
   "library": {
     "title": "Documents",
     "new": "New document",
@@ -128,6 +151,8 @@
       "reserved": "This name belongs to the engine",
       "exists": "A file with this name exists"
     },
+    "save": "Save…",
+    "reveal": "Show in File Explorer",
     "copy": "Copy",
     "cut": "Cut",
     "paste": "Paste",
@@ -171,7 +196,8 @@
     "language": "Language",
     "languageEn": "English",
     "languageFa": "فارسی",
-    "languageBoth": "Both",
+    "writing": "Writing documents",
+    "building": "Building components",
     "components": "Components",
     "all": "All",
     "none": "None",
@@ -262,11 +288,15 @@
     "empty": "No tags"
   },
   "options": {
+    "condition": "Condition",
+    "conditionOn": "Choose the value by a condition",
+    "conditionOff": "Back to a fixed value",
     "default": "Default",
     "unset": "Not set",
     "none": "This has no settings",
     "heading": "Heading",
     "table": "Table",
+    "equation": "Equation",
     "list": "List",
     "code": "Code"
   },
@@ -308,6 +338,27 @@
   "config": {
     "search": "Search settings",
     "general": "General",
+    "components": "Components",
+    "addComponent": "Add a component file",
+    "removeComponent": "Remove from the list",
+    "noComponentFiles": "No other .typ files in this project",
+    "noComponents": "No component files listed",
+    "componentMissing": "This file is not in the project",
+    "componentsRaw": "This list is written over several lines; change it in the text",
+    "variables": "Variables",
+    "addVariable": "Add a variable",
+    "removeVariable": "Remove the variable",
+    "variableName": "Name",
+    "variableType": "Type",
+    "variableAuto": "From the value",
+    "variableValues": "Allowed values, separated by commas (empty: any value)",
+    "variableMin": "Smallest",
+    "variableMax": "Largest",
+    "noVariables": "No variables yet",
+    "variableBlock": "Written over several lines; change it in the text",
+    "variableBad": "A name is letters, digits, - and _",
+    "variableTaken": "There is a variable with this name",
+    "variableAllowed": "Allowed values",
     "reset": "Back to default"
   },
   "menu": {
@@ -351,7 +402,9 @@
     "failed": "Could not move the project: {{message}}",
     "missing": "The project's folder was not found: {{path}}",
     "pickAgain": "Choose the folder again",
-    "removeFromLibrary": "Remove from the library"
+    "removeFromLibrary": "Remove from the library",
+    "localHint": "The files stay inside the app",
+    "folderHint": "Work in a folder you already have"
   },
   "overrides": {
     "mark": "Overridden by the document",

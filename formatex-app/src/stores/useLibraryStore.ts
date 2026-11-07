@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { DocumentItem, FolderItem } from "@/lib/db/types"
+import type { DocumentItem, FolderItem, ProjectKind } from "@/lib/db/types"
 
 /** What is in the clipboard of the library: projects and folders, to be copied (projects only) or moved. */
 export interface LibraryClipboard {
@@ -18,13 +18,16 @@ interface LibraryState {
   loaded: boolean
   hydrate: (documents: DocumentItem[], folders?: FolderItem[]) => void
   /** `location`: the folder of the user's that holds the project's files (none: the app's own storage). */
-  createDocument: (title: string, parentId?: string | null, location?: string | null) => DocumentItem
+  /** `kind`: a Formatex project (the default) or plain Typst, which starts with no main file. */
+  createDocument: (title: string, parentId?: string | null, location?: string | null, kind?: ProjectKind) => DocumentItem
   /** A new project record titled "<title> (copy)" next to the original; its files are copied by the caller. */
   duplicateDocument: (id: string, suffix: string) => DocumentItem | null
   renameDocument: (id: string, title: string) => void
   setMainFile: (id: string, mainFile: string) => void
   /** Moves a project's files' home: a folder of the user's, or `null` for the app's own storage (the files are copied by the caller). */
   setLocation: (id: string, location: string | null) => void
+  /** Changes what the project is; its files stay as they are. `mainFile` is the file to typeset after the change (`""`: none). */
+  setKind: (id: string, kind: ProjectKind, mainFile: string) => void
   /** Marks a project as changed now (a file in it was edited), so the library lists it first. */
   touch: (id: string) => void
   removeDocument: (id: string) => void
@@ -64,9 +67,9 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
 
   hydrate: (documents, folders = []) => set({ documents, folders, loaded: true }),
 
-  createDocument: (title, parentId = get().folderId, location = null) => {
+  createDocument: (title, parentId = get().folderId, location = null, kind = "formatex") => {
     const now = Date.now()
-    const doc: DocumentItem = { id: crypto.randomUUID(), title, mainFile: "main.md", parentId, location, createdAt: now, updatedAt: now }
+    const doc: DocumentItem = { id: crypto.randomUUID(), title, mainFile: kind === "typst" ? "" : "main.md", kind, parentId, location, createdAt: now, updatedAt: now }
     set((state) => ({ documents: [doc, ...state.documents] }))
     return doc
   },
@@ -86,6 +89,8 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
   setMainFile: (id, mainFile) => set((state) => ({ documents: patch(state.documents, id, { mainFile }) })),
 
   setLocation: (id, location) => set((state) => ({ documents: patch(state.documents, id, { location }) })),
+
+  setKind: (id, kind, mainFile) => set((state) => ({ documents: patch(state.documents, id, { kind, mainFile }) })),
 
   touch: (id) => set((state) => ({ documents: patch(state.documents, id, {}) })),
 

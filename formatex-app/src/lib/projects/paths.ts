@@ -81,13 +81,16 @@ export type NameProblem = "empty" | "invalid" | "reserved" | "exists"
 const FORBIDDEN = /[\\/:*?"<>|]/
 const hasControlCharacter = (text: string): boolean => [...text].some((char) => char.charCodeAt(0) < 32)
 
-/** Why `name` cannot be used for a new file or folder inside `parent`, or `null` when it can. */
-export function nameProblem(name: string, parent: string, existing: ReadonlySet<string>): NameProblem | null {
+/**
+ * Why `name` cannot be used for a new file or folder inside `parent`, or `null` when it can. A plain Typst project (`plain`) has no
+ * engine, so none of its names is reserved: `main.typ` and `src` are ordinary names there.
+ */
+export function nameProblem(name: string, parent: string, existing: ReadonlySet<string>, plain = false): NameProblem | null {
   const trimmed = name.trim()
   if (!trimmed) return "empty"
   if (FORBIDDEN.test(trimmed) || hasControlCharacter(trimmed) || trimmed === "." || trimmed === ".." || trimmed.length > 120 || trimmed.endsWith(".")) return "invalid"
   const path = joinPath(parent, trimmed)
-  if (parent === "" && isReservedPath(path)) return "reserved"
+  if (!plain && parent === "" && isReservedPath(path)) return "reserved"
   if (existing.has(path)) return "exists"
   return null
 }

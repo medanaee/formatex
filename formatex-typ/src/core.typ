@@ -4,6 +4,8 @@
 #import "@preview/fontawesome:0.6.2": fa-icon
 #import "/src/lib/option-schema.typ": option-schemas, option-keys
 #import "/src/preprocess/comments.typ": strip-comments
+#import "/src/lib/vars.typ": make-env
+#import "/src/preprocess/evaluate.typ": resolve-strings
 
 // Code-block badge: lowercase fence language → display name + Font Awesome icon.
 #let code-languages = (
@@ -74,22 +76,6 @@
   if data == none { (:) } else { data }
 }
 
-// `<include src="chapters/intro.md"></include>` alone on a line is replaced by that file's
-// text before rendering, so headings, numbering, ids and <ref> work across files.
-// A path starting with ./ or ../ is relative to the file that contains the include; any other path is
-// relative to the project root (like images). An included file's front matter is dropped:
-// only the main file's settings count. Lines inside fenced code blocks are left alone.
-// `mark-lines` has put its `_at="file:line"` after the tag name by then.
-#let include-line = regex("^\s{0,3}<include(?:\s+_at=\"[^\"]*\")?\s+src=\"([^\"]+)\"\s*/?>(?:\s*</include>)?\s*\r?$")
-#let resolve-include(path, from) = {
-  if not (path.starts-with("./") or path.starts-with("../")) { return path }
-  let parts = from.split("/").slice(0, -1)
-  for seg in path.split("/") {
-    if seg == "." or seg == "" { continue }
-    if seg == ".." { if parts.len() > 0 { parts = parts.slice(0, -1) } } else { parts.push(seg) }
-  }
-  parts.join("/")
-}
 // Where a piece of the user's text is, `"path:line"`: `src/preprocess/mark-lines.typ` writes it into every tag (`_at="..."`) and
 // option line (`md-at="..."`) when a file is read, and a problem found later says it with `@path:line message`. The app reads that
 // mark and puts the problem on that line of that file.
@@ -155,37 +141,6 @@
 // and found again by its label with its place on the page.
 #let fx-mark(at) = [#metadata((fx: at))<fx-mark>]
 
-// `mark` is applied to the text of every included file as it is read (the main file is marked by the caller).
-#let expand-includes(text, chain, mark: (text, path) => text) = {
-  let fence = none
-  let out = ()
-  // Comments go first, so a commented-out `<include>` line is not followed.
-  for line in strip-comments(text).split("\n") {
-    let f = line.match(regex("^\s{0,3}(`{3,}|~{3,})"))
-    if f != none {
-      let mark = f.captures.first().first()
-      if fence == none { fence = mark } else if mark == fence { fence = none }
-      out.push(line)
-      continue
-    }
-    let m = if fence == none { line.match(include-line) }
-    if m == none {
-      out.push(line)
-      continue
-    }
-    let path = resolve-include(m.captures.first(), chain.last())
-    assert(path not in chain, message: "<include> loop: " + (chain + (path,)).join(" -> "))
-    let included = mark(read(rooted(path)), path)
-    let fm = included.match(front-matter-regex)
-    if fm != none { included = included.slice(fm.end) }
-    // Blank lines keep the included blocks from merging with the surrounding paragraphs.
-    out.push("")
-    out.push(expand-includes(included, chain + (path,), mark: mark))
-    out.push("")
-  }
-  out.join("\n")
-}
-
 #let merge-config(base, over) = {
   let out = base
   for (key, value) in over {
@@ -194,7 +149,12 @@
   }
   out
 }
-#let config = merge-config(base-config, front-matter)
+#let raw-config = merge-config(base-config, front-matter)
+// The variables (`vars` of config.toml and of the front matter, `--input var.name=...`), and the settings with their `{{ ... }}` resolved
+#let make-var-env(config) = make-env(base-config.at("vars", default: (:)), front-matter.at("vars", default: (:)), base-config.at("var-types", default: (:)), front-matter.at("var-types", default: (:)), config, sys.inputs, setting-prefix)
+#let config = resolve-strings(raw-config, make-var-env(raw-config), setting-prefix)
+// What `{{ }}` in the text sees: the variables, and the settings as they are shown (with their own `{{ }}` put in)
+#let var-env = make-var-env(config)
 // Themes of the user: `[themes.<name>]` in config.toml, with hex colors (`bg = "#ffffff"`). `base` names the theme to start from;
 // a color left out comes from it (paper, or midnight when `dark = true`).
 #let theme-color-keys = ("bg", "fg", "heading", "muted", "accent", "secondary", "rule", "code-bg", "code-stroke")
@@ -323,6 +283,9 @@
 #let heading-underline = heading-flag("underline", false)
 #let heading-fill = heading-flag("fill", false)
 #let heading-max-level = int(heading-key("max-level", 2))
+// Deepest level that gets a number: 2 numbers # and ## and leaves ### and below without (levels count from the document's top heading).
+#let heading-max-numbering-level = int(heading-key("max-numbering-level", 6))
+#assert(heading-max-numbering-level >= 1, message: setting-prefix("heading", "max-numbering-level") + "heading max-numbering-level must be 1 or more, got " + str(heading-max-numbering-level))
 // The old top-level `heading-numbering` key still works.
 #let heading-numbered = heading-flag("numbering", config.at("heading-numbering", default: false))
 // Text right after the number: "" gives "۱ مقدمه", "." gives "۱. مقدمه", " -" gives "۱ - مقدمه".
@@ -455,11 +418,16 @@
 }
 
 // Leading zeros are dropped so documents starting at `==` aren't numbered "0.1".
+// A heading deeper than `max-numbering-level` has no number: none.
 #let heading-number(nums, rtl-digits) = {
   let n = nums
   while n.len() > 1 and n.first() == 0 { n = n.slice(1) }
+  if n.len() > heading-max-numbering-level { return none }
   numbering(if rtl-digits { "۱.۱" } else { "1.1" }, ..n)
 }
 
-#let make-heading-numbering(suffix, prefix: "") = (..nums) => context prefix + heading-number(nums.pos(), text.dir == rtl) + suffix
+#let make-heading-numbering(suffix, prefix: "") = (..nums) => context {
+  let number = heading-number(nums.pos(), text.dir == rtl)
+  if number == none { none } else { prefix + number + suffix }
+}
 #let heading-numbering = make-heading-numbering(heading-suffix, prefix: heading-prefix)

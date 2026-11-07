@@ -10,18 +10,19 @@ The output is the file and nothing else: front matter (`name`, `description`), t
 
 ## The screen
 
-- **Size** (four cards, each with its token count): **Minimal** (the short rules, one line per tag with its attribute names, the keys of the settings), **Compact** (the full rules, each tag's attributes with type, values and default, an example), **Standard** (plus each component's `about`: what it is for and its key rules, and brief notes on the settings), **Full** (plus every attribute described, the `more` notes of the components, full settings tables).
-- **Language**: English, Persian, or both (English first). The fixed text follows it; with both it is English.
-- **Components**: every component, grouped (document, layout, figures and code, writing, your own), each a check box; *All* / *None*. A skill can stay small by leaving components out. A group `custom` holds components the app does not know by name.
+The file has up to **two sections**, each a card with its own switch, **size** and **language**; at least one stays on.
+
+- **Writing documents** (on at the start): everything above. Its size (four cards, each with its token count): **Minimal** (the short rules, one line per tag with its attribute names, the keys of the settings), **Compact** (the full rules, each tag's attributes with type, values and default, an example), **Standard** (plus what each tag is for and its rules), **Full** (every note, every attribute described). Its language is English or Persian. Its **components**: every component, grouped (document, layout, figures and code, writing, your own), each a check box; *All* / *None*. A group `custom` holds components the app does not know by name.
+- **Building components** (off at the start): how to make a component of the project itself: what a component file defines (`<x>-tags`, optional `<x>-schema` and `<x>-docs`; any number of tags per file, any file name), how a project lists its files in `components`, what `/src/kit.typ` gives (`theme`, `zoom`, `feel`, the helpers), how errors are reported (`at-of`) and shown (in the Markdown file and in the component file), and a complete example. It is one fixed document in en and fa (`src/lib/skill/buildText.ts`), cut by size: Minimal (what and where), Compact (the schema and docs), Standard (the kit API and errors), Full (a complete file and the mistakes to avoid). A test checks that every name it documents is still defined by the engine.
 - **Preview** of the file (read-only) with its size, **Copy** and **Download** (`SKILL.md`, through `saveBytes`: the native "Save as" in the app, a download in a browser).
 
-Nothing is stored: the screen starts at Standard, English, all components.
+Nothing is stored: the screen starts with the writing section at Standard, English, all components, and the building section off.
 
-## How it is built (`generateSkill(schema, { level, language, components })`)
+## How it is built (`generateSkill(schema, { writing, building })`)
 
-`head` (front matter + title) + `intro` (the project, how to work, the rules; shorter at *Minimal*) + `## Components` + `## Option lines` + `## Settings` + `outro` (common mistakes and the checklist; shorter at *Minimal*). Components come in the order of [`GROUPS`](../../src/lib/skill/generate.ts), the user's own last. A component without docs (an older engine, a user's component that has none) is described from the schema alone. Tags are written as the engine spells them (`display`: `picHeader`). Examples are fenced with a fence longer than any fence they contain.
+`head` (front matter + title; the description names each section that is on) + `writing` (`generateWriting`: `intro` (the project, how to work, the rules; shorter at *Minimal*) + `## Components` + `## Option lines` + `## Settings` + `outro` (common mistakes and the checklist; shorter at *Minimal*)) + `building` (`generateBuilding`). The language of the head is that of the first section that is on. Components come in the order of [`GROUPS`](../../src/lib/skill/generate.ts).
 
-The fixed text is written once per language in `text.ts`. It mirrors the engine's own writing skill (`formatex-typ/skills/bilingual-document-authoring/`): when a rule changes there, change it here.
+The fixed text is written once per language in `text.ts` (writing) and `buildText.ts` (building). The writing text mirrors the engine's own writing skill (`formatex-typ/skills/bilingual-document-authoring/`): when a rule changes there, change it here.
 
 ## Where the docs of a component come from
 

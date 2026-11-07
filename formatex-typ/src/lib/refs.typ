@@ -22,11 +22,15 @@
 // Text for <ref>: kind word + number in the language of the sentence it appears in.
 #let reference-text(el, r) = {
   if el.func() == heading {
-    if el.numbering != none {
-      [#if r [بخش] else [Section] #heading-number(counter(heading).at(el.location()), r)]
+    let number = if el.numbering != none { heading-number(counter(heading).at(el.location()), r) }
+    if number != none {
+      [#if r [بخش] else [Section] #number]
     } else {
       el.body
     }
+  } else if el.func() == figure and el.numbering == none {
+    // Not numbered: the caption is all there is to say
+    if el.caption == none { [] } else { el.caption.body }
   } else if el.func() == figure {
     let n = counter(figure.where(kind: el.kind)).at(el.location()).first()
     let word = if el.kind == table { if r [جدول] else [Table] }

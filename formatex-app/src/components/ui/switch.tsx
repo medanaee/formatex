@@ -29,10 +29,10 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block rounded-full bg-background shadow-[0_1px_2px_rgb(0_0_0/0.35)] ring-0 transition-transform data-[state=unchecked]:translate-x-0",
-          size === "sm"
-            ? "size-2 data-[state=checked]:translate-x-3 rtl:data-[state=checked]:-translate-x-3"
-            : "size-3.5 data-[state=checked]:translate-x-4 rtl:data-[state=checked]:-translate-x-4"
+          // The thumb moves by a logical offset from the start edge: `translate-x` is physical and `rtl:` needs a `dir` attribute, but the
+          // editor sets its direction with CSS only (`direction: rtl`), so a switch inside it left its track
+          "pointer-events-none relative start-0 block rounded-full bg-background shadow-[0_1px_2px_rgb(0_0_0/0.35)] ring-0 transition-[inset-inline-start]",
+          size === "sm" ? "size-2 data-[state=checked]:start-3" : "size-3.5 data-[state=checked]:start-4"
         )}
       />
     </SwitchPrimitive.Root>

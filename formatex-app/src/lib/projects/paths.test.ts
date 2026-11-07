@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
-import { compareEntries, fileKindOf, isTextKind, type FsEntry } from "./paths"
+import { compareEntries, fileKindOf, isTextKind, type FsEntry, nameProblem } from "./paths"
 
 describe("code files", () => {
   it("are shown as text, whatever the language", () => {
@@ -37,3 +37,19 @@ describe("compareEntries", () => {
     expect(entries.sort(compareEntries).map((entry) => entry.path)).toEqual([".formatex", ".formatex/config.toml", "a", "images", "notes.md"])
   })
 })
+
+describe("names a project may use", () => {
+  it("keeps the engine's names for a Formatex project, and frees them for a plain Typst one", () => {
+    const none = new Set<string>()
+    for (const name of ["main.typ", "src", "components", "tools"]) {
+      expect(nameProblem(name, "", none)).toBe("reserved")
+      expect(nameProblem(name, "", none, true)).toBeNull()
+    }
+    // Inside a folder they were never reserved
+    expect(nameProblem("main.typ", "chapters", none)).toBeNull()
+    // The other rules hold in both
+    expect(nameProblem("bad:name", "", none, true)).toBe("invalid")
+    expect(nameProblem("a.typ", "", new Set(["a.typ"]), true)).toBe("exists")
+  })
+})
+

@@ -324,6 +324,6 @@ export const tableEditorTheme = EditorView.baseTheme({
   ".cm-lp-table-add:hover": { opacity: "1", backgroundColor: "var(--accent)", color: "var(--foreground)" },
   ".cm-lp-table-addrow": { width: "100%", height: "20px", marginTop: "3px" },
   ".cm-lp-table-addcolumn": { width: "20px", marginInlineStart: "3px" },
-  ".cm-lp-table-gear": { position: "absolute", top: "2px", insetInlineEnd: "2px", backgroundColor: "var(--card)", border: "1px solid var(--border)", opacity: "0" },
+  ".cm-lp-table-gear": { position: "absolute", top: "2px", insetInlineEnd: "2px", backgroundColor: "var(--card)", border: "1px solid var(--border)", opacity: "0.6" },
   ".cm-lp-table:hover .cm-lp-table-gear": { opacity: "1" },
 })

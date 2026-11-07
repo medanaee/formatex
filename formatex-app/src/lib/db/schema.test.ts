@@ -22,7 +22,8 @@ describe("runMigrations", () => {
   it("upgrades a version-1 database and keeps its documents", async () => {
     const driver = createMemoryDriver()
     await runMigrations(driver)
-    // Pretend the database is at version 1: drop what migrations 2 to 4 added, and the version
+    // Pretend the database is at version 1: drop what migrations 2 to 5 added, and the version
+    await driver.execute(`ALTER TABLE documents DROP COLUMN kind`)
     await driver.execute(`ALTER TABLE documents DROP COLUMN location`)
     await driver.execute(`ALTER TABLE documents DROP COLUMN parent_id`)
     await driver.execute(`DROP TABLE folders`)
@@ -31,8 +32,9 @@ describe("runMigrations", () => {
     await driver.execute(`INSERT INTO documents (id, title, created_at, updated_at) VALUES ('old', 'Old', 1, 1)`)
 
     await runMigrations(driver)
-    const rows = await driver.select<{ id: string; main_file: string }>(`SELECT id, main_file FROM documents`)
-    expect(rows).toEqual([{ id: "old", main_file: "main.md" }])
+    const rows = await driver.select<{ id: string; main_file: string; kind: string }>(`SELECT id, main_file, kind FROM documents`)
+    // A project from before kinds is a Formatex project
+    expect(rows).toEqual([{ id: "old", main_file: "main.md", kind: "formatex" }])
   })
 
   it("refuses a database that is newer than the app", async () => {

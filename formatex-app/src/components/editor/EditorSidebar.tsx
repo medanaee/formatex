@@ -4,12 +4,16 @@ import { FileTree } from "@/components/editor/FileTree"
 import { OutlinePanel } from "@/components/editor/OutlinePanel"
 import { TagPalette } from "@/components/editor/TagPalette"
 import { cn } from "@/lib/utils"
+import { useEditorStore } from "@/stores/useEditorStore"
 import { useSettingsStore, type SidebarTab } from "@/stores/useSettingsStore"
 
 /** The panel at the start edge of the editor, with a tab on top: the project's files, the headings or the tag palette. */
 export function EditorSidebar({ onOpen }: { /** Called after a file is opened or a tag is inserted (a phone closes the panel). */ onOpen?: () => void }) {
   const { t } = useTranslation()
-  const tab = useSettingsStore((state) => state.sidebarTab)
+  const kind = useEditorStore((state) => state.kind)
+  // The headings and the tags are Markdown things: a plain Typst project has the files only
+  const saved = useSettingsStore((state) => state.sidebarTab)
+  const tab: SidebarTab = kind === "typst" ? "files" : saved
   const setTab = useSettingsStore((state) => state.setSidebarTab)
 
   const tabs = [
@@ -17,11 +21,12 @@ export function EditorSidebar({ onOpen }: { /** Called after a file is opened or
     { id: "outline" as const, label: t("outline.title"), Icon: ListTree },
     { id: "tags" as const, label: t("tags.title"), Icon: Tags },
   ] satisfies { id: SidebarTab; label: string; Icon: typeof Folder }[]
+  const shown = kind === "typst" ? tabs.slice(0, 1) : tabs
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-sidebar">
       <div role="tablist" className="flex h-9 shrink-0 border-b border-sidebar-border select-none">
-        {tabs.map(({ id, label, Icon }) => (
+        {shown.map(({ id, label, Icon }) => (
           <button
             key={id}
             type="button"

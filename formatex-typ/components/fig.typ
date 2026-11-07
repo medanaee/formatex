@@ -217,18 +217,14 @@
       }
 
       span-columns(attrs, "fig", context {
-        let d = if caption == none { last-dir.get() } else { resolve-dir("auto", caption) }
-        set text(dir: d)
-        let fig = figure(
-          rounded(picture),
-          kind: image,
-          caption: caption,
-          supplement: if d == rtl [شکل] else [Figure],
-          numbering: n => numbering(if d == rtl { "۱" } else { "1" }, n),
+        let fig = captioned(
+          "figure", image, "شکل", "Figure", rounded(picture),
+          caption: caption, id: attrs.at("id", default: none),
+          numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
+          listed: caption-flag(attrs, "lof") != false, implicit: true,
         )
-        let id = attrs.at("id", default: none)
         let a = if a != none { a } else { inherited-align("center") }
-        align(align-names.at(a), block(width: auto, if id != none [#fig#label(id)] else { fig }))
+        align(align-names.at(a), block(width: auto, fig))
       })
     },
 )
@@ -239,6 +235,9 @@
     description: (en: "numbered figure", fa: "شکل شماره‌دار"),
     attrs: (
       "id": (type: "string", doc: (en: "Target for `<ref>`.", fa: "هدف `<ref>`.")),
+      "numbering": (type: "bool", doc: (en: "Number the figure («شکل ۱»). Default: `[figure] numbering` (on). With a `<caption>` inside, the caption follows the number: «شکل ۱: توضیح»; with the number off, the caption stands alone.", fa: "شکل شماره بخورد («شکل ۱»). پیش‌فرض: `[figure] numbering` (روشن). اگر `<caption>` داخلش باشد عنوان بعد از شماره می‌آید: «شکل ۱: توضیح»؛ با شمارهٔ خاموش عنوان تنها می‌آید.")),
+      "caption-position": (type: "enum", values: ("above", "below"), doc: (en: "Where the number and caption go. Default: `[figure] caption-position` (`below`).", fa: "جای شماره و عنوان. پیش‌فرض: `[figure] caption-position` (`below`).")),
+      "lof": (type: "bool", default: "true", doc: (en: "`false` leaves this figure out of `<lof>`.", fa: "`false` این شکل را از `<lof>` بیرون می‌گذارد.")),
       "align": (type: "enum", values: ("center", "left", "right", "start", "end"), default: "center", doc: (en: "`center` (default, or the enclosing `<align>`), `left`, `right`, `start`, `end`.", fa: "`center` (پیش‌فرض، یا `<align>` دربرگیرنده)، `left`، `right`، `start`، `end`.")),
       "height": (type: "length", doc: (en: "Size of the image or drawing.", fa: "اندازهٔ تصویر یا رسم.")),
       "width": (type: "length", doc: (en: "Size of the image or drawing. A `%` width is relative to the text width.", fa: "اندازهٔ تصویر یا رسم. پهنای `%` نسبت به پهنای متن است.")),

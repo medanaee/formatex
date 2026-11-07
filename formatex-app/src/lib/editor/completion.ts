@@ -1,4 +1,6 @@
 import { completeFrontMatter, inFrontMatter } from "./configCompletion"
+import { PAGE_VALUES, READ_ONLY_VARIABLES, readVariables } from "./variables"
+import { expressionAt } from "./variableSyntax"
 import { localized, type AttrSpec, type OptionKind, type Schema, type TagSpec } from "./schema"
 
 /**
@@ -11,10 +13,11 @@ import { localized, type AttrSpec, type OptionKind, type Schema, type TagSpec } 
  * - `<tag attr="` / `{attr=`: the values of an enum / bool attribute, project files for a path attribute
  * - `</`: the tags that are still open
  * - `{` on a heading, table, list, equation or span line: the engine's `{...}` options
+ * - `{{ ` and the `cond="` of `<if>`: the document's variables, and the values a variable lists after `==` or `in`
  * It stays silent in the front matter, in fenced code and in inline code.
  */
 
-export type SuggestionKind = "tag" | "attribute" | "value" | "close" | "option"
+export type SuggestionKind = "tag" | "attribute" | "value" | "close" | "option" | "variable" | "keyword"
 
 export interface Suggestion {
   label: string
@@ -29,6 +32,8 @@ export interface Suggestion {
 export interface Completions {
   /** Start of the text the suggestion replaces. */
   from: number
+  /** End of the text it replaces, when that is more than what stands before the cursor (the rest of a value that is already written). */
+  to?: number
   options: Suggestion[]
 }
 
@@ -245,12 +250,55 @@ function optionKindAt(text: string, lineStart: number, braceAt: number): OptionK
   return null
 }
 
+const NAME_END = /[\p{L}\p{N}_.-]*$/u
+const KEYWORDS = ["if", "else", "for", "let", "true", "false", "none"]
+
+/** `setting.theme`, `setting.chat.frame`: every setting the document can read, from the settings schema. */
+function settingPaths(env: CompletionEnv): Suggestion[] {
+  const config = env.schema.config?.["front-matter"]
+  if (!config) return []
+  const out: Suggestion[] = []
+  const add = (path: string, spec: AttrSpec) => out.push({ label: path, kind: "variable", detail: spec.default, info: localized(spec.doc, env.language) || undefined, template: path, boost: -1 })
+  for (const [key, spec] of Object.entries(config.attrs)) if (key !== "vars" && key !== "var-types" && key !== "components") add(`setting.${key}`, spec)
+  for (const [table, entry] of Object.entries(config.tables)) for (const [key, spec] of Object.entries(entry.attrs)) add(`setting.${table}.${key}`, spec)
+  return out
+}
+
+/** Variables to name, or the values a variable that lists them is compared with. `code` is the code of the expression up to the cursor. */
+function expressionSuggestions(code: string, text: string, pos: number, env: CompletionEnv): Completions | null {
+  const variables = readVariables(text)
+  const enumOf = (name: string): string[] | undefined => {
+    const rule = variables.find((variable) => variable.name === name)?.rule
+    return rule?.kind === "enum" ? rule.options : undefined
+  }
+  // `mode == "te` or `mode == `: the values of `mode`
+  const compare = /([\p{L}_][\p{L}\p{N}_-]*)\s*(?:==|!=)\s*("?)([^"\s]*)$/u.exec(code)
+  if (compare) {
+    const options = enumOf(compare[1])
+    if (!options) return null
+    const quoted = compare[2] === '"'
+    return { from: pos - compare[3].length, options: options.map((value): Suggestion => ({ label: value, kind: "value", template: quoted ? `${value}"` : `"${value}"` })) }
+  }
+  const word = NAME_END.exec(code)?.[0] ?? ""
+  const defined = variables.map((variable): Suggestion => ({ label: variable.name, kind: "variable", detail: variable.value, template: variable.name, boost: 2 }))
+  const names = new Set(variables.map((variable) => variable.name))
+  const readOnly = READ_ONLY_VARIABLES.filter((name) => !names.has(name)).map((name): Suggestion => ({ label: name, kind: "variable", template: name }))
+  const page = PAGE_VALUES.map((name): Suggestion => ({ label: name, kind: "variable", detail: "page", template: name, boost: 1 }))
+  const words = KEYWORDS.map((name): Suggestion => ({ label: name, kind: "keyword", template: name, boost: -2 }))
+  const options = [...defined, ...readOnly, ...page, ...settingPaths(env), ...words]
+  return { from: pos - word.length, options }
+}
+
 /** Suggestions for the text before `pos`, or `null` when nothing applies there. */
 export function complete(text: string, pos: number, env: CompletionEnv): Completions | null {
   // The YAML block at the top of the file has its own settings, from the config schema
   if (inFrontMatter(text, pos)) return completeFrontMatter(text, pos, env)
   if (inCode(text, pos)) return null
   const nextChar = text[pos] ?? ""
+
+  // 0. Inside `{{ ... }}`, in the text or in the value of an attribute
+  const inside = expressionAt(text, pos)
+  if (inside && !inside.inMarkdown) return expressionSuggestions(inside.code, text, pos, env)
 
   // 1. Inside a tag: `<name`, `<name attr`, `<name attr="va`, `</na`
   const lt = text.lastIndexOf("<", pos - 1)
@@ -309,6 +357,34 @@ export function complete(text: string, pos: number, env: CompletionEnv): Complet
     }
   }
   return null
+}
+
+/**
+ * The cursor stands in the value of an attribute that already has one (`kind="la|tte"`): every value the attribute takes, to switch
+ * to, and the range of the value written now, which a choice replaces whole. The value written now comes first. `null` outside a value
+ * of a known attribute, or when the value is not closed on its line (the typing completion above handles that).
+ */
+export function completeValue(text: string, pos: number, env: CompletionEnv): (Completions & { to: number }) | null {
+  if (inFrontMatter(text, pos) || inCode(text, pos)) return null
+  const lt = text.lastIndexOf("<", pos - 1)
+  if (lt < 0 || lt >= pos) return null
+  const inside = text.slice(lt + 1, pos)
+  if (!isTagOpen(inside)) return null
+  const name = /^[A-Za-z][\w-]*/.exec(inside)?.[0] ?? ""
+  const spec = name ? env.schema.tags[name] : undefined
+  if (!spec || !/^\s/.test(inside.slice(name.length))) return null
+  const context = readAttributes(inside.slice(name.length), lt + 1 + name.length)
+  if (context.state !== "value") return null
+  const attr = spec.attrs[context.attr]
+  if (!attr) return null
+  // The end of the value: its closing quote on this line, or the next space of an unquoted one
+  const line = text.slice(pos).split("\n", 1)[0]
+  const close = context.quote ? line.indexOf(context.quote) : /^[^\s>/]*/.exec(line)?.[0].length
+  if (close === undefined || close < 0) return null
+  const to = pos + close
+  const written = text.slice(context.from, to)
+  const options = valueSuggestions(attr, name, context.quote, true, env).map((option) => (option.label === written ? { ...option, boost: 2 } : option))
+  return options.length ? { from: context.from, to, options } : null
 }
 
 /**

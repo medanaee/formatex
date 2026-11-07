@@ -24,10 +24,39 @@ export const editorTheme = EditorView.theme({
   ".cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--primary) 22%, transparent)",
   },
-  ".cm-gutters": { backgroundColor: "var(--background)", color: "var(--muted-foreground)", border: "none", opacity: "0.7" },
+  ".cm-gutters": { backgroundColor: "var(--background)", color: "var(--muted-foreground)", border: "none" },
+  // The numbers are quiet; the fold markers are not (they are for clicking)
+  ".cm-lineNumbers": { opacity: "0.7" },
   ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--foreground)" },
   ".cm-lineNumbers .cm-gutterElement": { padding: "0 6px 0 10px", minWidth: "28px", fontSize: "11px" },
   ".cm-placeholder": { color: "var(--muted-foreground)" },
+
+  // Folding: a chevron beside a line that can fold (down: shown, toward the end: folded), and the mark left where lines are hidden
+  ".cm-foldGutter .cm-gutterElement": { display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", minWidth: "18px", cursor: "pointer" },
+  ".cm-fold-marker": { display: "inline-flex", color: "var(--muted-foreground)", opacity: "0.55", transition: "opacity 120ms, color 120ms, transform 120ms" },
+  ".cm-fold-open": { transform: "rotate(90deg)" },
+  ".cm-fold-closed": { color: "var(--primary)", opacity: "1" },
+  ".cm-foldGutter:dir(rtl) .cm-fold-closed": { transform: "scaleX(-1)" },
+  ".cm-foldGutter .cm-gutterElement:hover .cm-fold-marker, .cm-gutters:hover .cm-fold-open": { opacity: "1", color: "var(--foreground)" },
+  // {{ name }} prints, {{ a ? b : c }} and <if> decide; inside an attribute value both get a soft background so they show in a long tag, and a decision an outline too
+  ".cm-var": { color: "var(--syntax-var) !important" },
+  ".cm-cond": { color: "var(--syntax-cond) !important" },
+  ".cm-page": { color: "var(--syntax-page) !important", fontWeight: "600" },
+  ".cm-var-attr": { backgroundColor: "color-mix(in oklab, var(--syntax-var) 12%, transparent)", borderRadius: "4px" },
+  ".cm-cond-attr": { backgroundColor: "color-mix(in oklab, var(--syntax-cond) 14%, transparent)", borderRadius: "4px", boxShadow: "0 0 0 1px color-mix(in oklab, var(--syntax-cond) 35%, transparent)" },
+  ".cm-foldPlaceholder": {
+    display: "inline-block",
+    margin: "0 4px",
+    padding: "0 7px",
+    lineHeight: "1.3",
+    fontSize: "11px",
+    border: "1px solid var(--border)",
+    borderRadius: "5px",
+    backgroundColor: "color-mix(in oklab, var(--muted) 70%, transparent)",
+    color: "var(--muted-foreground)",
+    cursor: "pointer",
+  },
+  ".cm-foldPlaceholder:hover": { color: "var(--foreground)", borderColor: "var(--ring)" },
   ".cm-matchingBracket": { backgroundColor: "color-mix(in oklab, var(--primary) 18%, transparent)" },
 
   ".cm-tooltip": {

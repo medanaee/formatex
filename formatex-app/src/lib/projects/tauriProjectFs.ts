@@ -35,7 +35,19 @@ export class TauriProjectFs implements ProjectFs {
 
   private full = (path: string) => (path ? `${this.root}/${path}` : this.root)
 
+  private rootReady: Promise<void> | null = null
+
+  /** The project's own folder in the app's storage exists before it is listed or written to (a new project has none yet). */
+  private ensureRoot(): Promise<void> {
+    if (this.absolute) return Promise.resolve()
+    return (this.rootReady ??= (async () => {
+      const fs = await this.fs()
+      await fs.mkdir(this.root, { ...(await this.options()), recursive: true })
+    })())
+  }
+
   async list(): Promise<FsEntry[]> {
+    await this.ensureRoot()
     const fs = await this.fs()
     const options = await this.options()
     const out: FsEntry[] = []
@@ -69,6 +81,7 @@ export class TauriProjectFs implements ProjectFs {
   }
 
   async writeBytes(path: string, data: Uint8Array): Promise<void> {
+    await this.ensureRoot()
     const fs = await this.fs()
     const options = await this.options()
     const slash = path.lastIndexOf("/")

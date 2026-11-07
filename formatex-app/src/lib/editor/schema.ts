@@ -47,6 +47,8 @@ export interface ComponentDocs {
 export interface ComponentInfo {
   tags: string[]
   docs: ComponentDocs | null
+  /** The project file that defines it, for a component the project lists in its `components` setting. */
+  file?: string
 }
 
 export type OptionKind = "table" | "heading" | "list" | "equation" | "span"

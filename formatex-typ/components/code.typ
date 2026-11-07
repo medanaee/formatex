@@ -35,21 +35,12 @@
       let id = attrs.at("id", default: none)
 
       code-options.update((start: first, highlight: parse-line-set(attrs.at("highlight", default: ""))))
-      span-columns(attrs, "code", if caption == none and id == none { code-block } else {
-        context {
-          let detected = if caption != none { content-dir(caption) }
-          let d = if detected == none { last-dir.get() } else { detected }
-          set text(dir: d)
-          let fig = figure(
-            code-block,
-            kind: raw,
-            caption: caption,
-            supplement: if d == rtl [کد] else [Listing],
-            numbering: n => numbering(if d == rtl { "۱" } else { "1" }, n),
-          )
-          if id != none [#fig#label(id)] else { fig }
-        }
-      })
+      span-columns(attrs, "code", captioned(
+        "code", raw, "کد", "Listing", code-block,
+        caption: caption, id: id,
+        numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
+        listed: caption-flag(attrs, "lol") != false,
+      ))
       code-options.update((:))
     },
 )
@@ -63,8 +54,11 @@
       "lang": (type: "string", doc: (en: "Highlighting language. Default: the file extension, or the fence language.", fa: "زبان رنگ‌آمیزی. پیش‌فرض: پسوند فایل یا زبان بلوک کد.")),
       "lines": (type: "string", doc: (en: "`10-20`: show only these lines. Line numbers keep the file's numbering.", fa: "`10-20`: فقط این خط‌ها را نشان بده. شمارهٔ خط‌ها همان شماره‌گذاری فایل را نگه می‌دارد.")),
       "highlight": (type: "string", doc: (en: "`3`, `3,7-9`: lines drawn with a tinted band. Uses the shown line numbers.", fa: "`3`، `3,7-9`: خط‌هایی که با نوار ته‌رنگ کشیده می‌شوند. از شمارهٔ خط‌های نمایش‌داده‌شده استفاده می‌کند.")),
-      "caption": (type: "string", doc: (en: "Numbered caption above the code: «کد ۱: ...» / \"Listing 1: ...\". Not parsed as Markdown.", fa: "عنوان شماره‌دار بالای کد: «کد ۱: ...» / \"Listing 1: ...\". به‌عنوان Markdown پردازش نمی‌شود.")),
-      "id": (type: "string", doc: (en: "Target for `<ref>`. Gives a number even without a caption.", fa: "هدف `<ref>`. حتی بدون عنوان هم شماره می‌دهد.")),
+      "caption": (type: "string", doc: (en: "Caption of the code: «توضیح». With `numbering` on it follows the number: «کد ۱: توضیح» / \"Listing 1: ...\". Not parsed as Markdown.", fa: "عنوان کد: «توضیح». با `numbering` روشن بعد از شماره می‌آید: «کد ۱: توضیح» / \"Listing 1: ...\". به‌عنوان Markdown پردازش نمی‌شود.")),
+      "numbering": (type: "bool", doc: (en: "Number the listing («کد ۱»). Default: `[code] numbering` (off): with it on, a listing gets a number as soon as it has a caption; with it off, only the caption shows until you set `numbering=\"true\"` here.", fa: "کد شماره بخورد («کد ۱»). پیش‌فرض: `[code] numbering` (خاموش): با روشن بودن آن، کد به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا اینجا `numbering=\"true\"` بگذارید.")),
+      "caption-position": (type: "enum", values: ("above", "below"), doc: (en: "Where the number and caption go. Default: `[code] caption-position` (`above`).", fa: "جای شماره و عنوان. پیش‌فرض: `[code] caption-position` (`above`).")),
+      "lol": (type: "bool", default: "true", doc: (en: "`false` leaves this listing out of `<lol>`.", fa: "`false` این کد را از `<lol>` بیرون می‌گذارد.")),
+      "id": (type: "string", doc: (en: "Target for `<ref>`.", fa: "هدف `<ref>`.")),
       "span": (type: "enum", values: ("column", "all"), default: "column", doc: (en: "`column` (default) or `all`. In a multi-column document, `all` puts the listing across all columns, at the top or bottom of a page; useful for wide code. No effect with one column.", fa: "`column` (پیش‌فرض) یا `all`. در سند چندستونه، `all` کد را روی همهٔ ستون‌ها، در بالا یا پایین صفحه، می‌گذارد؛ برای کدهای پهن. در سند تک‌ستونه اثری ندارد.")),
     ),
   ),

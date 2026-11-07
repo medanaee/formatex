@@ -1,9 +1,13 @@
 #import "/src/kit.typ": *
 
 // <exercise>: numbered question; <choices> lays out a list as lettered options; <answer> is
-// shown, hidden or collected under <answers> by `answers` (config / --input).
+// shown, hidden or collected under <answers> by `answers` (config / --input), which `answers="..."` on one <exercise> overrides
+// for that question. The title of a question is bigger than the text, and `toc` (an attribute, or `exercise-toc` for every
+// question) lists it in the table of contents like a heading.
 #let answers-mode = sys.inputs.at("answers", default: str(config.at("answers", default: "show")))
 #assert(answers-mode in ("show", "hide", "end"), message: setting-prefix("answers") + "answers must be show, hide or end, got " + repr(answers-mode))
+#let exercise-toc-given = sys.inputs.at("exercise-toc", default: config.at("exercise-toc", default: false))
+#let exercise-toc-default = exercise-toc-given == true or exercise-toc-given == "true"
 
 #let exercise-answers = state("exercise-answers", ())
 
@@ -42,28 +46,108 @@
       text(size: 0.85em, fill: theme.muted, if r [#chart-label(p, none, r) نمره] else [#chart-label(p, none, r) #if p == 1 [point] else [points]])
     }
     let number = digits(n, r)
-    let head-color = if feel-name == "formal" { theme.heading } else { theme.accent }
-    let head = block(below: 0.75em, sticky: true, {
-      text(weight: "bold", fill: head-color, [#word #number#if title != none [ (#title)]#if feel-name == "formal" [.]])
+    // The title is in the heading color in every feel: on the page in formal, on the tinted box of the title in the others
+    let head-color = theme.heading
+    // The answers of this question: its own `answers`, else the setting of the document
+    let mode = attrs.at("answers", default: answers-mode)
+    // The title of a question is bigger than the text around it
+    let title-text = [#word #number#if title != none [ (#title)]#if feel-name == "formal" [.]]
+    // 1.2 times the body text, worked out here: the heading style of the document (which a listed title is drawn inside) does not change it
+    // In a box, the space above and below the title is measured from the ink of its letters, so the two are the same whatever the title says
+    // (Persian letters go below the line, capitals do not)
+    let boxed = feel-name != "formal"
+    let title-line = text(size: text.size * 1.2, weight: "bold", fill: head-color, top-edge: if boxed { "bounds" } else { "cap-height" }, bottom-edge: if boxed { "bounds" } else { "baseline" }, title-text)
+    // In the table of contents, as a heading of the document's top level, like the other first-level headings (an unnumbered one, whose
+    // text the list shows as it is): drawn as the title line above by a show rule inside this block, so only the list sees it
+    let toc-given = attrs.at("toc", default: none)
+    let listed = if toc-given == none { exercise-toc-default } else { toc-given == "true" }
+    let title-item = if listed {
+      let others = query(heading.where(outlined: true)).filter(h => h.at("label", default: none) != <exercise-title>)
+      let level = if others.len() > 0 { calc.min(..others.map(h => h.level)) } else { 1 }
+      [#show heading: it => title-line
+        #heading(level: level, numbering: none, outlined: true, title-text)<exercise-title>]
+    } else { title-line }
+    let head-content = {
+      title-item
       if points-text != none { h(1fr) + points-text }
-    })
+    }
+    // The colors of an exercise are the theme's secondary color (the soft tint of tables and highlights), not the accent
+    let tone = tinted(theme.secondary)
+    // The box of the title: only a little deeper than the card (the card has 10% of the secondary color, 16% on dark themes)
+    let title-fill = color.mix((theme.secondary, if theme.dark { 25% } else { 17% }), (theme.bg, if theme.dark { 75% } else { 83% }))
+    let card-radius = feel.box
+    let pad-x = 12pt * zoom
+    // Friendly: the little room around the title box inside the card
+    let gap = 3pt * zoom
+    // The title:
+    //  formal: a rule under it like the one under a heading (1pt, in the heading color), with room between the title and it, and under it;
+    //  standard: a band in a deeper tint the width of the card, touching its top and both sides, with the card's own radius at the top;
+    //  friendly: a box with very little room around it, its top corners concentric with the card's and its bottom ones a little round.
+    let head = if feel-name == "formal" {
+      block(width: 100%, sticky: true, below: 1em, inset: (bottom: 0.65em), stroke: (bottom: 1pt * zoom + theme.heading), head-content)
+    } else if feel-name == "standard" {
+      block(
+        width: 100%, sticky: true, below: 0pt, fill: title-fill, inset: (x: pad-x, y: 8pt * zoom),
+        radius: (top-left: card-radius, top-right: card-radius, bottom-left: 0pt, bottom-right: 0pt),
+        head-content,
+      )
+    } else {
+      let top = calc.max(card-radius - gap, 0pt)
+      block(
+        width: 100%, sticky: true, below: 0pt, fill: title-fill, inset: (x: pad-x - gap, y: 8pt * zoom),
+        radius: (top-left: top, top-right: top, bottom-left: 5pt * zoom, bottom-right: 5pt * zoom),
+        head-content,
+      )
+    }
     let answers = parts.tagged
     let answer-word = if r { "پاسخ" } else { "Answer" }
-    let inner = {
-      head
+    let showing = mode == "show" and answers.len() > 0
+    // Formal: the question, and under it each answer in a dashed rule frame
+    let formal-content = {
       block(width: 100%, question)
-      if answers-mode == "show" {
+      if mode == "show" {
         for a in answers { answer-frame(answer-word, a.body, r) }
       }
     }
-    exercise-head.update((word: word, number: number, r: r))
-    if answers-mode == "end" and answers.len() > 0 {
+    // Standard and friendly: the answer goes on in the same card, in green, joined to the question (no box of its own inside the card):
+    //  standard: a green area the width of the card: a deeper band like the title's, with the word and an icon, and the answer on the lighter green
+    //            under it; the last one takes the card's own radius at the bottom;
+    //  friendly: a green box with the same little room around it as the title's, round in every corner (concentric with the card's).
+    let green = tinted(color-presets.green)
+    let green-deep = color.mix((color-presets.green, if theme.dark { 25% } else { 17% }), (theme.bg, if theme.dark { 75% } else { 83% }))
+    let answer-label = text(size: text.size * 1.2, weight: "bold", fill: green.icon, top-edge: "bounds", bottom-edge: "bounds", [#fa-icon("circle-check")#h(0.5em)#answer-word])
+    let answer-area(a, last) = if feel-name == "standard" {
+      let bottom = if last { card-radius } else { 0pt }
+      block(width: 100%, above: 0pt, below: 0pt, fill: green.fill, inset: 0pt, radius: (top-left: 0pt, top-right: 0pt, bottom-left: bottom, bottom-right: bottom), {
+        block(width: 100%, above: 0pt, below: 0pt, fill: green-deep, inset: (x: pad-x, y: 8pt * zoom), answer-label)
+        block(width: 100%, above: 0pt, below: 0pt, inset: (x: pad-x, y: 10pt * zoom), a.body)
+      })
+    } else {
+      block(width: 100%, above: 0pt, below: if last { 0pt } else { gap }, fill: green-deep, radius: calc.max(card-radius - gap, 0pt), inset: (x: pad-x - gap, y: 8pt * zoom), {
+        block(width: 100%, above: 0pt, below: 0.55em, answer-label)
+        a.body
+      })
+    }
+    let answer-areas = for (i, a) in answers.enumerate() { answer-area(a, i == answers.len() - 1) }
+    exercise-head.update((word: word, number: number, r: r, mode: mode))
+    if mode == "end" and answers.len() > 0 {
       exercise-answers.update(all => all + ((word: word, number: number, body: answers.map(a => a.body).join(parbreak()), r: r),))
     }
     if feel-name == "formal" {
-      block(width: 100%, above: 1.2em, below: 1.2em, inner)
+      // Formal has no card: a thin rule under the question (and its answer), and a little more room below it
+      block(width: 100%, above: 1.2em, below: 1.7em, inset: (bottom: 0.7em), stroke: (bottom: 0.6pt * zoom + theme.rule), { head; formal-content })
+    } else if feel-name == "standard" {
+      block(width: 100%, above: 1.2em, below: 1.2em, fill: tone.fill, radius: card-radius, inset: 0pt, {
+        head
+        block(width: 100%, above: 0pt, below: 0pt, inset: (x: pad-x, top: 9pt * zoom, bottom: 10pt * zoom), block(width: 100%, question))
+        if showing { answer-areas }
+      })
     } else {
-      block(width: 100%, above: 1.2em, below: 1.2em, fill: tinted(theme.accent).fill, radius: feel.box, inset: (x: 12pt * zoom, y: 10pt * zoom), inner)
+      block(width: 100%, above: 1.2em, below: 1.2em, fill: tone.fill, radius: card-radius, inset: (top: gap, x: gap, bottom: if showing { gap } else { 0pt }), {
+        head
+        block(width: 100%, above: 0pt, below: 0pt, inset: (x: pad-x - gap, top: 9pt * zoom, bottom: if showing { 8pt * zoom } else { 10pt * zoom }), block(width: 100%, question))
+        if showing { answer-areas }
+      })
     }
     exercise-head.update(none)
   }
@@ -84,9 +168,12 @@
     let r = d == rtl
     set text(dir: d)
     let green = tinted(color-presets.green)
-    let accent = tinted(theme.accent)
+    let accent = tinted(theme.secondary)
+    // The question these options belong to says whether the right one shows; a <choices> outside any <exercise> follows the document
+    let head = exercise-head.get()
+    let mode = if head != none { head.mode } else { answers-mode }
     let mark(i) = {
-      let is-correct = answers-mode == "show" and (i + 1) in correct
+      let is-correct = mode == "show" and (i + 1) in correct
       let name = if style == "numbers" { digits(i + 1, r) } else if r { abjad-letters.at(calc.rem(i, abjad-letters.len())) } else { "abcdefghijklmnopqrstuvwxyz".at(calc.rem(i, 26)) }
       if feel-name == "formal" {
         text(weight: if is-correct { "bold" } else { "regular" }, fill: if is-correct { green.icon } else { theme.fg }, [#name)])
@@ -102,14 +189,13 @@
         )
       }
     }
-    let head = exercise-head.get()
-    if answers-mode == "end" and correct.len() > 0 and head != none {
+    if mode == "end" and correct.len() > 0 and head != none {
       let names = correct.map(k => if style == "numbers" { digits(k, head.r) } else if head.r { abjad-letters.at(calc.rem(k - 1, abjad-letters.len())) } else { "abcdefghijklmnopqrstuvwxyz".at(calc.rem(k - 1, 26)) })
       let note = if head.r [گزینهٔ #names.join("، ")] else [#if names.len() > 1 [Options] else [Option] #names.join(", ")]
       exercise-answers.update(all => all + ((word: head.word, number: head.number, body: note, r: head.r),))
     }
     let option(i, it) = {
-      let is-correct = answers-mode == "show" and (i + 1) in correct
+      let is-correct = mode == "show" and (i + 1) in correct
       grid(columns: (auto, 1fr), column-gutter: 0.55em, align: start + horizon, mark(i), if is-correct { strong(it) } else { it })
     }
     layout(size => {
@@ -125,9 +211,10 @@
 }
 
 #let answers-list(attrs) = {
-  if answers-mode != "end" { return [] }
   context {
+    // Only the questions whose answers go to the end are in it (the document's `answers`, or the `answers="end"` of a question)
     let all = exercise-answers.final()
+    if all.len() == 0 { return }
     let title = attrs.at("title", default: none)
     let d = resolve-dir(attrs.at("dir", default: "auto"), if title != none { title } else if all.len() > 0 { all.first().word } else { [] })
     let r = d == rtl
@@ -141,7 +228,7 @@
       } else { groups.push(a) }
     }
     for a in groups {
-      block(width: 100%, below: 1em, [#text(weight: "bold", fill: if feel-name == "formal" { theme.heading } else { theme.accent }, [#a.word #a.number.])#h(0.5em)#a.body])
+      block(width: 100%, below: 1em, [#text(weight: "bold", fill: if feel-name == "formal" { theme.heading } else { theme.secondary }, [#a.word #a.number.])#h(0.5em)#a.body])
     }
   }
 }
@@ -162,6 +249,8 @@
       "points": (type: "number", doc: (en: "Score on the end side of the head: \"2 points\", \"1 point\" («۲ نمره» in Persian).", fa: "نمره در سمت پایان سرعنوان: «۲ نمره» / \"2 points\" (\"1 point\").")),
       "name": (type: "string", doc: (en: "Replaces the word «تمرین» / \"Exercise\", e.g. `name=\"سؤال\"`. The number still comes from the same counter.", fa: "جایگزین کلمهٔ «تمرین» / \"Exercise\"، مثلاً `name=\"سؤال\"`. شماره همچنان از همان شمارنده می‌آید.")),
       "id": (type: "string", doc: (en: "Target for `<ref>`: «تمرین ۱» / \"Exercise 1\" (or the `name` word).", fa: "هدف `<ref>`: «تمرین ۱» / \"Exercise 1\" (یا کلمهٔ `name`).")),
+      "answers": (type: "enum", values: ("show", "hide", "end"), doc: (en: "What happens to the answers of this question, instead of the document's `answers` setting: `show` (under the question, the right option highlighted), `hide` (left out) or `end` (collected where `<answers></answers>` stands).", fa: "پاسخ‌های همین سؤال چه شوند، به‌جای تنظیم `answers` سند: `show` (زیر سؤال، با گزینهٔ درست برجسته)، `hide` (نمایش داده نشوند) یا `end` (جایی جمع شوند که `<answers></answers>` نوشته شده).")),
+      "toc": (type: "bool", doc: (en: "`true`: the title of this question («تمرین ۱») is listed in the table of contents like a first-level heading; `false`: not. Default: the document's `exercise-toc` setting (`false`).", fa: "`true`: عنوان همین سؤال («تمرین ۱») مثل یک تیتر سطح اول در فهرست مطالب بیاید؛ `false`: نیاید. پیش‌فرض: تنظیم `exercise-toc` سند (`false`).")),
       "dir": (type: "enum", values: ("auto", "rtl", "ltr"), default: "auto", doc: (en: "`auto` (default: from the title or the content), `rtl`, `ltr`.", fa: "جهت: `auto` (پیش‌فرض: از روی عنوان یا محتوا)، `rtl`، `ltr`.")),
     ),
     children: ("choices", "answer"),
@@ -199,7 +288,8 @@ A numbered exercise or quiz question: `<exercise>` holds the question, `<choices
 
 - All exercises share one counter in document order. `points` shows the score; `title` names the exercise; `id` makes it a `<ref>` target.
 - `<choices>` turns a Markdown list (bulleted or numbered) into lettered options; `correct="3"` marks the right option by number. A `<choices>` without a list is a compile error.
-- Answers depend on the `answers` setting: `show` (default) puts each `<answer>` under its question and highlights the right option; `hide` makes a question sheet; `end` collects them where `<answers></answers>` stands.
+- Answers depend on the `answers` setting: `show` (default) puts each `<answer>` under its question and highlights the right option; `hide` makes a question sheet; `end` collects them where `<answers></answers>` stands. `answers="..."` on one `<exercise>` overrides the setting for that question: one answer can be shown, another hidden and a third sent to the end; `<answers></answers>` lists the ones that went to the end.
+- The title of a question («تمرین ۱») is set bigger than the text. `toc="true"` on an `<exercise>` lists that title in the table of contents like a first-level heading (without a number); the `exercise-toc` setting does it for every question, and `toc="false"` leaves one out.
 - Leave blank lines inside `<exercise>`, `<choices>` and `<answer>`.
 `````.text,
   ),
@@ -209,7 +299,8 @@ A numbered exercise or quiz question: `<exercise>` holds the question, `<choices
 
 - همهٔ تمرین‌ها یک شمارنده دارند، به ترتیب سند. `points` نمره را نشان می‌دهد، `title` نام تمرین است و `id` آن را هدف `<ref>` می‌کند.
 - `<choices>` یک فهرست Markdown (گلوله‌ای یا شماره‌دار) را به گزینه‌های حرف‌دار تبدیل می‌کند؛ `correct="3"` گزینهٔ درست را با شماره نشان می‌دهد. `<choices>` بدون فهرست خطای ساخت است.
-- پاسخ‌ها به تنظیم `answers` بستگی دارند: `show` (پیش‌فرض) هر `<answer>` را زیر سؤال می‌گذارد و گزینهٔ درست را برجسته می‌کند؛ `hide` برگهٔ سؤال می‌سازد؛ `end` همه را جایی جمع می‌کند که `<answers></answers>` نوشته شده.
+- پاسخ‌ها به تنظیم `answers` بستگی دارند: `show` (پیش‌فرض) هر `<answer>` را زیر سؤال می‌گذارد و گزینهٔ درست را برجسته می‌کند؛ `hide` برگهٔ سؤال می‌سازد؛ `end` همه را جایی جمع می‌کند که `<answers></answers>` نوشته شده. `answers="..."` روی یک `<exercise>` تنظیم را برای همان سؤال بازنویسی می‌کند: پاسخ یکی نشان داده شود، دیگری پنهان و سومی به انتها برود؛ `<answers></answers>` همان‌هایی را فهرست می‌کند که به انتها رفته‌اند.
+- عنوان سؤال («تمرین ۱») از متن بزرگ‌تر است. `toc="true"` روی `<exercise>` آن عنوان را مثل یک تیتر سطح اول (بدون شماره) در فهرست مطالب می‌آورد؛ تنظیم `exercise-toc` همین را برای همهٔ سؤال‌ها می‌کند و `toc="false"` یکی را کنار می‌گذارد.
 - داخل `<exercise>`، `<choices>` و `<answer>` خط خالی بگذارید.
 `````.text,
   ),

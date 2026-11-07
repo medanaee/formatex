@@ -1,4 +1,5 @@
-#import "/src/preprocess/common.typ": fence-match, option-token
+#import "/src/preprocess/common.typ": blank, fence-match, option-token
+#import "/src/preprocess/comments.typ": blank-comments
 
 // The first thing that happens to a file when it is read: every piece of the user's text that can be wrong is told where it is.
 //   <alert type="tip">      ->  <alert _at="main.md:5" type="tip">
@@ -29,11 +30,10 @@
 #let indent-re = regex("^[ \t]*")
 
 // Same bytes, same lines: only the characters change.
-#let blank(text) = text.replace(regex("[^\\n]+"), m => " " * m.text.len())
 
 // The text with everything that is not markup blanked out: comments, fenced code, inline code and inline math.
 #let markup-only(src) = {
-  let text = src.replace(regex("<!--[\\s\\S]*?-->"), m => blank(m.text))
+  let text = blank-comments(src)
   let fence = none
   let lines = ()
   for line in text.split("\n") {
@@ -55,11 +55,12 @@
 #let only-options(content) = content.trim() != "" and content.replace(option-token, "").trim() == ""
 
 // `src` is the whole file as it is on disk, `path` its project path.
-#let mark-lines(src, path, schemas, front-matter-regex) = {
+// `places` says, for each line of `src`, the `path:line` of the file it was written on (the lines of a text a `{{ }}` made are the line of the `{{`)
+#let mark-lines(src, path, schemas, front-matter-regex, places: none) = {
   let fm = src.match(front-matter-regex)
   // The front matter is settings, not text: its lines count but nothing in it is marked
   let clean = markup-only(if fm == none { src } else { blank(src.slice(0, fm.end)) + src.slice(fm.end) })
-  let at(line) = path + ":" + str(line)
+  let at(line) = if places == none { path + ":" + str(line) } else { places.at(line - 1, default: path + ":" + str(line)) }
   // (position in the file, text to put there)
   let inserts = ()
 

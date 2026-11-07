@@ -14,6 +14,7 @@ import { isTauri } from "@/lib/platform"
 import { CONFIG_FILE } from "@/lib/projects"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { cn } from "@/lib/utils"
+import { typstSourceAt } from "@/lib/editor/typstIde"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 
@@ -72,6 +73,7 @@ async function openExternal(url: string): Promise<void> {
 export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void }) {
   const { t } = useTranslation()
   const pages = useEditorStore((state) => state.pages)
+  const plainTypstWithoutMain = useEditorStore((state) => state.kind === "typst" && !state.mainFile)
   const diagnostics = useEditorStore((state) => state.diagnostics)
   const status = useEditorStore((state) => state.compileStatus)
   const ok = useEditorStore((state) => state.ok)
@@ -100,6 +102,14 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     const x = ((event.clientX - rect.left) / rect.width) * map.width
     const y = ((event.clientY - rect.top) / rect.height) * map.height
     const store = useEditorStore.getState()
+    // A plain Typst project: Typst says which text the click is on (the engine's markers do not exist there)
+    if (store.kind === "typst") {
+      const place = await typstSourceAt(index, x, y)
+      if (!place) return
+      void store.revealAt(place.path, place.line, place.column)
+      onJumpToSource?.()
+      return
+    }
     const maps = pages.map((page) => page.map)
     // The block the click is in comes from the engine's markers (any file of the project); the text search only finds the row in it
     const marker = markerAt(store.markers, index, x, y, maps)
@@ -281,7 +291,7 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
         {status === "unavailable" ? (
           <p className="p-6 text-center text-xs text-muted-foreground">{t("editor.unavailable")}</p>
         ) : images.length === 0 ? (
-          <p className="p-6 text-center text-xs text-muted-foreground">{status === "compiling" ? t("editor.compiling") : t("editor.noPages")}</p>
+          <p className="p-6 text-center text-xs text-muted-foreground">{status === "compiling" ? t("editor.compiling") : plainTypstWithoutMain ? t("kind.chooseMain") : t("editor.noPages")}</p>
         ) : (
           <div style={{ width: size.w > 0 ? pageWidth + 24 : "100%" }} className={cn("mx-auto box-border flex flex-col gap-3 p-3", !ok && "opacity-60")}>
             {images.map((image, index) => {

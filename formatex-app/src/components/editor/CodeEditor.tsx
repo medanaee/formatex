@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { autocompletion, completionKeymap } from "@codemirror/autocomplete"
+import { autocompletion, completionKeymap, completionStatus, startCompletion } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab, redoDepth, undoDepth } from "@codemirror/commands"
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
 import { StreamLanguage } from "@codemirror/language"
@@ -17,9 +17,16 @@ import { bidiIsolate } from "@/lib/editor/bidiIsolate"
 import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
+import { indentGuides } from "@/lib/editor/indentGuides"
+import { surroundOnType } from "@/lib/editor/surround"
+import { tagFolding, tagFoldingKeymap } from "@/lib/editor/tagFolding"
+import { tagWrapOnType } from "@/lib/editor/tagWrap"
+import { variableMarks } from "@/lib/editor/variableMarks"
 import { problemExtension, setProblems, type Problem } from "@/lib/editor/problems"
 import { stickyHeadings, stickyTheme } from "@/lib/editor/stickyHeadings"
+import { completeValue } from "@/lib/editor/completion"
 import { completionSource } from "@/lib/editor/completionSource"
+import { typstCompletionSource } from "@/lib/editor/typstIde"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
 import { typstLanguage } from "@/lib/editor/typstLanguage"
 import { editorHighlighting, editorTheme } from "@/lib/editor/theme"
@@ -114,8 +121,10 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   const liveExtension = (fileKind: FileKind, on: boolean): Extension =>
     on && fileKind === "markdown" ? livePreview(() => latest.current.schema, (request) => latest.current.onConfigure?.(request), frontMatterMount) : []
 
-  const createState = (doc: string, fileKind: FileKind, filePath: string) =>
-    EditorState.create({
+  const createState = (doc: string, fileKind: FileKind, filePath: string) => {
+    // The attribute value the cursor is in, so the choices open once when it comes in (not on every key inside)
+    let valueKey = ""
+    return EditorState.create({
       doc,
       extensions: [
         showLineNumbers ? lineNumbers() : [],
@@ -123,6 +132,11 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         drawSelection(),
         highlightActiveLine(),
         highlightSelectionMatches(),
+        // A bracket or a quote typed over a selection goes around it; in Markdown `<` writes a tag around it, and tags fold, with a marker beside the line
+        surroundOnType,
+        // A line behind every level of indentation, like VS Code
+        indentGuides(),
+        fileKind === "markdown" ? [tagFolding(), variableMarks(), tagWrapOnType()] : [],
         EditorView.lineWrapping,
         dir.of(dirExtension(direction, fileKind)),
         EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
@@ -157,7 +171,10 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
               override: [completionSource(() => ({ schema: latest.current.schema, language: latest.current.language, files: latest.current.files }), fileKind)],
               icons: false,
             })
-          : [],
+          : // Typst's own completions, in a plain Typst project (the source answers nothing in any other)
+            fileKind === "typst"
+            ? autocompletion({ override: [typstCompletionSource(filePath)], icons: false })
+            : [],
         keymap.of([
           ...(fileKind === "markdown"
             ? [
@@ -166,6 +183,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
               ]
             : []),
           ...completionKeymap,
+          ...(fileKind === "markdown" ? tagFoldingKeymap : []),
           ...searchKeymap,
           ...historyKeymap,
           ...defaultKeymap,
@@ -175,12 +193,28 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         editorHighlighting,
         EditorView.updateListener.of((update) => {
           if (latest.current.primary) publishHistory(update.state)
+          // The cursor moved into the value of an attribute: offer the values it takes, to switch to another (a click, or a key along the line)
+          if (update.docChanged) valueKey = ""
+          else if (update.selectionSet && fileKind === "markdown" && update.view.hasFocus) {
+            const head = update.state.selection.main.head
+            const nearby = update.state.doc.sliceString(Math.max(0, head - 300), head)
+            const value = update.state.selection.main.empty && nearby.includes("<") ? completeValue(update.state.doc.toString(), head, { schema: latest.current.schema, language: latest.current.language, files: latest.current.files }) : null
+            if (!value) valueKey = ""
+            else if (String(value.from) !== valueKey) {
+              valueKey = String(value.from)
+              const pointer = update.transactions.some((transaction) => transaction.isUserEvent("select.pointer"))
+              const sameLine = update.startState.doc.lineAt(update.startState.selection.main.head).number === update.state.doc.lineAt(head).number
+              // Up and Down belong to the list while it is open, so a move to another line by key does not open it
+              if ((pointer || sameLine) && completionStatus(update.state) === null) setTimeout(() => startCompletion(update.view), 0)
+            }
+          }
           if (update.docChanged && !update.transactions.some((transaction) => transaction.annotation(External))) {
             latest.current.onChange(update.state.doc.toString())
           }
         }),
       ],
     })
+  }
 
   // Create the view once
   useEffect(() => {

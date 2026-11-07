@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { complete, maskCode, openTags, type CompletionEnv } from "./completion"
+import { complete, completeValue, maskCode, openTags, type CompletionEnv } from "./completion"
 import { schema } from "./schema"
 
 const env: CompletionEnv = { schema, language: "en", files: ["main.md", "images/ocean.svg", "images/a.png", "notes.txt"] }
@@ -219,5 +219,85 @@ describe("helpers", () => {
   it("keeps the open tags in order", () => {
     expect(openTags("<box><alert>", 12, schema).map((t) => t.name)).toEqual(["box", "alert"])
     expect(openTags("<box><alert></alert>", 20, schema).map((t) => t.name)).toEqual(["box"])
+  })
+})
+
+describe("switching a value that is already written", () => {
+  const values = schema.tags.alert.attrs.type.values ?? []
+
+  /** `completeValue` at the `|` in `text`. */
+  function inside(text: string) {
+    const pos = text.indexOf("|")
+    const source = text.slice(0, pos) + text.slice(pos + 1)
+    const result = completeValue(source, pos, env)
+    return result && { ...result, source, labels: result.options.map((option) => option.label) }
+  }
+
+  it("offers every value of the attribute while the cursor is inside the one written, and replaces it whole", () => {
+    for (const text of ['<alert type="wa|rning">x</alert>', '<alert type="|warning">x</alert>', '<alert type="warning|">x</alert>']) {
+      const result = inside(text)!
+      expect(result.labels).toEqual(expect.arrayContaining(values))
+      expect(result.source.slice(result.from, result.to)).toBe("warning")
+      // The quotes are already there: a choice is the bare value
+      expect(result.options.every((option) => !option.template.includes('"'))).toBe(true)
+    }
+  })
+
+  it("puts the value written now first", () => {
+    const result = inside('<alert type="wa|rning">x</alert>')!
+    const first = [...result.options].sort((a, b) => (b.boost ?? 0) - (a.boost ?? 0))[0]
+    expect(first.label).toBe("warning")
+  })
+
+  it("is not for a value that is not closed, a tag it does not know, or the text outside a tag", () => {
+    expect(inside('<alert type="wa|rning')).toBeNull()
+    expect(inside('<nothing type="a|b">x</nothing>')).toBeNull()
+    expect(inside('Text with "qu|ote" and <alert type="warning">x</alert>')).toBeNull()
+    expect(inside('<alert type="warning">x|</alert>')).toBeNull()
+  })
+
+  it("does nothing inside code", () => {
+    expect(inside('```\n<alert type="wa|rning">\n```')).toBeNull()
+  })
+})
+
+describe("variables", () => {
+  const doc = ["---", "vars:", "  year: 1405", "  audience: teacher", "var-types:", "  audience: [student, teacher, 'two words']", "---", ""].join("\n")
+
+  it("names the variables after `{{`", () => {
+    const result = at(`${doc}Term {{ ye|`)!
+    expect(result.labels).toEqual(expect.arrayContaining(["year", "audience", "title", "PAGE"]))
+    expect(result.source.slice(result.from, result.from + 2)).toBe("ye")
+  })
+
+  it("works in the value of an attribute and over several lines", () => {
+    expect(at(`${doc}<alert title="{{ au|`)!.labels).toContain("audience")
+    expect(at(`${doc}{{
+  let x = 1
+  if au|`)!.labels).toContain("audience")
+  })
+
+  it("offers the values a variable lists after `==`, quoted", () => {
+    const result = at(`${doc}{{ audience == |`)!
+    expect(result.labels).toEqual(["student", "teacher", "two words"])
+    expect(result.options[0].template).toBe('"student"')
+    const typing = at(`${doc}{{ audience != "te|`)!
+    expect(typing.options[1].template).toBe('teacher"')
+  })
+
+  it("stays silent for a variable that lists no values, in code, after an escape and in the Markdown of a [ ]", () => {
+    expect(at(`${doc}{{ year == |`)).toBeNull()
+    expect(at(`${doc}\`{{ ye|\``)).toBeNull()
+    expect(at(`${doc}\\{{ ye|`)).toBeNull()
+    expect(at(`${doc}{{ if a [ <ale|`)!.labels).toContain("alert")
+  })
+})
+
+describe("settings in expressions", () => {
+  it("offers the settings as setting.name, and filters by the dot", () => {
+    const labels = at("{{ setting.|")!.labels
+    expect(labels).toEqual(expect.arrayContaining(["setting.theme", "setting.feel"]))
+    expect(labels).not.toContain("setting.vars")
+    expect(at("{{ s|")!.labels).toContain("setting.theme")
   })
 })

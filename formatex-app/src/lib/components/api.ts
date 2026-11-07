@@ -51,4 +51,6 @@ export const componentsApi = {
     isTauri() ? invoke("component_set_enabled", { name, enabled }) : web.setEnabled(name, enabled),
   /** The schema of every enabled tag, the user's included (the app only). */
   schema: (): Promise<Schema> => invoke("engine_schema"),
+  /** The schema as one project sees it: the same, plus the tags of the component files the project lists in `components`. `null` when it cannot be read right now. */
+  projectSchema: (projectId: string, main: string, overrides: Record<string, string>): Promise<Schema | null> => invoke("project_schema", { projectId, main, overrides }),
 }

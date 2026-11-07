@@ -1,5 +1,6 @@
 import { fileKindOf } from "@/lib/projects"
 import { previewPlaceForLine } from "@/lib/editor/previewPlace"
+import { typstPlaceForOffset } from "@/lib/editor/typstIde"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
 import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
@@ -22,13 +23,22 @@ export function startFollowingTyping(): () => void {
   const follow = () => {
     waiting = false
     if (!useSettingsStore.getState().previewFollow || Date.now() < usePreviewScrollStore.getState().manualUntil) return
-    const { activePath, texts, ok, lastEdit } = useEditorStore.getState()
+    const { activePath, texts, ok, lastEdit, kind } = useEditorStore.getState()
     const view = useEditorViewStore.getState().view
-    // Only the file that was typed in, while it is still the one shown
-    if (!view || !ok || !activePath || activePath !== lastEdit?.path || fileKindOf(activePath) !== "markdown") return
+    // Only the file that was typed in, while it is still the one shown (Markdown in a Formatex project, Typst in a plain Typst one)
+    if (!view || !ok || !activePath || activePath !== lastEdit?.path || fileKindOf(activePath) !== (kind === "typst" ? "typst" : "markdown")) return
     const source = texts[activePath]
     if (source === undefined || view.state.doc.toString() !== source) return
     const head = view.state.selection.main.head
+    if (kind === "typst") {
+      // Typst says where on the pages the text at the cursor is; the answer comes a moment later, so what has moved since is checked
+      const asked = lastEdit.id
+      void typstPlaceForOffset(activePath, head).then((place) => {
+        const now = useEditorStore.getState()
+        if (place && now.lastEdit?.id === asked && Date.now() >= usePreviewScrollStore.getState().manualUntil) usePreviewScrollStore.getState().show(place, false)
+      })
+      return
+    }
     const line = view.state.doc.lineAt(head)
     const place = previewPlaceForLine(activePath, source, line.number, head - line.from)
     if (place && !place.approximate) usePreviewScrollStore.getState().show(place, false)

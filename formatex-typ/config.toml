@@ -24,6 +24,19 @@ page = "desktop-a4"
 # page-width = "148mm"    # only with page = "custom": mm, cm, in or pt
 # page-height = "210mm"
 
+# Your own components: Typst files of the project that define tags (any number of tags per file, any file name and place).
+# In the front matter of a document the list is added to this one.
+# components = ["notes.typ", "extras/stamps.typ"]
+
+# Variables for the text: print one with {{ name }}, or use it in code: {{ if draft { "Draft" } else { "Final" } }}.
+# The front matter of a document adds to these. `var-types` holds the rules: a list of the values a variable may have, { min, max } for a number,
+# or a type (bool, number, length, color, markdown, json).
+# [vars]
+# year = 1405
+# audience = "student"
+# [var-types]
+# audience = ["student", "teacher", "parent"]
+
 # Page margins: "narrow" (15 mm sides on A4), "normal" (about 25 mm), "wide" (35 mm sides); other sizes scale. Ignored on phone pages. Default: "normal"
 margin = "normal"
 
@@ -51,6 +64,9 @@ todo = "show"
 # Answers of <exercise>: "show" (default; under each question, correct options highlighted),
 # "hide" (question sheet) or "end" (collected under <answers>). `--input answers=hide` overrides it.
 answers = "show"
+# Exercise titles ("Exercise 1") in the table of contents, like headings: false (default) or true. `toc="true"` / `toc="false"` on one
+# <exercise> overrides it, and so does `answers="show|hide|end"` for the answers of one <exercise>.
+# exercise-toc = false
 
 # Fonts (any installed font; see `typst fonts`). Override the feel's fonts; leave commented to use them.
 [font]
@@ -89,6 +105,8 @@ numbering = true
 # number-prefix = "("
 # Text right after the number: "" → «۱ مقدمه», "." → «۱. مقدمه», " -" → «۱ - مقدمه». Default: ""
 number-suffix = "-"
+# Deepest level that gets a number: 2 numbers # and ## and leaves ### and below without. Levels count from the document's top heading. Default: 6
+# max-numbering-level = 6
 # Rule below the heading: true / false. Default: false
 underline = true
 # Tinted background behind the heading: true / false. Default: false
@@ -109,6 +127,10 @@ align = "center"
 # With columns > 1: "column" = stays in its column, "all" = floats across all columns.
 # Usually set per table instead: {span=all ...}
 span = "column"
+# Number tables: a table gets «جدول ۱» as soon as it has a caption (false: the caption only). A table sets its own with {numbering=true}.
+# numbering = false
+# Where the number and caption go: "above" or "below"
+# caption-position = "above"
 
 # Default look of lists. A `{numbers=abjad prefix="(" suffix=")" #id}` line right above a list overrides it
 # for that list; front matter `list:` overrides it for one document.
@@ -129,6 +151,25 @@ suffix = "."
 
 # Extra indent of every list, e.g. "1.5em" or "5mm". Default: none
 # indent = "1em"
+# Lines between the levels of bulleted lists: "none", "line" (a line down the side of each nested level, from its first item to its last)
+# or "tree" (the same line with a branch to every item). A list sets its own with {guides=tree}. Default: "none"
+# guides = "none"
+
+# Number lists that have a caption («فهرست ۱»); false: the caption only. A list sets its own with {numbering=true}.
+# numbering = false
+# caption-position = "below"
+
+# Figures (<fig>, and <tree> / <chart> with a caption): every figure is numbered («شکل ۱»), with or without a caption.
+# A figure turns it off with numbering="false". With a <caption> inside, the number and caption read «شکل ۱: توضیح».
+[figure]
+# numbering = true
+# Where the number and caption go: "above" or "below"
+# caption-position = "below"
+
+# Code listings (<code>): numbered as soon as they have a caption when this is true (false: the caption only).
+[code]
+# numbering = false
+# caption-position = "above"
 
 # AI chat transcripts: <chat> with <user> and <ai> messages. Every key can be overridden in
 # front matter (`chat:`) or on one <chat> tag (`<chat style="bubbles" ai-name="ChatGPT">`).

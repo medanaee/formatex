@@ -95,6 +95,9 @@
     --syntax-heading: oklch(0.42 0.14 265);
     --syntax-tag: oklch(0.5 0.16 305);
     --syntax-attr: oklch(0.5 0.11 215);
+    --syntax-var: oklch(0.5 0.12 175);
+    --syntax-cond: oklch(0.52 0.19 330);
+    --syntax-page: oklch(0.55 0.16 60);
     --syntax-string: oklch(0.5 0.13 150);
     --syntax-number: oklch(0.55 0.15 55);
     --syntax-link: oklch(0.5 0.15 250);
@@ -138,6 +141,9 @@
     --syntax-heading: oklch(0.8 0.12 265);
     --syntax-tag: oklch(0.78 0.13 305);
     --syntax-attr: oklch(0.8 0.1 215);
+    --syntax-var: oklch(0.8 0.11 175);
+    --syntax-cond: oklch(0.8 0.15 330);
+    --syntax-page: oklch(0.82 0.14 80);
     --syntax-string: oklch(0.8 0.12 150);
     --syntax-number: oklch(0.8 0.13 60);
     --syntax-link: oklch(0.78 0.12 250);

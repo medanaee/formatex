@@ -26,6 +26,18 @@
     "Overall feel: corner rounding and the default fonts. formal: square, official. standard: slightly rounded. friendly: very rounded.",
     "حالت کلی: گردی گوشه‌ها و فونت‌های پیش‌فرض. formal: گوشهٔ تیز و رسمی. standard: کمی گرد. friendly: بسیار گرد و صمیمی.",
   )),
+  "components": (type: "string", doc: d(
+    "Your own components: Typst files of the project that define tags (a list [\"notes.typ\", \"extras/stamps.typ\"], or paths separated by commas). A file can define any number of tags and its name does not matter. In the front matter the files are added to those of config.toml.",
+    "کامپوننت‌های خودتان: فایل‌های Typst پروژه که تگ تعریف می‌کنند (فهرست [\"notes.typ\", \"extras/stamps.typ\"] یا مسیرهای جداشده با ویرگول). یک فایل می‌تواند هر تعداد تگ تعریف کند و نامش مهم نیست. در front matter فایل‌ها به فایل‌های config.toml افزوده می‌شوند.",
+  )),
+  "vars": (type: "string", doc: d(
+    "Values for the text, `name: value` lines: print one with {{ name }}, or use it in code: {{ if draft { \"Draft\" } else { \"Final\" } }}. The rules of a variable are in `var-types`.",
+    "مقدارهایی برای متن، خط‌های `name: value`: با {{ name }} چاپ می‌شود، یا در کد می‌آید: {{ if draft { \"پیش‌نویس\" } else { \"نهایی\" } }}. قاعده‌های هر متغیر در `var-types` است.",
+  )),
+  "var-types": (type: "string", doc: d(
+    "The rules of the variables of `vars`: a list is the values a variable may have (`audience: [student, teacher]`), `{ min: 1, max: 3 }` the range of a number, and a name its type: bool, number, length, color, markdown, json (a file or an object).",
+    "قاعده‌های متغیرهای `vars`: فهرست مقدارهای مجاز یک متغیر است (`audience: [student, teacher]`)، `{ min: 1, max: 3 }` بازهٔ یک عدد، و یک نام نوعش: bool، number، length، color، markdown، json (یک فایل یا یک شیء).",
+  )),
   "page": (type: "enum", values: ("desktop-a4", "desktop-a3", "desktop-a4-landscape", "desktop-a5", "desktop-a6", "desktop-b4", "desktop-b5", "desktop-letter", "desktop-legal", "desktop-tabloid", "desktop-square", "mobile-16-9", "mobile-18-9", "mobile-20-9", "mobile-21-9", "custom"), default: "desktop-a4", doc: d(
     "Page size. desktop-* are for print and screen (desktop-a4, desktop-a5, desktop-letter, ...); mobile-* are narrow pages for phones (110 mm wide, small margins, one column, no header center item). custom uses page-width and page-height; a custom page narrower than 120 mm gets the phone rules too. The old names a4 and mobile still work.",
     "اندازهٔ صفحه. desktop-* برای چاپ و صفحه‌نمایش (desktop-a4، desktop-a5، desktop-letter و ...)؛ mobile-* صفحهٔ باریک برای موبایل (عرض ۱۱۰ میلی‌متر، حاشیهٔ کم، تک‌ستونه، بدون آیتم میانی هدر). custom از page-width و page-height می‌گیرد؛ صفحهٔ دلخواه باریک‌تر از ۱۲۰ میلی‌متر هم قاعده‌های موبایل را می‌گیرد. نام‌های قدیمی a4 و mobile هنوز کار می‌کنند.",
@@ -66,6 +78,10 @@
     "Answers of <exercise>: show (under each question), hide (question sheet) or end (collected under <answers>).",
     "پاسخ‌های <exercise>: show (زیر هر پرسش)، hide (برگهٔ پرسش) یا end (جمع‌شده زیر <answers>).",
   )),
+  "exercise-toc": (type: "bool", default: "false", doc: d(
+    "List the title of every <exercise> («تمرین ۱») in the table of contents like a first-level heading. `toc=\"true\"` / `toc=\"false\"` on one <exercise> overrides it.",
+    "عنوان هر <exercise> («تمرین ۱») را مثل یک تیتر سطح اول در فهرست مطالب بیاورد. `toc=\"true\"` / `toc=\"false\"` روی یک <exercise> آن را بازنویسی می‌کند.",
+  )),
 )
 
 #let shared-tables = (
@@ -92,6 +108,7 @@
       "numbering": (type: "bool", default: "true", doc: d("Automatic heading numbering.", "شماره‌گذاری خودکار تیترها.")),
       "number-prefix": (type: "string", default: "", doc: d("Text right before the number: \"(\" with number-suffix \")\" gives «(۱) مقدمه».", "متن بلافاصله قبل از شماره: \"(\" همراه number-suffix \")\" می‌شود «(۱) مقدمه».")),
       "number-suffix": (type: "string", default: "", doc: d("Text right after the number: \"\" → «۱ مقدمه», \".\" → «۱. مقدمه», \" -\" → «۱ - مقدمه».", "متن بلافاصله بعد از شماره: \"\" → «۱ مقدمه»، \".\" → «۱. مقدمه»، \" -\" → «۱ - مقدمه».")),
+      "max-numbering-level": (type: "int", default: "6", doc: d("Deepest level that gets a number: 2 numbers # and ## and leaves ### and below without. Levels count from the document's top heading.", "عمیق‌ترین سطحی که شماره می‌گیرد: ۲ یعنی # و ## شماره می‌گیرند و ### و پایین‌تر بی‌شماره می‌مانند. سطح‌ها از بالاترین تیتر سند حساب می‌شوند.")),
       "underline": (type: "bool", default: "false", doc: d("A rule below the heading.", "خط زیر تیتر.")),
       "fill": (type: "bool", default: "false", doc: d("A tinted background behind the heading.", "ته‌رنگ پشت تیتر.")),
       "max-level": (type: "int", default: "2", doc: d("Deepest level that gets this look: 1 = only #, 2 = # and ##, ...", "عمیق‌ترین سطحی که این ظاهر را می‌گیرد: ۱ = فقط #، ۲ = # و ## و ...")),
@@ -104,6 +121,8 @@
       "width": (type: "enum", values: ("auto", "full"), default: "auto", doc: d("full = the full text width, auto = as wide as the content.", "full = تمام پهنای متن، auto = به پهنای محتوا.")),
       "align": (type: "enum", values: ("center", "left", "right", "start", "end"), default: "center", doc: d("Where an auto-width table sits.", "جای جدولی که پهنایش auto است.")),
       "span": (type: "enum", values: ("column", "all"), default: "column", doc: d("With columns > 1: column stays in its column, all floats across all columns.", "با columns بیشتر از ۱: column در ستون خودش می‌ماند، all روی همهٔ ستون‌ها می‌افتد.")),
+      "numbering": (type: "bool", default: "false", doc: d("Number every table («جدول ۱»). Default: off. With it on a table gets a number as soon as it has a caption; with it off it shows the caption only, until the item turns `numbering` on. A number and a caption read «جدول ۱: توضیح».", "جدول‌ها شماره بخورد («جدول ۱»). پیش‌فرض: خاموش. با روشن بودن آن، جدول به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا خودِ مورد `numbering` را روشن کند. شماره و عنوان با هم «جدول ۱: توضیح» می‌شوند.")),
+      "caption-position": (type: "enum", values: ("above", "below"), default: "above", doc: d("Where the number and caption go: above or below the table. An item can set its own `caption-position`.", "جای شماره و عنوان: بالا یا پایین جدول. هر مورد می‌تواند `caption-position` خودش را بدهد.")),
     ),
   ),
   "list": (
@@ -114,6 +133,23 @@
       "suffix": (type: "string", default: ".", doc: d("Text right after the number: \".\" → «۱.», \")\" → «۱)», \"\" → «۱».", "متن بلافاصله بعد از شماره: \".\" → «۱.»، \")\" → «۱)»، \"\" → «۱».")),
       "marker": (type: "string", values: ("disc", "circle", "square", "dash", "triangle", "arrow", "check", "star", "none"), doc: d("Bullet of unnumbered lists: a character or a name; comma-separated for one per nesting level (\"disc,circle,dash\").", "نشانهٔ لیست بی‌شماره: یک نویسه یا نام؛ با ویرگول برای هر سطح تو در تو (\"disc,circle,dash\").")),
       "indent": (type: "string", doc: d("Extra indent of every list, e.g. \"1.5em\" or \"5mm\".", "تورفتگی اضافهٔ همهٔ لیست‌ها، مثلاً \"1.5em\" یا \"5mm\".")),
+      "guides": (type: "enum", values: ("none", "line", "tree"), default: "none", doc: d("Lines between the levels of bulleted lists: none (default), line (a line down the side of each nested level, from its first item to its last) or tree (the same line with a branch to every item). A list sets its own with {guides=tree}.", "خط‌های بین سطح‌های لیست‌های بی‌شماره: none (پیش‌فرض)، line (یک خط در کنار هر سطح تودرتو، از اولین آیتم تا آخرین)، یا tree (همان خط با شاخه‌ای به هر آیتم). هر لیست با {guides=tree} مقدار خودش را می‌دهد.")),
+      "numbering": (type: "bool", default: "false", doc: d("Number every list («فهرست ۱»). Default: off. With it on a list gets a number as soon as it has a caption; with it off it shows the caption only, until the item turns `numbering` on. A number and a caption read «فهرست ۱: توضیح».", "لیست‌ها شماره بخورد («فهرست ۱»). پیش‌فرض: خاموش. با روشن بودن آن، لیست به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا خودِ مورد `numbering` را روشن کند. شماره و عنوان با هم «فهرست ۱: توضیح» می‌شوند.")),
+      "caption-position": (type: "enum", values: ("above", "below"), default: "below", doc: d("Where the number and caption go: above or below the list. An item can set its own `caption-position`.", "جای شماره و عنوان: بالا یا پایین لیست. هر مورد می‌تواند `caption-position` خودش را بدهد.")),
+    ),
+  ),
+  "figure": (
+    doc: d("Figures (<fig>, and <tree> / <chart> with a caption): numbering and where the number and caption go. A figure can override each key.", "شکل‌ها (<fig>، و <tree> / <chart> دارای عنوان): شماره‌گذاری و جای شماره و عنوان. هر شکل می‌تواند هر کلید را بازنویسی کند."),
+    attrs: (
+      "numbering": (type: "bool", default: "true", doc: d("Number every figure («شکل ۱»). Default: on, whether or not it has a caption. A figure can turn it off with `numbering=\"false\"`. A number and a caption read «شکل ۱: توضیح».", "هر شکل شماره بخورد («شکل ۱»). پیش‌فرض: روشن، چه عنوان داشته باشد چه نه. هر شکل می‌تواند با `numbering=\"false\"` آن را خاموش کند. شماره و عنوان با هم «شکل ۱: توضیح» می‌شوند.")),
+      "caption-position": (type: "enum", values: ("above", "below"), default: "below", doc: d("Where the number and caption go: above or below the figure. An item can set its own `caption-position`.", "جای شماره و عنوان: بالا یا پایین شکل. هر مورد می‌تواند `caption-position` خودش را بدهد.")),
+    ),
+  ),
+  "code": (
+    doc: d("Code listings (<code>): numbering and where the number and caption go. A listing can override each key.", "کدها (<code>): شماره‌گذاری و جای شماره و عنوان. هر کد می‌تواند هر کلید را بازنویسی کند."),
+    attrs: (
+      "numbering": (type: "bool", default: "false", doc: d("Number every listing («کد ۱»). Default: off. With it on a listing gets a number as soon as it has a caption; with it off it shows the caption only, until the item turns `numbering` on. A number and a caption read «کد ۱: توضیح».", "کد‌ها شماره بخورد («کد ۱»). پیش‌فرض: خاموش. با روشن بودن آن، کد به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا خودِ مورد `numbering` را روشن کند. شماره و عنوان با هم «کد ۱: توضیح» می‌شوند.")),
+      "caption-position": (type: "enum", values: ("above", "below"), default: "above", doc: d("Where the number and caption go: above or below the listing. An item can set its own `caption-position`.", "جای شماره و عنوان: بالا یا پایین کد. هر مورد می‌تواند `caption-position` خودش را بدهد.")),
     ),
   ),
   "chat": (

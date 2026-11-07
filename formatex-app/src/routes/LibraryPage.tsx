@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Archive, ChevronRight, ClipboardPaste, Copy, CopyPlus, ExternalLink, FileText, FolderTree, FolderPlus, LayoutGrid, Pencil, Plus, Scissors, Table2, Trash2, Upload } from "lucide-react"
+import { Archive, ChevronRight, ClipboardPaste, Copy, CopyPlus, ExternalLink, FileText, FolderTree, FolderPlus, LayoutGrid, Pencil, Plus, Replace, Scissors, Table2, Trash2, Upload } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
 import { ActionItems, DROP_ROOT, FolderCard, ProjectCard, useDropTarget, type DragPayload, type MenuAction } from "@/components/library/LibraryCards"
 import { LibraryRows, type LibraryRow } from "@/components/library/LibraryRows"
-import { LOCAL_CHOICE, StoragePicker, type StorageChoice } from "@/components/library/StoragePicker"
+import { NewProjectDialog, type NewProject } from "@/components/library/NewProjectDialog"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label"
 import type { DocumentItem, FolderItem } from "@/lib/db/types"
 import { saveBytes, pickFiles } from "@/lib/files/saveFile"
 import { copyProjectFiles, deleteProjectFiles, initProject, projectMainFile } from "@/lib/projects"
-import { canUseFolders, folderName, initFolderProject } from "@/lib/projects/storageMode"
+import { changeProjectKind, initTypstProject, TYPST_MAIN_FILE } from "@/lib/projects/projectKind"
+import { folderName, initFolderProject } from "@/lib/projects/storageMode"
 import { exportProjectZip, readProjectZip, writeImportedProject } from "@/lib/projects/zip"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import { cn } from "@/lib/utils"
@@ -42,7 +43,6 @@ export function LibraryPage() {
 
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null)
   const [name, setName] = useState("")
-  const [choice, setChoice] = useState<StorageChoice>(LOCAL_CHOICE)
   const [deleting, setDeleting] = useState<{ doc?: DocumentItem; folder?: FolderItem } | null>(null)
   /** A zip that could not be saved or read: what went wrong, shown in a dialog. */
   const [problem, setProblem] = useState<string | null>(null)
@@ -115,7 +115,8 @@ export function LibraryPage() {
 
   const exportZip = async (doc: DocumentItem) => {
     try {
-      const bytes = await exportProjectZip(doc.id, doc.title, (await projectMainFile(doc.id)) ?? doc.mainFile)
+      const plain = doc.kind === "typst"
+      const bytes = await exportProjectZip(doc.id, doc.title, plain ? doc.mainFile : ((await projectMainFile(doc.id)) ?? doc.mainFile), plain ? "typst" : "formatex")
       await saveBytes(bytes, `${doc.title.replace(/[\\/:*?"<>|]+/g, "_").trim() || "project"}.zip`, "application/zip")
     } catch (error) {
       setProblem(String((error as Error)?.message ?? error))
@@ -127,7 +128,7 @@ export function LibraryPage() {
       const [picked] = await pickFiles({ extensions: ["zip"], multiple: false })
       if (!picked) return
       const project = readProjectZip(picked.data, picked.name.replace(/\.zip$/i, "") || t("library.untitled"))
-      const doc = store.createDocument(project.title, here)
+      const doc = store.createDocument(project.title, here, null, project.kind)
       await writeImportedProject(doc.id, project)
       store.setMainFile(doc.id, project.mainFile)
     } catch (error) {
@@ -152,6 +153,7 @@ export function LibraryPage() {
     { key: "open", label: t("library.open"), icon: <ExternalLink />, onSelect: () => open(doc) },
     { key: "rename", label: t("common.rename"), icon: <Pencil />, onSelect: () => (setName(doc.title), setNameDialog({ kind: "rename", doc })) },
     "separator",
+    { key: "kind", label: doc.kind === "typst" ? t("kind.toFormatex") : t("kind.toTypst"), icon: <Replace />, onSelect: () => void changeProjectKind(doc.id, doc.kind === "typst" ? "formatex" : "typst") },
     { key: "duplicate", label: t("library.duplicate"), icon: <CopyPlus />, onSelect: () => void duplicate(doc, doc.parentId ?? null) },
     { key: "zip", label: t("library.exportZip"), icon: <Archive />, onSelect: () => void exportZip(doc) },
     { key: "copy", label: t("menu.copy"), icon: <Copy />, onSelect: () => store.setClipboard({ docs: [doc.id], folders: [], mode: "copy" }) },
@@ -169,7 +171,7 @@ export function LibraryPage() {
   ]
 
   const backgroundActions: MenuAction[] = [
-    { key: "new", label: t("library.new"), icon: <Plus />, onSelect: () => (setName(""), setChoice(LOCAL_CHOICE), setNameDialog({ kind: "document" })) },
+    { key: "new", label: t("library.new"), icon: <Plus />, onSelect: () => (setName(""), setNameDialog({ kind: "document" })) },
     { key: "folder", label: t("library.newFolder"), icon: <FolderPlus />, onSelect: () => (setName(""), setNameDialog({ kind: "folder" })) },
     { key: "import", label: t("library.importZip"), icon: <Upload />, onSelect: () => void importZip() },
     ...(clipboard ? ["separator" as const, { key: "paste", label: t("menu.paste"), icon: <ClipboardPaste />, onSelect: paste }] : []),
@@ -186,22 +188,32 @@ export function LibraryPage() {
       else if (value) store.createFolder(value, here)
     } else if (dialog.kind === "rename") {
       if (value) store.renameDocument(dialog.doc.id, value)
-    } else {
-      const inFolder = choice.storage === "folder" && choice.folder
-      if (choice.storage === "folder" && !choice.folder) return
-      const doc = store.createDocument(value || (inFolder ? folderName(choice.folder!) : t("library.untitled")), here, inFolder ? choice.folder : null)
-      try {
-        if (inFolder) await initFolderProject(doc.id, choice.main || null)
-        else await initProject(doc.id)
-      } catch (error) {
-        // The editor starts an empty project from the template when it finds no files
-        console.error("[formatex] could not create the project files", error)
-      }
-      open(doc)
     }
   }
 
-  const dialogTitle = nameDialog?.kind === "document" ? t("library.new") : nameDialog?.kind === "folder" ? (nameDialog.folder ? t("common.rename") : t("library.newFolder")) : t("common.rename")
+  /** The new-project dialog's answer: the project, and its first files (a folder of the user's gets none of a plain Typst project). */
+  const createProject = async ({ title, kind, choice }: NewProject) => {
+    setNameDialog(null)
+    const inFolder = choice.storage === "folder" && choice.folder
+    const doc = store.createDocument(title || (inFolder ? folderName(choice.folder!) : t("library.untitled")), here, inFolder ? choice.folder : null, kind)
+    try {
+      if (kind === "typst") {
+        if (inFolder) {
+          if (choice.typstMain) store.setMainFile(doc.id, choice.typstMain)
+        } else {
+          await initTypstProject(doc.id)
+          store.setMainFile(doc.id, TYPST_MAIN_FILE)
+        }
+      } else if (inFolder) await initFolderProject(doc.id, choice.main || null)
+      else await initProject(doc.id)
+    } catch (error) {
+      // The editor starts an empty project from the template when it finds no files
+      console.error("[formatex] could not create the project files", error)
+    }
+    open(doc)
+  }
+
+  const dialogTitle = nameDialog?.kind === "folder" ? (nameDialog.folder ? t("common.rename") : t("library.newFolder")) : t("common.rename")
   const empty = view === "tree" ? documents.length === 0 && folders.length === 0 : shownDocs.length === 0 && shownFolders.length === 0
   const shownPath = view === "tree" ? [] : path
   const viewSwitch = (
@@ -238,7 +250,7 @@ export function LibraryPage() {
               <FolderPlus data-icon="inline-start" />
               <span className="hidden sm:inline">{t("library.newFolder")}</span>
             </Button>
-            <Button onClick={() => (setName(""), setChoice(LOCAL_CHOICE), setNameDialog({ kind: "document" }))}>
+            <Button onClick={() => (setName(""), setNameDialog({ kind: "document" }))}>
               <Plus data-icon="inline-start" />
               <span className="hidden sm:inline">{t("library.new")}</span>
               <span className="sr-only sm:hidden">{t("library.new")}</span>
@@ -323,7 +335,7 @@ export function LibraryPage() {
       </ContextMenu>
 
       <ResponsiveDialog
-        open={nameDialog !== null}
+        open={nameDialog !== null && nameDialog.kind !== "document"}
         onOpenChange={(next) => !next && setNameDialog(null)}
         title={dialogTitle}
         footer={
@@ -331,7 +343,7 @@ export function LibraryPage() {
             <Button variant="outline" size="lg" onClick={() => setNameDialog(null)}>
               {t("common.cancel")}
             </Button>
-            <Button size="lg" disabled={nameDialog?.kind === "document" && choice.storage === "folder" && !choice.folder} onClick={() => void submitName()}>
+            <Button size="lg" onClick={() => void submitName()}>
               {nameDialog?.kind === "rename" || (nameDialog?.kind === "folder" && nameDialog.folder) ? t("common.save") : t("common.create")}
             </Button>
           </>
@@ -340,9 +352,10 @@ export function LibraryPage() {
         <div className="grid gap-2">
           <Label htmlFor="library-name">{nameDialog?.kind === "folder" ? t("library.folderName") : t("library.titleLabel")}</Label>
           <Input id="library-name" dir="auto" autoFocus value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void submitName()} className="h-10" />
-          {nameDialog?.kind === "document" && canUseFolders() && <StoragePicker value={choice} onChange={setChoice} />}
         </div>
       </ResponsiveDialog>
+
+      <NewProjectDialog open={nameDialog?.kind === "document"} onClose={() => setNameDialog(null)} onCreate={(project) => void createProject(project)} />
 
       <ResponsiveDialog
         open={problem !== null}

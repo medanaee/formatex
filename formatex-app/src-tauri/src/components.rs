@@ -23,7 +23,7 @@ use typst::introspection::{Introspector, MetadataElem};
 use typst::utils::PicoStr;
 use typst_layout::PagedDocument;
 
-use crate::compile::{Diagnostic, Engine, convert};
+use crate::compile::{Diagnostic, Engine, convert_all};
 use crate::engine;
 use crate::themes::{self, UserTheme};
 use crate::world::ProjectWorld;
@@ -382,20 +382,26 @@ fn builtin_source(name: &str) -> Option<String> {
 /// JSON. This both **validates** the library (a component that does not load shows up as a diagnostic) and gives autocomplete
 /// the schema of every tag, the user's included.
 pub fn compute_schema(engine: &Engine) -> (Option<serde_json::Value>, Vec<Diagnostic>) {
-    let _guard = engine.components.check.lock().unwrap_or_else(|e| e.into_inner());
     let extra: HashMap<String, Vec<u8>> = HashMap::from([
         ("config.toml".to_string(), DEFAULT_CONFIG.as_bytes().to_vec()),
         ("main.md".to_string(), b"# probe\n".to_vec()),
     ]);
     let inputs = HashMap::from([("source".to_string(), "main.md".to_string())]);
-    let world = ProjectWorld::new(None, engine::SCHEMA_ENTRY, engine.packages.clone(), engine.fonts.get(), engine.components.clone(), &inputs, extra);
+    schema_in(engine, None, &inputs, extra)
+}
+
+/// The same, as one project sees it: its `config.toml` and the front matter of `inputs.source` say which component files of the
+/// project add their tags (the `components` setting). `dir` is the project folder; `extra` are unsaved texts.
+pub(crate) fn schema_in(engine: &Engine, dir: Option<PathBuf>, inputs: &HashMap<String, String>, extra: HashMap<String, Vec<u8>>) -> (Option<serde_json::Value>, Vec<Diagnostic>) {
+    let _guard = engine.components.check.lock().unwrap_or_else(|e| e.into_inner());
+    let world = ProjectWorld::new(dir, engine::SCHEMA_ENTRY, engine.packages.clone(), engine.fonts.get(), engine.components.clone(), inputs, extra);
 
     let warned = typst::compile::<PagedDocument>(&world);
-    let mut diagnostics: Vec<Diagnostic> = warned.warnings.iter().map(|d| convert(&world, d)).collect();
+    let mut diagnostics: Vec<Diagnostic> = warned.warnings.iter().flat_map(|d| convert_all(&world, d)).collect();
     let document = match warned.output {
         Ok(document) => document,
         Err(errors) => {
-            diagnostics.extend(errors.iter().map(|d| convert(&world, d)));
+            diagnostics.extend(errors.iter().flat_map(|d| convert_all(&world, d)));
             typst::comemo::evict(10);
             return (None, diagnostics);
         }
@@ -507,6 +513,28 @@ pub async fn themes_set(engine: State<'_, Arc<Engine>>, themes: BTreeMap<String,
     tauri::async_runtime::spawn_blocking(move || {
         engine.components.set_themes(themes)?;
         Ok(check(&engine))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// The schema as the open project sees it: every enabled tag, plus those of the component files the project lists in its
+/// `components` setting. `None` when it cannot be read right now (the project's own error shows in the compile); the caller
+/// keeps the last schema then.
+#[tauri::command]
+pub async fn project_schema(
+    engine: State<'_, Arc<Engine>>,
+    project_id: String,
+    main: String,
+    overrides: Option<HashMap<String, String>>,
+) -> Result<Option<serde_json::Value>, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::compile::check_relative(&main)?;
+        let dir = crate::compile::project_dir(&engine, &project_id)?;
+        let extra = crate::compile::overrides_to_bytes(overrides.unwrap_or_default(), false)?;
+        let inputs = HashMap::from([("source".to_string(), main)]);
+        Ok(schema_in(&engine, Some(dir), &inputs, extra).0)
     })
     .await
     .map_err(|e| e.to_string())?

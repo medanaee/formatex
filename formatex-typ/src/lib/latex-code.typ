@@ -4,7 +4,8 @@
 // the code runs, math containing `\` or `{` becomes a `latex-math("...")` call; other math
 // (`$x^2$`, `$a times b$`) is left alone. The scanner tracks code vs. markup (`[...]`), strings
 // and comments so the call is written in the form that is valid at that spot. In labels it also
-// accepts Markdown habits: `**bold**` becomes `*bold*`, and a `#` not starting code (`#۰۳`) is literal.
+// accepts Markdown habits: `**bold**` becomes `*bold*`, and a `#` not starting code (`#۰۳`) is literal. A string that is nothing but a
+// formula (`"$x_{n-1}$"`) is the formula too.
 #let latex-in-code(src) = {
   let cs = src.clusters()
   let n = cs.len()
@@ -55,7 +56,17 @@
       if c == "\"" {
         let j = i + 1
         while j < n and cs.at(j) != "\"" { j += if cs.at(j) == "\\" { 2 } else { 1 } }
-        out.push(cs.slice(i, calc.min(j + 1, n)).join()); i = j + 1; continue
+        let literal = cs.slice(i, calc.min(j + 1, n)).join()
+        // A string that is only a formula, `"$x_{n-1}$"` (the way a label is often written), is the formula: Typst would draw the dollars
+        // and the braces as text. Anything else in a string stays text.
+        let inner = cs.slice(i + 1, calc.min(j, n))
+        if j < n and inner.len() >= 3 and inner.first() == "$" and inner.last() == "$" and not inner.slice(1, -1).contains("$") {
+          let math = inner.slice(1, -1).join()
+          out.push(if math.contains("\\") or math.contains("{") { "latex-math(" + repr(math.trim()) + ")" } else { "$" + math + "$" })
+        } else {
+          out.push(literal)
+        }
+        i = j + 1; continue
       }
       if c == "/" and next == "/" {
         let j = i

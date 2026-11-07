@@ -4,7 +4,9 @@ import { useNavigate } from "@tanstack/react-router"
 import { Eye, FileCode2, PanelRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MainFileItems } from "@/components/editor/MainFileMenu"
+import type { ProjectKind } from "@/lib/db/types"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import { openProjectSettings } from "@/lib/editor/openSettings"
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
@@ -29,6 +31,7 @@ export function EditorMenus() {
   const canRedo = useEditorViewStore((state) => state.canRedo)
   const exporting = useEditorStore((state) => state.exportStatus) === "working"
   const projectId = useEditorStore((state) => state.projectId)
+  const kind = useEditorStore((state) => state.kind)
   const location = useLibraryStore((state) => state.documents.find((doc) => doc.id === projectId)?.location) ?? null
   const panels = useSettingsStore((state) => state.panels)
   const setPanel = useSettingsStore((state) => state.setPanel)
@@ -49,7 +52,25 @@ export function EditorMenus() {
       <DropdownMenu>
         <DropdownMenuTrigger className={trigger}>{t("appMenu.file")}</DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-56" {...keepFocus}>
-          <DropdownMenuItem onSelect={() => void openProjectSettings()}>{t("editor.settings")}</DropdownMenuItem>
+          {kind === "typst" ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>{t("kind.mainFile")}</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="max-h-80 min-w-48">
+                <MainFileItems />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem onSelect={() => void openProjectSettings()}>{t("editor.settings")}</DropdownMenuItem>
+          )}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>{t("kind.title")}</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="min-w-48">
+              <DropdownMenuRadioGroup value={kind} onValueChange={(next) => void useEditorStore.getState().switchKind(next as ProjectKind)}>
+                <DropdownMenuRadioItem value="formatex">{t("kind.formatex")}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="typst">{t("kind.typst")}</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuItem disabled={exporting} onSelect={() => void useEditorStore.getState().exportPdf()}>
             {t("editor.export")}
           </DropdownMenuItem>

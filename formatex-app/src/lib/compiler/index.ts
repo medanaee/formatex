@@ -1,4 +1,5 @@
 import { isTauri } from "@/lib/platform"
+import type { ProjectKind } from "@/lib/db/types"
 
 export interface Diagnostic {
   severity: "error" | "warning"
@@ -112,7 +113,7 @@ async function invoke<T>(command: string, args: Record<string, unknown>): Promis
 export async function compileProject(
   projectId: string,
   main: string,
-  options: { inputs?: Record<string, string>; /** Unsaved text by path, used instead of the files on disk. */ overrides?: Record<string, string>; /** Hashes of the pages already shown, by index: those pages are not sent again. */ known?: string[] } = {}
+  options: { inputs?: Record<string, string>; /** Unsaved text by path, used instead of the files on disk. */ overrides?: Record<string, string>; /** Hashes of the pages already shown, by index: those pages are not sent again. */ known?: string[]; /** `typst`: a plain Typst project, compiled by Typst alone (no engine, no inputs). */ kind?: ProjectKind } = {}
 ): Promise<CompileOutput> {
   // The preview asks the engine to mark where each block of the source starts (a PDF export does not)
   const raw = await invoke<RawOutput>("compile_project", { projectId, main, ...options, inputs: { markers: "1", ...options.inputs } })
@@ -120,11 +121,11 @@ export async function compileProject(
 }
 
 /** The first page of a project as SVG text (a card of the library); `null` when it does not compile. */
-export const projectPreview = (projectId: string, main: string, overrides?: Record<string, string>): Promise<string | null> => invoke<string | null>("project_preview", { projectId, main, overrides })
+export const projectPreview = (projectId: string, main: string, overrides?: Record<string, string>, kind?: ProjectKind): Promise<string | null> => invoke<string | null>("project_preview", { projectId, main, overrides, kind })
 
 /** The PDF of the project. Rejects with the first error when it does not compile. */
-export async function exportPdf(projectId: string, main: string, overrides?: Record<string, string>): Promise<Uint8Array> {
-  return new Uint8Array(await invoke<ArrayBuffer>("export_pdf", { projectId, main, overrides }))
+export async function exportPdf(projectId: string, main: string, overrides?: Record<string, string>, kind?: ProjectKind): Promise<Uint8Array> {
+  return new Uint8Array(await invoke<ArrayBuffer>("export_pdf", { projectId, main, overrides, kind }))
 }
 
 export interface FontFamily {

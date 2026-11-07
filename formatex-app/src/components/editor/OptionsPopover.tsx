@@ -1,6 +1,8 @@
 import { createElement, useMemo } from "react"
+import { Variable } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ColorField, LengthField } from "@/components/editor/fields"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,6 +11,7 @@ import type { ConfigureRequest } from "@/lib/editor/livePreview"
 import { localized, type AttrSpec } from "@/lib/editor/schema"
 import { tagIcon } from "@/lib/editor/tagIcons"
 import { attrValue, withAttr } from "@/lib/editor/tagSyntax"
+import { fromConditional, isConditional, readVariables, toConditional } from "@/lib/editor/variables"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
@@ -46,6 +49,17 @@ function Field({ name, spec, value, files, onChange }: { name: string; spec: Att
     </Select>
   )
 
+  if (isConditional(value)) {
+    return (
+      <Input
+        dir="ltr"
+        value={value}
+        aria-label={name}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 border-(--syntax-cond) bg-[color-mix(in_oklab,var(--syntax-cond)_10%,transparent)] font-mono text-xs text-(--syntax-cond)"
+      />
+    )
+  }
   if (spec.type === "enum" && spec.values) return choose(spec.values)
   if (spec.type === "bool") return choose(["true", "false"])
   if (spec.type === "path") return choose([...files].sort((a, b) => Number(IMAGE.test(b)) - Number(IMAGE.test(a)) || a.localeCompare(b)))
@@ -78,12 +92,20 @@ export function OptionsPopover({ request, onRequestChange }: OptionsPopoverProps
   if (!request) return null
   const spec = request.kind === "tag" ? schema.tags[request.name] : schema.options[request.option]
   const attrs = spec?.attrs ?? {}
-  const title = request.kind === "tag" ? `<${request.name}>` : t(request.option === "heading" ? "options.heading" : request.option === "list" ? "options.list" : "options.table")
+  const title = request.kind === "tag" ? `<${request.name}>` : t(request.option === "heading" ? "options.heading" : request.option === "list" ? "options.list" : request.option === "equation" ? "options.equation" : "options.table")
   const description = request.kind === "tag" ? localized(schema.tags[request.name]?.description, i18n.language) : localized(schema.options[request.option]?.where, i18n.language)
   // Required attributes first, then the schema's order
   const names = Object.keys(attrs).sort((a, b) => Number(!!attrs[b].required) - Number(!!attrs[a].required))
   const known = new Set(names)
   const extra = request.attrs.filter(([key]) => !known.has(key))
+
+  // `fx` turns a fixed value into a choice by a condition, and back
+  const canChoose = request.kind === "tag"
+  const toggle = (name: string, value: string) => {
+    if (!view) return
+    if (isConditional(value)) change(name, fromConditional(value))
+    else change(name, toConditional(value, readVariables(view.state.doc.toString())[0]?.name ?? "condition"))
+  }
 
   const change = (name: string, value: string) => {
     if (!view) return
@@ -111,14 +133,30 @@ export function OptionsPopover({ request, onRequestChange }: OptionsPopoverProps
           {names.length === 0 && extra.length === 0 && <p className="text-xs text-muted-foreground">{t("options.none")}</p>}
           {names.map((name) => {
             const field = attrs[name]
+            const current = attrValue(request.attrs, name)
+            const conditional = isConditional(current)
             return (
               <label key={name} className="grid gap-1" title={localized(field.doc, i18n.language)}>
-                <span className={cn("flex items-center gap-1 font-mono text-[11px] text-muted-foreground", field.required && "text-foreground")}>
+                <span className={cn("flex items-center gap-1 font-mono text-[11px] text-muted-foreground", field.required && "text-foreground", conditional && "text-(--syntax-cond)")}>
                   {field.shorthand === "#" ? "#id" : name}
                   {field.required && <span className="text-destructive">*</span>}
-                  <span className="ms-auto font-sans text-[10px]">{field.type}</span>
+                  <span className="ms-auto font-sans text-[10px]">{conditional ? t("options.condition") : field.type}</span>
+                  {canChoose && field.shorthand !== "#" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className={cn("size-5 shrink-0", conditional ? "text-(--syntax-cond)" : "text-muted-foreground")}
+                      title={conditional ? t("options.conditionOff") : t("options.conditionOn")}
+                      aria-label={conditional ? t("options.conditionOff") : t("options.conditionOn")}
+                      aria-pressed={conditional}
+                      onClick={() => toggle(name, current)}
+                    >
+                      <Variable />
+                    </Button>
+                  )}
                 </span>
-                <Field name={name} spec={field} value={attrValue(request.attrs, name)} files={paths} onChange={(value) => change(name, value)} />
+                <Field name={name} spec={field} value={current} files={paths} onChange={(value) => change(name, value)} />
               </label>
             )
           })}

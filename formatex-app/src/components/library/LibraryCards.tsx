@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent, type ReactNode, type RefObject } from "react"
 import { FileText, MoreVertical } from "lucide-react"
-import { StorageBadge } from "@/components/library/StorageBadge"
+import { ActionItems, type MenuAction } from "@/components/common/ActionItems"
+import { KindBadge, StorageBadge } from "@/components/library/StorageBadge"
 import { Button } from "@/components/ui/button"
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { DocumentItem } from "@/lib/db/types"
 import { cachedThumbnail, requestThumbnail } from "@/lib/projectThumbnails"
 import { hasFinePointer } from "@/lib/platform"
@@ -18,27 +19,7 @@ export interface DragPayload {
   folders: string[]
 }
 
-export type MenuAction = { key: string; label: string; icon: ReactNode; onSelect: () => void; destructive?: boolean } | "separator"
-
-/** The same list of actions as a right-click menu and as the three-dot menu of a card. */
-export function ActionItems({ actions, kind }: { actions: MenuAction[]; kind: "context" | "dropdown" }) {
-  const Item = kind === "context" ? ContextMenuItem : DropdownMenuItem
-  const Separator = kind === "context" ? ContextMenuSeparator : DropdownMenuSeparator
-  return (
-    <>
-      {actions.map((action, index) =>
-        action === "separator" ? (
-          <Separator key={`s${index}`} />
-        ) : (
-          <Item key={action.key} variant={action.destructive ? "destructive" : "default"} onSelect={action.onSelect}>
-            {action.icon}
-            {action.label}
-          </Item>
-        )
-      )}
-    </>
-  )
-}
+export { ActionItems, type MenuAction } from "@/components/common/ActionItems"
 
 export function readDrag(event: DragEvent): DragPayload | null {
   try {
@@ -189,6 +170,7 @@ export function ProjectCard({ doc, subtitle, actions, menuLabel, href, onTouchDr
           <div dir="auto" className="min-w-0 truncate text-[13px] font-semibold">
             {doc.title}
           </div>
+          <KindBadge kind={doc.kind} />
           <StorageBadge location={doc.location} />
         </div>
         <div className="text-[11px] text-muted-foreground">{subtitle}</div>

@@ -1,5 +1,6 @@
 #import "/src/prelude.typ": *
 #import "/src/lib/basics.typ": *
+#import "/src/lib/captioned.typ": caption-flag, captioned
 
 // Lists: [list] in config.toml / front matter; a `{...}` line above one list overrides it (`list-attrs`).
 #let list-config = config.at("list", default: (:))
@@ -53,7 +54,78 @@
   prefix + label + suffix
 }
 
-// `numbers`, `prefix`, `suffix`, `marker` ("•", "dash", or one per level: "disc,circle,dash") and `indent`.
+// Guide lines between the levels of a bulleted list (`guides`): "line" is a line down the side of every nested level, from its first
+// item to its last; "tree" is the same line with a branch to each item (├ └), like a folder tree. The top level has none.
+#let list-depth = state("list-depth", 0)
+// The guides of the list being laid out: one entry for the document (`[list] guides`), one more for every list with its own `{guides=...}`
+#let list-guides-default = {
+  let value = list-config.at("guides", default: none)
+  let value = if value == none { "none" } else { str(value) }
+  assert(value in ("none", "line", "tree"), message: setting-prefix("list", "guides") + "[list] guides must be none, line or tree, got " + repr(value))
+  value
+}
+#let list-guides = state("list-guides", (list-guides-default,))
+
+// A stroke or an outset on the start side of a block: Typst names the sides left and right, so it depends on the direction
+#let on-start(value) = {
+  let side = if text.dir == rtl { "right" } else { "left" }
+  let out = (:)
+  out.insert(side, value)
+  out
+}
+
+// `branches: false` is the `line` look: the same level without the branches, one line down its whole side. Both take the place of the markers.
+#let tree-list(it, depth, branches: true) = {
+  let stroke = 0.8pt * zoom + theme.rule
+  // The space between items is inside the cells, so the line goes on across it
+  let gap = if it.tight { par.leading } else { par.spacing }
+  // The width of the branch, and how far down the first line of an item it leaves the line
+  let stem = if branches { 1.1em } else { 0.8em }
+  let reach = 0.5em
+  let count = it.children.len()
+  let rows = ()
+  for (i, item) in it.children.enumerate() {
+    let last = i == count - 1
+    // The line of the level runs down the start edge of this cell, the whole height of the row; for the last item it stops at the branch.
+    // The branch is a line out of it, at the height of the first line of the item. The branch stands in for the marker.
+    // The last item has no space below it: the space belongs between items, and the level around it adds its own
+    let below = if last { 0pt } else { gap }
+    rows.push(grid.cell(
+      inset: (bottom: below),
+      // The sides of a table cell are named by the direction of the table: its first column is on the right in a right-to-left one
+      stroke: if last and branches { none } else { (left: stroke) },
+      {
+        if last and branches { place(top + start, block(width: 0pt, height: reach, stroke: on-start(stroke), [])) }
+        if branches {
+        // A box with a top edge, not a `line`: a line takes no room, so it would not stay on the side the text is on in a right-to-left list
+        place(top + start, dy: reach, block(width: stem - 0.45em, height: 0pt, stroke: (top: stroke), []))
+        }
+      },
+    ))
+    rows.push(grid.cell(inset: (bottom: below), {
+      // Inside an item the gaps are the list's own, so a nested level does not push its neighbours away
+      set block(spacing: gap)
+      set par(spacing: gap)
+      item.body
+    }))
+  }
+  // The level stands the same distance from the item above it as its own items from each other
+  set block(spacing: gap)
+  set par(spacing: gap)
+  grid(columns: (stem, 1fr), ..rows)
+}
+
+#let guided-list(it) = {
+  list-depth.update(n => n + 1)
+  context {
+    let depth = list-depth.get()
+    let style = list-guides.get().last()
+    if depth < 2 or style == "none" { it } else { tree-list(it, depth, branches: style == "tree") }
+  }
+  list-depth.update(n => n - 1)
+}
+
+// `numbers`, `prefix`, `suffix`, `marker` ("•", "dash", or one per level: "disc,circle,dash"), `indent` and `guides`.
 #let list-style(opts, body) = {
   let setting(key) = opts.at(key, default: list-config.at(key, default: none))
   let kind = setting("numbers")
@@ -65,11 +137,21 @@
   let prefix = if prefix == none { "" } else { str(prefix) }
   let marker = setting("marker")
   let indent = setting("indent")
+  let own-guides = opts.at("guides", default: none)
+  assert(own-guides == none or own-guides in ("none", "line", "tree"), message: at-prefix(opts.at("md-at", default: none)) + "List guides must be none, line or tree, got " + repr(own-guides))
+  // The rule for the whole document is set once, by the call with no options; a list with its own `guides` says so to it
+  show list: it => if opts.len() == 0 { guided-list(it) } else { it }
   set enum(numbering: list-numbering(kind, suffix, prefix: prefix))
-  set list(marker: str(marker).split(",").map(m => [#marker-names.at(m.trim(), default: m.trim())])) if marker != none
+  // Every marker gets a box of the same width, so each level steps in by the same amount (a bullet, a triangle and a dash are not equally wide)
+  let marker-list = if marker != none { str(marker).split(",").map(m => marker-names.at(m.trim(), default: m.trim())) } else { ("•", "‣", "–") }
+  set list(marker: marker-list.map(m => box(width: 0.9em, align(start, m))))
   set enum(indent: parse-length(str(indent), attrs: opts)) if indent != none
   set list(indent: parse-length(str(indent), attrs: opts)) if indent != none
-  body
+  if own-guides != none {
+    list-guides.update(stack => stack + (own-guides,))
+    body
+    list-guides.update(stack => stack.slice(0, -1))
+  } else { body }
 }
 
 // One list with a `{...}` line above it: its own style; `caption` / `#id` number it «فهرست ۱» / "List 1".
@@ -81,19 +163,10 @@
   let styled = list-style(opts, body)
   let caption = opts.at("caption", default: none)
   let id = opts.at("id", default: none)
-  if caption == none and id == none { return styled }
-  context {
-    let detected = content-dir(if caption != none { caption } else { body })
-    let d = if detected == none { last-dir.get() } else { detected }
-    set text(dir: d)
-    show figure: set block(breakable: true)
-    let fig = figure(
-      block(width: 100%, align(start, styled)),
-      kind: "list",
-      caption: caption,
-      supplement: if d == rtl [فهرست] else [List],
-      numbering: n => digits(n, d == rtl),
-    )
-    if id != none [#fig#label(id)] else { fig }
-  }
+  show figure: set block(breakable: true)
+  captioned(
+    "list", "list", "فهرست", "List", block(width: 100%, align(start, styled)),
+    caption: caption, id: id,
+    numbering: caption-flag(opts, "numbering"), position: opts.at("caption-position", default: none),
+  )
 }

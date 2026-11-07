@@ -1,18 +1,33 @@
 import { localized, type AttrSpec, type ComponentDocs, type ConfigSchema, type LocalizedText, type OptionKind, type Schema, type TagSpec } from "@/lib/editor/schema"
+import { buildingSkill } from "@/lib/skill/buildText"
 import { skillHead, skillIntro, skillOutro, type FixedLanguage } from "@/lib/skill/text"
 
 /** How much the skill holds: from the names and attributes of the tags up to every note of every component. */
 export type SkillLevel = "minimal" | "compact" | "standard" | "full"
 export const SKILL_LEVELS: readonly SkillLevel[] = ["minimal", "compact", "standard", "full"]
 
-/** The language of what the engine says about its components. `both` writes English first, then Persian. */
-export type SkillLanguage = "en" | "fa" | "both"
+/** The language of a section of the skill. */
+export type SkillLanguage = FixedLanguage
 
-export interface SkillOptions {
+/** What one section of the skill takes: whether it is in the file, how much it holds and in which language. */
+export interface SkillSection {
+  enabled: boolean
+  level: SkillLevel
+  language: SkillLanguage
+}
+
+/** The skill for writing documents: the components it describes are chosen too. */
+export interface WritingOptions {
   level: SkillLevel
   language: SkillLanguage
   /** The components to describe; `null` is all of them. */
   components: ReadonlySet<string> | null
+}
+
+/** The file holds up to two sections: writing documents, and building components. */
+export interface SkillOptions {
+  writing: SkillSection & { components: ReadonlySet<string> | null }
+  building: SkillSection
 }
 
 /** Where a component stands in the picker. */
@@ -87,9 +102,9 @@ export function estimateTokens(text: string): number {
 
 // ---- small helpers -----------------------------------------------------------------------------------------------------------
 
-const languagesOf = (language: SkillLanguage): FixedLanguage[] => (language === "both" ? ["en", "fa"] : [language])
+const languagesOf = (language: SkillLanguage): FixedLanguage[] => [language]
 
-/** A one-line text in the languages asked for: `en / fa` for both. */
+/** A one-line text in the language asked for. */
 function line(text: LocalizedText | undefined, language: SkillLanguage): string {
   if (!text) return ""
   const parts = languagesOf(language).map((lang) => localized(text, lang).replace(/\s*\n\s*/g, " ").trim())
@@ -145,15 +160,13 @@ const openTag = (tag: string, spec: TagSpec | undefined): string => {
 
 // ---- components --------------------------------------------------------------------------------------------------------------
 
-function exampleOf(docs: ComponentDocs, language: SkillLanguage, level: SkillLevel): string[] {
+function exampleOf(docs: ComponentDocs, language: SkillLanguage): string[] {
   const example = docs.example
   const pick = (lang: FixedLanguage): string => (typeof example === "string" ? example : lang === "fa" ? (example.fa ?? example.en) : example.en)
-  const wanted = language === "both" ? (level === "full" ? (["en", "fa"] as const) : (["en"] as const)) : ([language] as const)
-  const texts = [...new Set(wanted.map(pick))]
-  return texts.flatMap((text) => ["Example:", "", fenced(text), ""])
+  return ["Example:", "", fenced(pick(language)), ""]
 }
 
-function componentSection(schema: Schema, component: SkillComponent, options: SkillOptions): string {
+function componentSection(schema: Schema, component: SkillComponent, options: WritingOptions): string {
   const { level, language } = options
   const lines: string[] = []
   const tags = component.tags.filter((tag) => schema.tags[tag])
@@ -190,7 +203,7 @@ function componentSection(schema: Schema, component: SkillComponent, options: Sk
     }
   }
   if (level !== "full") lines.push("")
-  if (docs) lines.push(...exampleOf(docs, language, level))
+  if (docs) lines.push(...exampleOf(docs, language))
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()
 }
 
@@ -209,7 +222,7 @@ function minimalComponents(schema: Schema, components: SkillComponent[], languag
 
 // ---- settings and option lines -----------------------------------------------------------------------------------------------
 
-function configSection(title: string, config: ConfigSchema, options: SkillOptions): string {
+function configSection(title: string, config: ConfigSchema, options: WritingOptions): string {
   const { level, language } = options
   const lines = [`### ${title}`, ""]
   const keys = (attrs: Record<string, AttrSpec>) => Object.entries(attrs)
@@ -236,7 +249,7 @@ const OPTION_TITLES: Record<OptionKind, string> = {
   span: "Text fragments",
 }
 
-function optionsSection(schema: Schema, options: SkillOptions): string {
+function optionsSection(schema: Schema, options: WritingOptions): string {
   const { level, language } = options
   const lines = ["## Option lines `{...}`", "", "A line of options in braces changes one table, list, heading, equation or text fragment. Where it goes, and what it takes:", ""]
   for (const kind of Object.keys(schema.options) as OptionKind[]) {
@@ -264,12 +277,11 @@ function themesLine(schema: Schema): string {
 
 // ---- the whole skill ---------------------------------------------------------------------------------------------------------
 
-/** One Markdown file: a head, the fixed introduction, the reference generated from the schema and the docs of the components, the checklist. */
-export function generateSkill(schema: Schema, options: SkillOptions): string {
-  const fixed: FixedLanguage = options.language === "fa" ? "fa" : "en"
+/** The skill for writing documents: the fixed introduction, the reference generated from the schema and the docs of the components, the checklist. */
+export function generateWriting(schema: Schema, options: WritingOptions): string {
   const all = skillComponents(schema)
   const chosen = options.components ? all.filter((component) => options.components?.has(component.name)) : all
-  const parts: string[] = [skillHead(fixed).trimEnd(), skillIntro(fixed, options.level)]
+  const parts: string[] = [skillIntro(options.language, options.level)]
 
   const reference: string[] = ["## Components", ""]
   if (options.level === "minimal") {
@@ -296,6 +308,24 @@ export function generateSkill(schema: Schema, options: SkillOptions): string {
     parts.push(settings.join("\n"))
   }
 
-  parts.push(skillOutro(fixed, options.level))
+  parts.push(skillOutro(options.language, options.level))
+  return parts.join("\n\n").replace(/\n{3,}/g, "\n\n").trimEnd()
+}
+
+/** The skill for building components: the contract of a component file and what the engine gives it. */
+export function generateBuilding(options: SkillSection): string {
+  return buildingSkill(options.language, options.level)
+}
+
+/**
+ * One Markdown file: a head, then each section that is on, in its own size and language. A file with no section on is only the head;
+ * the page keeps one on.
+ */
+export function generateSkill(schema: Schema, options: SkillOptions): string {
+  const { writing, building } = options
+  const first = writing.enabled ? writing : building
+  const parts = [skillHead(first.language, { writing: writing.enabled, building: building.enabled }).trimEnd()]
+  if (writing.enabled) parts.push(generateWriting(schema, writing))
+  if (building.enabled) parts.push(generateBuilding(building))
   return parts.join("\n\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n"
 }
