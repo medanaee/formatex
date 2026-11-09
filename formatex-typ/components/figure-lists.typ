@@ -33,6 +33,27 @@
   if after { pagebreak(weak: true) }
 }
 
+// The HTML form of the three lists (optional, used by the HTML export): the figures of one kind, each a link
+#let html-figure-list(kind, attrs, fa-title, en-title) = context {
+  let d = attrs.at("dir", default: "rtl")
+  let title = attrs.at("title", default: if d == "ltr" { en-title } else { fa-title })
+  let entries = ()
+  for el in query(figure.where(kind: kind)) {
+    let caption = if el.caption == none { [] } else { el.caption.body }
+    let has-caption = caption != []
+    if el.numbering == none and not has-caption { continue }
+    let number = if el.numbering != none { reference-text(el, d != "ltr") }
+    entries.push((indent: 0, target: el.location(), text: if number != none and has-caption [#number: #caption] else if number != none { number } else { caption }))
+  }
+  if entries.len() == 0 { return none }
+  html-link-list(title, entries, d)
+}
+#let figure-lists-html = (
+    lof: (attrs, body) => html-figure-list(image, attrs, "فهرست شکل‌ها", "List of Figures"),
+    lot: (attrs, body) => html-figure-list(table, attrs, "فهرست جدول‌ها", "List of Tables"),
+    lol: (attrs, body) => html-figure-list(raw, attrs, "فهرست کدها", "List of Listings"),
+)
+
 #let figure-lists-tags = (
     lof: (attrs, body) => figure-list(image, "lof", attrs, "فهرست شکل‌ها", "List of Figures"),
     lot: (attrs, body) => figure-list(table, "lot", attrs, "فهرست جدول‌ها", "List of Tables"),

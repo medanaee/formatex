@@ -115,6 +115,18 @@ typst watch main.typ                                    # rebuild on every save
 
 The Markdown file that gets compiled is set by `source` at the top of `config.toml` (default `doc_en.md`). Change it there to make another file the default, e.g. `source = "thesis.md"`. The path is relative to `main.typ`. `--input source=...` still overrides it for a single build. The output PDF is always named after the `.typ` file (`main.pdf`) unless you give an output path.
 
+### One HTML file (experimental) {#html-export}
+
+```bash
+typst compile main.typ out.html --format html --features html --font-path fonts \
+  --input source=docs/doc_en.md --input target=html --input html-copy-code=true
+```
+
+`--input target=html` makes the engine write a page instead of paged output (`src/html/`): the theme, the feel and the fonts become CSS, headings, lists, tables, code blocks, alerts, boxes, badges, keys, links and references are real HTML, and the page reflows with the width of the window. A tag that has no HTML form yet (`<chart>`, `<cetz>`, `<steps>`, `<compare>`, ...) keeps its PDF look as an inline picture, so nothing is lost. The `[html]` table of config.toml (`toolbar`, `progress`, `outline`, `copy-code`, `embed-fonts`, all on by default) chooses what the page gets: a toolbar with zoom, theme and feel, a reading-progress line, an outline sidebar and a copy button on every code block. `--input html-copy-code=false` (and `html-toolbar`, `html-progress`, `html-outline`) overrides one of them for one build. The reader can change the theme and the feel in the toolbar; with the toolbar on, the fonts of every feel are put in the file (only the glyphs the page uses), so the feel changes the fonts as well; a red dot marks a setting changed from the page's own, and the menu has a "Back to default" item. `examples/demo.md` shows every tag and is the test page for the HTML output.
+
+- Typst still calls its HTML export incomplete, so this may change. The app's **Export HTML** button does the same and also puts the fonts inside the file (the CLI leaves them to the reader's machine).
+- A tag gets its HTML form in `src/html/tags.typ` (`html-tag-impls`) and its CSS in `src/html/style.typ`.
+
 ### All themes and feels: `tools/build-all.mjs`
 
 `tools/build-all.mjs` compiles every combination of the 8 themes and 3 feels, 24 PDFs in total. Files are named `<source>-<theme>-<feel>.pdf` and written to `out/`:
@@ -1873,7 +1885,8 @@ As <cite key="vaswani2017attention" form="prose"></cite> showed ...
   - Ids must be unique, and an unknown id is a compile error.
 - **Style:** every reference and citation is drawn in the theme's accent color with an underline. In citations, only the text inside the brackets is styled.
 - **Also referenceable:** numbered equations («رابطهٔ (۱)»), `<code>` listings with an `id` («کد ۱» / "Listing 1") and `<diff>` blocks with an `id` («تغییرات ۱» / "Diff 1").
-- **Text fragments:** mark a piece of text inside a paragraph as a reference target with `<span id="term">text</span>` or the Markdown form `[text]{#term}`. `<anchor id="term">` is another name for `<span>`, and `name` works instead of `id`. `<ref to="term"></ref>` then prints the marked text as a link (custom text inside `<ref>` still wins). `{#...}` inside fenced code blocks is left alone.
+- **Text fragments:** mark a piece of text inside a paragraph as a reference target with `<span id="term">text</span>` or the Markdown form `[text]{#term}`. `<anchor id="term">` is another name for `<span>`. `<ref to="term"></ref>` then prints the marked text as a link (custom text inside `<ref>` still wins). `{#...}` inside fenced code blocks is left alone.
+- **Tailwind classes on text:** `tailwind` takes the same classes as <a href="#div-section">`<div>`</a>, on a piece of text: `<span tailwind="border border-red-500 rounded px-1 bg-red-100 text-lg text-red-700 font-bold">text</span>` or `[text]{tailwind="border rounded-lg px-2 text-red-600"}`. A border, rounding, a background and padding make a box around the text (it stays on one line, and vertical padding does not push the lines apart); the text classes (`text-xs` to `text-9xl`, `text-<color>`, `font-*`, `italic`, `underline`, `line-through`, `tracking-*`, `font-mono`) style the text itself. A span takes the groups padding, background, text color, text, border and rounding; a class of another group (`flex`, `w-*`, margins) or one `<div>` does not know is a compile error that names the line. The editor completes the classes as you type, only those the tag takes (a `<div>` gets all of them, a `<span>` its six groups); `dist/tags.json` has them as `tailwind` (the groups, their classes and values) and each tag lists its groups in `classes` of its `tailwind` attribute.
 - **Highlighting text:** `<span highlight="true">text</span>` puts a highlighter band behind the text; `highlight` takes `true` (yellow), a <a href="#color-presets">color preset</a>, Tailwind name or hex (`highlight="green"`). It works with or without an `id` (`<span id="term" highlight="pink">`), follows line breaks so a long phrase stays one band, and can sit inside bold or italic text. A `<ref>` to a highlighted span prints the plain text. The Markdown form takes it too, as a token inside the braces: `[text]{highlight=green}`, `[text]{#term highlight=true}`. Braces holding anything else are left as plain text; an unknown key is a compile error. For highlighted code lines use `highlight` on `<code>`.
 
 ### `<def>`: a defined term, inline or block
@@ -2042,6 +2055,34 @@ Upgraded from <del>v1.4 (legacy)</del> to <ins>v2.0 (optimized)</ins>.
   - `icon` adds a Font Awesome icon before the text.
   - `size` is the text size: `1em` by default (the same as the surrounding text); `size="0.8em"` makes it a little smaller.
 - Both follow the theme and the feel's corner rounding.
+
+### `<counter>`: numbers of your own
+
+```markdown
+<counter of="ex" label="تمرین %1." /> معادله را حل کنید.
+<counter of="ex" label="تمرین %1." /> آن را ثابت کنید.
+```
+
+Each `<counter of="ex" />` prints the next number of the counter called `ex` (1, 2, 3 ...). Every `of` name is a counter of its own, and it needs no setting to start.
+
+- `label` is the printed text: `%1` is the number of the first level, `%2` of the second. Without it the label is just the number. `label=""` (or `hide`) counts without printing anything.
+- `format` writes the numbers the way numbered lists do: `auto` (by the language of the text), `fa`, `en`, `fatxt`, `rome`, `abc`, `abjad`, `alefba`.
+- `step="2"` adds 2 instead of 1, and `step="0"` shows the number without adding. `set="10"` makes this use 10, and the next one 11.
+- **Levels** (`1.1`, `1.2`, `2.1`): give the counter its shape once, in `[counters.<name>]` of config.toml or under `counters:` in the front matter, then say which level a use steps with `level="2"` (default 1). Stepping a level sets the levels below it back to zero.
+
+```toml
+[counters.sec]
+levels = 2            # how many levels (default 1)
+separator = "."       # between the numbers of the default label (default ".")
+format = ["en", "abc"] # one kind for all levels, or a list with one per level
+label = "%1.%2"       # a default label, with %1, %2 ... for the levels
+```
+
+```markdown
+<counter of="sec" /> <counter of="sec" level="2" /> <counter of="sec" level="2" /> <counter of="sec" />
+```
+
+This prints `1.0`, `1.a`, `1.b` and `2.0`. In config.toml and the front matter `label`, `format`, `levels` and `separator` are set once; a use can override `label` and `format`.
 
 ### `<icon>`: icon inside a sentence
 
@@ -2577,6 +2618,7 @@ components = ["notes.typ", "extras/stamps.typ"]
 - **Components of one project:** list Typst files in `components` (see [Your own components](#your-own-components)); no change to the engine.
 - **New component:** add a file `components/<name>.typ` that exports `<name>-tags = (tag: (attrs, body) => ...)`; run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it) and the tag is available, with no change to `main.typ`. It receives `(attrs, body)`, where `body` is already rendered content. Parent and child tags (like `<fig>` and `<caption>`) communicate through `tag(...)`, `untag(...)` and `find-tagged(...)`.
 - **Docs of a component:** every component also exports `#let <name>-docs = (en: (about: "...", more: "..."), fa: (about: "...", more: "..."), example: (en: "...", fa: "..."))`: what it is for and its key rules in Markdown (`about`, short; `more`, optional and longer), in both languages, and a usage example in Markdown. Write the long texts as raw blocks (`` `````md ... `````.text ``). `tools/gen-registry.mjs` stops when a built-in component has none; `tools/export-schema.mjs` writes them into `dist/tags.json` under `components` with the component's tags. The Skill page of the Formatex app builds one Markdown file for AI agents from them and from the schema.
+- **HTML form of a component (optional):** the tags of a component also have a form in the [HTML export](#html-export): export `#let <name>-html = (tag: (attrs, body) => html.elem("div", attrs: (class: "fx-x"), body))` (the same `(attrs, body)`, or `("void", attrs => ...)`) and `#let <name>-css = `````css ... `````.text` (its CSS). The tag is then real HTML; without them it is a picture of its PDF look, and the PDF is never affected. `html.elem` is only called inside the functions, since `html` exists only in the HTML export. The helpers come with `#import "/src/kit.typ": *` (`css-color`, `css-len`, `style-of`, `panel-style`, `html-icon`, `find-target`, `html-link-list`, `in-frame`), and the theme, feel and fonts are CSS variables (`--bg --fg --heading --muted --accent --rule --code-bg --code-stroke --r-badge --r-alert --font-body ...`). A project's own components (`components` setting) can export both names too.
 - **New code language badge:** extend `code-languages` and `code-language-aliases` in `src/core.typ`.
 
 The editor skill in `skills/typst-formatex-dev/` documents the internals in more detail (`reference.md`). `extending.md` there is the guide for adding themes, feels and components without breaking direction, alignment or other themes. Read it (or point an AI agent to it) before extending the template. Its first rule: everything new must fit all three feels, and `formal` stays square everywhere.

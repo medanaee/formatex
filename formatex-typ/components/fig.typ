@@ -229,6 +229,21 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): Typst's own `figure` with its caption around what is inside (an <img> stays an image,
+// a drawing is a picture); the size, ratio and alignment options are the PDF's
+#let fig-html = (
+    fig: (attrs, body) => {
+      let (tagged: captions, rest) = untag(body, "caption")
+      let caption = if captions.len() > 0 { captions.at(0).body } else { none }
+      context captioned(
+        "figure", image, "شکل", "Figure", if type(rest) == array { rest.join() } else { rest },
+        caption: caption, id: attrs.at("id", default: none),
+        numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
+        listed: caption-flag(attrs, "lof") != false, implicit: true,
+      )
+    },
+)
+
 #let fig-schema = (
   "fig": (
     kind: "block",

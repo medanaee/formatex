@@ -36,6 +36,23 @@
     }),
 )
 
+// The HTML form (optional, used by the HTML export): an `<hr>` with the border of the style (dash-dot becomes dashed, wavy solid)
+#let hr-html = (
+    hr: ("void", attrs => {
+      let style = flag-attr(attrs, "style", "solid", hr-styles, "hr")
+      let hue = pick-hue(attrs.at("color", default: none), "hr", theme.rule, attrs: attrs)
+      let thickness = parse-length(attrs.at("thickness", default: "1pt"), attrs: attrs)
+      let width = parse-length(attrs.at("width", default: "100%"), attrs: attrs)
+      let gap = parse-length(attrs.at("gap", default: "0.8em"), attrs: attrs)
+      let line = if style in ("dashed", "dotted", "double") { style } else if style == "dash-dot" { "dashed" } else { "solid" }
+      html.elem("hr", attrs: (style: style-of((
+        "border-top: " + css-len(if style == "double" { thickness * 3 } else { thickness }) + " " + line + " " + css-color(hue),
+        "width: " + if type(width) == ratio { str(width / 1%) + "%" } else { css-len(width) },
+        "margin: " + css-len(gap) + " auto",
+      ))))
+    }),
+)
+
 #let hr-schema = (
   "hr": (
     kind: "void",

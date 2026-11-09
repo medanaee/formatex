@@ -18,6 +18,24 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): a `.fx-panel` (its CSS is the page's)
+#let box-html = (
+    box: (attrs, body) => {
+      let given = attrs.at("color", default: none)
+      let colors = if given != none { resolve-color(given, attrs: attrs) }
+      let is-preset = given != none and given in color-presets
+      let border = parse-length(attrs.at("border", default: if is-preset { "0.6" } else { "0" }), attrs: attrs)
+      let border-color = if "border-color" in attrs { resolve-color(attrs.at("border-color"), attrs: attrs).border } else if is-preset { colors.border } else { theme.rule }
+      let r = if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.box }
+      html.elem("div", attrs: (class: "fx-panel", style: style-of((
+        "border-radius: " + css-len(r),
+        "padding: " + css-len(parse-length(attrs.at("padding", default: "8pt"), attrs: attrs)),
+        if colors != none { panel-style(colors) },
+        if border != 0pt { "border: " + css-len(border) + " solid " + (if "border-color" in attrs { css-color(border-color) } else if is-preset { "var(--panel-border)" } else { "var(--rule)" }) },
+      ))), body)
+    },
+)
+
 #let box-schema = (
   "box": (
     kind: "block",

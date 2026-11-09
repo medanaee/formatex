@@ -18,6 +18,14 @@
     }),
 )
 
+// The HTML form (optional, used by the HTML export): a small picture, so the page needs no icon font
+#let icon-html = (
+    icon: ("void", attrs => {
+      let given = attrs.at("color", default: none)
+      html-icon(attrs.name, fill: if given != none { resolve-color(given, attrs: attrs).icon }, size: parse-length(attrs.at("size", default: "1em"), attrs: attrs))
+    }),
+)
+
 #let icon-schema = (
   "icon": (
     kind: "void",

@@ -9,7 +9,7 @@ use typst::foundations::{Bytes, Datetime, Dict, Duration, Value};
 use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
-use typst::{Library, LibraryExt, World};
+use typst::{Feature, Features, Library, LibraryExt, World};
 use typst_kit::datetime::Time;
 use typst_kit::files::{FileLoader, FileStore, FsRoot};
 use typst_kit::fonts::FontStore;
@@ -117,17 +117,36 @@ impl ProjectWorld {
         inputs: &HashMap<String, String>,
         extra: HashMap<String, Vec<u8>>,
     ) -> Self {
-        Self::build(false, project_dir, entry, packages, fonts, components, inputs, extra)
+        Self::build(false, false, project_dir, entry, packages, fonts, components, inputs, extra)
+    }
+
+    /// The same, for an HTML export: the library has Typst's (still experimental) HTML feature on.
+    pub fn new_html(
+        project_dir: Option<PathBuf>,
+        entry: &str,
+        packages: Arc<SystemPackages>,
+        fonts: Arc<FontStore>,
+        components: Arc<ComponentLibrary>,
+        inputs: &HashMap<String, String>,
+        extra: HashMap<String, Vec<u8>>,
+    ) -> Self {
+        Self::build(false, true, project_dir, entry, packages, fonts, components, inputs, extra)
     }
 
     /// The world of a project that is plain Typst: `entry` is a file of the project, there are no `sys.inputs`, and nothing of the engine.
     pub fn plain(project_dir: Option<PathBuf>, entry: &str, packages: Arc<SystemPackages>, fonts: Arc<FontStore>, components: Arc<ComponentLibrary>, extra: HashMap<String, Vec<u8>>) -> Self {
-        Self::build(true, project_dir, entry, packages, fonts, components, &HashMap::new(), extra)
+        Self::build(true, false, project_dir, entry, packages, fonts, components, &HashMap::new(), extra)
+    }
+
+    /// Plain Typst, for an HTML export.
+    pub fn plain_html(project_dir: Option<PathBuf>, entry: &str, packages: Arc<SystemPackages>, fonts: Arc<FontStore>, components: Arc<ComponentLibrary>, extra: HashMap<String, Vec<u8>>) -> Self {
+        Self::build(true, true, project_dir, entry, packages, fonts, components, &HashMap::new(), extra)
     }
 
     #[allow(clippy::too_many_arguments)]
     fn build(
         plain: bool,
+        html: bool,
         project_dir: Option<PathBuf>,
         entry: &str,
         packages: Arc<SystemPackages>,
@@ -141,8 +160,9 @@ impl ProjectWorld {
         for (key, value) in inputs {
             dict.insert(key.as_str().into(), Value::Str(value.as_str().into()));
         }
+        let features: Features = if html { [Feature::Html].into_iter().collect() } else { Features::none() };
         Self {
-            library: LazyHash::new(Library::builder().with_inputs(dict).build()),
+            library: LazyHash::new(Library::builder().with_inputs(dict).with_features(features).build()),
             fonts,
             files: FileStore::new(Loader { plain, project: project_dir.clone().map(FsRoot::new), root: project_dir.clone(), packages, components, extra: extra.clone() }),
             time: Time::system(),

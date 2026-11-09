@@ -178,7 +178,18 @@
   attrs: (
     "source": (type: "path", default: "docs/doc_en.md", doc: d("The Markdown file that main.typ compiles (path relative to the project). A build option can override it.", "فایل Markdown که main.typ کامپایل می‌کند (مسیر نسبت به پروژه). گزینهٔ ساخت می‌تواند آن را بازنویسی کند.")),
   ),
-  tables: (:),
+  tables: (
+    "html": (
+      doc: d("The HTML output (the live HTML preview and the Export HTML dialog start from these; the dialog can change them for one export).", "خروجی HTML (پیش‌نمایش زندهٔ HTML و پنجرهٔ «خروجی HTML» از این‌ها شروع می‌کنند؛ پنجره می‌تواند برای یک خروجی تغییرشان دهد)."),
+      attrs: (
+        "toolbar": (type: "bool", default: "true", doc: d("A slim toolbar: zoom, theme and feel, changed by the reader.", "نوار ابزار باریک: بزرگ‌نمایی، تم و حال‌وهوا، به انتخاب خواننده.")),
+        "progress": (type: "bool", default: "true", doc: d("A reading-progress line at the top and a percent in the toolbar.", "خط نشانگر خواندن بالای صفحه و درصد آن در نوار ابزار.")),
+        "outline": (type: "bool", default: "true", doc: d("An outline of the headings in a sidebar on the right (a drawer on a phone).", "فهرست سرفصل‌ها در یک نوار کناری سمت راست (در موبایل به شکل کشو).")),
+        "copy-code": (type: "bool", default: "true", doc: d("A copy button on every code block.", "دکمهٔ کپی روی هر بلوک کد.")),
+        "embed-fonts": (type: "bool", default: "true", doc: d("Put the font files in the HTML (a few MB bigger) so it looks the same on any machine; false: the reader's own fonts. With the toolbar on, the fonts of every feel are included, so changing the feel changes the fonts too.", "فایل فونت‌ها در HTML گذاشته شود (چند مگابایت بزرگ‌تر) تا همه‌جا یک‌شکل دیده شود؛ false: فونت‌های خود خواننده.")),
+      ),
+    ),
+  ),
 )
 
 #let header-footer-keys = (

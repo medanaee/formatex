@@ -40,18 +40,22 @@
   parts.join(" و ")
 }
 
-// Enum numbering for a `numbers` kind; "auto" follows the list's direction (its first letter).
-#let list-numbering(kind, suffix, prefix: "") = (..nums) => context {
-  let n = nums.pos().last()
-  let letters(all) = if n <= all.len() { all.at(n - 1) } else { numbering("۱", n) }
-  let label = if kind in ("auto", "fa", "en") {
+// The number `n` written in a `numbers` kind (auto, fa, en, fatxt, rome, abc, abjad, alefba); "auto" follows the direction of the text
+// where it stands, so call it inside `context`. Used by numbered lists and by <counter>.
+#let format-number(kind, n) = {
+  let letters(all) = if n >= 1 and n <= all.len() { all.at(n - 1) } else { numbering("۱", n) }
+  if kind in ("auto", "fa", "en") {
     numbering(if (kind == "auto" and text.dir == rtl) or kind == "fa" { "۱" } else { "1" }, n)
   } else if kind == "fatxt" { persian-words(n) }
-    else if kind == "rome" { numbering("I", n) }
-    else if kind == "abc" { numbering("a", n) }
+    else if kind == "rome" { if n >= 1 { numbering("I", n) } else { str(n) } }
+    else if kind == "abc" { if n >= 1 { numbering("a", n) } else { str(n) } }
     else if kind == "abjad" { letters(abjad-letters) }
     else { letters(alefba-letters) }
-  prefix + label + suffix
+}
+
+// Enum numbering for a `numbers` kind; "auto" follows the list's direction (its first letter).
+#let list-numbering(kind, suffix, prefix: "") = (..nums) => context {
+  prefix + format-number(kind, nums.pos().last()) + suffix
 }
 
 // Guide lines between the levels of a bulleted list (`guides`): "line" is a line down the side of every nested level, from its first
@@ -165,7 +169,7 @@
   let id = opts.at("id", default: none)
   show figure: set block(breakable: true)
   captioned(
-    "list", "list", "فهرست", "List", block(width: 100%, align(start, styled)),
+    "list", "list", "فهرست", "List", if html-mode { styled } else { block(width: 100%, align(start, styled)) },
     caption: caption, id: id,
     numbering: caption-flag(opts, "numbering"), position: opts.at("caption-position", default: none),
   )

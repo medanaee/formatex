@@ -3,6 +3,7 @@ mod compile;
 mod components;
 mod engine;
 mod fonts;
+mod html_export;
 mod ide;
 mod links;
 mod packages;
@@ -22,6 +23,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       compile::compile_project,
       compile::export_pdf,
+      compile::export_html,
       compile::project_preview,
       compile::project_set_root,
       watcher::project_watch,
@@ -61,12 +63,34 @@ pub fn run() {
       tauri::Manager::manage(app, engine);
       Ok(())
     })
+    // The window is gone: the app ends, whatever is still running
+    .on_window_event(|_window, event| {
+      if let tauri::WindowEvent::Destroyed = event {
+        end_soon();
+      }
+    })
     .build(tauri::generate_context!())
     .expect("error while building tauri application")
     .run(|_app, event| {
-      // Folders that are watched are let go of before the process ends, so no directory handle is left with a read waiting on it
       if let tauri::RunEvent::Exit = event {
-        watcher::stop_all();
+        end_soon();
       }
     });
+}
+
+/// Ends the process after a short grace. Folders that are watched are let go of first (a watcher is a handle on a folder with a read waiting on
+/// it, and a static is not dropped when the process ends), but that happens on a thread of its own: if letting one go waits for something
+/// that never comes (it did, now and then, and the closed window stayed on the screen as a ghost until the machine was restarted), the
+/// process still ends, 1.5 seconds later, instead of hanging.
+fn end_soon() {
+  use std::sync::atomic::{AtomicBool, Ordering};
+  static ENDING: AtomicBool = AtomicBool::new(false);
+  if ENDING.swap(true, Ordering::SeqCst) {
+    return;
+  }
+  std::thread::spawn(watcher::stop_all);
+  std::thread::spawn(|| {
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+    std::process::exit(0);
+  });
 }

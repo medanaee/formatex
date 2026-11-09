@@ -46,6 +46,34 @@
     }),
 )
 
+// The HTML form (optional, used by the HTML export): the picture covers a band with a gradient rising from the bottom and the white title on
+// it; `margin-x="false"` lets the band bleed to the edges of the window. A page break means nothing on a web page, so `break` is ignored.
+#let picheader-html = (
+    picheader: ("void", attrs => {
+      assert("src" in attrs, message: at-of(attrs) + "<picHeader> requires src=\"path\"")
+      assert("title" in attrs, message: at-of(attrs) + "<picHeader> requires title=\"...\"")
+      let bleed = attrs.at("margin-x", default: "true") == "false"
+      let h = parse-length(attrs.at("height", default: "60mm"), attrs: attrs)
+      let subtitle = attrs.at("subtitle", default: none)
+      html.elem("div", attrs: (class: "fx-pic" + if bleed { " fx-pic-bleed" } else { "" }, style: "height: " + css-len(h)), {
+        image(root-path(attrs.src), width: 100%, height: 100%, fit: "cover")
+        html.elem("div", attrs: (class: "fx-pic-text", dir: attrs.at("dir", default: "auto")), {
+          html.elem("div", attrs: (class: "fx-pic-title"), attrs.title)
+          if subtitle != none { html.elem("div", attrs: (class: "fx-pic-sub"), subtitle) }
+        })
+      })
+    }),
+)
+#let picheader-css = `````css
+.fx-pic { position: relative; overflow: hidden; margin: 1.1em 0; border-radius: var(--r-image); color: #fff; background: #000; }
+.fx-pic img { position: absolute; inset: 0; width: 100% !important; height: 100% !important; max-width: none; object-fit: cover; }
+.fx-pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 25%, rgba(0, 0, 0, .9)); }
+.fx-pic-text { position: absolute; z-index: 1; inset-inline: 0; bottom: 0; padding: 1em 1.2em 1.1em; unicode-bidi: plaintext; }
+.fx-pic-title { font-size: 2.2em; font-weight: 700; line-height: 1.3; color: #fff; }
+.fx-pic-sub { margin-top: .5em; font-size: 1.1em; color: rgba(255, 255, 255, .85); }
+.fx-pic-bleed { border-radius: 0; width: 100vw; margin-inline: calc(50% - 50vw); }
+`````.text
+
 #let picheader-schema = (
   "picheader": (
     display: "picHeader",

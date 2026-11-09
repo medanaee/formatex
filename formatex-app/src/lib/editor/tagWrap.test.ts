@@ -44,3 +44,25 @@ describe("wrapping a selection in a tag", () => {
     expect(state.doc.toString()).toBe("<bo>word</bo>")
   })
 })
+
+describe("a name accepted from the completion list", () => {
+  it("goes into the closing tag too (a replaced typed part, or a name with attributes)", () => {
+    let state = type(wrap(start("one two three", 4, 7)), "ki")
+    expect(state.doc.toString()).toBe("one <ki>two</ki> three")
+    // The list replaces the typed part with the whole name
+    state = state.update({ changes: { from: 5, to: 7, insert: "kbd" }, selection: EditorSelection.cursor(8), userEvent: "input.complete" }).state
+    expect(state.doc.toString()).toBe("one <kbd>two</kbd> three")
+    // A tag with a required attribute: the name and the attribute go in, the closing tag has the name only
+    let other = type(wrap(start("one two three", 4, 7)), "ale")
+    other = other.update({ changes: { from: 5, to: 8, insert: 'alert type=""' }, selection: EditorSelection.cursor(18), userEvent: "input.complete" }).state
+    expect(other.doc.toString()).toBe('one <alert type="">two</alert> three')
+  })
+})
+
+describe("a selection over several lines", () => {
+  it("gives the closing tag on its own line what is typed in the name", () => {
+    const NL = String.fromCharCode(10)
+    const state = type(type(wrap(start(["a", "b"].join(NL), 0, 3)), "k"), "bd")
+    expect(state.doc.toString()).toBe(["<kbd>", "a", "b", "</kbd>"].join(NL))
+  })
+})

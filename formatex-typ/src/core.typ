@@ -372,6 +372,11 @@
 
 #let is-rtl(body) = text-dir(body) != ltr
 
+// The output is HTML (`--input target=html`, set by the app's HTML export): `src/html/` makes the page's rules and the tags
+// that have an HTML form; a tag without one is drawn as an inline picture. It is an input, not `target()`, so the PDF's code
+// never has to ask in a `context`.
+#let html-mode = sys.inputs.at("target", default: "pdf") == "html"
+
 // Text direction: "auto" = every block from its first letter; "rtl" / "ltr" force it on everything.
 #let doc-dir = sys.inputs.at("dir", default: config.at("dir", default: "auto"))
 #assert(doc-dir in ("auto", "rtl", "ltr"), message: setting-prefix("dir") + "dir must be auto, rtl or ltr, got " + repr(doc-dir))
@@ -391,7 +396,13 @@
   if forced != none { forced } else { text-dir(body) }
 }
 
-#let last-dir = state("last-dir", ltr)
+// The language of the HTML page, from the letters of the text. It is also the direction a block with no letters starts from.
+#let html-lang = if doc-dir == "rtl" { "fa" } else if doc-dir == "ltr" { "en" } else {
+  let arabic = source-text.matches(regex("\p{Arabic}")).len()
+  let latin = source-text.matches(regex("[A-Za-z]")).len()
+  if arabic > latin { "fa" } else { "en" }
+}
+#let last-dir = state("last-dir", if html-mode and html-lang == "fa" { rtl } else { ltr })
 
 // <align> pushes its value here while its content is laid out, so tables, figures and
 // drawings (which align themselves explicitly) follow the enclosing alignment too.

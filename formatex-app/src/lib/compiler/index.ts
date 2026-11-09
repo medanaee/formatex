@@ -1,5 +1,6 @@
 import { isTauri } from "@/lib/platform"
 import type { ProjectKind } from "@/lib/db/types"
+import type { HtmlExportOptions } from "@/lib/projects/htmlConfig"
 
 export interface Diagnostic {
   severity: "error" | "warning"
@@ -148,6 +149,19 @@ export const remoteFile = async (projectId: string, url: string): Promise<Uint8A
 
 export async function exportPdf(projectId: string, main: string, overrides?: Record<string, string>, kind?: ProjectKind): Promise<Uint8Array> {
   return new Uint8Array(await invoke<ArrayBuffer>("export_pdf", { projectId, main, overrides, kind }))
+}
+
+/** The project as one HTML file (an experiment): the page, its stylesheet and, with `embedFonts`, its fonts. */
+export async function exportHtml(
+  projectId: string,
+  main: string,
+  options: HtmlExportOptions,
+  overrides?: Record<string, string>,
+  kind?: ProjectKind,
+  /** The file to write, chosen by the user (desktop): the file is then written by the native side and no bytes come back. */
+  path?: string,
+): Promise<Uint8Array> {
+  return new Uint8Array(await invoke<ArrayBuffer>("export_html", { projectId, main, overrides, kind, options, path }))
 }
 
 export interface FontFamily {

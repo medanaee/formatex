@@ -98,6 +98,14 @@ The engine reads `vars` (values) and `var-types` (rules) from the front matter o
 - **Addresses** (`https://...` in `<img>`, `![](...)`, or a data function in `{{ }}`): the engine writes an address as a path under `/.remote/` (`src/lib/remote.typ` in the engine; Typst cannot open an address), and the native world downloads it the first time and reads it from `.cache/` (`.formatex/.cache/` in a folder project) after that (`remote.rs`, `world.rs`). A file outside the project is written `file:///...` (`/x` stays the project's root, as in Typst), goes under `/.external/` and into the same cache: copied again when its modification time or size changes, the kept copy is used when the original is gone, only pictures and data files are allowed, and one inside the project folder is read where it is. The file tree shows the cache folder (it appears after the first compile that needs it). The sync button beside Export (desktop) downloads every kept address again (`remote_sync`); a failed one keeps its old copy. The arrow beside it opens the list of everything kept (`RemoteFilesMenu.tsx`: a small picture for images, the size, and a button that downloads just that one again; `remote_list`, `remote_file`, and `remote_sync` with a `url`).
 - The Outline moves the editor and the preview to a heading; the main file can be renamed from the tree (the project follows it).
 
+## Tailwind completion
+
+In the value of a `tailwind="..."` (on a tag, or in the `{...}` of a span) the editor completes the word being typed, as VS Code's Tailwind extension does, with the classes the tag takes only (`tailwindComplete.ts`): a `<div>` all groups, a `<span>` padding, background, text color, text, border and rounding. The engine says what exists: `src/lib/tailwind.typ` is the catalog (values, variants and groups), exported as `tailwind` in `tags.json`, and a tag lists its groups in `classes` of the attribute. A word after `dark:` (or another variant) is completed without the prefix, and the variants are offered before a class. The same file makes `<span>` reject a class of a group it does not take (`tailwind-check`).
+
+## Zoom of the code
+
+View menu (zoom in, zoom out, reset) and Ctrl + plus / minus / 0, or Ctrl + wheel, in the editor: 50 to 300 %, saved in the settings (`editorZoom`). The theme multiplies the editor's font size by `--editor-zoom` (set on the editor's element, `editorZoom.ts`); the keys are read by their place on the keyboard (`event.code`), so a Persian layout works. The preview has its own zoom.
+
 ## Indent guides
 
 A thin vertical line stands behind every level of indentation, in every file (Markdown lists, TOML, Typst), as in VS Code (`indentGuides.ts`). A line that wraps gets them on its first row only (`1lh` high): the rows below start at the edge, so a guide there would cross the text. A level is the editor's indent unit (two spaces; a tab counts as the tab size). A blank line between two indented lines carries the lines on. Persian lines draw them from the right. They are line backgrounds in `ch`, so they need the editor's monospace font.
@@ -153,3 +161,7 @@ Decision: [ADR 0008](../decisions/0008-source-to-preview-mapping.md). Logic: [`p
 ## Behavior without the app
 
 In a browser there is no compiler: the preview says so, and the files live in localStorage. The editor, autocomplete and file tree still work, which is what the browser build is for during development.
+
+## Export HTML (experiment)
+
+The toolbar's code-file icon and **File > Export HTML (experimental)** open a dialog (`HtmlExportDialog.tsx`) with the HTML-only settings: a **copy button on code blocks** and **fonts inside the file** (whole font files as base64; off, the page names the fonts and the reader's own are used). The choices are kept in the settings store (`htmlExport`). **Export** runs the Rust command `export_html` (`compile.rs`) and saves `<title>.html`; the page is written by the engine's `src/html/` and reflows with the width of the window. The same status as the PDF button shows (`exportStatus`). Phone / tablet / desktop: the dialog is a `ResponsiveDialog` (a bottom sheet on a phone).

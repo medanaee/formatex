@@ -26,6 +26,8 @@ One Typst file, `components/<name>.typ`:
 
 Also allowed: `<name>-docs = (en: (about: "..."), fa: (about: "..."), example: (en: "...", fa: "..."))`: what the tag is for (Markdown, both languages) and an example. The [Skill](skill.md) page builds a file for AI agents from it and from the schema; a component without it is described from its schema alone. The new-component template writes a starter.
 
+The HTML export (an experiment) takes two more optional names from a component: `<name>-html` (the HTML form of its tags, same `(attrs, body)` as the PDF form, built with `html.elem`) and `<name>-css` (a string of CSS); the app's registry generator (`components.rs`) imports them like the others. A tag without an `-html` is a picture of its PDF look in the HTML. The helpers (`css-color`, `css-len`, `style-of`, `panel-style`, `html-icon`, `find-target`, `in-frame`, ...) come from the engine's kit; see `extending.md` of the engine's skill. A project's own component files can export them too.
+
 Also allowed: `<name>-rules(doc)` (show rules for the whole document; order with `// rules-order: N`) and `<name>-scope` (names for the Markdown scope). Schema entries: `kind`, `description`, `attrs` (`type`: enum, color, string, number, length, path, bool, int, id; `values`, `default`, `required`, `doc`), `children`, `scoped`. See the built-in components for examples.
 
 ## Components of one project

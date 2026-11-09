@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
-import { ArrowLeft, Check, CircleAlert, FileDown, Files, Loader2, Pencil, RefreshCw, Settings2 } from "lucide-react"
+import { ArrowLeft, Check, CircleAlert, FileCode, FileDown, Files, Loader2, Pencil, RefreshCw, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { EditorMenus, PanelToggles } from "@/components/editor/EditorChrome"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { isDesktopApp, isTauri } from "@/lib/platform"
 import { RemoteFilesMenu } from "./RemoteFilesMenu"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useLibraryStore } from "@/stores/useLibraryStore"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
 export type EditorTab = "edit" | "preview"
 
@@ -155,6 +156,9 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorTo
           <RemoteFilesMenu disabled={syncing} />
         </>
       )}
+      <Button variant="ghost" size="icon-sm" disabled={exporting} onClick={() => useWorkspaceStore.getState().set({ htmlDialog: true })} title={t("editor.exportHtml")} aria-label={t("editor.exportHtml")}>
+        <FileCode />
+      </Button>
       <Button size="sm" disabled={exporting} onClick={() => void useEditorStore.getState().exportPdf()} title={exportTitle} aria-label={t("editor.export")} className="ms-0.5 sm:ms-1">
         {exporting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : exportStatus === "error" ? <CircleAlert data-icon="inline-start" /> : <FileDown data-icon="inline-start" />}
         <span className="hidden sm:inline">{t("editor.export")}</span>

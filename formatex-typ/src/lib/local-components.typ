@@ -9,6 +9,8 @@
 //   #let <x>-tags   = (tag: (attrs, body) => content, ...)     required: the code of each tag
 //   #let <x>-schema = ("tag": (kind, description, attrs), ...)   optional: autocomplete, and the attributes are checked
 //   #let <x>-docs   = (en: (about: ...), fa: (about: ...), example: ...)   optional: for the Skill page of the app
+//   #let <x>-html   = (tag: (attrs, body) => html.elem(...), ...)   optional: the HTML form of tags, for the HTML export
+//   #let <x>-css    = "..."                                     optional: the CSS of that HTML form (a string)
 //
 // A tag has to be new: a tag that is built in, or defined by another file, is an error that names both files.
 #import "/src/core.typ": base-config, config-text, front-matter, front-matter-match, setting-prefix, source-path
@@ -67,6 +69,8 @@
   let origin = (:)
   let components = (:)
   let docs = (:)
+  let html-impls = (:)
+  let css = ""
   for path in declared {
     let target = "/" + path
     import target as module
@@ -74,8 +78,13 @@
     let own = (:)
     let described = (:)
     for (key, value) in defined {
-      if key in kit-names or type(value) != dictionary { continue }
-      if key.ends-with("-tags") {
+      if key in kit-names { continue }
+      // `<x>-css`: the CSS of the HTML forms (a string)
+      if key.ends-with("-css") and type(value) == str { css += value + "\n"; continue }
+      if type(value) != dictionary { continue }
+      if key.ends-with("-html") {
+        html-impls += value
+      } else if key.ends-with("-tags") {
         own += value
         components.insert(final-label(key.slice(0, -5), path), (tags: value.keys(), file: path))
       } else if key.ends-with("-schema") {
@@ -98,13 +107,17 @@
     }
     schemas += described
   }
-  (tags: tags, schemas: schemas, components: components, docs: docs, origin: origin)
+  (tags: tags, schemas: schemas, components: components, docs: docs, origin: origin, html-impls: html-impls, css: css)
 }
 
 // The code of the tags, and their schemas: a tag without one still gets a line mark and no attribute check
 #let local-tags = loaded.tags
 #let local-schemas = loaded.schemas
 #let local-all-schemas = loaded.tags.keys().map(name => (name, loaded.schemas.at(name, default: no-schema))).to-dict()
+
+// The HTML forms of the tags (`<x>-html`) and their CSS (`<x>-css`), for the HTML export
+#let local-html-impls = loaded.html-impls
+#let local-html-css = loaded.css
 
 // For the schema the editor reads: the tags of each file under its label, and the docs under the same label
 #let local-components = loaded.components

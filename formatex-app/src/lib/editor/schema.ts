@@ -18,6 +18,8 @@ export interface AttrSpec {
   /** An enum that may be written as its bare value: `<align center>` means `<align to="center">`. */
   bare?: boolean
   doc?: LocalizedText
+  /** For a `tailwind` attribute: the ids of the Tailwind groups the tag takes (see `Schema.tailwind`). */
+  classes?: string[]
 }
 
 export type TagKind = "block" | "inline" | "void"
@@ -71,6 +73,13 @@ export interface ConfigSchema {
   tables: Record<string, ConfigTable>
 }
 
+/** The Tailwind classes the template reads: the values the families take, the variants, and the groups (a tag lists the ids it takes). */
+export interface TailwindCatalog {
+  values: Record<string, string[]>
+  variants: string[]
+  groups: { id: string; tags: string[]; label: LocalizedText; static: string[]; families: { prefixes: string[]; values: string; arbitrary?: boolean; opacity?: boolean }[] }[]
+}
+
 /** The engine's description of its tags and `{...}` option lines: `engine/tags.json`, written by `npm run engine:sync`. */
 export interface Schema {
   tags: Record<string, TagSpec>
@@ -81,6 +90,8 @@ export interface Schema {
   config?: { config: ConfigSchema; "front-matter": ConfigSchema }
   /** Every theme with its colors as `#rrggbb`: the engine's and, in the app, the user's. */
   themes?: Record<string, { dark: boolean } & Record<string, string | boolean>>
+  /** The Tailwind classes the template reads, for the autocomplete of `tailwind="..."`. */
+  tailwind?: TailwindCatalog
   /** The names of the themes that are the user's (the app only). */
   customThemes?: string[]
 }

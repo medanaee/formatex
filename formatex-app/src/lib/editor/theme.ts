@@ -13,7 +13,8 @@ export const editorTheme = EditorView.theme({
     isolation: "isolate",
     color: "var(--foreground)",
     backgroundColor: "var(--background)",
-    fontSize: "13px",
+    // The code zoom (View menu, Ctrl + plus / minus) is a number on the editor's element
+    fontSize: "calc(13px * var(--editor-zoom, 1))",
   },
   "&.cm-focused": { outline: "none" },
   ".cm-scroller": { fontFamily: "ui-monospace, 'Cascadia Mono', Menlo, Consolas, 'Vazir Code', monospace", lineHeight: "1.65", overflow: "auto" },
@@ -28,7 +29,7 @@ export const editorTheme = EditorView.theme({
   // The numbers are quiet; the fold markers are not (they are for clicking)
   ".cm-lineNumbers": { opacity: "0.7" },
   ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--foreground)" },
-  ".cm-lineNumbers .cm-gutterElement": { padding: "0 6px 0 10px", minWidth: "28px", fontSize: "11px" },
+  ".cm-lineNumbers .cm-gutterElement": { padding: "0 6px 0 10px", minWidth: "28px", fontSize: "calc(11px * var(--editor-zoom, 1))" },
   ".cm-placeholder": { color: "var(--muted-foreground)" },
 
   // Folding: a chevron beside a line that can fold (down: shown, toward the end: folded), and the mark left where lines are hidden

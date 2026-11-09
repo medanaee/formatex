@@ -10,6 +10,7 @@ import type { ProjectKind } from "@/lib/db/types"
 import { useFormFactor } from "@/hooks/useFormFactor"
 import { openProjectSettings } from "@/lib/editor/openSettings"
 import { copySelection, cutSelection, pasteClipboard } from "@/lib/editor/clipboard"
+import { resetEditorZoom, stepEditorZoom } from "@/lib/editor/editorZoom"
 import { stepZoom } from "@/lib/previewZoom"
 import { desktopOs } from "@/lib/platform"
 import { canUseFolders, revealFolder } from "@/lib/projects/storageMode"
@@ -39,6 +40,7 @@ export function EditorMenus() {
   const setVisualEditor = useSettingsStore((state) => state.setVisualEditor)
   const shown = useWorkspaceStore((state) => state.previewShown)
   const setZoom = useSettingsStore((state) => state.setPreviewZoom)
+  const editorZoom = useSettingsStore((state) => state.editorZoom)
   const mod = desktopOs() === "macos" ? "⌘" : "Ctrl+"
   const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
   const run = (command: (target: NonNullable<typeof view>) => unknown) => () => {
@@ -73,6 +75,9 @@ export function EditorMenus() {
           </DropdownMenuSub>
           <DropdownMenuItem disabled={exporting} onSelect={() => void useEditorStore.getState().exportPdf()}>
             {t("editor.export")}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={exporting} onSelect={() => useWorkspaceStore.getState().set({ htmlDialog: true })}>
+            {t("editor.exportHtml")}
           </DropdownMenuItem>
           {canUseFolders() && (
             <>
@@ -137,6 +142,12 @@ export function EditorMenus() {
           <DropdownMenuCheckboxItem checked={visualEditor} onCheckedChange={setVisualEditor}>
             {t("appMenu.visual")}
           </DropdownMenuCheckboxItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => stepEditorZoom(1)}>
+            {t("appMenu.codeZoomIn")} <DropdownMenuShortcut>{editorZoom}%</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => stepEditorZoom(-1)}>{t("appMenu.codeZoomOut")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => resetEditorZoom()}>{t("appMenu.codeZoomReset")}</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => stepZoom(1)}>
             {t("preview.zoomIn")} <DropdownMenuShortcut>{Math.round(shown)}%</DropdownMenuShortcut>

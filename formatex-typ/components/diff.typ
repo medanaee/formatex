@@ -291,6 +291,7 @@
   ),
   "old": (
     kind: "block",
+    scoped: true,
     description: (en: "Old version of a <diff> (alias of <before>)", fa: "نسخهٔ قبلی در <diff> (نام دیگر <before>)"),
     attrs: (
       "title": (type: "string", doc: (en: "Header title in split mode", fa: "عنوان سربرگ در حالت split")),
@@ -308,6 +309,7 @@
   ),
   "new": (
     kind: "block",
+    scoped: true,
     description: (en: "New version of a <diff> (alias of <after>)", fa: "نسخهٔ جدید در <diff> (نام دیگر <after>)"),
     attrs: (
       "title": (type: "string", doc: (en: "Header title in split mode", fa: "عنوان سربرگ در حالت split")),

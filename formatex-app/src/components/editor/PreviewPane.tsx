@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, LocateFixed, Minus, Plus } from "lucide-react"
+import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, FileText, Globe, Loader2, LocateFixed, Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { stepZoom, ZOOM_PRESETS } from "@/lib/previewZoom"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
+import { HtmlPreview } from "@/components/editor/HtmlPreview"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import type { Diagnostic, PageLink, PageMap } from "@/lib/compiler"
 import { lineFromMarker, markerAt } from "@/lib/editor/markerLookup"
@@ -219,6 +220,7 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     }
   }, [])
 
+  const htmlMode = useWorkspaceStore((state) => state.previewMode) === "html"
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -240,13 +242,23 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-muted/40">
       <div dir="ltr" className="flex h-8 shrink-0 items-center gap-1 border-b border-border bg-background px-2 text-xs text-muted-foreground select-none">
-        <Button variant="ghost" size="icon-xs" disabled={pages.length === 0 || shownPage <= 1} onClick={() => goToPage(shownPage - 1)} title={t("preview.prevPage")} aria-label={t("preview.prevPage")}>
+        <Button
+          variant={htmlMode ? "secondary" : "ghost"}
+          size="icon-xs"
+          aria-pressed={htmlMode}
+          onClick={() => useWorkspaceStore.getState().set({ previewMode: htmlMode ? "pages" : "html" })}
+          title={htmlMode ? t("htmlExport.pagesPreview") : t("htmlExport.preview")}
+          aria-label={htmlMode ? t("htmlExport.pagesPreview") : t("htmlExport.preview")}
+        >
+          {htmlMode ? <FileText /> : <Globe />}
+        </Button>
+        <Button variant="ghost" size="icon-xs" disabled={htmlMode || pages.length === 0 || shownPage <= 1} onClick={() => goToPage(shownPage - 1)} title={t("preview.prevPage")} aria-label={t("preview.prevPage")}>
           <ChevronUp />
         </Button>
         <input
           key={shownPage}
           defaultValue={pages.length ? shownPage : ""}
-          disabled={pages.length === 0}
+          disabled={htmlMode || pages.length === 0}
           inputMode="numeric"
           aria-label={t("preview.page")}
           onKeyDown={(event) => {
@@ -256,18 +268,18 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
           className="h-5 w-9 rounded border border-border bg-transparent text-center text-foreground tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <span className="tabular-nums">/ {pages.length}</span>
-        <Button variant="ghost" size="icon-xs" disabled={pages.length === 0 || shownPage >= pages.length} onClick={() => goToPage(shownPage + 1)} title={t("preview.nextPage")} aria-label={t("preview.nextPage")}>
+        <Button variant="ghost" size="icon-xs" disabled={htmlMode || pages.length === 0 || shownPage >= pages.length} onClick={() => goToPage(shownPage + 1)} title={t("preview.nextPage")} aria-label={t("preview.nextPage")}>
           <ChevronDown />
         </Button>
         <span className="flex-1" />
-        <Button variant={follow ? "secondary" : "ghost"} size="icon-xs" aria-pressed={follow} onClick={() => setFollow(!follow)} title={t("preview.follow")} aria-label={t("preview.follow")}>
+        <Button variant={follow && !htmlMode ? "secondary" : "ghost"} size="icon-xs" disabled={htmlMode} aria-pressed={follow} onClick={() => setFollow(!follow)} title={t("preview.follow")} aria-label={t("preview.follow")}>
           <LocateFixed />
         </Button>
-        <Button variant="ghost" size="icon-xs" disabled={percent <= 30} onClick={() => stepZoom(-1)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
+        <Button variant="ghost" size="icon-xs" disabled={htmlMode || percent <= 30} onClick={() => stepZoom(-1)} title={t("preview.zoomOut")} aria-label={t("preview.zoomOut")}>
           <Minus />
         </Button>
         <DropdownMenu>
-          <DropdownMenuTrigger title={t("preview.zoom")} className="h-5 min-w-12 rounded px-1 text-center text-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted">
+          <DropdownMenuTrigger disabled={htmlMode} title={t("preview.zoom")} className="h-5 min-w-12 rounded px-1 text-center text-foreground tabular-nums outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted">
             {zoom === "width" ? t("preview.fitWidth") : zoom === "page" ? t("preview.fitPage") : `${zoom}%`}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-auto min-w-36">
@@ -283,11 +295,16 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button variant="ghost" size="icon-xs" disabled={percent >= 400} onClick={() => stepZoom(1)} title={t("preview.zoomIn")} aria-label={t("preview.zoomIn")}>
+        <Button variant="ghost" size="icon-xs" disabled={htmlMode || percent >= 400} onClick={() => stepZoom(1)} title={t("preview.zoomIn")} aria-label={t("preview.zoomIn")}>
           <Plus />
         </Button>
       </div>
-      <div ref={scroller} onScroll={markPage} className="min-h-0 flex-1 overflow-auto">
+      {htmlMode && (
+        <div className="min-h-0 flex-1">
+          <HtmlPreview />
+        </div>
+      )}
+      <div ref={scroller} onScroll={markPage} className={cn("min-h-0 flex-1 overflow-auto", htmlMode && "hidden")}>
         {status === "unavailable" ? (
           <p className="p-6 text-center text-xs text-muted-foreground">{t("editor.unavailable")}</p>
         ) : images.length === 0 ? (

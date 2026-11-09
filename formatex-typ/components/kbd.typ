@@ -19,6 +19,18 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): a `<kbd>` for each key
+#let kbd-html = (
+    kbd: (attrs, body) => {
+      let keys = plain-text(body).split("+").map(k => k.trim()).filter(k => k != "")
+      html.elem("span", attrs: (class: "fx-keys"), keys.map(k => html.elem("kbd", attrs: (class: "fx-kbd"), k)).join([+]))
+    },
+)
+#let kbd-css = `````css
+.fx-keys { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+.fx-kbd { display: inline-block; font-family: var(--font-code); font-size: .82em; line-height: 1.4; padding: 0 .35em; background: var(--code-bg); color: var(--fg); border: 1px solid var(--code-stroke); border-bottom-width: 2px; border-radius: min(var(--r-badge), 4px); }
+`````.text
+
 #let kbd-schema = (
   "kbd": (
     kind: "inline",

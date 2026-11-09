@@ -26,13 +26,31 @@
           fill: if theme.dark { colors.icon } else { color.mix((colors.icon, 70%), (theme.fg, 30%)) },
           ..if d != none { (dir: d) },
           {
-            if icon-name != none { fa-icon(icon-name) + h(3pt * zoom) }
+            if icon-name != none { fa-icon(icon-name) + h(2pt * zoom) }
             body
           },
         ),
       )
     },
 )
+
+// The HTML form (optional, used by the HTML export)
+#let badge-html = (
+    badge: (attrs, body) => {
+      let given = attrs.at("color", default: none)
+      let colors = if given != none { resolve-color(given, attrs: attrs) } else { tinted(theme.muted) }
+      let icon-name = attrs.at("icon", default: none)
+      let ink = if theme.dark { colors.icon } else { color.mix((colors.icon, 70%), (theme.fg, 30%)) }
+      html.elem("span", attrs: (class: "fx-badge", style: style-of((panel-style(colors), if "hue" not in colors { "color: " + css-color(ink) }, if "size" in attrs { "font-size: " + css-len(parse-length(attrs.size, attrs: attrs)) }))), {
+        if icon-name != none { html-icon(icon-name, fill: ink); [ ] }
+        body
+      })
+    },
+)
+#let badge-css = `````css
+.fx-badge { display: inline-block; font-size: .85em; line-height: 1.5; padding: 0 .55em; border-radius: var(--r-badge); border: 1px solid var(--panel-border); background: var(--panel-fill); color: var(--fg); white-space: nowrap; font-weight: 700; }
+.fx-badge[style*="--hue"] { color: color-mix(in srgb, color-mix(in srgb, var(--hue) var(--ic-pct), var(--ic-with)) calc(100% - var(--ink-fg)), var(--fg)); }
+`````.text
 
 #let badge-schema = (
   "badge": (

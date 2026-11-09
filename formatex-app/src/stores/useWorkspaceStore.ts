@@ -10,6 +10,10 @@ interface WorkspaceState {
   previewShown: number
   /** The dialog that moves the project between the storage of the app and a folder of the user. */
   storageDialog: "toFolder" | "toLocal" | null
+  /** The dialog of the HTML export (an experiment) with its settings. */
+  htmlDialog: boolean
+  /** What the preview pane shows: the typeset pages, or the live HTML page (built from the same text, with the `[html]` settings of config.toml). */
+  previewMode: "pages" | "html"
   set: (patch: Partial<Omit<WorkspaceState, "set">>) => void
 }
 
@@ -20,5 +24,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   filesSheet: false,
   previewShown: 100,
   storageDialog: null,
+  htmlDialog: false,
+  previewMode: "pages",
   set: (patch) => set(patch),
 }))

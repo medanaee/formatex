@@ -55,6 +55,25 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): a list of links, indented by level (no page numbers: the page scrolls)
+#let toc-html = (
+    toc: (attrs, body) => context {
+      let d = attrs.at("dir", default: "rtl")
+      let title = attrs.at("title", default: if d == "ltr" { "Contents" } else { "فهرست مطالب" })
+      let fa-digits = d != "ltr"
+      let all = query(heading.where(outlined: true))
+      if all.len() == 0 { return none }
+      let numbered = all.filter(it => it.numbering != none)
+      let top = calc.min(..(if numbered.len() > 0 { numbered } else { all }).map(it => it.level))
+      let depth = attrs.at("depth", default: none)
+      let entries = all.filter(it => depth == none or it.level < top + int(depth)).map(head => {
+        let number = if head.numbering != none { heading-number(counter(heading).at(head.location()), fa-digits) }
+        (indent: (head.level - top) * 1.5, target: head.location(), text: if number != none [#number~#head.body] else { head.body })
+      })
+      html-link-list(title, entries, d)
+    },
+)
+
 #let toc-schema = (
   "toc": (
     kind: "block",

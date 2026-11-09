@@ -92,6 +92,7 @@
     "exporting": "Exporting",
     "exported": "Saved",
     "exportFailed": "Export failed",
+    "exportHtml": "Export HTML (experimental)",
     "sync": "Sync files from the internet",
     "synced": "Updated {{count}} file(s) from the internet",
     "syncFailed": "Sync failed",
@@ -379,6 +380,26 @@
     "loading": "Loading…",
     "failed": "This PDF could not be opened"
   },
+  "htmlExport": {
+    "title": "Export HTML",
+    "experimental": "Experimental: one HTML file that reflows with the window. Some tags are pictures for now.",
+    "copyCode": "Copy button on code",
+    "copyCodeHint": "Every code block gets a button that copies it.",
+    "embedFonts": "Put the fonts in the file",
+    "embedFontsHint": "Looks the same everywhere, but the file is a few MB bigger. Off: the reader's own fonts.",
+    "toolbar": "Toolbar",
+    "toolbarHint": "Zoom, the theme and the feel, changed by the reader.",
+    "progress": "Reading progress",
+    "progressHint": "A thin line at the top and a percent that follow the scrolling.",
+    "outline": "Outline sidebar",
+    "outlineHint": "The headings on the right; a drawer on a phone.",
+    "fromConfig": "From config.toml",
+    "fromConfigHint": "Back to the [html] settings of the project",
+    "preview": "HTML preview",
+    "pagesPreview": "Pages preview",
+    "previewFailed": "The HTML could not be built",
+    "export": "Export"
+  },
   "storage": {
     "label": "Storage",
     "local": "In the app",
@@ -440,6 +461,9 @@
     "view": "View",
     "find": "Find",
     "visual": "Visual editor",
+    "codeZoomIn": "Zoom in code",
+    "codeZoomOut": "Zoom out code",
+    "codeZoomReset": "Reset code zoom",
     "close": "Close project"
   },
   "panels": {

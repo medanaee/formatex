@@ -1,4 +1,5 @@
 #import "/src/kit.typ": *
+#import "/src/lib/tailwind.typ": tailwind-groups-of
 
 // <div tailwind="p-4 bg-blue rounded-lg flex gap-2 ...">: a container styled by Tailwind-like utility
 // classes. Spacing is 0.25em per step, colors are theme-aware, rounding does not follow the feel (a `rounded-*` class always rounds), and the flex layout is computed here because Typst has no flexbox.
@@ -582,7 +583,7 @@
     kind: "block",
     description: (en: "container styled with Tailwind-like classes", fa: "ظرف با کلاس‌هایی شبیه Tailwind"),
     attrs: (
-      "tailwind": (type: "string", doc: (en: "Space-separated utility classes: padding `p-4 px-2`, margin `mt-2 mx-auto`, colors `bg-blue text-red-600 border-teal`, size `text-lg font-bold`, `rounded-lg`, `border`, `w-1/2`, and flex: `flex flex-col flex-wrap justify-between items-center gap-4 flex-1`. Spacing is 0.25em per step.", fa: "کلاس‌های جداشده با فاصله: پدینگ `p-4 px-2`، مارجین `mt-2 mx-auto`، رنگ `bg-blue text-red-600 border-teal`، اندازه `text-lg font-bold`، `rounded-lg`، `border`، `w-1/2` و flex: `flex flex-col flex-wrap justify-between items-center gap-4 flex-1`. فاصله‌ها ۰٫۲۵em در هر گام.")),
+      "tailwind": (type: "string", doc: (en: "Space-separated utility classes: padding `p-4 px-2`, margin `mt-2 mx-auto`, colors `bg-blue text-red-600 border-teal`, size `text-lg font-bold`, `rounded-lg`, `border`, `w-1/2`, and flex: `flex flex-col flex-wrap justify-between items-center gap-4 flex-1`. Spacing is 0.25em per step.", fa: "کلاس‌های جداشده با فاصله: پدینگ `p-4 px-2`، مارجین `mt-2 mx-auto`، رنگ `bg-blue text-red-600 border-teal`، اندازه `text-lg font-bold`، `rounded-lg`، `border`، `w-1/2` و flex: `flex flex-col flex-wrap justify-between items-center gap-4 flex-1`. فاصله‌ها ۰٫۲۵em در هر گام."), classes: tailwind-groups-of("div")),
       "dir": (type: "enum", values: ("auto", "rtl", "ltr"), default: "auto", doc: (en: "Direction of the content; flex rows start from its start side", fa: "جهت محتوا؛ ردیف‌های flex از سمت شروع آن آغاز می‌شوند")),
     ),
   ),

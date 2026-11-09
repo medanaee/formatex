@@ -84,6 +84,9 @@ struct Parsed {
     schema: bool,
     /// `<name>-docs`: what the component is for, in both languages, and an example (the skill generator reads it).
     docs: bool,
+    /// `<name>-html`: the HTML form of tags, and `<name>-css` its CSS (both optional, used by the HTML export).
+    html: bool,
+    css: bool,
     order: i32,
     tags: Vec<String>,
 }
@@ -125,6 +128,8 @@ fn parse(name: &str, text: &str) -> Parsed {
         scope: has("scope\\b"),
         schema: has("schema\\s*="),
         docs: has("docs\\s*="),
+        html: has("html\\s*="),
+        css: has("css\\s*="),
         order,
         tags,
     }
@@ -157,6 +162,12 @@ fn generate_registry(entries: &[Entry]) -> String {
         if entry.parsed.docs {
             names.push(format!("{}-docs", entry.name));
         }
+        if entry.parsed.html {
+            names.push(format!("{}-html", entry.name));
+        }
+        if entry.parsed.css {
+            names.push(format!("{}-css", entry.name));
+        }
         out += &format!("#import \"/components/{}.typ\": {}\n", entry.name, names.join(", "));
     }
     out += "#import \"/src/lib/schema.typ\": wrap-tags\n\n";
@@ -171,7 +182,11 @@ fn generate_registry(entries: &[Entry]) -> String {
         dict(entries.iter().map(|e| format!("{}: {}", e.name, if e.parsed.schema { format!("{}-schema.keys()", e.name) } else { "()".to_string() })).collect())
     );
     out += &format!("#let component-docs = {}\n", dict(entries.iter().filter(|e| e.parsed.docs).map(|e| format!("{}: {}-docs", e.name, e.name)).collect()));
-    out += &format!("#let scope-extras = {}\n\n", join(entries.iter().filter(|e| e.parsed.scope).map(|e| format!("{}-scope", e.name)).collect()));
+    out += &format!("#let scope-extras = {}\n", join(entries.iter().filter(|e| e.parsed.scope).map(|e| format!("{}-scope", e.name)).collect()));
+    // The HTML forms of the tags and their CSS (what `src/html/` uses when the output is HTML)
+    out += &format!("#let html-impls = {}\n", join(entries.iter().filter(|e| e.parsed.html).map(|e| format!("{}-html", e.name)).collect()));
+    let css: Vec<String> = entries.iter().filter(|e| e.parsed.css).map(|e| format!("{}-css, ", e.name)).collect();
+    out += &format!("#let html-css = (\"\", {}).join(\"\\n\")\n\n", css.concat());
     out += "#let all-rules(doc) = {\n";
     let mut ruled: Vec<&Entry> = entries.iter().filter(|e| e.parsed.rules).collect();
     ruled.sort_by(|a, b| (a.parsed.order, &a.name).cmp(&(b.parsed.order, &b.name)));

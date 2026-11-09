@@ -13,6 +13,7 @@
 //   lists       `list-block`, `list-style`, numbering
 //   mitex       LaTeX math
 //   latex-code  LaTeX code blocks for `<cetz>` / `<lilaq>`
+//   html/kit    the helpers of a tag's HTML form (`<name>-html`): `css-color`, `css-len`, `style-of`, `panel-style`, `html-icon`, `find-target`, ...
 //
 // A problem a component finds in the text is reported with its line: start the message of an `assert` with `at-of(attrs)` (it
 // is in the prelude), and give the shared helpers `attrs: attrs`.
@@ -25,3 +26,4 @@
 #import "/src/lib/lists.typ": *
 #import "/src/lib/mitex.typ": *
 #import "/src/lib/latex-code.typ": *
+#import "/src/html/kit.typ": *

@@ -45,6 +45,33 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): the code with its caption and number; the page draws the frame of the block and the
+// copy button, and the line numbers and highlighted lines of the PDF are left out
+#let code-html = (
+    code: (attrs, body) => {
+      let (source, lang) = if "src" in attrs {
+        (read(root-path(attrs.src)), attrs.at("lang", default: attrs.src.split(".").last()))
+      } else {
+        let r = find-raw(body)
+        assert(r != none, message: at-of(attrs) + "<code> needs src=\"file\" or a fenced code block inside it")
+        (r.text, attrs.at("lang", default: r.at("lang", default: none)))
+      }
+      let all = source.split("\n").map(l => l.trim("\r", at: end))
+      if "lines" in attrs {
+        let ends = attrs.lines.split("-").map(p => int(p.trim()))
+        let last = calc.min(ends.last(), all.len())
+        assert(ends.first() >= 1 and ends.first() <= last, message: at-of(attrs) + "<code> lines " + repr(attrs.lines) + " is outside the code (" + str(all.len()) + " lines)")
+        all = all.slice(ends.first() - 1, last)
+      }
+      captioned(
+        "code", raw, "کد", "Listing", raw(all.join("\n"), lang: lang, block: true),
+        caption: attrs.at("caption", default: none), id: attrs.at("id", default: none),
+        numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
+        listed: caption-flag(attrs, "lol") != false,
+      )
+    },
+)
+
 #let code-schema = (
   "code": (
     kind: "block",

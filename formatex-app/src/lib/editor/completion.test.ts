@@ -301,3 +301,43 @@ describe("settings in expressions", () => {
     expect(at("{{ s|")!.labels).toContain("setting.theme")
   })
 })
+
+describe("Tailwind classes in a tailwind attribute", () => {
+  it("offers the classes the tag takes, for the word being typed", () => {
+    const span = at('<span tailwind="px-2 bo|')!
+    expect(span.labels).toEqual(expect.arrayContaining(["border", "border-2", "bg-red-500", "text-lg", "rounded-lg", "p-4"]))
+    // A span takes no layout classes; a div takes all of them
+    expect(span.labels).not.toContain("flex")
+    expect(span.labels).not.toContain("w-1/2")
+    const div = at('<div tailwind="fl|')!
+    expect(div.labels).toEqual(expect.arrayContaining(["flex", "flex-col", "justify-between", "w-1/2", "mx-auto"]))
+  })
+
+  it("starts the replaced part at the word, and after a variant", () => {
+    const plain = at('<span tailwind="px-2 bo|')!
+    expect(plain.source.slice(plain.from)).toBe("bo")
+    const variant = at('<span tailwind="dark:bg|')!
+    expect(variant.source.slice(variant.from)).toBe("bg")
+    expect(plain.labels).toContain("dark:")
+    expect(variant.labels).not.toContain("dark:")
+  })
+
+  it("works in the braces of a span too", () => {
+    const braces = at('A [text]{tailwind="ro|')!
+    expect(braces.labels).toEqual(expect.arrayContaining(["rounded", "rounded-lg"]))
+    expect(braces.labels).not.toContain("flex")
+  })
+})
+
+describe("the counter tag", () => {
+  it("is a void tag with its attributes from the schema", () => {
+    const tag = at("<|")!.options.find((o) => o.label === "counter")!
+    expect(tag.template).toContain('of="')
+    expect(tag.template).not.toContain("</counter>")
+    expect(at("<counter |")!.labels).toEqual(expect.arrayContaining(["of", "label", "format", "step", "set", "level", "hide"]))
+  })
+
+  it("suggests the number kinds for format", () => {
+    expect(at('<counter of="ex" format="|')!.labels).toEqual(expect.arrayContaining(["rome", "abjad", "alefba"]))
+  })
+})

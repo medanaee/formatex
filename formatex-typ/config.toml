@@ -197,3 +197,16 @@ width = "80%"
 [equation]
 # "labelled" = only equations followed by {#id} get a number, "all" = every one, "none" = never
 numbering = "labelled"
+
+# The HTML output: the live HTML preview and the Export HTML dialog start from these (the dialog can change them for one export).
+[html]
+# A slim toolbar: zoom, theme and feel
+toolbar = true
+# A reading-progress line at the top
+progress = true
+# An outline of the headings in a sidebar on the right (a drawer on a phone)
+outline = true
+# A copy button on every code block
+copy-code = true
+# The font files inside the HTML (a few MB bigger; the same look on any machine)
+embed-fonts = true

@@ -14,6 +14,7 @@ use serde::Serialize;
 use tauri::ipc::Response;
 use tauri::{AppHandle, Manager, State};
 use typst::diag::{Severity, SourceDiagnostic};
+use typst_html::{HtmlDocument, HtmlOptions};
 use typst_layout::PagedDocument;
 use typst::{World, WorldExt};
 use typst_kit::packages::SystemPackages;
@@ -23,6 +24,7 @@ use typst_svg::SvgOptions;
 use crate::components::ComponentLibrary;
 use crate::engine;
 use crate::fonts::{FamilyInfo, FontService};
+use crate::html_export::{self, HtmlExport};
 use crate::links::{self, Marker, PageMap};
 use crate::world::ProjectWorld;
 
@@ -419,6 +421,72 @@ pub async fn export_pdf(
     .map_err(|error| error.to_string())?
 }
 
+/// The project as one HTML file (an experiment). The engine writes the page and Typst's HTML export serializes it; with `embed_fonts` the
+/// fonts the page names are put inside, so it looks the same on any machine.
+pub(crate) fn render_html(engine: &Engine, project_id: &str, main: &str, overrides: HashMap<String, String>, plain: bool, options: HtmlExport) -> Result<String, String> {
+    check_relative(main)?;
+    let dir = project_dir(engine, project_id)?;
+    let mut inputs = Inputs::new();
+    if !plain {
+        inputs.insert("source".into(), main.into());
+        inputs.insert("target".into(), "html".into());
+        inputs.insert("html-copy-code".into(), options.copy_code.to_string());
+        inputs.insert("html-toolbar".into(), options.toolbar.to_string());
+        inputs.insert("html-progress".into(), options.progress.to_string());
+        inputs.insert("html-outline".into(), options.outline.to_string());
+    }
+    let extra = overrides_to_bytes(overrides, plain)?;
+    let fonts = engine.fonts.get();
+    let world = if plain {
+        ProjectWorld::plain_html(Some(dir), main, engine.packages.clone(), fonts.clone(), engine.components.clone(), extra)
+    } else {
+        ProjectWorld::new_html(Some(dir), engine::ENTRY, engine.packages.clone(), fonts.clone(), engine.components.clone(), &inputs, extra)
+    };
+    let started = Instant::now();
+    let warned = typst::compile::<HtmlDocument>(&world);
+    eprintln!("[html export] compiled in {} ms", started.elapsed().as_millis());
+    let document = match warned.output {
+        Ok(document) => document,
+        Err(errors) => {
+            let mut diagnostics: Vec<Diagnostic> = errors.iter().flat_map(|d| convert_all(&world, d)).collect();
+            drop_unplaced_labels(&mut diagnostics);
+            let first = diagnostics.iter().find(|d| d.severity == "error");
+            return Err(first.map(|d| d.message.clone()).unwrap_or_else(|| "compilation failed".into()));
+        }
+    };
+    let html = typst_html::html(&document, &HtmlOptions::default()).map_err(|errors| errors.iter().map(|e| e.message.to_string()).collect::<Vec<_>>().join("; "))?;
+    typst::comemo::evict(10);
+    let started = Instant::now();
+    let html = if options.embed_fonts { html_export::embed_fonts(html, &fonts) } else { html };
+    eprintln!("[html export] {} bytes, fonts put in {} ms", html.len(), started.elapsed().as_millis());
+    Ok(html)
+}
+
+#[tauri::command]
+pub async fn export_html(
+    engine: State<'_, Arc<Engine>>,
+    project_id: String,
+    main: String,
+    overrides: Option<HashMap<String, String>>,
+    kind: Option<String>,
+    options: Option<HtmlExport>,
+    path: Option<String>,
+) -> Result<Response, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let html = render_html(&engine, &project_id, &main, overrides.unwrap_or_default(), is_plain(&kind), options.unwrap_or_default())?;
+        // With a `path` (the file the user chose, on desktop) the file is written here: a page with its fonts is megabytes, and
+        // sending that to the webview and back only to write it is slow. Without one (Android) the bytes go to the webview.
+        if let Some(path) = path {
+            std::fs::write(&path, html.as_bytes()).map_err(|error| format!("{path}: {error}"))?;
+            return Ok(Response::new(Vec::new()));
+        }
+        Ok(Response::new(html.into_bytes()))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 pub async fn fonts_list(engine: State<'_, Arc<Engine>>) -> Result<Vec<FamilyInfo>, String> {
     let engine = engine.inner().clone();
@@ -453,6 +521,42 @@ pub fn init(app: &AppHandle) -> Result<Arc<Engine>, Box<dyn std::error::Error>> 
 mod tests {
     use super::*;
     use std::fs;
+
+    /// The HTML export of the starter project: the page, its fonts inside, written to a file like the app does.
+    #[test]
+    fn exports_the_starter_project_as_html() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-html-test-{}", std::process::id()));
+        let project = data_dir.join("documents").join("starter");
+        fs::create_dir_all(project.join("images")).unwrap();
+        fs::write(project.join("config.toml"), include_str!("../../engine/config.toml")).unwrap();
+        fs::write(project.join("main.md"), include_str!("../../templates/main.md")).unwrap();
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+
+        let started = Instant::now();
+        let plain = render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport { embed_fonts: false, ..HtmlExport::default() }).expect("the page");
+        eprintln!("html without fonts: {} bytes in {:?}", plain.len(), started.elapsed());
+        assert!(plain.contains("<main class=\"fx-doc\">"), "the page has no <main>");
+        assert!(plain.contains("name=\"fx-fonts\""));
+        assert!(plain.contains("fx-copy"), "the copy script is missing");
+        assert!(!plain.contains("@font-face"));
+
+        let started = Instant::now();
+        let full = render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport::default()).expect("the page with fonts");
+        eprintln!("html with fonts: {} bytes in {:?}", full.len(), started.elapsed());
+        assert!(full.contains("@font-face"), "no font was put in the page");
+        assert!(full.len() > plain.len());
+
+        let target = data_dir.join("out.html");
+        fs::write(&target, full.as_bytes()).unwrap();
+        assert_eq!(fs::metadata(&target).unwrap().len() as usize, full.len());
+        let _ = fs::remove_dir_all(&data_dir);
+    }
 
     /// Compiles a real project (the embedded engine, the default config, the starter document) end to end. Needs the Typst
     /// packages of the engine: they are found in the typst cache or downloaded, so run it with network access once.

@@ -1,5 +1,6 @@
 #import "src/prelude.typ": *
-#show: doc => conf(doc)
+#import "src/html/conf.typ": html-conf
+#import "src/html/tags.typ": html-adapt
 
 
 #import "src/lib/mitex.typ": mitex
@@ -8,13 +9,18 @@
 #import "src/preprocess/mark-lines.typ": mark-lines
 #import "src/preprocess/evaluate.typ": evaluate-document
 #import "src/lib/expr.typ": run-code, show-value
-#import "components/_registry.typ": html-tags as built-in-html-tags, all-rules, all-schemas as built-in-all-schemas, scope-extras
-#import "src/lib/local-components.typ": local-tags, local-all-schemas
+#import "components/_registry.typ": html-tags as built-in-html-tags, raw-tags as built-in-raw-tags, all-rules, all-schemas as built-in-all-schemas, scope-extras, html-impls as built-in-html-impls, html-css as built-in-html-css
+#import "src/lib/local-components.typ": local-tags, local-all-schemas, local-html-impls, local-html-css
 #import "src/lib/schema.typ": wrap-tags
 #let all-schemas = built-in-all-schemas + local-all-schemas
-#let html-tags = built-in-html-tags + wrap-tags(local-tags, local-all-schemas)
+// The HTML output (`html-mode`) has its own forms of the tags: each is real HTML or, without one, a picture of its PDF look
+#let html-tags = if html-mode {
+  wrap-tags(html-adapt(built-in-raw-tags, built-in-all-schemas, built-in-html-impls), built-in-all-schemas) + wrap-tags(html-adapt(local-tags, local-all-schemas, local-html-impls), local-all-schemas)
+} else { built-in-html-tags + wrap-tags(local-tags, local-all-schemas) }
 
-#show: all-rules
+// The page's rule comes after the imports: the HTML form needs the CSS of the components
+#show: doc => if html-mode { html-conf(doc, built-in-html-css + "\n" + local-html-css) } else { conf(doc) }
+#show: doc => if html-mode { doc } else { all-rules(doc) }
 
 // The text of the document is Typst code and its includes put in place (src/preprocess/evaluate.typ), then every tag and option line is told
 // its place (src/preprocess/mark-lines.typ), so a problem found anywhere later can say which line of which file it is about

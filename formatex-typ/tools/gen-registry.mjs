@@ -10,6 +10,9 @@
 //                                                              (a #show inside an imported file does not leak out)
 //   #let <name>-scope = (name: value)                          optional; merged into cmarker's scope
 //   #let <name>-schema = ( tag: (kind, description, attrs, ...) )  required for every tag; see src/lib/schema.typ
+//   #let <name>-html  = ( tag: (attrs, body) => html.elem(...), ... )   optional; the HTML form of tags, used by the HTML export (a tag
+//                                                              without one is drawn as a picture of its PDF look); see src/html/kit.typ
+//   #let <name>-css   = "..."                                  optional; the CSS of that HTML form (a string), added to the page's
 //   #let <name>-docs = (en: (about, more?), fa: (about, more?), example: (en, fa))   required here (a user's own component may omit it):
 //                                                              what the component is for, in both languages, and a usage example;
 //                                                              exported with the schema, and what the app's skill generator reads
@@ -42,6 +45,8 @@ export function genRegistry(root) {
     const scope = new RegExp(`^#let\\s+${esc}-scope\\b`, "m").test(text)
     const schema = new RegExp(`^#let\\s+${esc}-schema\\s*=`, "m").test(text)
     const docs = new RegExp(`^#let\\s+${esc}-docs\\s*=`, "m").test(text)
+    const html = new RegExp(`^#let\\s+${esc}-html\\s*=`, "m").test(text)
+    const css = new RegExp(`^#let\\s+${esc}-css\\s*=`, "m").test(text)
     if (!docs) throw new Error(`components/${file}: it must define #let ${name}-docs = (en: (about: ...), fa: (about: ...), example: (en: ..., fa: ...))`)
     const before = seen.size
     const order = Number(/^\/\/\s*rules-order:\s*(-?\d+)/m.exec(text)?.[1] ?? 100)
@@ -61,7 +66,7 @@ export function genRegistry(root) {
       }
     }
     if (seen.size > before && !schema) throw new Error(`components/${file}: it declares tags but has no #let ${name}-schema`)
-    comps.push({ name, rules, order, scope, schema, docs })
+    comps.push({ name, rules, order, scope, schema, docs, html, css })
   }
 
   const join = (items) => ["(:)", ...items].join(" + ")
@@ -72,6 +77,8 @@ export function genRegistry(root) {
     if (c.scope) names.push(`${c.name}-scope`)
     if (c.schema) names.push(`${c.name}-schema`)
     if (c.docs) names.push(`${c.name}-docs`)
+    if (c.html) names.push(`${c.name}-html`)
+    if (c.css) names.push(`${c.name}-css`)
     out.push(`#import "/components/${c.name}.typ": ${names.join(", ")}`)
   }
   out.push('#import "/src/lib/schema.typ": wrap-tags', "")
@@ -82,7 +89,10 @@ export function genRegistry(root) {
   const dict = (items) => (items.length ? `(${items.join(", ")})` : "(:)")
   out.push(`#let component-tags = ${dict(comps.map((c) => `${c.name}: ${c.schema ? `${c.name}-schema.keys()` : "()"}`))}`)
   out.push(`#let component-docs = ${dict(comps.filter((c) => c.docs).map((c) => `${c.name}: ${c.name}-docs`))}`)
-  out.push(`#let scope-extras = ${join(comps.filter((c) => c.scope).map((c) => `${c.name}-scope`))}`, "")
+  out.push(`#let scope-extras = ${join(comps.filter((c) => c.scope).map((c) => `${c.name}-scope`))}`)
+  // The HTML forms of the tags and their CSS: what src/html/ uses when the output is HTML
+  out.push(`#let html-impls = ${join(comps.filter((c) => c.html).map((c) => `${c.name}-html`))}`)
+  out.push(`#let html-css = ("", ${comps.filter((c) => c.css).map((c) => `${c.name}-css`).join(", ")}${comps.some((c) => c.css) ? "," : ""}).join("\\n")`, "")
   out.push("#let all-rules(doc) = {")
   for (const c of comps.filter((c) => c.rules).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))) out.push(`  show: ${c.name}-rules`)
   out.push("  doc", "}")

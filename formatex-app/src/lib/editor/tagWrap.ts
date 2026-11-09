@@ -53,7 +53,8 @@ export function wrapInTag(state: EditorState): TransactionSpec | null {
       { from: range.to, insert: closing },
     ],
     selection: EditorSelection.cursor(range.from + 1),
-    effects: startLink.of({ open: range.from + 1, close: range.to + opening.length + 2 }),
+    // The closing name stands after `</`, which is after the line break too when the tags have lines of their own
+    effects: startLink.of({ open: range.from + 1, close: range.to + opening.length + (block ? 3 : 2) }),
     userEvent: "input.wrap",
     scrollIntoView: true,
   }

@@ -837,6 +837,17 @@ def fact(n):
 - `<kbd>`: each `+`-separated key is drawn as a key cap; the shortcut always reads left to right.
 - `<badge>`: small inline label. `color` = preset or hex (default neutral gray); `icon` = Font Awesome name; `size` = text size (default `1em` = same as the sentence, `0.8em` = a little smaller).
 
+## `<counter>`
+
+```markdown
+<counter of="ex" label="تمرین %1." /> معادله را حل کنید.
+<counter of="ex" label="تمرین %1." /> آن را ثابت کنید.
+```
+
+- Each `<counter of="ex" />` prints the next number of the counter `ex` (1, 2, 3 ...); every `of` name is its own counter. `label` is the printed text with `%1` (first level), `%2` ... in it; `label=""` or `hide` counts without printing.
+- `format` as in numbered lists (auto, fa, en, fatxt, rome, abc, abjad, alefba), or a comma-separated list with one per level. `step` (default 1; `0` shows without adding), `set` (this use becomes that number), `level` (which level to step, default 1; the levels below go back to zero).
+- Levels, a default `label`, `format` and the `separator` between the numbers are written once in `[counters.<name>]` of config.toml or under `counters:` in the front matter (`levels = 2`).
+
 ## `<icon>`
 
 ```markdown

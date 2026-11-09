@@ -1,7 +1,8 @@
 import { create } from "zustand"
 import { imageFolder, nextImageName, readableImage } from "@/lib/files/pastedImage"
 import { pasteSystemFiles } from "@/lib/files/systemClipboard"
-import { CompilerUnavailableError, compileProject, exportPdf, syncRemote, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
+import type { HtmlExportOptions } from "@/lib/projects/htmlConfig"
+import { CompilerUnavailableError, compileProject, exportHtml, exportPdf, syncRemote, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { planSave, zipItems } from "@/lib/files/saveEntries"
 import { saveBytes } from "@/lib/files/saveFile"
@@ -29,6 +30,7 @@ import { componentsApi } from "@/lib/components/api"
 import type { ProjectKind } from "@/lib/db/types"
 import { changeProjectKind, initTypstProject, TYPST_MAIN_FILE } from "@/lib/projects/projectKind"
 import { editorPaths, shrankSuspiciously, watchProject, type ProjectChange } from "@/lib/projects/watch"
+import { isDesktopApp } from "@/lib/platform"
 import { useLibraryStore } from "@/stores/useLibraryStore"
 import { useSchemaStore } from "@/stores/useSchemaStore"
 
@@ -116,6 +118,9 @@ interface EditorState {
   /** Puts back the text the editor had before a text from disk replaced it (`dismiss`: keep what is there). */
   restoreReplaced: (path: string, restore: boolean) => void
   exportPdf: () => Promise<void>
+  /** The project as one HTML file, with the choices of the export dialog (an experiment). */
+  /** Writes the project as one HTML file with these options (the dialog starts them from `[html]` of config.toml). */
+  exportHtml: (options: HtmlExportOptions) => Promise<void>
   /** Downloads the files from the internet that the project keeps in its cache again (all, or only `url`), then typesets. */
   syncRemote: (url?: string) => Promise<void>
 }
@@ -790,6 +795,35 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         const title = useLibraryStore.getState().documents.find((doc) => doc.id === projectId)?.title ?? "document"
         const fileName = `${title.replace(/[\\/:*?"<>|]+/g, "_").trim() || "document"}.pdf`
         const result = await saveBytes(bytes, fileName, "application/pdf")
+        set({ exportStatus: result.saved ? "done" : "idle", exportMessage: result.path ?? null })
+      } catch (error) {
+        set({ exportStatus: "error", exportMessage: String((error as Error)?.message ?? error) })
+      }
+    },
+
+    exportHtml: async (options) => {
+      const { projectId, mainFile } = get()
+      if (!projectId) return
+      set({ exportStatus: "working", exportMessage: null })
+      try {
+        await flush()
+        if (!mainFile) throw new Error("No main file is chosen")
+        const title = useLibraryStore.getState().documents.find((doc) => doc.id === projectId)?.title ?? "document"
+        const fileName = `${title.replace(/[\\/:*?"<>|]+/g, "_").trim() || "document"}.html`
+        if (isDesktopApp()) {
+          // The page is megabytes (the fonts are in it): ask where first, and let the native side write it
+          const { save } = await import("@tauri-apps/plugin-dialog")
+          const path = await save({ defaultPath: fileName, filters: [{ name: "HTML", extensions: ["html"] }] })
+          if (!path) {
+            set({ exportStatus: "idle", exportMessage: null })
+            return
+          }
+          await exportHtml(projectId, mainFile, options, get().texts, get().kind, path)
+          set({ exportStatus: "done", exportMessage: path })
+          return
+        }
+        const bytes = await exportHtml(projectId, mainFile, options, get().texts, get().kind)
+        const result = await saveBytes(bytes, fileName, "text/html")
         set({ exportStatus: result.saved ? "done" : "idle", exportMessage: result.path ?? null })
       } catch (error) {
         set({ exportStatus: "error", exportMessage: String((error as Error)?.message ?? error) })

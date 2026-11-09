@@ -46,6 +46,10 @@ interface SettingsState {
   /** Zoom of the preview pages in percent; 100 fits the width of the pane. */
   previewZoom: PreviewZoom
   setPreviewZoom: (zoom: PreviewZoom) => void
+  /** Zoom of the code editor in percent (View menu, Ctrl + plus / minus). */
+  editorZoom: number
+  setEditorZoom: (zoom: number) => void
+  /** What the HTML export dialog chose (an experiment): the fonts inside the file, a copy button on code blocks. */
   /** The preview scrolls to the text being edited once it has been rebuilt. */
   previewFollow: boolean
   setPreviewFollow: (follow: boolean) => void
@@ -90,6 +94,8 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       previewZoom: 100,
       setPreviewZoom: (zoom) => set({ previewZoom: typeof zoom === "number" ? Math.round(Math.min(Math.max(zoom, 30), 400)) : zoom }),
+      editorZoom: 100,
+      setEditorZoom: (zoom) => set({ editorZoom: Math.round(Math.min(Math.max(Number.isFinite(zoom) ? zoom : 100, 50), 300)) }),
       previewFollow: true,
       setPreviewFollow: (previewFollow) => set({ previewFollow }),
       libraryView: "grid",
@@ -129,6 +135,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (!state) return
         // A stored value from an older / newer version may not be valid any more
         if (typeof state.previewZoom !== "number" && state.previewZoom !== "width" && state.previewZoom !== "page") state.previewZoom = 100
+        if (typeof state.editorZoom !== "number" || !(state.editorZoom >= 50 && state.editorZoom <= 300)) state.editorZoom = 100
         if (!LIBRARY_VIEWS.includes(state.libraryView)) state.libraryView = "grid"
         if (!isThemePreference(state.theme)) state.theme = "system"
         if (!isSupportedLanguage(state.language)) state.language = DEFAULT_LANGUAGE

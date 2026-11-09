@@ -74,6 +74,7 @@
     attrs: (
       "id": id-attr(" (the text becomes a reference target)"),
       "highlight": (type: "color", doc: (en: "Highlighter band behind the text: `true` (yellow), a color preset, Tailwind name or hex", fa: "نوار هایلایت پشت متن: `true` (زرد)، رنگ آماده، نام Tailwind یا hex")),
+      "tailwind": (type: "string", doc: (en: "A small subset of Tailwind classes for a box around the text and its size and color: `border`, `border-red-500`, `rounded-lg`, `bg-yellow-100`, `p-1`, `px-2`, `text-lg`, `text-red-600`, ... (see `<span>`)", fa: "زیرمجموعهٔ کوچکی از کلاس‌های Tailwind برای قاب دور متن و اندازه و رنگ آن: `border`، `border-red-500`، `rounded-lg`، `bg-yellow-100`، `p-1`، `px-2`، `text-lg`، `text-red-600` و ... (به `<span>` نگاه کنید)")),
     ),
   ),
 )

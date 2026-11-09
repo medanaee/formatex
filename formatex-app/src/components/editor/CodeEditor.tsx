@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { autocompletion, completionKeymap, completionStatus, startCompletion } from "@codemirror/autocomplete"
 import { defaultKeymap, history, historyKeymap, indentWithTab, redoDepth, undoDepth } from "@codemirror/commands"
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
@@ -18,6 +18,8 @@ import { colorSwatches, type ColorRequest } from "@/lib/editor/colorSwatches"
 import { livePreview, type ConfigureRequest } from "@/lib/editor/livePreview"
 import { minimap, minimapTheme } from "@/lib/editor/minimap"
 import { indentGuides } from "@/lib/editor/indentGuides"
+import { editorZoomShortcuts } from "@/lib/editor/editorZoom"
+import { useSettingsStore } from "@/stores/useSettingsStore"
 import { pasteImage } from "@/lib/editor/pasteImage"
 import { surroundOnType } from "@/lib/editor/surround"
 import { tagFolding, tagFoldingKeymap } from "@/lib/editor/tagFolding"
@@ -137,6 +139,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         surroundOnType,
         // A line behind every level of indentation, like VS Code
         indentGuides(),
+        editorZoomShortcuts(),
         fileKind === "markdown" ? [tagFolding(), variableMarks(), tagWrapOnType(), pasteImage()] : [],
         EditorView.lineWrapping,
         dir.of(dirExtension(direction, fileKind)),
@@ -289,5 +292,11 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     editor.focus()
   }, [reveal, path])
 
-  return <div ref={host} className={cn("h-full min-h-0 min-w-0 overflow-hidden", className)} />
+  // The zoom is a number the theme multiplies the sizes by; the editor measures its lines again when it changes
+  const zoom = useSettingsStore((state) => state.editorZoom)
+  useEffect(() => {
+    view.current?.requestMeasure()
+  }, [zoom])
+
+  return <div ref={host} style={{ "--editor-zoom": zoom / 100 } as CSSProperties} className={cn("h-full min-h-0 min-w-0 overflow-hidden", className)} />
 }

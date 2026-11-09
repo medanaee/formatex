@@ -2,6 +2,7 @@ import { completeFrontMatter, inFrontMatter } from "./configCompletion"
 import { PAGE_VALUES, READ_ONLY_VARIABLES, readVariables } from "./variables"
 import { expressionAt } from "./variableSyntax"
 import { localized, type AttrSpec, type OptionKind, type Schema, type TagSpec } from "./schema"
+import { tailwindCompletion } from "./tailwindComplete"
 
 /**
  * Autocomplete of the engine's markup, from its schema (`engine/tags.json`). Pure: text and a cursor in, suggestions out, so
@@ -187,7 +188,15 @@ function valueSuggestions(spec: AttrSpec, tag: string, quote: string, closed: bo
     const imageLike = /img|picheader|fig/.test(tag)
     return (env.files ?? []).map((file) => make(file, undefined, imageLike && IMAGE_EXTENSION.test(file) ? 5 : 0))
   }
+  // A string with `values` takes any text, and the values are suggestions
+  if (spec.values?.length) return spec.values.map((value) => make(value, value === spec.default ? "default" : undefined, value === spec.default ? 1 : 0))
   return spec.default ? [make(spec.default, "default")] : []
+}
+
+/** The classes of a `tailwind` attribute (the groups its tag takes), for the word being typed; `null` for any other attribute. */
+function tailwindAt(attr: AttrSpec, env: CompletionEnv, valueStart: number, written: string): Completions | null {
+  if (!attr.classes || !env.schema.tailwind) return null
+  return tailwindCompletion(env.schema.tailwind, attr.classes, valueStart, written, env.language)
 }
 
 function tagTemplate(name: string, spec: TagSpec, closed: boolean): string {
@@ -332,6 +341,8 @@ export function complete(text: string, pos: number, env: CompletionEnv): Complet
         const attr = spec.attrs[context.attr]
         if (!attr) return null
         const closed = context.quote !== "" && nextChar === context.quote
+        const classes = tailwindAt(attr, env, context.from, text.slice(context.from, pos))
+        if (classes) return classes
         const options = valueSuggestions(attr, name, context.quote, closed, env)
         return options.length ? { from: context.from, options } : null
       }
@@ -352,6 +363,8 @@ export function complete(text: string, pos: number, env: CompletionEnv): Complet
       const attr = spec.attrs[context.attr]
       if (!attr) return null
       const closed = context.quote !== "" && nextChar === context.quote
+      const classes = tailwindAt(attr, env, context.from, line.slice(context.from - lineStart))
+      if (classes) return classes
       const options = valueSuggestions(attr, "", context.quote, closed, env)
       return options.length ? { from: context.from, options } : null
     }

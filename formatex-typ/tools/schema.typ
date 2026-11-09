@@ -3,6 +3,7 @@
 //   options  the `{...}` option lines (src/lib/option-schema.typ)
 //   config   the keys of config.toml and of the front matter (src/lib/config-schema.typ); the values of `theme` are every theme
 //   themes   every theme with its colors as hex strings (src/themes.typ; the Formatex app adds the user's themes to that file)
+//   tailwind  the Tailwind classes the template reads: values, variants and groups (src/lib/tailwind.typ); a tag lists the groups it takes in `classes` of its `tailwind` attribute
 //   components  every component: its tags and its docs (what it is for in en and fa, and an example); the skill generator of the app reads them
 //   issues   things that disagree: a `children` entry that is not a tag, a `scoped` tag that no tag lists as a child
 #import "/components/_registry.typ": all-schemas as built-in-schemas, component-tags as built-in-component-tags, component-docs as built-in-component-docs
@@ -14,6 +15,7 @@
 #import "/src/lib/option-schema.typ": option-schemas
 #import "/src/lib/config-schema.typ": config-schemas
 #import "/src/themes.typ": themes
+#import "/src/lib/tailwind.typ": tailwind-catalog, tailwind-groups-of
 
 #let parents-of(name) = all-schemas.pairs().filter(((_, s)) => name in s.at("children", default: ())).map(((p, _)) => p)
 
@@ -57,4 +59,11 @@
   if missing.len() > 0 { "the docs of the component " + name + " lack " + missing.join(", ") } else { none }
 }).filter(x => x != none)
 
-#metadata((tags: tags, components: components, options: option-schemas, config: config, themes: theme-data, issues: issues + scoped-orphans + docs-issues)) <schemas>
+// The `{tailwind="..."}` of a span takes what the tag takes
+#let options = {
+  let o = option-schemas
+  o.span.attrs.tailwind.classes = tailwind-groups-of("span")
+  o
+}
+
+#metadata((tags: tags, components: components, options: options, config: config, themes: theme-data, tailwind: tailwind-catalog, issues: issues + scoped-orphans + docs-issues)) <schemas>

@@ -5,6 +5,8 @@
   fill: color.mix((hue, if theme.dark { 16% } else { 10% }), (theme.bg, if theme.dark { 84% } else { 90% })),
   border: color.mix((hue, if theme.dark { 45% } else { 35% }), (theme.bg, if theme.dark { 55% } else { 65% })),
   icon: if theme.dark { hue.lighten(30%) } else { hue.darken(15%) },
+  // The color the tints come from: the HTML page keeps it and mixes the tints in CSS, so a reader who changes the theme gets new ones
+  hue: hue,
 )
 
 // A preset name gets theme-aware tints; a hex color is used as given (toned down on dark pages).
@@ -13,9 +15,9 @@
   assert(name.starts-with("#"), message: at-of(attrs) + "Unknown color " + repr(name) + "; use a hex color or one of: " + color-names.join(", ") + " (optionally with a shade, like blue-200)")
   let c = rgb(name)
   if theme.dark {
-    (fill: color.mix((c, 22%), (theme.bg, 78%)), border: c.transparentize(50%), icon: theme.fg)
+    (fill: color.mix((c, 22%), (theme.bg, 78%)), border: c.transparentize(50%), icon: theme.fg, hex: c)
   } else {
-    (fill: c, border: color.mix((c, 60%), (theme.fg, 40%)), icon: theme.fg)
+    (fill: c, border: color.mix((c, 60%), (theme.fg, 40%)), icon: theme.fg, hex: c)
   }
 }
 

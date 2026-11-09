@@ -58,6 +58,30 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): a tinted panel, the icon as a small picture and the content beside it
+#let alert-html = (
+    alert: (attrs, body) => {
+      let kind = attrs.at("type", default: none)
+      assert(kind == none or kind in box-types, message: at-of(attrs) + "Unknown alert type " + repr(kind) + "; available: " + box-types.keys().join(", "))
+      let preset = if kind != none { box-types.at(kind) } else { (color: none, icon: none) }
+      let given = attrs.at("color", default: preset.color)
+      let colors = if given != none { resolve-color(given, attrs: attrs) } else { tinted(theme.muted) }
+      let r = if "radius" in attrs { float(attrs.radius) * 1pt * zoom } else { feel.alert }
+      let icon-name = attrs.at("icon", default: preset.icon)
+      // `dir="auto"`: the icon goes to the side the text starts on
+      html.elem("div", attrs: (class: "fx-panel fx-alert", dir: "auto", style: panel-style(colors) + "; border-radius: " + css-len(r)), {
+        if icon-name != none { html.elem("div", attrs: (class: "fx-alert-icon"), html-icon(icon-name, fill: colors.icon, size: 1.2em)) }
+        html.elem("div", attrs: (class: "fx-alert-body"), body)
+      })
+    },
+)
+#let alert-css = `````css
+.fx-alert { display: flex; gap: .9em; align-items: flex-start; }
+.fx-alert-icon { flex: none; line-height: 1; padding-top: .35em; }
+.fx-alert-body { flex: 1; min-width: 0; }
+.fx-alert-body > :first-child { margin-top: 0; } .fx-alert-body > :last-child { margin-bottom: 0; }
+`````.text
+
 #let alert-schema = (
   "alert": (
     kind: "block",

@@ -1,6 +1,6 @@
 [package]
 name = "formatex"
-version = "0.5.0"
+version = "0.6.0"
 description = "Formatex: write Markdown, get a typeset PDF"
 authors = ["Formatex"]
 license = ""
@@ -32,6 +32,13 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 typst = "0.15.1"
 typst-pdf = "0.15.1"
 typst-svg = "0.15.1"
+# HTML export (an experiment: Typst still calls its HTML output incomplete) and the base64 of the fonts put in the file
+typst-html = "0.15.1"
+base64 = "0.22"
+# WOFF packing of the fonts of an HTML export (pure Rust deflate)
+flate2 = "1"
+# Cutting a font down to the glyphs of the page, keeping the shaping tables (Persian letters take their forms from them); pure Rust
+fontcull = { version = "2", default-features = false }
 typst-layout = "0.15.1"
 typst-ide = "0.15.1"
 typst-kit = { version = "0.15.1", features = ["embedded-fonts", "scan-fonts", "system-packages", "datetime"] }
@@ -72,6 +79,9 @@ opt-level = 3
 [profile.dev.package.typst-kit]
 opt-level = 3
 [profile.dev.package.typst-html]
+opt-level = 3
+# The fonts of an HTML export are base64 encoded: megabytes, too slow without optimization
+[profile.dev.package.base64]
 opt-level = 3
 [profile.dev.package.typst-timing]
 opt-level = 3

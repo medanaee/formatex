@@ -24,6 +24,17 @@
     },
 )
 
+// The HTML form (optional, used by the HTML export): a plain link to the target; the language of the page decides the digits
+#let ref-html = (
+    ref: (attrs, body) => context {
+      let id = attrs.to
+      let el = find-target(id, attrs, "ref")
+      // Custom link text inside the tag wins over the generated "شکل ۲" / "Section 3"
+      let shown = if body != none and text-dir(body) != none { body } else { reference-text(el, html-lang == "fa") }
+      link(el.location(), if shown != none { shown } else { [#id] })
+    },
+)
+
 #let ref-schema = (
   "ref": (
     kind: "inline",
@@ -47,6 +58,7 @@ Cross-references to figures, tables, listings, equations, theorems and headings 
     more: `````md
 - Heading ids: end a heading line with `{#id}` (removed from the printed heading, the table of contents and the page header); the same braces can hold per-heading options (`{#id fill=true numbering=false}`). It survives edits of the heading text, so prefer it.
 - Also referenceable: numbered equations («رابطهٔ (۱)»), `<code id>` listings and `<diff id>` blocks. A link inside a heading is left out of its anchor.
+- Tailwind classes on text: `<span tailwind="border border-red-500 rounded px-1 bg-red-100 text-lg text-red-700">text</span>` or `[text]{tailwind="border rounded-lg px-2"}`; the classes are those of `<div>` (a border, rounding, background and padding make a box that stays on one line; `text-*`, `font-*`, `italic`, `underline` style the text).
 - Highlighting: `<span highlight="true">text</span>` puts a highlighter band behind text (`true` is yellow; a preset, Tailwind name or hex also works), with or without an `id`; the Markdown form is `[text]{highlight=green}` or `[text]{#term highlight=true}`.
 `````.text,
   ),
@@ -61,6 +73,7 @@ Cross-references to figures, tables, listings, equations, theorems and headings 
     more: `````md
 - شناسهٔ تیتر: انتهای خط تیتر `{#id}` بگذارید (از تیتر چاپی، فهرست مطالب و سربرگ صفحه حذف می‌شود)؛ همین آکولادها گزینه‌های هر تیتر را هم می‌گیرند (`{#id fill=true numbering=false}`). با ویرایش متن تیتر از بین نمی‌رود، پس آن را ترجیح بدهید.
 - قابل ارجاع‌اند: معادله‌های شماره‌دار («رابطهٔ (۱)»)، کدهای `<code id>` و بلوک‌های `<diff id>`. پیوند داخل تیتر از لنگر آن بیرون می‌ماند.
+- کلاس‌های Tailwind روی متن: ‏`<span tailwind="border border-red-500 rounded px-1 bg-red-100 text-lg text-red-700">متن</span>` یا `[متن]{tailwind="border rounded-lg px-2"}`؛ کلاس‌ها همان‌های `<div>` هستند (بوردر، گردی، پس‌زمینه و پدینگ قابی در یک خط می‌سازند؛ `text-*`، `font-*`، `italic` و `underline` روی متن اثر می‌گذارند).
 - هایلایت: ‏`<span highlight="true">متن</span>` نوار هایلایت پشت متن می‌گذارد (`true` زرد است؛ رنگ آماده، نام Tailwind یا hex هم می‌شود)، با `id` یا بدون آن؛ شکل Markdown آن `[متن]{highlight=green}` یا `[متن]{#term highlight=true}` است.
 `````.text,
   ),
