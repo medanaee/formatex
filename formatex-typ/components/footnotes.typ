@@ -53,6 +53,9 @@
     },
 )
 
+#let footnotes-html = footnotes-tags
+#let footnotes-css = ".fx-doc [role=doc-noteref] { color: var(--accent); font-size: .8em; padding-inline: .1em; } .fx-doc [role=doc-endnotes] { border-top: 1px solid var(--rule); margin-block-start: 1.2em; font-size: .9em; }"
+
 #let footnotes-schema = (
   "fn": (
     kind: "inline",

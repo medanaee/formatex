@@ -221,6 +221,14 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
   }, [])
 
   const htmlMode = useWorkspaceStore((state) => state.previewMode) === "html"
+  const htmlElapsedMs = useWorkspaceStore((state) => state.htmlElapsedMs)
+  const htmlBusy = useWorkspaceStore((state) => state.htmlBusy)
+  const displayedElapsedMs = htmlMode ? htmlElapsedMs : elapsedMs
+  const previousHtmlMode = useRef(htmlMode)
+  useEffect(() => {
+    if (previousHtmlMode.current && !htmlMode) useEditorStore.getState().compile()
+    previousHtmlMode.current = htmlMode
+  }, [htmlMode])
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -351,14 +359,14 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
       {showList && diagnostics.length > 0 && <DiagnosticList diagnostics={diagnostics} onGo={go} className="max-h-[40%] shrink-0 border-t border-border" />}
 
       <div className="flex h-8 shrink-0 items-center gap-3 border-t border-border bg-background px-3 text-xs text-muted-foreground select-none">
-        {status === "compiling" ? (
+        {(htmlMode ? htmlBusy : status === "compiling") ? (
           <span className="flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" /> {t("editor.compiling")}
           </span>
         ) : (
           <span>
-            {pages.length > 0 && t("editor.pages", { count: pages.length })}
-            {elapsedMs !== null && <span className="ms-2 tabular-nums">{(elapsedMs / 1000).toFixed(1)}s</span>}
+            {!htmlMode && pages.length > 0 && t("editor.pages", { count: pages.length })}
+            {displayedElapsedMs !== null && <span className="ms-2 tabular-nums">{(displayedElapsedMs / 1000).toFixed(1)}s</span>}
           </span>
         )}
         <span className="flex-1" />

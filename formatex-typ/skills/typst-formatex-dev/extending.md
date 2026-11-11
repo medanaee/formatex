@@ -11,7 +11,7 @@ For the internals (helpers, tag mechanics) see [reference.md](reference.md); for
 | Color themes | `src/themes.typ` | `themes` dictionary |
 | Feels (radii, table style, default fonts) | `src/core.typ` | `feels` dictionary |
 | Config / front matter / `<include>`, direction detection | `src/core.typ` | `config`, `text-dir`, `content-dir`, `expand-includes` |
-| Page, header, footer, cover | `src/page.typ` | `page-header`, `page-footer`, `cover-page` |
+| Page, header, footer, cover | `src/page.typ` and `components/cover.typ` | Page/header/footer helpers; the `<cover>` component invokes standalone cover layout at its body position |
 | Code / quote / table / heading styling | `src/conf.typ` | `conf` |
 | What every file imports | `src/prelude.typ` | template names + `@preview` packages |
 | What a component imports | `src/kit.typ` | the prelude plus the helper libraries (`basics`, `colors`, `widgets`, `refs`, `lists`, `mitex`, `latex-code`) |

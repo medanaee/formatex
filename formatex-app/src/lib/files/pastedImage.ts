@@ -1,5 +1,6 @@
 import { FORMATEX_DIR } from "@/lib/projects/paths"
 import { systemImage } from "./systemClipboard"
+import { isMobileApp } from "@/lib/platform"
 
 /** The image formats Typst reads, by the type the clipboard names them with. */
 const EXTENSIONS: Record<string, string> = {
@@ -35,6 +36,8 @@ export function imageOfPaste(data: DataTransfer | null): File | null {
 
 /** An image on the system clipboard, read without a paste event (the Paste menu items); `null` when there is none or reading is not allowed. */
 export async function imageOnClipboard(): Promise<Blob | null> {
+  // Mobile exposes plain text through the native clipboard plugin. Do not ask the web view for image permission first.
+  if (isMobileApp()) return null
   // The desktop app reads it natively (the browser may not allow it)
   const native = await systemImage()
   if (native) return native

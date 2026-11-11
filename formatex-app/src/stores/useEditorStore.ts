@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { imageFolder, nextImageName, readableImage } from "@/lib/files/pastedImage"
 import { pasteSystemFiles } from "@/lib/files/systemClipboard"
 import type { HtmlExportOptions } from "@/lib/projects/htmlConfig"
@@ -347,6 +348,11 @@ export const useEditorStore = create<EditorState>()((set, get) => {
         return
       }
       const before = get().pages
+      if (useWorkspaceStore.getState().previewMode === "html") {
+        if (kind === "formatex") void syncProjectSchema(projectId, mainFile, current)
+        set({ compileStatus: "idle" })
+        return
+      }
       const output = await compileProject(projectId, mainFile, { overrides: get().texts, known: before.map((page) => page.hash), kind })
       if (current !== session) return
       if (kind === "formatex") void syncProjectSchema(projectId, mainFile, current)

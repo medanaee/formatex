@@ -186,7 +186,7 @@ fn generate_registry(entries: &[Entry]) -> String {
     // The HTML forms of the tags and their CSS (what `src/html/` uses when the output is HTML)
     out += &format!("#let html-impls = {}\n", join(entries.iter().filter(|e| e.parsed.html).map(|e| format!("{}-html", e.name)).collect()));
     let css: Vec<String> = entries.iter().filter(|e| e.parsed.css).map(|e| format!("{}-css, ", e.name)).collect();
-    out += &format!("#let html-css = (\"\", {}).join(\"\\n\")\n\n", css.concat());
+    out += &format!("#let html-css = (\"\", {}).join(\"\\n\")\n\n", css.concat().trim_end());
     out += "#let all-rules(doc) = {\n";
     let mut ruled: Vec<&Entry> = entries.iter().filter(|e| e.parsed.rules).collect();
     ruled.sort_by(|a, b| (a.parsed.order, &a.name).cmp(&(b.parsed.order, &b.name)));

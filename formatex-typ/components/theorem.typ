@@ -91,6 +91,39 @@
     ..theorem-kind-tags,
 )
 
+#let theorem-html = {
+  let handlers = (:)
+  for kind in theorem-kinds.keys() {
+    handlers.insert(kind, (attrs, body) => {
+      let spec = theorem-kinds.at(kind)
+      let c = counter("theorem-" + kind)
+      let title = attrs.at("title", default: none)
+      let id = attrs.at("id", default: none)
+      [
+        #if spec.numbered { c.step() }
+        #if id != none [#metadata((theorem-kind: kind))#label(id)]
+        #context {
+          let d = resolve-dir(attrs.at("dir", default: doc-dir), body)
+          let r = d == rtl
+          let kind-name = if r { spec.fa } else { spec.en }
+          let num = if spec.numbered [ #digits(c.get().first(), r)]
+          let header-text = if title != none [ *#kind-name#num* (#title) ] else [ *#kind-name#num* ]
+          html.elem("div", attrs: (class: "fx-panel fx-theorem fx-theorem-" + kind, ..if id != none { (id: id) }, dir: if r { "rtl" } else { "ltr" }), {
+            html.elem("div", attrs: (class: "fx-theorem-head"), header-text)
+            html.elem("div", attrs: (class: "fx-theorem-body"), { body; if spec.style == "proof" { html.elem("span", attrs: (class: "fx-qed"), "□") } })
+          })
+        }
+      ]
+    })
+  }
+  handlers
+}
+#let theorem-css = `````css
+.fx-theorem { margin: .8em 0; padding: .6em .8em; border-radius: var(--r-box, 6px); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); border-inline-start: 3.5px solid var(--accent); border-top: 1px solid var(--code-stroke); border-bottom: 1px solid var(--code-stroke); border-inline-end: 1px solid var(--code-stroke); }
+.fx-qed { float: inline-end; margin-inline-start: .7em; }
+.fx-theorem-head { font-weight: 700; margin-bottom: .4em; color: var(--heading); }
+`````.text
+
 #let theorem-schema = (
   "theorem": (
     kind: "block",

@@ -19,6 +19,15 @@
     }),
 )
 
+#let img-html = (
+  img: ("void", attrs => {
+    let styles = ("border-radius: " + if "radius" in attrs { css-len(parse-length(attrs.radius, attrs: attrs)) } else { "var(--r-image)" },)
+    for k in ("width", "height") { if k in attrs { styles.push(k + ": " + css-len(parse-length(attrs.at(k), attrs: attrs))) } }
+    html.elem("span", attrs: (class: "fx-image", style: styles.join("; ")), image(root-path(attrs.src), alt: attrs.at("alt", default: none)))
+  }),
+)
+#let img-css = ".fx-image { display: inline-block; overflow: hidden; vertical-align: middle; max-width: 100%; } .fx-image > img { display: block; max-width: 100%; width: 100%; height: 100%; object-fit: cover; }"
+
 #let img-schema = (
   "img": (
     kind: "void",

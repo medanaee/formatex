@@ -58,7 +58,7 @@
 }
 
 // A YAML front matter block at the very top of the Markdown (between two `---` lines)
-// is merged over config.toml, so each document carries its own cover, header, theme, ...
+// is merged over config.toml, so each document carries its own header, theme, ...
 // Typst resolves a path relative to the file that calls read()/image(); user paths are relative to the
 // project root, so they are rooted here (and in components/src via root-path) to keep working from any file.
 #let rooted(p) = if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
@@ -390,7 +390,7 @@
   let forced = named-dir(if s.len() > 0 { s.last() } else { doc-dir })
   if forced != none { forced } else { text-dir(body) }
 }
-// Same for page furniture (header, footer, cover), which only follows the document setting.
+// Same for page furniture (header, footer), which only follows the document setting.
 #let doc-text-dir(body) = {
   let forced = named-dir(doc-dir)
   if forced != none { forced } else { text-dir(body) }
@@ -398,11 +398,13 @@
 
 // The language of the HTML page, from the letters of the text. It is also the direction a block with no letters starts from.
 #let html-lang = if doc-dir == "rtl" { "fa" } else if doc-dir == "ltr" { "en" } else {
-  let arabic = source-text.matches(regex("\p{Arabic}")).len()
-  let latin = source-text.matches(regex("[A-Za-z]")).len()
+  // Splitting counts matches without constructing a dictionary (offsets/captures) for every letter.
+  let arabic = source-text.split(regex("\p{Arabic}")).len() - 1
+  let latin = source-text.split(regex("[A-Za-z]")).len() - 1
   if arabic > latin { "fa" } else { "en" }
 }
 #let last-dir = state("last-dir", if html-mode and html-lang == "fa" { rtl } else { ltr })
+#let html-math = sys.inputs.at("html-math", default: config.at("html", default: (:)).at("math", default: "native"))
 
 // <align> pushes its value here while its content is laid out, so tables, figures and
 // drawings (which align themselves explicitly) follow the enclosing alignment too.

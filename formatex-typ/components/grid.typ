@@ -104,6 +104,29 @@
     },
 )
 
+#let html-grid-columns = state("html-grid-columns", (2,))
+#let grid-html = (
+  grid: (attrs, body) => context {
+    let cols = int(attrs.at("cols", default: "2"))
+    assert(cols > 0, message: at-of(attrs) + "<grid> cols must be positive")
+    let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+    let style = "--grid-cols: " + str(cols) + "; grid-template-columns: repeat(" + str(cols) + ",minmax(0,1fr)); column-gap: " + css-len(parse-length(attrs.at("gap-x", default: "1em"), attrs: attrs)) + "; row-gap: " + css-len(parse-length(attrs.at("gap-y", default: "1em"), attrs: attrs))
+    html-grid-columns.update(s => s + (cols,))
+    html.elem("div", attrs: (class: "fx-grid", dir: if d == rtl { "rtl" } else { "ltr" }, style: style), body)
+    html-grid-columns.update(s => s.slice(0, -1))
+  },
+  item: (attrs, body) => context {
+    let styles = ()
+    if "span" in attrs { styles.push("grid-column: span " + str(calc.clamp(int(attrs.span), 1, html-grid-columns.get().last()))) }
+    styles.push("align-self: " + (start: "start", center: "center", end: "end").at(attrs.at("valign", default: "start")))
+    if "halign" in attrs { styles.push("text-align: " + attrs.halign) }
+    if attrs.at("width", default: "fill") == "auto" { styles.push("justify-self: " + attrs.at("halign", default: "start")); styles.push("width: fit-content") }
+    if attrs.at("height", default: "fill") == "fill" { styles.push("align-self: stretch"); styles.push("justify-content: " + (start: "start", center: "center", end: "end").at(attrs.at("valign", default: "start"))) }
+    html.elem("div", attrs: (class: "fx-grid-item", style: styles.join("; ")), body)
+  },
+)
+#let grid-css = ".fx-grid { display: grid; margin-block: .8em; width: 100%; box-sizing: border-box; } .fx-grid-item { min-width: 0; display: flex; flex-direction: column; } .fx-grid-item > .fx-panel { flex: 1; margin-block: 0; } @media(max-width:480px) { .fx-grid { grid-template-columns: 1fr !important; } .fx-grid-item { grid-column: 1 !important; } }"
+
 #let grid-schema = (
   "grid": (
     kind: "block",

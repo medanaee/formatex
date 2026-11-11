@@ -578,6 +578,69 @@
     }],
 )
 
+#let div-css-len(v) = if type(v) == length {
+  str(v.pt()) + "pt"
+} else if type(v) == ratio {
+  str(v / 1%) + "%"
+} else if type(v) == relative {
+  "calc(" + str(v.ratio / 1%) + "% + " + str(v.length.pt()) + "pt)"
+} else {
+  str(v)
+}
+
+#let div-html = (
+  div: (attrs, body) => context {
+    let d = if attrs.at("dir", default: none) != none { attrs.dir } else { doc-dir }
+    let is-rtl = if d == "rtl" { true } else if d == "ltr" { false } else { doc-dir == "rtl" }
+    let spec = div-parse(attrs.at("tailwind", default: ""), is-rtl, at: attrs.at("_at", default: none))
+    if spec.display == "hidden" { return none }
+    let styles = ()
+    if spec.display in ("flex", "inline-flex") {
+      styles.push("display: " + spec.display + ";")
+      let dir-str = if spec.col { if spec.reverse { "column-reverse" } else { "column" } } else { if spec.reverse { "row-reverse" } else { "row" } }
+      styles.push("flex-direction: " + dir-str + ";")
+      if spec.wrap { styles.push("flex-wrap: " + if spec.wrap-reverse { "wrap-reverse" } else { "wrap" } + ";") }
+      let jm = (start: "flex-start", end: "flex-end", center: "center", between: "space-between", around: "space-around", evenly: "space-evenly", stretch: "stretch", normal: "normal")
+      styles.push("justify-content: " + jm.at(spec.justify, default: spec.justify) + ";")
+      let im = (start: "flex-start", end: "flex-end", center: "center", stretch: "stretch", baseline: "baseline")
+      styles.push("align-items: " + im.at(spec.items, default: spec.items) + ";")
+      if spec.gap-x != 0pt or spec.gap-y != 0pt {
+        styles.push("column-gap: " + div-css-len(spec.gap-x) + "; row-gap: " + div-css-len(spec.gap-y) + ";")
+      }
+    } else if spec.display != "block" {
+      styles.push("display: " + spec.display + ";")
+    }
+    if spec.fill != none { styles.push("background-color: " + css-color(spec.fill) + ";") }
+    if spec.text-color != none { styles.push("color: " + css-color(spec.text-color) + ";") }
+    if spec.pad-t != 0pt or spec.pad-b != 0pt or spec.pad-l != 0pt or spec.pad-r != 0pt {
+      styles.push("padding: " + (spec.pad-t, spec.pad-r, spec.pad-b, spec.pad-l).map(div-css-len).join(" ") + ";")
+    }
+    if spec.mar-t != 0pt or spec.mar-b != 0pt or spec.mar-l != 0pt or spec.mar-r != 0pt {
+      styles.push("margin: " + (spec.mar-t, spec.mar-r, spec.mar-b, spec.mar-l).map(div-css-len).join(" ") + ";")
+    }
+    if spec.bw-t != 0pt or spec.bw-b != 0pt or spec.bw-l != 0pt or spec.bw-r != 0pt {
+      let bc = if spec.bcolor != none { css-color(spec.bcolor) } else { "var(--code-stroke)" }
+      styles.push("border-style: " + spec.bstyle + "; border-color: " + bc + ";")
+      styles.push("border-width: " + (spec.bw-t, spec.bw-r, spec.bw-b, spec.bw-l).map(div-css-len).join(" ") + ";")
+    }
+    if spec.rad-tl != 0pt or spec.rad-tr != 0pt or spec.rad-br != 0pt or spec.rad-bl != 0pt {
+      styles.push("border-radius: " + (spec.rad-tl, spec.rad-tr, spec.rad-br, spec.rad-bl).map(div-css-len).join(" ") + ";")
+    }
+    if spec.w != none and spec.w != auto { styles.push("width: " + div-css-len(spec.w) + ";") }
+    if spec.h != none and spec.h != auto { styles.push("height: " + div-css-len(spec.h) + ";") }
+    if spec.max-w != none { styles.push("max-width: " + div-css-len(spec.max-w) + ";") }
+    if spec.grow != 0 { styles.push("flex-grow: " + str(spec.grow) + ";") }
+    if spec.shrink != 1 { styles.push("flex-shrink: " + str(spec.shrink) + ";") }
+    if spec.basis != auto and spec.basis != none { styles.push("flex-basis: " + div-css-len(spec.basis) + ";") }
+    if spec.clip { styles.push("overflow: hidden;") }
+    html.elem("div", attrs: (class: "fx-div", ..if d != none and d != auto { (dir: str(d)) }, ..if styles.len() > 0 { (style: styles.join(" ")) }), body)
+  }
+)
+#let div-css = `````css
+.fx-div { box-sizing: border-box; }
+`````.text
+
+
 #let div-schema = (
   "div": (
     kind: "block",

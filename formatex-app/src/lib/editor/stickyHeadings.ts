@@ -88,9 +88,9 @@ function stickyPanel(view: EditorView): Panel {
 export const stickyHeadings = showPanel.of(stickyPanel)
 
 export const stickyTheme = EditorView.baseTheme({
+  ".cm-panels.cm-panels-top:has(.cm-sticky)": { marginRight: "var(--cm-minimap-width, 0px)" },
   ".cm-panels.cm-panels-top:has(.cm-sticky[hidden])": { borderBottom: "none" },
   ".cm-sticky": {
-    paddingRight: "var(--cm-minimap-width, 0px)",
     backgroundColor: "var(--background)",
     fontFamily: "Inter, Vazirmatn, system-ui, sans-serif",
   },

@@ -41,6 +41,7 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `common/` | `StorageBoot` (boot screen + retry), `ResponsiveDialog` (sheet on phone, dialog elsewhere; `size="lg"` for an editor inside), `AppLogo`. |
 | `editor/` | `EditorWorkspace` (layout per form factor), `EditorToolbar`, `CodeEditor` (CodeMirror 6), `FileTree` (+ name / delete dialogs), `FileView` (text / image / other), `PdfViewer` (a PDF of the project with pdf.js and a slim bar: page, zoom, fit width), `DiagnosticList` (problems, shared with the Components screen), `PreviewPane` (SVG pages, problems), `FormatBar` (undo / redo, formatting, Source / Visual), `EditorSidebar` (Files / Tags tabs), `TagPalette` (tag tiles, drag or click to insert), `OptionsPopover` (settings form generated from the schema, with the `fx` button), `VariablesSection` (the *Variables* list of the settings screen). |
 | `settings/` | `FontsSettings` (imported and available fonts). |
+| `editor/EditorSearchPanel.tsx`, `editor/searchPanel.tsx` | Translated shadcn find/replace controls and the CodeMirror panel adapter, shared by the first format-bar Search icon and Ctrl / Cmd + F on all text kinds. |
 | `ui/` | shadcn primitives: `button`, `dialog`, `drawer`, `dropdown-menu`, `input`, `label`, `popover`, `select`, `sheet`, `switch`, `textarea`, `tooltip`, plus `segmented-control`. |
 
 ### `src/hooks/`
@@ -65,7 +66,10 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `skill/` | `generate.ts` (`generateSkill`: the head, the fixed text, the reference built from the schema and the docs of the components, at four sizes and in en or fa, as two sections; `skillComponents`, `estimateTokens`, `brief`), `text.ts` (the fixed introduction and the checklist, en and fa), `buildText.ts` (the skill for building components, en and fa, by size), tests next to them. |
 | `projects/` | `ProjectFs` (`types.ts`), `tauriProjectFs.ts`, `webProjectFs.ts`, `paths.ts` (names, kinds incl. `code` files such as `.py`, reserved paths; their colors come from `src/lib/editor/codeLanguages.ts`), `index.ts` (`openProjectFs`, `initProject`, `deleteProjectFiles`, default config), `folderProjectFs.ts` (a project kept in a user folder: `.formatex/config.toml` as `config.toml`), `storageMode.ts` (pick / scan / create / move between the app and a folder), `storagePlan.ts` (pure: what is copied, conflicts, config for a copy). UI: `components/editor/StorageDialogs.tsx`, `components/library/StoragePicker.tsx`, `StorageBadge.tsx`. Rust: `project_set_root` in `compile.rs`. |
 | `components/` | `api.ts` (the component commands; `componentsApi`), `template.ts` (name rule, new-component source), `webComponents.ts` (browser fallback). |
-| `compiler/` | `compileProject`, `exportPdf`, `listFonts`, `reloadFonts` over Tauri `invoke`; `CompilerUnavailableError` in a browser. |
+| `compiler/` | `compileProject`, `exportPdf`, `exportHtml`, `previewHtml`, `listFonts`, `reloadFonts` over Tauri `invoke`; the live HTML response carries timings, a font key and optional CSS. `CompilerUnavailableError` in a browser. |
+| `editor/latestTaskQueue.ts` | One running HTML preview task and one replaceable latest pending task, retained across preview remounts; adaptive 120–250 ms debounce. |
+| `editor/htmlFrame.ts` | `splitHtml`, `initialFrame` and `frameBridge`: shell signatures, persistent sandboxed frame updates, per-document channel tokens, scroll/font preservation and full-reload fallback for custom scripts or output without `main.fx-doc`. |
+| `editor/minimapGeometry.ts`, `editor/minimap.ts` | Fixed 2 px/source-line minimap geometry and virtual canvas viewport; source-scroll following, wheel/click/drag navigation. The sticky-heading top panel reserves `--cm-minimap-width`. |
 | `files/` | `saveFile.ts` (Save dialog / download, file picker), `fonts.ts` (import / remove fonts). |
 | `db/` | `types.ts` (`Repository`, `SqlDriver`, `FileStore`, `DocumentItem`), `schema.ts` (migrations), `sqliteRepository.ts`, `webRepository.ts`, `tauriBackend.ts` (plugin driver + file store), `index.ts` (`openStorage`), `sync.ts` (store → storage), `writeQueue.ts`, `testDriver.ts` (tests only). |
 
@@ -83,8 +87,12 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `src/clipboard.rs` | The system clipboard for Paste in the file tree (desktop only, `clipboard-rs`): `clipboard_import` copies files and folders copied in the file manager into a project folder, `clipboard_image` gives a picture as PNG. |
 | `src/remote.rs` | Files from the internet: `.remote/` paths decoded to addresses, downloaded once into `.cache/` (`.formatex/.cache/` in a folder project), `remote_sync`; tests with a local server. |
 | `src/compile.rs` | Commands `compile_project`, `export_pdf`, `fonts_list`, `fonts_reload`; diagnostics; shared `Engine` state; tests that compile a real project. |
+| `src/compile_benchmark.rs` | Ignored native large-document benchmarks, internal Typst tracing and an in-memory regex control; [measurements and reproduction](performance-2026-11-10.md). |
+| `src/compile.rs` HTML path | `preview_html` / `render_preview_html` return the live page, timings and optional font CSS; `kept_world_for` retains separate HTML and paged slots. `export_html` retains standalone font-subset embedding. See [ADR 0012](decisions/0012-incremental-html-preview.md). |
+| `src/html_export.rs` preview fonts | `preview_fonts` caches reusable full WOFF faces by weak `FontStore` identity, family list and italic need; `fontKey` allows an unchanged CSS payload to be omitted. |
 | `src/components.rs` | The component library: built-in + user components, registry generation, schema computation, the `component_*` and `engine_schema` commands. |
 | `src/fonts.rs` | Font discovery: imported, system, embedded. |
+| `web-fonts/`, `../scripts/prepare-html-serif.py` | HTML-only quadratic NewCM font assets, generator and upstream notices; PDF font selection is unchanged. See [HTML improvements](html-export-improvements-2026-11-11.md). |
 | `src/packages.rs` | Typst Universe packages: cache + rustls downloader. |
 | `src/main.rs` | Desktop entry. |
 | `tauri.conf.json` | Product name, identifier `com.formatex.org`, window, bundle. |

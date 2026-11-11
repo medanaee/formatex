@@ -75,6 +75,38 @@
     todos: (attrs, body) => todo-list(attrs),
 )
 
+#let todo-html = (
+  todo: (attrs, body) => {
+    if todo-mode == "hide" { return [] }
+    let note = plain-text(body).trim()
+    let author = attrs.at("author", default: "")
+    [#metadata((todo-text: if author != "" { author + ": " + note } else { note }))<formatex-todo>]
+    context {
+      let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+      let colors = resolve-color(attrs.at("color", default: "yellow"), attrs: attrs)
+      let figure = attrs.at("type", default: "note") == "figure"
+      let block-note = figure or (body.has("children") and body.children.any(c => c.func() in (parbreak, par)))
+      let styles = (panel-style(colors),)
+      if figure { styles.push("width: " + css-len(parse-length(attrs.at("width", default: "100%"), attrs: attrs))); styles.push("min-height: " + css-len(parse-length(attrs.at("height", default: "120"), attrs: attrs))) }
+      html.elem(if block-note { "div" } else { "span" }, attrs: (class: "fx-panel fx-todo" + if figure { " fx-todo-figure" } else if block-note { "" } else { " fx-todo-inline" }, dir: if d == rtl { "rtl" } else { "ltr" }, style: styles.join("; ")), {
+        if author != "" { html.elem("strong", author + ": ") }
+        body
+      })
+    }
+  },
+  todos: (attrs, body) => context {
+    if todo-mode == "hide" { return [] }
+    let items = query(<formatex-todo>)
+    let d = resolve-dir(attrs.at("dir", default: "auto"), attrs.at("title", default: items.map(i => i.value.todo-text).join(" ")))
+    html.elem("section", attrs: (class: "fx-todos", dir: if d == rtl { "rtl" } else { "ltr" }), {
+      html.elem("h2", attrs.at("title", default: if d == rtl { "کارهای باقی‌مانده" } else { "To-do list" }))
+      html.elem("ol", items.map(it => html.elem("li", link(it.location(), it.value.todo-text))).join())
+      if items.len() == 0 { html.elem("p", if d == rtl { "کاری باقی نمانده است." } else { "Nothing left to do." }) }
+    })
+  },
+)
+#let todo-css = ".fx-todo { box-sizing: border-box; margin-block: .7em; padding: .55em .7em; border: 1px dashed var(--panel-border); border-radius: var(--r-alert); } .fx-todo-figure { display: grid; place-content: center; text-align: center; margin-inline: auto; max-width: 100%; } .fx-todo-inline { display: inline; padding: .1em .3em; margin: 0; border-radius: var(--r-badge); font-size: .9em; } .fx-todos { margin-block: 1em; }"
+
 #let todo-schema = (
   "todo": (
     kind: "block",

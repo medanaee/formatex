@@ -19,11 +19,13 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_fs::init())
+    .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_sql::Builder::default().build())
     .invoke_handler(tauri::generate_handler![
       compile::compile_project,
       compile::export_pdf,
       compile::export_html,
+      compile::preview_html,
       compile::project_preview,
       compile::project_set_root,
       watcher::project_watch,

@@ -145,6 +145,57 @@
     },
 )
 
+#let docheader-html = (
+  docheader: (attrs, body) => context {
+    let mains = untag(body, "main").tagged.map(m => m.body)
+    let scopes = (body,) + mains
+    let collect(kind) = scopes.map(s => untag(s, kind).tagged).flatten()
+    let titles = ()
+    for (key, level) in (("title", "1"), ("subtitle", "2"), ("subtitle2", "3")) {
+      if key in attrs { titles.push((attrs: (size: level), body: cmarker.render(attrs.at(key), math: mitex))) }
+    }
+    titles += collect("title")
+    let sides = attrs.at("border", default: "")
+    if sides == "true" { sides = "lrtb" } else if sides == "false" { sides = "" }
+    assert(sides.clusters().all(c => c in ("l", "r", "t", "b")), message: at-of(attrs) + "<docheader> border must contain only l,r,t,b")
+    let hue = attrs.at("color", default: none)
+    let border-given = attrs.at("border-color", default: hue)
+    let fill-given = attrs.at("fill-color", default: hue)
+    let line = if border-given != none { css-color(resolve-color(border-given, attrs: attrs).border) } else { "var(--rule)" }
+    let fill = if fill-given != none { css-color(resolve-color(fill-given, attrs: attrs).fill) } else { "var(--code-bg)" }
+    let styles = ()
+    for (key, side) in (("l", "left"), ("r", "right"), ("t", "top"), ("b", "bottom")) { if key in sides { styles.push("border-" + side + ": 1px solid " + line) } }
+    if attrs.at("fill", default: "false") == "true" { styles.push("background: " + fill) }
+    if sides != "" or attrs.at("fill", default: "false") == "true" { styles.push("padding: " + css-len(parse-length(attrs.at("padding", default: ".8em"), attrs: attrs))) }
+    let radius = if "radius" in attrs { css-len(parse-length(attrs.radius, attrs: attrs)) } else { "var(--r-box)" }
+    styles.push("border-radius: " + (if "l" in sides and "t" in sides or sides == "" { radius } else { "0" }) + " " + (if "r" in sides and "t" in sides or sides == "" { radius } else { "0" }) + " " + (if "r" in sides and "b" in sides or sides == "" { radius } else { "0" }) + " " + (if "l" in sides and "b" in sides or sides == "" { radius } else { "0" }))
+    let pic(kind) = {
+      let found = collect(kind)
+      if found.len() > 0 {
+        let a = found.last().attrs
+        let w = parse-length(a.at("width", default: none), attrs: a)
+        let h = parse-length(a.at("height", default: none), attrs: a)
+        html.elem("div", attrs: (class: "fx-docheader-image", style: "border-radius: " + if "radius" in a { css-len(parse-length(a.radius, attrs: a)) } else { "var(--r-image)" }), image(root-path(a.src), width: if w != none { w } else { auto }, height: if h != none { h } else if w == none { 4em } else { auto }))
+      }
+    }
+    html.elem("header", attrs: (class: "fx-docheader", style: styles.join("; ")), {
+      html.elem("div", attrs: (class: "fx-docheader-main"), {
+        pic("l-img")
+        html.elem("div", attrs: (class: "fx-docheader-titles"), {
+          for t in titles {
+            let level = t.attrs.at("size", default: "1")
+            let tint = if "color" in t.attrs { css-color(resolve-heading-color(t.attrs.color)) } else if level == "1" { "var(--heading)" } else { "var(--muted)" }
+            html.elem("div", attrs: (class: "fx-docheader-title", dir: "auto", style: "font-size: " + ("1": "2em", "2": "1.4em", "3": "1.1em").at(level) + "; color: " + tint + if level == "1" { "; font-weight: 700" } else { "" }), t.body)
+          }
+        })
+        pic("r-img")
+      })
+      for info in collect("info") { html.elem("div", attrs: (class: "fx-docheader-info"), info.body) }
+    })
+  },
+)
+#let docheader-css = ".fx-docheader { margin-block: 1em 1.2em; box-sizing: border-box; text-align: center; } .fx-docheader-main { display: flex; direction: ltr; align-items: center; gap: .8em; } .fx-docheader-titles { flex: 1; min-width: 0; } .fx-docheader-title + .fx-docheader-title { margin-block-start: .35em; } .fx-docheader-image { flex: none; max-width: 25%; overflow: hidden; } .fx-docheader-image img { max-width: 100%; object-fit: contain; } .fx-docheader-info { margin-block-start: .6em; } @media(max-width:480px) { .fx-docheader-main { flex-wrap: wrap; justify-content: center; } .fx-docheader-titles { order: 3; flex-basis: 100%; } .fx-docheader-image { max-width: 40%; } }"
+
 #let docheader-schema = (
   "docheader": (
     kind: "block",

@@ -17,6 +17,20 @@
     },
 )
 
+#let dir-html = (
+  dir: (attrs, body) => {
+    let bare = attrs.keys().filter(k => k in ("rtl", "ltr", "auto"))
+    let to = attrs.at("to", default: if bare.len() > 0 { bare.first() } else { "auto" })
+    assert(to in ("rtl", "ltr", "auto"), message: at-of(attrs) + "<dir> to must be rtl, ltr or auto, got " + repr(to))
+    dir-stack.update(s => s + (to,))
+    html.elem("div", attrs: if to != "auto" { (dir: to) } else { (:) }, {
+      set text(dir: if to == "rtl" { rtl } else { ltr }) if to != "auto"
+      body
+    })
+    dir-stack.update(s => s.slice(0, -1))
+  },
+)
+
 #let dir-schema = (
   "dir": (
     kind: "block",

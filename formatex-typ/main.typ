@@ -4,6 +4,8 @@
 
 
 #import "src/lib/mitex.typ": mitex
+#import "src/html/katex.typ": katex-math
+#let math-renderer = if html-mode and html-math == "katex" { katex-math } else { mitex }
 #import "src/lib/remote.typ": is-remote, remote-path
 #import "src/preprocess/pipeline.typ": preprocess
 #import "src/preprocess/mark-lines.typ": mark-lines
@@ -30,7 +32,7 @@
 #let source-body = if marked-front == none { marked-source } else { marked-source.slice(marked-front.end) }
 
 #let render-scope = (image: (source, ..args) => image(if is-remote(source) { remote-path(source) } else { source }, ..args), make-heading-numbering: make-heading-numbering, check-label: check-label, fx-mark: fx-mark) + scope-extras
-#let render-markdown(text) = cmarker.render(preprocess(text), math: mitex, scope: render-scope, html: html-tags)
+#let render-markdown(text) = cmarker.render(preprocess(text), math: math-renderer, scope: render-scope, html: html-tags)
 
 // A `{{ }}` that names a value of the page (PAGE, PAGES, SECTION, SECTION_NUMBER) runs here, when the pages are made, and its text is
 // read as Markdown then (src/preprocess/evaluate.typ left a comment that calls this)
@@ -47,4 +49,4 @@
   render-markdown(show-value(ran.first()))
 }
 
-#cmarker.render(preprocess(source-body), math: mitex, scope: render-scope + (fx-deferred: fx-deferred), html: html-tags)
+#cmarker.render(preprocess(source-body), math: math-renderer, scope: render-scope + (fx-deferred: fx-deferred), html: html-tags)

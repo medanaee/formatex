@@ -109,6 +109,46 @@
     chat: chat-block,
 )
 
+#let chat-html = (
+  user: (attrs, body) => tag("chat-msg", attrs + (role: "user"), body),
+  ai: (attrs, body) => tag("chat-msg", attrs + (role: "ai"), body),
+  chat: (attrs, body) => context {
+    let setting(key, fallback) = { let v = attrs.at(key, default: chat-config.at(key, default: none)); if v == none or v == "" { fallback } else { v } }
+    let messages = untag(body, "chat-msg").tagged
+    assert(messages.len() > 0, message: at-of(attrs) + "<chat> needs <user> or <ai>")
+    let style = setting("style", "auto")
+    assert(style in chat-styles, message: at-of(attrs) + "<chat> unknown style")
+    if style == "auto" { style = if feel-name == "formal" { "transcript" } else if feel-name == "friendly" { "bubbles" } else { "assistant" } }
+    let d = resolve-dir(setting("dir", "auto"), messages.first().body)
+    let framed = repr(setting("frame", true)) in ("true", "\"true\"")
+    html.elem("section", attrs: (class: "fx-chat fx-chat-" + style + if framed { " fx-chat-frame" } else { "" }, dir: if d == rtl { "rtl" } else { "ltr" }, style: "--chat-width: " + css-len(parse-length(str(setting("width", "80%")), attrs: attrs))), {
+      if setting("title", none) != none { html.elem("header", attrs: (class: "fx-chat-title"), setting("title", "")) }
+      for m in messages {
+        let role = m.attrs.role
+        let word = if role == "user" { if d == rtl { "شما" } else { "You" } } else { if d == rtl { "هوش مصنوعی" } else { "AI" } }
+        let name = m.attrs.at("name", default: setting(role + "-name", word))
+        let icon = m.attrs.at("icon", default: setting(role + "-icon", if role == "user" { "user" } else { "robot" }))
+        let color = setting(role + "-color", none)
+        let colors = if color != none { resolve-color(color, attrs: attrs) } else { tinted(if role == "user" { theme.accent } else { theme.secondary }) }
+        html.elem("div", attrs: (class: "fx-panel fx-chat-msg fx-chat-" + role, style: panel-style(colors)), {
+          html.elem("div", attrs: (class: "fx-chat-author"), { html-icon(icon, fill: colors.icon, size: .9em); html.elem("strong", name) })
+          html.elem("div", attrs: (class: "fx-chat-bubble"), m.body)
+        })
+      }
+    })
+  },
+)
+#let chat-css = `````css
+.fx-chat { display: flex; flex-direction: column; gap: .65em; margin-block: .85em; } .fx-chat-frame { padding: .75em; border-block: 1px solid var(--rule); }
+.fx-chat-title { color: var(--heading); font-weight: 700; } .fx-chat-msg { margin: 0; min-width: 0; padding: .55em .7em; border-radius: var(--r-box); }
+.fx-chat-author { display: flex; align-items: center; gap: .4em; color: var(--panel-icon); font-size: .8em; margin-block-end: .35em; }
+.fx-chat-bubble > :first-child { margin-top: 0; } .fx-chat-bubble > :last-child { margin-bottom: 0; }
+.fx-chat-transcript .fx-chat-msg { border: 0; border-inline-start: 2px solid var(--panel-icon); border-radius: 0; background: none; }
+.fx-chat-bubbles .fx-chat-msg, .fx-chat-assistant .fx-chat-user { width: fit-content; max-width: min(100%,var(--chat-width)); }
+.fx-chat-bubbles .fx-chat-user, .fx-chat-assistant .fx-chat-user { align-self: end; } .fx-chat-bubbles .fx-chat-ai { align-self: start; }
+.fx-chat-assistant .fx-chat-ai { border: 0; background: none; padding-inline: 0; } @media(max-width:480px) { .fx-chat { --chat-width: 100% !important; } }
+`````.text
+
 #let chat-schema = (
   "chat": (
     kind: "block",

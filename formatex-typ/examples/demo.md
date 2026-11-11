@@ -16,24 +16,23 @@ footer:
   end: "— {page} —"
   digits: fa
 
-cover:
-  institution: "دانشگاه نمونه"
-  faculty: "دانشکدهٔ مهندسی کامپیوتر"
-  type: "سند نمایشی قالب"
-  title: "نمونهٔ کامل امکانات قالب"
-  subtitle: "Markdown دوزبانه، از متن ساده تا رسم و ارجاع"
-  author: "نام نویسنده"
-  supervisor: ["دکتر الف", "دکتر ب"]
-  advisor: "دکتر ج"
-  date: "مهر ۱۴۰۵"
-  frame: true
-
 bibliography:
   file: examples/references.bib
   style: ieee                      # any Typst/CSL style: apa, chicago-author-date, ...
   title: "منابع"
   dir: auto                        # auto (each entry by its own language) | ltr | rtl
 ---
+
+<cover institution="دانشگاه نمونه"
+  faculty="دانشکدهٔ مهندسی کامپیوتر"
+  type="سند نمایشی قالب"
+  title="نمونهٔ کامل امکانات قالب"
+  subtitle="Markdown دوزبانه، از متن ساده تا رسم و ارجاع"
+  author="نام نویسنده"
+  supervisor="دکتر الف / دکتر ب"
+  advisor="دکتر ج"
+  date="مهر ۱۴۰۵"
+  frame="true"></cover>
 
 <toc break="true"></toc>
 
@@ -1322,18 +1321,12 @@ const a = 2;
 <picHeader src="images/header-mountains.jpg" title="تاپ تاپی" subtitle="اینطوریه که یک عکس فول سرتاسری داریم اختیاری" break="before" margin-x="true" margin-y="false" height="60mm" />
 
 
-خب ببین متن داخب def اینلاین وسط نیست یکمی پایینه
-یک کامپوننت دیگه ازت میخوام اضافه کنی 
-اینطوریه که یک عکس فول سرتاسری داریم
-گرادایان مشکی به شفاف از پایین روی عکسه و یک تایتل سفید بزرگ و یک زیرتایتل اختیاری داره
-پراپ ها:
-مسیر عکس
-تایتل
-زیرتایتل اختیاری
-اندازه ارتفاع
-break: اگر خاموش باشد در همان محل درج می شود اگر before باشد می رود اول صفحه بعد
-margin-x: اگر روشن باشد کل فضای عرض را میگیرد ولی حاشیه های سند را نمیگیرد. اگر خاموش باشد حتی حاشیه سند را هم میگیرد و در این حالت گردی گوشه ها حذف می شوند
-margin-y: در حالتی که break=false هست هیچ اثری ندارد که چی است ولی وقتی break=true باشد اگر این مارجین روشن باشد می اید بالای صفحه ولی حاشیه بالا صفحه را از بین نمیبرد اما اگر خاموش باشد میرود می چسبد بالای صفحه و گردی احتمالی بالای آن حذف می شود.
+تصویر تمام‌عرض سراسری با گرادیان و عنوان بزرگ:
+- `src`: مسیر تصویر
+- `title` و `subtitle`: عنوان و زیرعنوان
+- `height`: ارتفاع کادر
+- `break`: درج در همان محل یا ابتدای صفحه بعد (`before`)
+- `margin-x` و `margin-y`: کنترل اشغال حاشیه‌های افقی و عمودی سند
 
 
 <picHeader src="images/header-mountains.jpg" title="تاپ تاپی" subtitle="زیرعنوان اختیاری" break="before" margin-x="false" margin-y="false" height="60mm" />

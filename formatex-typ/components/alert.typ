@@ -66,10 +66,10 @@
       let preset = if kind != none { box-types.at(kind) } else { (color: none, icon: none) }
       let given = attrs.at("color", default: preset.color)
       let colors = if given != none { resolve-color(given, attrs: attrs) } else { tinted(theme.muted) }
-      let r = if "radius" in attrs { float(attrs.radius) * 1pt * zoom } else { feel.alert }
+      let r-style = if "radius" in attrs { "; border-radius: " + css-len(float(attrs.radius) * 1pt * zoom) } else { "" }
       let icon-name = attrs.at("icon", default: preset.icon)
-      // `dir="auto"`: the icon goes to the side the text starts on
-      html.elem("div", attrs: (class: "fx-panel fx-alert", dir: "auto", style: panel-style(colors) + "; border-radius: " + css-len(r)), {
+      // Forced document direction wins; auto still follows the first strong letter.
+      html.elem("div", attrs: (class: "fx-panel fx-alert", dir: doc-dir, style: panel-style(colors) + r-style), {
         if icon-name != none { html.elem("div", attrs: (class: "fx-alert-icon"), html-icon(icon-name, fill: colors.icon, size: 1.2em)) }
         html.elem("div", attrs: (class: "fx-alert-body"), body)
       })

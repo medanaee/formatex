@@ -8,7 +8,7 @@
 /// A length in pixels (`8pt` is 8px)
 #let css-px(len) = str(calc.round(len / 1pt, digits: 2)) + "px"
 /// A length as CSS: points as px, `1.2em` stays em
-#let css-len(len) = if len == 0pt { "0" } else if len.em == 0 { css-px(len) } else if len.abs == 0pt { str(calc.round(len.em, digits: 3)) + "em" } else { "calc(" + css-px(len.abs) + " + " + str(len.em) + "em)" }
+#let css-len(len) = if type(len) == ratio { str(len / 1%) + "%" } else if type(len) == relative { "calc(" + str(len.ratio / 1%) + "% + " + css-len(len.length) + ")" } else if len == 0pt { "0" } else if len.em == 0 { css-px(len) } else if len.abs == 0pt { str(calc.round(len.em, digits: 3)) + "em" } else { "calc(" + css-px(len.abs) + " + " + str(len.em) + "em)" }
 /// The parts of a `style="..."` attribute, left to right; a part that is `none` is left out
 #let style-of(parts) = parts.filter(p => p != none).join("; ")
 /// The CSS variables of a tinted panel (`resolve-color` / `tinted` of src/lib/colors.typ): `.fx-panel` and `.fx-badge` read them
@@ -40,8 +40,9 @@
   if el.func() == metadata and type(el.value) == dictionary and "heading-id" in el.value {
     el = query(selector(heading).before(el.location())).last()
   }
-  if el.func() == metadata and type(el.value) == dictionary and "equation-id" in el.value {
-    el = query(selector(math.equation).before(el.location())).last()
+  if el.func() == metadata and type(el.value) == dictionary and "equation-id" in el.value and html-math != "katex" {
+    let eq = query(selector(math.equation).before(el.location()))
+    if eq.len() > 0 { el = eq.last() }
   }
   el
 }

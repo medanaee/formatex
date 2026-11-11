@@ -232,17 +232,26 @@
 // The HTML form (optional, used by the HTML export): Typst's own `figure` with its caption around what is inside (an <img> stays an image,
 // a drawing is a picture); the size, ratio and alignment options are the PDF's
 #let fig-html = (
-    fig: (attrs, body) => {
+    fig: (attrs, body) => context {
       let (tagged: captions, rest) = untag(body, "caption")
       let caption = if captions.len() > 0 { captions.at(0).body } else { none }
+      let styles = ()
+      for k in ("width", "height") { if k in attrs { styles.push(k + ": " + css-len(parse-length(attrs.at(k), attrs: attrs))) } }
+      let aspect = parse-ratio(attrs.at("ratio", default: none))
+      if aspect != none { styles.push("aspect-ratio: " + str(aspect)) }
+      let a = attrs.at("align", default: inherited-align("center"))
+      styles.push("margin-inline: " + if a in ("left", "start") { "0 auto" } else if a in ("right", "end") { "auto 0" } else { "auto" })
+      let media = html.elem("div", attrs: (class: "fx-figure-content" + if aspect != none { " fx-figure-crop" } else { "" }, style: styles.join("; ")), if type(rest) == array { rest.join() } else { rest })
       context captioned(
-        "figure", image, "شکل", "Figure", if type(rest) == array { rest.join() } else { rest },
+        "figure", image, "شکل", "Figure", media,
         caption: caption, id: attrs.at("id", default: none),
         numbering: caption-flag(attrs, "numbering"), position: attrs.at("caption-position", default: none),
         listed: caption-flag(attrs, "lof") != false, implicit: true,
       )
     },
 )
+
+#let fig-css = ".fx-figure-content { max-width: 100%; width: fit-content; text-align: center; } .fx-figure-crop .fx-image { display: block; width: 100%; height: 100%; } .fx-figure-content > .fx-frame { margin: 0; }"
 
 #let fig-schema = (
   "fig": (

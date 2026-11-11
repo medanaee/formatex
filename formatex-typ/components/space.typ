@@ -15,9 +15,11 @@
 
 // The HTML form (optional, used by the HTML export): a page and a gap between lines mean nothing on a page that scrolls
 #let space-html = (
-    v: ("void", attrs => none),
-    pagebreak: ("void", attrs => none),
+    v: ("void", attrs => html.elem("div", attrs: (class: "fx-space" + if attrs.at("weak", default: "false") == "true" { " fx-space-weak" } else { "" }, style: "height: " + css-len(parse-length(attrs.at("size", default: "1em"), attrs: attrs))), "")),
+    pagebreak: ("void", attrs => html.elem("div", attrs: (class: "fx-pagebreak", style: "break-after: " + (even: "left", odd: "right").at(attrs.at("to", default: ""), default: "page")), "")),
 )
+
+#let space-css = ".fx-space { margin: 0; padding: 0; } .fx-space-weak:first-child { display: none; } .fx-pagebreak { height: 0; margin: 0; padding: 0; }"
 
 #let space-break-attrs = (
   "weak": (type: "bool", default: "false", doc: (en: "`true`: no break when the page is already empty (the break is skipped at the top of a page)", fa: "`true`: اگر صفحه همین حالا خالی است شکستی انجام نمی‌شود (بالای صفحه نادیده گرفته می‌شود)")),

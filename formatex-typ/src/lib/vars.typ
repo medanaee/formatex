@@ -13,7 +13,7 @@
 
 #let name-re = regex("^[\\p{L}_][\\p{L}\\p{N}_-]*$")
 #let keywords = ("if", "else", "for", "while", "in", "and", "or", "not", "let", "set", "show", "import", "include", "return", "break", "continue", "context", "true", "false", "none", "auto", "setting")
-#let cover-names = ("title", "subtitle", "author", "date", "institution", "faculty", "department", "supervisor", "advisor")
+#let metadata-names = ("title", "subtitle", "author", "date", "institution", "faculty", "department", "supervisor", "advisor")
 #let number-re = regex("^-?\\d+(\\.\\d+)?$")
 #let length-re = regex("^-?\\d+(\\.\\d+)?(pt|mm|cm|in|em|%)$")
 
@@ -156,11 +156,10 @@
     values.insert(name, convert(name, raw, rule, at))
   }
   let settings = build-settings(config, inputs)
-  // What a document can always read, under the names of the cover
-  let cover = config.at("cover", default: (:))
+  // Read-only document metadata is independent of the cover component.
   let scope = (setting: settings)
-  for name in cover-names {
-    scope.insert(name, if type(cover) == dictionary { cover.at(name, default: config.at(name, default: none)) } else { none })
+  for name in metadata-names {
+    scope.insert(name, config.at(name, default: none))
   }
   (values: values, rules: rules, settings: settings, scope: scope)
 }

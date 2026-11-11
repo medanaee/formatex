@@ -91,6 +91,62 @@
     progress: (attrs, body) => progress-block(attrs, body),
 )
 
+#let progress-html = (
+  progress: (attrs, body) => {
+  let style = flag-attr(attrs, "style", "bar", progress-styles, "progress")
+  let max-value = chart-number(attrs.at("max", default: if style == "bar" { "100" } else { "5" }), "max", attrs: attrs)
+  assert(max-value != none and max-value > 0, message: at-of(attrs) + "<progress> max must be a number above zero")
+  let show-values = flag-attr(attrs, "values", "true", ("true", "false"), "progress") == "true"
+  let found = find-first(body, list)
+  let rows = if found != none {
+    found.children.map(item => {
+      let s = plain-text(item.body).trim()
+      let m = s.match(regex("^(.*)[:：]\s*([^:：]+)$"))
+      assert(m != none, message: at-of(attrs) + "<progress> list items must look like \"label: value\", got " + repr(s))
+      (label: m.captures.first().trim(), value: chart-number(m.captures.last(), repr(s), attrs: attrs))
+    })
+  } else {
+    assert("value" in attrs, message: at-of(attrs) + "<progress> needs value=\"...\" or a list of \"label: value\" lines")
+    let label-text = plain-text(body).trim()
+    ((label: if label-text == "" { none } else { body }, value: chart-number(attrs.value, "value", attrs: attrs)),)
+  }
+  for row in rows {
+    assert(row.value != none and row.value >= 0, message: at-of(attrs) + "<progress> values must be numbers of zero or more")
+  }
+    context {
+      let d = resolve-dir(attrs.at("dir", default: "auto"), rows.map(row => if row.label == none { [] } else { row.label }).join())
+      let r = d == rtl
+      let hue = if "color" in attrs { css-color(pick-hue(attrs.color, "progress", theme.accent, attrs: attrs)) } else { "var(--accent)" }
+      html.elem("div", attrs: (class: "fx-progress", dir: if r { "rtl" } else { "ltr" }, style: "--progress-ink: " + hue), {
+        for row in rows {
+          html.elem("div", attrs: (class: "fx-progress-row"), {
+            if row.label != none { html.elem("span", attrs: (class: "fx-progress-label"), row.label) }
+            html.elem("div", attrs: (class: "fx-progress-indicator", role: "meter", "aria-valuemin": "0", "aria-valuemax": str(max-value), "aria-valuenow": str(row.value)), {
+              if style == "bar" {
+                html.elem("div", attrs: (class: "fx-progress-track"), html.elem("div", attrs: (class: "fx-progress-fill", style: "width: " + str(calc.clamp(row.value / max-value, 0, 1) * 100) + "%")))
+              } else {
+                html.elem("div", attrs: (class: "fx-rating"), {
+                  for i in range(int(calc.ceil(max-value))) {
+                    html.elem("span", attrs: (class: "fx-rating-cell fx-rating-" + style, style: "--part: " + str(calc.clamp(row.value - i, 0, 1) * 100) + "%"), {
+                      if style == "stars" { html.elem("span", "★"); html.elem("span", attrs: (class: "fx-rating-filled"), "★") } else { html.elem("span", attrs: (class: "fx-rating-filled"), "") }
+                    })
+                  }
+                })
+              }
+            })
+            if show-values { html.elem("span", attrs: (class: "fx-progress-value"), if style == "bar" and max-value == 100 { chart-label(row.value, "%", r) } else if r [#chart-label(row.value, none, r) از #chart-label(max-value, none, r)] else [#chart-label(row.value, none, r)/#chart-label(max-value, none, r)]) }
+          })
+        }
+      })
+    }
+  },
+)
+#let progress-css = `````css
+.fx-progress { display: grid; gap: .55em; margin-block: .75em; } .fx-progress-row { display: flex; align-items: center; gap: .7em; } .fx-progress-label { flex: 0 1 24%; min-width: 0; } .fx-progress-indicator { flex: 1; min-width: 0; } .fx-progress-value { font-size: .85em; color: var(--muted); white-space: nowrap; }
+.fx-progress-track { height: .55em; background: var(--code-bg); border: 1px solid var(--code-stroke); border-radius: var(--r-badge); overflow: hidden; } .fx-progress-fill { height: 100%; background: var(--progress-ink); }
+.fx-rating { display: flex; gap: .2em; flex-wrap: wrap; } .fx-rating-cell { position: relative; display: inline-block; color: var(--rule); line-height: 1; } .fx-rating-filled { position: absolute; inset-inline-start: 0; top: 0; width: var(--part); overflow: hidden; color: var(--progress-ink); } .fx-rating-dots { width: .8em; height: .8em; border: 1px solid var(--rule); border-radius: var(--r-badge); overflow: hidden; } .fx-rating-dots .fx-rating-filled { height: 100%; background: var(--progress-ink); }
+`````.text
+
 #let progress-schema = (
   "progress": (
     kind: "block",

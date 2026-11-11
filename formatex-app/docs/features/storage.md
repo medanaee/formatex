@@ -44,6 +44,10 @@ A project is in the app's storage (`$APPDATA/documents/<id>/`, the default) or i
 
 Storage is identical on phone, tablet and desktop. Android keeps the database in the app's private storage; keep large exports as files, not rows.
 
+## Hidden project files
+
+The filesystem plugin uses `plugins.fs.requireLiteralLeadingDot = false` in `tauri.conf.json`, so the existing project and font scopes also match hidden files and folders on Unix platforms, including Android's `.cache` and `.formatex`. This changes glob matching inside the allowed scopes; it does not grant access outside them. Without it, listing a project after the compiler creates `.cache` can fail with `forbidden path` on Android.
+
 ## Known limits
 
 - The web backend is localStorage (a few MB). Replace with SQLite-WASM on OPFS before the web release.

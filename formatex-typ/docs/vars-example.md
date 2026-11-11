@@ -1,7 +1,5 @@
 ---
-cover:
-  title: "{{ course }}: {{ exam.title }}"
-  author: "Dr. Rezaei"
+author: "Dr. Rezaei"
 vars:
   course: "Calculus 1"
   year: 1405
@@ -16,6 +14,8 @@ var-types:
   width: length
   exam: json
 ---
+
+<cover title="{{ course }}: {{ exam.title }}" author="{{ author }}"></cover>
 
 # {{ course }}, term {{ year }}
 

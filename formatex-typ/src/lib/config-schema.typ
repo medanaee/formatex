@@ -182,6 +182,7 @@
     "html": (
       doc: d("The HTML output (the live HTML preview and the Export HTML dialog start from these; the dialog can change them for one export).", "خروجی HTML (پیش‌نمایش زندهٔ HTML و پنجرهٔ «خروجی HTML» از این‌ها شروع می‌کنند؛ پنجره می‌تواند برای یک خروجی تغییرشان دهد)."),
       attrs: (
+        "math": (type: "enum", values: ("native", "katex"), default: "native", doc: d("Math renderer for HTML.", "رندرکنندهٔ فرمول در HTML.")),
         "toolbar": (type: "bool", default: "true", doc: d("A slim toolbar: zoom, theme and feel, changed by the reader.", "نوار ابزار باریک: بزرگ‌نمایی، تم و حال‌وهوا، به انتخاب خواننده.")),
         "progress": (type: "bool", default: "true", doc: d("A reading-progress line at the top and a percent in the toolbar.", "خط نشانگر خواندن بالای صفحه و درصد آن در نوار ابزار.")),
         "outline": (type: "bool", default: "true", doc: d("An outline of the headings in a sidebar on the right (a drawer on a phone).", "فهرست سرفصل‌ها در یک نوار کناری سمت راست (در موبایل به شکل کشو).")),

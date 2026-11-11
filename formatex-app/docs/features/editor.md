@@ -29,10 +29,11 @@ Back · title (editable) · save state icon · [Edit / Preview on narrow screens
 
 ## Format bar and undo / redo
 
-One slim bar (`h-10`, scrolls sideways on a narrow screen) above the editor. For every text file: **Undo** and **Redo** (disabled when there is nothing to do; each file keeps its own history while it is open; Ctrl / ⌘ + Z and Y or Shift + Z work as usual). For Markdown also:
+One slim bar (`h-10`, scrolls sideways on a narrow screen) above the editor. Every text file has **Search**, **Undo** and **Redo** (history buttons are disabled when there is nothing to do; each file keeps its own history while open; Ctrl / ⌘ + Z and Y or Shift + Z work as usual). Markdown additionally has the formatting tools below:
 
 | Tool | Does | Shortcut |
 | :--- | :--- | :--- |
+| Search | Opens the translated find/replace panel; the first icon, available for all text file kinds and Raw Typst, including on a phone | Ctrl / ⌘ + F |
 | Bold, Italic, Strikethrough, Code | Wrap the selection (or the word at the cursor); applying it again takes the marks off | Ctrl / ⌘ + B, I |
 | Heading ▾ | Heading 1–4 or a plain paragraph on the current lines; another level replaces the first | |
 | Bulleted / numbered list, Quote | Toggle the prefix on every selected line | |
@@ -42,6 +43,26 @@ One slim bar (`h-10`, scrolls sideways on a narrow screen) above the editor. For
 | Insert tag | Types `<` and opens the tag suggestions | |
 
 The commands are pure functions on the editor view ([`format.ts`](../../src/lib/editor/format.ts), tested in `format.test.ts`). On a phone the bar sits above the editor in the Edit tab.
+
+## Touch selection and text clipboard
+
+On a touch device, holding the editor opens its context menu without selecting a word or showing selection handles first. **Select text** starts selection at the pressed word (or line when there is no word) after the menu closes. Android's native selection highlight and handles then extend the selection across wrapped rows and source lines; the touch editor does not use CodeMirror's drawn selection layer. The context-menu long-press handler stays out of the way while those handles are in use. Collapsing the selection ends this mode.
+
+The editor's and ordinary text fields' Cut / Copy / Paste actions use `@tauri-apps/plugin-clipboard-manager` in the native app, including Android, with only its read-text and write-text permissions ([ADR 0011](../decisions/0011-native-text-clipboard.md)). A browser uses `navigator.clipboard` as before. Image and file clipboard support remains separate from this plain-text path.
+
+### Phone
+
+Hold to open the menu, choose **Select text**, then drag the native handles to select multiple lines.
+
+The main editor uses [`touchSelection.ts`](../../src/lib/editor/touchSelection.ts) to gate native range selection and track its lifetime; the context menu applies Select text after its modal focus scope closes. Other embedded code editors keep ordinary native touch selection.
+
+### Tablet
+
+The same touch interaction applies when the primary pointer is coarse. A mouse uses the desktop interaction.
+
+### Desktop
+
+Mouse selection and CodeMirror's drawn selection layer are unchanged; the context menu also uses the native text clipboard inside Tauri.
 
 ## File tree: selection, drag and drop, clipboard
 
@@ -81,7 +102,7 @@ The engine reads `vars` (values) and `var-types` (rules) from the front matter o
 
 - **Colors.** [`variableMarks.ts`](../../src/lib/editor/variableMarks.ts), from the pure scanner `variableSyntax.ts` (a `{{ }}` may take several lines and hold `[ ... ]` texts of Markdown with `{{ }}` of their own), colors a printed name (`--syntax-var`, teal), code (`--syntax-cond`, magenta; the Markdown inside its brackets keeps the colors of Markdown) and the values of the page `PAGE`, `PAGES`, `SECTION`, `SECTION_NUMBER` (`--syntax-page`, amber). Inside an attribute value they also get a soft background, and code an outline, so a conditional property shows in a long tag. Code, math, comments and `\{{` are skipped (`maskText`).
 - **Folding.** A `{{` that closes on a later line folds up to the line of its `}}` (`expressionFold`, with the tag folding).
-- **Autocomplete.** In the code of a `{{ }}` (over several lines; not inside a `[ ]` text, where tags complete as usual): the variables of the document (`variables.ts` reads `vars` and `var-types`), the cover keys, the values of the page, every setting as `setting.theme` / `setting.chat.frame` (from the settings schema), and the keywords; after `==` / `!=` the values the variable lists in `var-types`, quoted.
+- **Autocomplete.** In the code of a `{{ }}` (over several lines; not inside a `[ ]` text, where tags complete as usual): the variables of the document (`variables.ts` reads `vars` and `var-types`), the top-level readonly metadata (with no cover fallback), the values of the page, every setting as `setting.theme` / `setting.chat.frame` (from the settings schema), and the keywords; after `==` / `!=` the values the variable lists in `var-types`, quoted.
 - **Settings screen.** A *Variables* section beside *Components* (`VariablesSection.tsx`, config.toml and front matter): the value of each variable with a control of its kind (menu for a list, switch, number, data file, text), a popover for its rule (type, values it may have, range of a number) that writes `var-types`, add and remove. A value that is more than one line (a list, a table) is shown and not rewritten.
 - **Tag popover.** Every attribute has an `fx` button: it turns the fixed value into `{{ if var { 'value' } else { 'value' } }}` (the first variable of the document) shown in the code color, and back to the first value.
 
@@ -106,6 +127,20 @@ In the value of a `tailwind="..."` (on a tag, or in the `{...}` of a span) the e
 
 View menu (zoom in, zoom out, reset) and Ctrl + plus / minus / 0, or Ctrl + wheel, in the editor: 50 to 300 %, saved in the settings (`editorZoom`). The theme multiplies the editor's font size by `--editor-zoom` (set on the editor's element, `editorZoom.ts`); the keys are read by their place on the keyboard (`event.code`), so a Persian layout works. The preview has its own zoom.
 
+## Find and replace
+
+The first format-bar icon and Ctrl / ⌘ + F open the same custom [`EditorSearchPanel`](../../src/components/editor/EditorSearchPanel.tsx). It uses translated shadcn controls with touch-sized targets: find next/previous, case sensitivity, regular expressions, whole-word matching, and an optional replace row with Replace next / Replace all. Escape closes the panel. This is source search, available for Markdown, TOML, code and Raw Typst files.
+
+Phone, tablet and desktop share the panel and its commands; the icon makes it reachable without a hardware keyboard on a phone. Interface direction and labels follow the app language; the query text follows its own direction.
+
+The HTML viewer has its own **Find** magnifier when its toolbar is enabled, including on a phone. Ctrl / Cmd + F inside that viewer opens the same HTML panel. It searches rendered text literally and case-insensitively across DOM text nodes, with previous/next and a localized match count. Enter / Shift + Enter move next/previous and Escape closes it. It excludes script/style text and copy-button chrome, and refreshes matches after live `fx-content-updated` events. This viewer search has no replace operation; use the source panel to edit matches.
+
+## Minimap and sticky headings
+
+The source minimap (`minimap.ts`, geometry in `minimapGeometry.ts`) uses a fixed **2 px per source line** scale and draws only the visible miniature viewport on its canvas. A long document slides through that viewport instead of being compressed into the available height. It follows source scrolling; wheel scrolling, clicking a location and dragging the viewport band move the source editor.
+
+The sticky-heading top panel reserves the minimap width, so headings and top-panel controls do not cover the map. Tablet and desktop show the map; the phone layout leaves it out to keep the editor width. A dynamic CodeMirror compartment reconfigures the map when resizing crosses the phone breakpoint, without reopening the file. Search remains available on all three form factors. Browser checks on a 4500-line source at 1280/768 px reported no overlap; at 360 px the minimap was removed and source Find selected `Line 3333`. Real Android touch behavior remains unverified.
+
 ## Indent guides
 
 A thin vertical line stands behind every level of indentation, in every file (Markdown lists, TOML, Typst), as in VS Code (`indentGuides.ts`). A line that wraps gets them on its first row only (`1lh` high): the rows below start at the edge, so a guide there would cross the text. A level is the editor's indent unit (two spaces; a tab counts as the tab size). A blank line between two indented lines carries the lines on. Persian lines draw them from the right. They are line backgrounds in `ch`, so they need the editor's monospace font.
@@ -118,14 +153,14 @@ The engine merges the front matter of the document over `config.toml` (`merge-co
 
 The settings files have their own schema, defined **in the engine next to the option schema**: [`src/lib/config-schema.typ`](../../../src/lib/config-schema.typ) (the `formatex` repository, one folder up). It has the same entry shape as a tag's attributes (`type`, `values`, `default`, `doc: (en, fa)`) and is exported by `tools/schema.typ` as `config` in `engine/tags.json`, so it reaches the app through `npm run engine:sync` and, in the app, through `engine_schema` like every other schema. Nothing in the editor lists a setting by hand: add or change a key in that file and the suggestions follow.
 
-Two schemas come from it: `config` (config.toml: every document) and `front-matter` (one document, which can override anything in config.toml and also holds the header, footer, cover and bibliography). Keys that mean the same in both are written once.
+Two schemas come from it: `config` (config.toml: every document) and `front-matter` (one document, which can override anything in config.toml and also holds the header, footer and bibliography). Keys that mean the same in both are written once.
 
 | In | Typed | Suggested |
 | :--- | :--- | :--- |
 | `config.toml` | `[` | The tables: `font`, `paragraph`, `heading`, `table`, `list`, `chat`, `equation` |
 | `config.toml` | a line start | The keys of the current table (or the top-level keys before any table), minus those already written there |
 | `config.toml` | `key = ` | An enum's values (quoted for you, closing quote added only when missing), `true` / `false`, a suggested value or the default |
-| front matter | a line start | The settings and the blocks (`header:`, `footer:`, `cover:`, `bibliography:`, ...) at the top level; the keys of a block when indented under it, minus those already there |
+| front matter | a line start | The settings and the blocks (`header:`, `footer:`, `bibliography:`, ...) at the top level; the keys of a block when indented under it, minus those already there |
 | front matter | `key: ` | The values of that key, by its schema |
 
 It is silent in comments and outside the `---` block (the rest of the file uses the tag autocomplete). The logic is pure ([`configCompletion.ts`](../../src/lib/editor/configCompletion.ts), 18 tests) and the `config.toml` code editor uses it too.
@@ -147,8 +182,10 @@ Decision: [ADR 0008](../decisions/0008-source-to-preview-mapping.md). Logic: [`p
 
 ## Saving and compiling
 
+For a measured breakdown of compilation, SVG, HTML, fonts and scheduling on a large bilingual document, see [the 2026-11-10 performance report](../performance-2026-11-10.md). It distinguishes native backend time from unmeasured WebView/IPC/paint time.
+
 1. Typing updates the store at once; a **400 ms pause** writes the file (`ProjectFs.writeText`).
-2. After a save the project is compiled (`compile_project`). Compilations are serial and latest-wins: a change made while one runs triggers exactly one more.
+2. Paged preview compilation (`compile_project`) is requested independently of the 400 ms save delay. Compilations are serial and latest-wins: a change made while one runs triggers exactly one more. In HTML preview mode, edits build HTML instead of scheduling a hidden paged build; returning to pages requests a fresh paged compile.
 3. A successful build replaces the pages. A failed build **keeps the last good pages** (dimmed) and lists the errors.
 4. Export saves pending edits first, then `export_pdf`, then asks where to save (desktop and Android: native dialog; browser: download).
 
@@ -164,4 +201,33 @@ In a browser there is no compiler: the preview says so, and the files live in lo
 
 ## Export HTML (experiment)
 
-The toolbar's code-file icon and **File > Export HTML (experimental)** open a dialog (`HtmlExportDialog.tsx`) with the HTML-only settings: a **copy button on code blocks** and **fonts inside the file** (whole font files as base64; off, the page names the fonts and the reader's own are used). The choices are kept in the settings store (`htmlExport`). **Export** runs the Rust command `export_html` (`compile.rs`) and saves `<title>.html`; the page is written by the engine's `src/html/` and reflows with the width of the window. The same status as the PDF button shows (`exportStatus`). Phone / tablet / desktop: the dialog is a `ResponsiveDialog` (a bottom sheet on a phone).
+Text and structural components render as native HTML with the same attributes used for PDF: cover, title block, paragraphs, letters, file trees, exercise/answers, todos, layout, chat, comparison, diff, definitions and progress. Code has selectable syntax-colored rows, original line numbers for slices and highlighted lines, with a separate language/copy header. Charts, CeTZ, Lilaq and arbitrary Typst graphics intentionally retain Typst SVG rendering. Native structures use compact spacing and adapt to the viewport; visual checks of the expanded coverage remain distinct from successful CLI compilation.
+
+Math references use their own equation metadata and counter values. Standard Markdown and inline tag footnotes retain their full content in native numbered references and one endnotes section. The [2026-11-11 HTML report](../html-export-improvements-2026-11-11.md) records font compatibility, package sizes and the current browser/automated verification checkpoint.
+
+The dialog's KaTeX choice maps to `[html] math = "katex"`; the default `"native"` retains Typst's HTML math. KaTeX includes its compressed renderer, stylesheet and WOFF2 fonts only when the document contains its math markers. The file works offline without a CDN. The iframe bridge waits for the asynchronous math renderer before reporting paint, both on initial load and on content updates. Charts and drawings may remain Typst SVG output; native HTML text and structural components do not require changing that graphics path.
+
+The HTML preview and exported file use the app's current language for the viewer's toolbar, menus, outline controls and code-copy buttons. `exportHtml` passes `uiLang` to Rust, which supplies the engine's `html-ui-lang` build input. The document's language and direction are independent of these controls.
+
+The toolbar's code-file icon and **File > Export HTML (experimental)** open a dialog (`HtmlExportDialog.tsx`) with the HTML-only settings: a **copy button on code blocks** and **fonts inside the file** (subset to the glyphs the page needs; off, the page names the fonts and the reader's own are used). The choices are kept in the settings store (`htmlExport`). **Export** runs the Rust command `export_html` (`compile.rs`) and saves `<title>.html`; the page is written by the engine's `src/html/` and reflows with the width of the window. The same status as the PDF button shows (`exportStatus`). Phone / tablet / desktop: the dialog is a `ResponsiveDialog` (a bottom sheet on a phone).
+
+### Live HTML preview
+
+The globe button opens the live HTML view. It uses the same document and `[html]` controls, but has a separate preview pipeline:
+
+- `previewHtml()` invokes the native `preview_html` command; `render_preview_html` returns HTML, timings, a `fontKey` and optional `fontCss`. `compile.rs::kept_world_for` retains an HTML `ProjectWorld` in a separate slot from the paged world, refreshing changed files and rebuilding it when its inputs, main file, component generation or fonts change.
+- [`latestTaskQueue.ts`](../../src/lib/editor/latestTaskQueue.ts) allows one preview request in flight, including across preview remounts. Further changes replace the pending snapshot, so the next build uses the latest text. Its debounce adapts between 120 and 250 ms rather than waiting a fixed 700 ms after every edit.
+- `html_export.rs::preview_fonts` caches full WOFF font faces by a weak `FontStore` identity, required family list and italic need. A font import/reload supplies a new store and invalidates the old entries. The response omits CSS when the frontend already knows its key. Preview therefore reuses complete faces rather than subsetting the same fonts on every edit; standalone Export retains subset embedding.
+- [`htmlFrame.ts`](../../src/lib/editor/htmlFrame.ts) splits ordinary document content from its viewer shell (`splitHtml`), builds the first frame (`initialFrame`) and supplies the sandbox bridge (`frameBridge`). The sandboxed iframe stays mounted. A validated parent/frame `postMessage` handshake delivers `fxPatch` content and optional font CSS; the source window and a per-document channel token prevent stale frames from applying messages after a reload. Ordinary edits replace only the main document content, preserving scroll, viewer controls and the font-style node. `fx-content-updated` refreshes the outline and code-copy controls.
+- A changed viewer signature (theme, scripts, options or UI language) reloads the shell so its viewer initializes consistently. Custom scripts inside the main document and Raw Typst output without `main.fx-doc` also fall back to a full reload rather than patching interactive content without initialization.
+- HTML mode avoids an additional hidden paged compile. Returning to paged preview compiles the latest text rather than showing it as current without rebuilding.
+
+Phone, tablet and desktop use this same pipeline; their surrounding pane layouts remain as described above. Six HTML browser cases passed in English/paper and Persian/dracula at phone/tablet/desktop target widths: patches retained the toolbar, font node, scroll and zoom, refreshed copy/outline/Find controls, and ignored wrong-token messages. Browser patch/paint is separate from native compilation and Tauri IPC; see [the improvement report](../performance-improvements-2026-11-10.md). Real Android hardware and full Tauri end-to-end measurements remain pending.
+
+## Standalone cover component
+
+A cover is a `<cover ...></cover>` block in the Markdown body, so the editor inserts it from the tag palette/autocomplete at the desired position and its attributes are edited through the component schema. There is no cover configuration form or front-matter/CLI cover switch. This is a breaking migration: move fields from old `cover:` / `[cover]` settings to tag attributes; old cover settings have no effect. Frame defaults to `false`; use `frame="true"` explicitly when migrating a framed cover.
+
+The tag accepts logo, institution, faculty, department, type, title, subtitle, author, supervisor, advisor, date, frame and direction, plus optional Markdown information in its body. PDF makes one standalone unnumbered, header/footer-free single-column page and resets the following body page to 1. Native HTML uses the effective page height with internal scrolling and responsive width. Automatic direction respects a surrounding `<dir>`. Top-level readonly metadata stays separate: attributes must be explicit or use declared `{{ }}` values, and the tag does not provide a metadata fallback.
+
+Phone, tablet and desktop use the same tag/schema and retain their existing editor layouts. Cover PDF/HTML rendering and migration checks are pending for this update.

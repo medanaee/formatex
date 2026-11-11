@@ -55,7 +55,7 @@ A project is a folder of real files:
 
 **Every path in a document is relative to the project folder** (\`images/fig1.png\`, \`chapters/intro.md\`). URLs and absolute paths do not work for files. The app compiles as the user types and shows each error with its file and line; there is nothing for you to build.
 
-Settings live in two places. \`config.toml\` holds the defaults of every document in the project; the front matter at the top of one Markdown file overrides them for that document only, and also holds the page header, footer, cover and bibliography. Front matter wins. Sections (\`heading\`, \`font\`, \`paragraph\`, \`list\`, \`table\`, \`equation\`, \`chat\`) merge key by key.
+Settings live in two places. \`config.toml\` holds the defaults of every document in the project; the front matter at the top of one Markdown file overrides them for that document only, and also holds the page header, footer and bibliography. The cover is a body block \`<cover>\`, with explicit attributes or declared \`{{ }}\` values, not a front-matter/config setting. Its frame defaults to false; remove the tag to omit it. Readonly metadata is top-level only, with no cover fallback. Front matter wins. Sections (\`heading\`, \`font\`, \`paragraph\`, \`list\`, \`table\`, \`equation\`, \`chat\`) merge key by key.
 
 ## How to work
 
@@ -93,7 +93,7 @@ Text ... (see <ref to="sec-method"></ref>)
 <bibliography></bibliography>
 \`\`\`
 
-The front matter must be the very first thing in the file, between two \`---\` lines; leave it out when the document needs no header, footer, cover or bibliography. Sections are \`##\`; \`#\` is not used for sections (the title goes in \`<docheader>\` or the cover).
+The front matter must be the very first thing in the file, between two \`---\` lines; leave it out when the document needs no header, footer or bibliography. Sections are \`##\`; \`#\` is not used for sections (the title goes in \`<docheader>\` or the cover).
 
 ## Rules that matter most
 
@@ -145,7 +145,7 @@ const INTRO_FA = `شما **محتوای** یک سند فرمتکس را می‌�
 
 **هر مسیر در سند نسبت به پوشهٔ پروژه است** (\`images/fig1.png\`، \`chapters/intro.md\`). نشانی اینترنتی و مسیر مطلق برای فایل‌ها کار نمی‌کند. برنامه همزمان با تایپ می‌سازد و هر خطا را با فایل و شمارهٔ خط نشان می‌دهد؛ چیزی برای ساختن به عهدهٔ شما نیست.
 
-تنظیم‌ها دو جا هستند. \`config.toml\` پیش‌فرض همهٔ سندهای پروژه را دارد؛ front matter بالای یک فایل Markdown آن‌ها را فقط برای همان سند عوض می‌کند و سربرگ، پابرگ، جلد و فهرست منابع را هم نگه می‌دارد. front matter مقدم است. بخش‌ها (\`heading\`، \`font\`، \`paragraph\`، \`list\`، \`table\`، \`equation\`، \`chat\`) کلید به کلید ادغام می‌شوند.
+تنظیم‌ها دو جا هستند. \`config.toml\` پیش‌فرض همهٔ سندهای پروژه را دارد؛ front matter بالای یک فایل Markdown آن‌ها را فقط برای همان سند عوض می‌کند و سربرگ، پابرگ و فهرست منابع را هم نگه می‌دارد. جلد یک بلوک \`<cover>\` در متن با ویژگی‌های صریح یا مقدارهای تعریف‌شدهٔ \`{{ }}\` است، نه تنظیم front matter/config. قاب پیش‌فرض خاموش است؛ برای حذف جلد خود تگ را بردارید. فرادادهٔ فقط‌خواندنی فقط از سطح بالا می‌آید و به جلد برنمی‌گردد. front matter مقدم است. بخش‌ها (\`heading\`، \`font\`، \`paragraph\`، \`list\`، \`table\`، \`equation\`، \`chat\`) کلید به کلید ادغام می‌شوند.
 
 ## شیوهٔ کار
 
@@ -185,7 +185,7 @@ bibliography:
 <bibliography></bibliography>
 \`\`\`
 
-front matter باید اولین چیز فایل باشد، میان دو خط \`---\`؛ اگر سند سربرگ، پابرگ، جلد یا فهرست منابع نمی‌خواهد حذفش کنید. بخش‌ها با \`##\` نوشته می‌شوند؛ \`#\` برای بخش به کار نمی‌رود (عنوان در \`<docheader>\` یا جلد می‌آید).
+front matter باید اولین چیز فایل باشد، میان دو خط \`---\`؛ اگر سند سربرگ، پابرگ یا فهرست منابع نمی‌خواهد حذفش کنید. بخش‌ها با \`##\` نوشته می‌شوند؛ \`#\` برای بخش به کار نمی‌رود (عنوان در \`<docheader>\` یا جلد می‌آید).
 
 ## قاعده‌های مهم
 

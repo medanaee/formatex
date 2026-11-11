@@ -5,13 +5,25 @@ Settings live in two places:
 | Where | Scope | Holds |
 |-------|-------|-------|
 | `config.toml` (project folder) | Every document in the project | Which file is compiled, theme, feel, page, margins, scale, text direction, columns, fonts, paragraphs, headings, list, table, equation and chat defaults |
-| Front matter (YAML at the top of a `.md`) | That document only | Page header, footer, cover page, bibliography, and overrides of any `config.toml` setting except `source` |
+| Front matter (YAML at the top of a `.md`) | That document only | Page header, footer, bibliography, and overrides of any `config.toml` setting except `source` |
 
 Front matter wins over `config.toml`. Sections (`heading`, `font`, `paragraph`, `list`, `table`, `equation`, `chat`) are merged key by key: `font: {latin: Lexend}` changes only the Latin font.
 
-Contents: [config.toml](#configtoml) · [Front matter basics](#front-matter-basics) · [Header](#header) · [Footer](#footer) · [Cover](#cover) · [Bibliography](#bibliography) · [Per-heading overrides](#per-heading-overrides) · [Choosing settings](#choosing-settings)
+Contents: [HTML output language](#html-output-language) · [config.toml](#configtoml) · [Front matter basics](#front-matter-basics) · [Header](#header) · [Footer](#footer) · [Cover migration](#cover-migration) · [Bibliography](#bibliography) · [Per-heading overrides](#per-heading-overrides) · [Choosing settings](#choosing-settings)
 
 ---
+
+## HTML output language
+
+HTML math is selected with `[html] math = "native"` (default) or `"katex"`; `--input html-math=katex` overrides it for one build. KaTeX's renderer, CSS and WOFF2 fonts are embedded as a compressed offline bundle only when the document contains KaTeX math markers. No CDN or other network resource is needed. Rendering is asynchronous on initial load and after live content updates. The app's Export HTML dialog exposes the same choice.
+
+For experimental HTML output (`--format html --features html --input target=html`), `--input html-ui-lang=fa` or `--input html-ui-lang=en` sets the labels and direction of the viewer's toolbar, menus, outline controls and code-copy buttons independently of the document. With no input, these controls follow the document's language. The app passes its current interface language for HTML preview and export. This is a build input, not a `config.toml` or front-matter key; changing it does not change the document's own language or direction.
+
+The app's live HTML preview reuses compilation and font data and updates the existing page when possible. This does not introduce a setting or a different document format: use the same Markdown, tags, front matter and `[html]` options for preview and export. The standalone Export command keeps font-subset embedding when `embed-fonts` is enabled.
+
+Native HTML blocks use the merged document `dir`: `auto` retains per-block detection, while `rtl` / `ltr` stay forced across main content, lists, tables, quotes and alerts. `[paragraph]` justification and line/letter/word spacing, table `head-align` / `body-align`, and heading look settings apply to HTML as well. Heading `max-level` is relative to the top outlined heading. Global `[list]` settings and local `{...}` list options share their numbering/marker behavior between PDF and HTML; unordered markers are text, while `guides` remain PDF-only drawings.
+
+`[html] toolbar = true` also provides the viewer's Find magnifier, reachable on a phone or with Ctrl / Cmd + F. It searches rendered document text literally and case-insensitively across text nodes, with previous/next and a localized count; Enter / Shift + Enter move between matches and Escape closes it. Script/style text and code-copy controls are excluded, and live content updates refresh the results. It does not replace source-editor find/replace. Native HTML word spacing uses percentages where supported, with an `em` fallback for older browsers.
 
 ## config.toml
 
@@ -112,7 +124,7 @@ width = "80%"          # widest bubble: % of the line or a length
 | `components` | list of paths, or paths separated by commas | none | Typst files of the project that define tags of its own (any number of tags per file, any file name, anywhere in the project). In the front matter they are added to those of `config.toml`. Only the `.typ` files named here are loaded. |
 | `margin` | `narrow`, `normal`, `wide` | `normal` | Page margins (scale with the page). Ignored on phone pages. |
 | `scale` | number (percent) | `100` | Scales text, spacing, corners and rules together. |
-| `dir` | `auto`, `rtl`, `ltr` | `auto` | Text direction. `auto`: each block follows its own first letter. `rtl` / `ltr`: everything is forced to that direction, English or Persian alike: paragraphs, headings (Persian digits in `rtl`), lists, tables (column order flips) and cells, quotes, captions and their label («شکل» / "Figure"), alerts, boxes, steps, badges, toc/lof/lot entries, the bibliography, and the header, footer and cover when their own `dir` is `auto`; also the column order when `column-dir = "auto"`. Code stays LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keep their own direction. Usually set in front matter (`dir: rtl`); for one part of a document use `<dir>` (components.md). |
+| `dir` | `auto`, `rtl`, `ltr` | `auto` | Text direction. `auto`: each block follows its own first letter. `rtl` / `ltr`: everything is forced to that direction, English or Persian alike: paragraphs, headings (Persian digits in `rtl`), lists, tables (column order flips) and cells, quotes, captions and their label («شکل» / "Figure"), alerts, boxes, steps, badges, toc/lof/lot entries, the bibliography, and the header and footer when their own `dir` is `auto` (the `<cover>` tag resolves in its surrounding direction context); also the column order when `column-dir = "auto"`. Code stays LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keep their own direction. Usually set in front matter (`dir: rtl`); for one part of a document use `<dir>` (components.md). |
 | `columns` | integer ≥ 1 | `1` | Text columns. The cover is always one column; `<docheader>` spans all columns; a phone page forces 1. |
 | `column-dir` | `rtl`, `ltr`, `auto` | `auto` | Column order. Use `rtl` for Persian documents and `ltr` for English ones (set it in the front matter if the project default doesn't match). |
 | `[font] latin` / `persian` / `code` | font name | from the feel | Fonts. Latin is tried first for each character, then Persian. |
@@ -142,7 +154,9 @@ width = "80%"          # widest bubble: % of the line or a length
 | `[chat] width` | percent or length | `"80%"` | Widest a bubble gets. |
 | `[chat] title` / `dir` | as on `<chat>` | none / `auto` | Accepted too, but usually set per chat. Every `[chat]` key is overridden by the same attribute on a `<chat>` tag (components.md). |
 
-Fonts per feel (used unless `[font]` sets them): `formal` New Computer Modern + XB Niloofar; `standard` Inter + IRANSans; `friendly` Lexend + Pelak. Code: Anonymous Pro. Only name fonts the user has installed.
+Fonts per feel (used unless `[font]` sets them): `formal` New Computer Modern + XB Niloofar; `standard` Inter + IRANSans; `friendly` Lexend + Pelak. Code: Anonymous Pro. Only name fonts the user has installed. In the app's HTML embedding, an installed exact family such as `CMU Serif` wins over alias fallbacks. If an alias is needed because the family is missing, the fallback is registered under the requested CSS family name; this does not change the formal feel's default.
+
+HTML selects regular/bold faces by nearest weight per required style, including real CMU Serif regular faces at weight 500. Stock NewCM uses browser-compatible quadratic-outline copies only for HTML embedding, preserving metrics and shaping; the original PDF font selection remains unchanged. This requires no different authoring syntax or font setting.
 
 ---
 
@@ -168,7 +182,6 @@ chat:
 
 header: ...
 footer: ...
-cover: ...
 bibliography: ...
 ---
 ```
@@ -177,7 +190,7 @@ bibliography: ...
 - **Quote** any text containing `{`, `: ` or ` #`: `end: "صفحه {page} از {pages}"`. Unquoted, `{` starts a YAML table and `#` starts a comment.
 - Lists: `["الف", "ب"]` or one `- item` per line.
 - An empty value (`color:`) means the default.
-- A document has a header only if it has `header:`, and a cover only if it has `cover:`. `enabled: false` inside turns them off again while keeping the settings.
+- A document has a header only if it has `header:`; `enabled: false` inside turns it off while keeping the settings. A cover is a `<cover>` block in the body.
 - Booleans are `true` / `false`.
 
 ## Header
@@ -208,8 +221,8 @@ Placeholders in `start`, `center`, `end`:
 
 | Placeholder | Value |
 |-------------|-------|
-| `{page}` | Current page number (the cover is not counted) |
-| `{pages}` | Total pages |
+| `{page}` | Current page counter; the body page immediately after a `<cover>` starts again at 1 |
+| `{pages}` | Final page counter value; with a cover at the beginning, this is the number of body pages |
 | `{section}` | Current top-level section title |
 | `{section-number}` | Its number (empty when numbering is off) |
 
@@ -237,30 +250,11 @@ footer:
 - `start` and `end` sit at the sides only when both are set; otherwise everything is centered.
 - The cover never gets a footer.
 
-## Cover
+## Cover migration
 
-```yaml
-cover:
-  # logo: images/logo.png
-  institution: "دانشگاه نمونه"
-  faculty: "دانشکدهٔ مهندسی کامپیوتر"
-  department: ""
-  type: "پایان‌نامهٔ کارشناسی ارشد"   # document kind line
-  title: "عنوان پژوهش"
-  subtitle: ""
-  author: "نام نویسنده"               # or a list: ["A", "B"]
-  supervisor: "دکتر الف"              # or a list
-  advisor: ""                          # or a list
-  date: "مهر ۱۴۰۵"
-  frame: true                          # border around the page
-  dir: auto                            # rtl | ltr | auto (the document's dir, else from title and institution)
-  # enabled: false
-```
+A cover is body content, not a config/front-matter setting. Place `<cover ...></cover>` where its page belongs; the [component reference](components.md#cover-standalone-cover-page) lists every attribute and the optional Markdown body. The default is `frame="false"`, and attributes are explicit or use declared `{{ }}` values; top-level readonly metadata does not automatically fill the tag.
 
-- The cover is a separate first page with no header or page number; page 1 is the page after it.
-- Empty fields are left out.
-- Field labels follow the cover's language: «نگارش / استاد راهنما / استاد مشاور» or "Author / Supervisor / Advisor".
-- Use a cover for theses and formal reports. For papers and notes use `<docheader>` in the body instead.
+**Breaking change:** remove old `cover:` / `[cover]` settings and move their fields to the tag. Old cover configuration and CLI switches have no effect; remove the tag to omit the cover. A PDF cover is one unnumbered, header/footer-free, single-column page and resets the following body page to 1. Native HTML uses the effective page height with internal scrolling for extra information. `<dir>` around the tag affects its automatic direction.
 
 ## Bibliography
 
@@ -297,7 +291,7 @@ Any heading can override `numbering`, `number-prefix`, `number-suffix`, `toc`, `
 
 | Document | Suggested settings |
 |----------|--------------------|
-| Persian thesis | `feel = "formal"`, `theme = "paper"`, heading numbering on, `[list] numbers = "fa"` (or `abjad` for item lists), cover in front matter, `<toc break="true">`, `<lof>`, `<lot break="after">`, `[paragraph] justify = true` |
+| Persian thesis | `feel = "formal"`, `theme = "paper"`, heading numbering on, `[list] numbers = "fa"` (or `abjad` for item lists), `<cover>` before the contents, `<toc break="true">`, `<lof>`, `<lot break="after">`, `[paragraph] justify = true` |
 | Conference-style paper | `feel = "formal"`, `columns: 2`, `column-dir = "rtl"` (Persian), `<docheader>` instead of a cover, `span=all` on wide tables and `span="all"` on wide `<fig>` / `<grid>` / `<code>`, `scale` 85–95 |
 | Technical report / tutorial | `feel = "standard"`, header `style: band` or `line`, alerts and steps where useful |
 | Reading on a phone | `page = "mobile-20-9"` |

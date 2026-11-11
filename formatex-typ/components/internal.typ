@@ -7,6 +7,8 @@
     "include": (attrs, body) => panic("<include src=\"" + attrs.at("src", default: "") + "\"> must stand alone on its own line, with blank lines around it"),
 )
 
+#let internal-html = (listpages: (attrs, body) => html.elem("div", attrs: (class: "fx-listpages"), body))
+
 #let internal-schema = (
   "listpages": (
     kind: "block",

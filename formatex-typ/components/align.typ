@@ -17,6 +17,20 @@
     },
 )
 
+#let align-html = (
+  align: (attrs, body) => {
+    let bare = attrs.keys().filter(k => k in align-names)
+    let to = attrs.at("to", default: if bare.len() > 0 { bare.first() } else { "center" })
+    assert(to in align-names, message: at-of(attrs) + "<align> unknown alignment")
+    align-stack.update(s => s + (to,))
+    html.elem("div", attrs: (class: "fx-align", style: "text-align: " + to + ";"), body)
+    align-stack.update(s => s.slice(0, -1))
+  },
+)
+#let align-css = `````css
+.fx-align { margin: .7em 0; } .fx-doc .fx-align p { text-align: inherit; }
+`````.text
+
 #let align-schema = (
   "align": (
     kind: "block",

@@ -1,3 +1,4 @@
+import i18n from "@/i18n"
 import { isTauri } from "@/lib/platform"
 import type { ProjectKind } from "@/lib/db/types"
 import type { HtmlExportOptions } from "@/lib/projects/htmlConfig"
@@ -161,13 +162,27 @@ export async function exportHtml(
   /** The file to write, chosen by the user (desktop): the file is then written by the native side and no bytes come back. */
   path?: string,
 ): Promise<Uint8Array> {
-  return new Uint8Array(await invoke<ArrayBuffer>("export_html", { projectId, main, overrides, kind, options, path }))
+  // The page's own words (toolbar, menus) are in the language of the app, not of the document
+  const uiLang = i18n.language?.startsWith("fa") ? "fa" : "en"
+  return new Uint8Array(await invoke<ArrayBuffer>("export_html", { projectId, main, overrides, kind, options: { ...options, uiLang, math: options.katexMath ? 'katex' : 'native' }, path }))
 }
 
 export interface FontFamily {
   family: string
   faces: number
   origin: "imported" | "system" | "embedded"
+}
+
+export interface HtmlPreviewOutput {
+  html: string
+  fontKey: string
+  fontCss: string | null
+  timings: { world_ms: number; compile_ms: number; serialize_ms: number; fonts_ms: number; total_ms: number; bytes: number }
+}
+
+export function previewHtml(projectId: string, main: string, options: HtmlExportOptions, overrides: Record<string, string>, kind: ProjectKind, knownFonts: string): Promise<HtmlPreviewOutput> {
+  const uiLang = i18n.language?.startsWith("fa") ? "fa" : "en"
+  return invoke<HtmlPreviewOutput>("preview_html", { projectId, main, overrides, kind, options: { ...options, uiLang, math: options.katexMath ? 'katex' : 'native' }, knownFonts })
 }
 
 export const listFonts = (): Promise<FontFamily[]> => invoke<FontFamily[]>("fonts_list", {})

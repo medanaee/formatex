@@ -1,4 +1,4 @@
-// The page: size, margins, columns, header, footer and cover page.
+// The page: size, margins, columns, header, footer and footer.
 #import "/src/core.typ": *
 
 // Page sizes by name, width by height. `desktop-*` are documents for print and screen; `mobile-*` are pages for reading on a phone
@@ -223,82 +223,4 @@
     align(center, (start-filled, center-filled, end-filled).filter(c => c != none).join(h(1.5em)))
   }
   if style == "line" { stack(spacing: 5pt * zoom, line(length: 100%, stroke: 0.5pt * zoom + theme.rule), row) } else { row }
-}
-
-#let cover-config = config.at("cover", default: (:))
-
-// Lists (e.g. two supervisors) are shown one per line; YAML numbers (`date: 1405`) as text.
-#let cover-value(v) = if type(v) == array { v.map(str).join(linebreak()) } else { str(v) }
-
-#let cover-page() = {
-  let c = cover-config
-  let field(key) = {
-    let v = c.at(key, default: "")
-    if v == "" or v == () { none } else { cover-value(v) }
-  }
-  let title = field("title")
-  let d = c.at("dir", default: "auto")
-  let dir = if d == "rtl" { rtl } else if d == "ltr" { ltr } else {
-    let detected = doc-text-dir(c.at("title", default: "") + " " + c.at("institution", default: ""))
-    if detected == none { ltr } else { detected }
-  }
-  let labels = if dir == rtl {
-    (author: "نگارش", supervisor: "استاد راهنما", advisor: "استاد مشاور")
-  } else {
-    (author: "Author", supervisor: "Supervisor", advisor: "Advisor")
-  }
-
-  let people = ()
-  for key in ("author", "supervisor", "advisor") {
-    let v = field(key)
-    if v != none {
-      people.push(text(fill: theme.muted, labels.at(key) + ":"))
-      people.push(text(weight: "bold", v))
-    }
-  }
-
-  let logo = c.at("logo", default: none)
-  let content = {
-    set text(dir: dir)
-    set align(center)
-    if logo != none {
-      image(rooted(logo), height: 3cm)
-      v(0.8em)
-    }
-    if field("institution") != none { text(size: 1.4em, weight: "bold", fill: theme.heading, field("institution")) }
-    if field("faculty") != none { linebreak(); text(size: 1.15em, field("faculty")) }
-    if field("department") != none { linebreak(); text(size: 1.05em, fill: theme.muted, field("department")) }
-    v(1fr)
-    if field("type") != none {
-      text(size: 1.15em, fill: theme.muted, field("type"))
-      v(0.8em)
-    }
-    if title != none { text(size: 2.2em, weight: "bold", fill: theme.heading, title) }
-    if field("subtitle") != none {
-      v(0.4em)
-      text(size: 1.3em, fill: theme.muted, field("subtitle"))
-    }
-    v(1fr)
-    if people.len() > 0 {
-      grid(
-        columns: 2,
-        column-gutter: 1em,
-        row-gutter: 0.9em,
-        align: (end, start),
-        ..people,
-      )
-    }
-    v(1fr)
-    if field("date") != none { text(size: 1.1em, field("date")) }
-  }
-
-  // The reset happens on the cover itself so the next page's header already sees page 1.
-  page(numbering: none, header: none, footer: none, columns: 1, {
-    counter(page).update(0)
-    if c.at("frame", default: false) {
-      block(width: 100%, height: 100%, stroke: 1.5pt * zoom + theme.rule, radius: feel.frame, inset: 1.2cm, content)
-    } else {
-      content
-    }
-  })
 }

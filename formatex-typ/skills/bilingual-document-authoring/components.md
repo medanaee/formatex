@@ -9,9 +9,19 @@ Every component is an HTML-like tag inside the Markdown. General rules (repeated
 5. Colors: a preset name or a hex string (see [Color presets](#color-presets)).
 6. Tags nest freely.
 
-Contents: [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-and-markdown-footnotes) · [Tables](#tables) · [Lists](#lists) · [Numbered equations](#numbered-equations) · [Heading ids](#heading-ids-and-options) · [docheader](#docheader-title-block) · [picHeader](#picheader-picture-header) · [toc / lof / lot / lol](#toc-lof-lot-lol-contents-and-lists) · [alert](#alert-callout) · [box](#box-container) · [div](#div-container-with-tailwind-style-classes) · [Color presets](#color-presets) · [img](#img-image) · [fig + caption](#fig--caption-numbered-figure) · [cetz](#cetz-drawing) · [typ](#typ-typst-code-or-a-typst-file) · [lilaq](#lilaq-data-plots) · [Mermaid diagrams](#mermaid-diagrams) · [tree](#tree-file-and-folder-tree) · [chart](#chart-data-chart) · [grid + item](#grid--item-columns) · [align](#align-alignment) · [dir](#dir-text-direction-of-a-part) · [cite + bibliography](#cite--bibliography-citations) · [ref](#ref-cross-reference) · [span / def](#marking-text-and-defining-terms-span-anchor-def) · [code](#code-code-listing) · [diff](#diff-code-and-text-comparison) · [a and links](#links-and-a) · [kbd + badge](#kbd--badge) · [steps + step](#steps--step-numbered-procedure) · [chat + user + ai](#chat--user--ai-ai-conversation) · [Theorem blocks](#theorem-blocks) · [include](#include-split-into-files)
+Contents: [cover](#cover-standalone-cover-page) · [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-and-markdown-footnotes) · [Tables](#tables) · [Lists](#lists) · [Numbered equations](#numbered-equations) · [Heading ids](#heading-ids-and-options) · [docheader](#docheader-title-block) · [picHeader](#picheader-picture-header) · [toc / lof / lot / lol](#toc-lof-lot-lol-contents-and-lists) · [alert](#alert-callout) · [box](#box-container) · [div](#div-container-with-tailwind-style-classes) · [Color presets](#color-presets) · [img](#img-image) · [fig + caption](#fig--caption-numbered-figure) · [cetz](#cetz-drawing) · [typ](#typ-typst-code-or-a-typst-file) · [lilaq](#lilaq-data-plots) · [Mermaid diagrams](#mermaid-diagrams) · [tree](#tree-file-and-folder-tree) · [chart](#chart-data-chart) · [grid + item](#grid--item-columns) · [align](#align-alignment) · [dir](#dir-text-direction-of-a-part) · [cite + bibliography](#cite--bibliography-citations) · [ref](#ref-cross-reference) · [span / def](#marking-text-and-defining-terms-span-anchor-def) · [code](#code-code-listing) · [diff](#diff-code-and-text-comparison) · [a and links](#links-and-a) · [kbd + badge](#kbd--badge) · [steps + step](#steps--step-numbered-procedure) · [chat + user + ai](#chat--user--ai-ai-conversation) · [Theorem blocks](#theorem-blocks) · [include](#include-split-into-files)
 
 ---
+
+## Native HTML behavior
+
+Text and structural components render as native HTML, including cover, docheader, paragraph, letter, tree, exercise/choices/answers, todos, chat, comparison, diff, grid, steps, definitions and progress. Counters, digits, lists, citations and bibliography remain native content too. The existing documented attributes are shared with PDF; there is no alternate HTML authoring syntax. Charts and drawings (`<chart>`, `<cetz>`, `<lilaq>`) retain their Typst SVG rendering; arbitrary graphics in `<typ>` may use a frame too.
+
+The same component and Markdown syntax is used for PDF and HTML. Native HTML wrappers for main content, lists, tables, quotes and alerts honor the merged document `dir`; automatic direction stays per block, while forced RTL/LTR remains forced. Paragraph justification and spacing, table `head-align` / `body-align`, and heading look settings also apply to HTML. Heading `max-level` counts from the top outlined heading.
+
+Global and local list options keep their numbering, prefixes/suffixes and markers in native HTML. Unordered markers are emitted as text instead of relying on browser-default bullets; `guides` (`line` / `tree`) are drawings for PDF and are not emitted around HTML lists. See [config.md](config.md#html-output-language).
+
+The HTML toolbar's Find magnifier searches rendered document text literally and case-insensitively, including matches spanning text nodes; script/style text and copy controls are excluded. Ctrl / Cmd + F opens the same viewer panel. Native HTML word spacing uses the configured percentage where the browser supports it and an `em` fallback otherwise.
 
 ## Standard Markdown
 
@@ -54,6 +64,7 @@ Contents: [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-a
 
 - **Bidirectional numbers:** Footnote numbers automatically render with Persian digits (`۱`, `۲`, ...) in RTL context and Latin digits (`1`, `2`, ...) in LTR context.
 - **Direction detection:** Footnote entries at the bottom of the page detect their own content direction, so English entries are left-aligned and Persian entries are right-aligned regardless of document direction.
+- **HTML:** Markdown footnotes and inline `<fn>` / `<footnote>` tags keep their full content as native numbered references and a single endnotes section.
 
 ## Tables
 
@@ -149,6 +160,41 @@ $$ {#eq-sum}
 - Other keys override the heading look for that heading only: `numbering` (`true`/`false`), `number-prefix` / `number-suffix` (quoted text before / after the number), `underline` (`true`/`false`), `fill` (`true`/`false`), `color` (preset or hex). An unnumbered heading does not use up a number.
 - Braces that contain anything other than `#id` and `key=value` stay in the title as text.
 - A heading without `{#id}` can still be referenced by its automatic anchor (slug: lowercase, punctuation removed, spaces → `-`). Links inside the heading are left out of it: `### پلتفرم Papers With Code ([paperswithcode.com](https://paperswithcode.com))` → `<ref to="پلتفرم-papers-with-code">`, `<a href="#پلتفرم-papers-with-code">` or `[...](#پلتفرم-papers-with-code)`. The full slug, link text included, also works.
+
+## `<cover>`: standalone cover page
+
+Place this block in the Markdown body exactly where the cover should appear, usually before `<toc>`:
+
+```markdown
+<cover institution="Example University" faculty="Engineering" department="Computing" type="Research report" title="Research title" subtitle="Optional subtitle" author="Author name" supervisor="Supervisor name" advisor="Advisor name" date="October 2026" frame="false" dir="auto">
+
+**Additional information** can be written as Markdown here.
+
+</cover>
+```
+
+| Attribute | Meaning | Default |
+|---|---|---|
+| `logo` | Image path from the project root | empty |
+| `institution` | University or organization | empty |
+| `faculty` | Faculty or school | empty |
+| `department` | Department | empty |
+| `type` | Document kind, such as thesis or report | empty |
+| `title` | Main cover title | empty |
+| `subtitle` | Subtitle | empty |
+| `author` | Author text | empty |
+| `supervisor` | Supervisor text | empty |
+| `advisor` | Advisor text | empty |
+| `date` | Date text | empty |
+| `frame` | Draw a theme/feel-aware frame: `true` / `false` | `false` |
+| `dir` | `auto`, `rtl` or `ltr`; `auto` resolves in context, including a surrounding `<dir>` | `auto` |
+
+- All fields are optional; empty fields are omitted. Attribute values are strings, not list literals: use `author="A / B"` for several names or put multiline information in the Markdown body. Content is not filled from metadata automatically: write attributes explicitly or interpolate declared variables/metadata with `{{ }}`, such as `title="{{ course }}"` when `course` is defined.
+- The optional body is ordinary Markdown for extra information; leave blank lines inside the block. Close an empty cover too: `<cover title="Title"></cover>`.
+- **PDF:** exactly one standalone single-column page at the tag's position, with no header, footer or printed page number. It resets the page counter to zero, so the following body page is page 1, even when the tag occurs later in the document. Oversized PDF content is scaled down to keep the cover on that single page.
+- **HTML:** a native section with the effective page height (297 mm for A4; custom and mobile heights are honored), responsive width and an internally scrolling content area, so extra information stays accessible without increasing the cover height. Its frame follows the theme and feel, with square corners in formal mode.
+- Author/supervisor/advisor labels follow the resolved direction. A surrounding `<dir>` affects the cover unless its own `dir` explicitly overrides it.
+- **Migration:** remove `cover:` front matter or `[cover]` settings and move their fields to this tag. Old cover settings and CLI switches have no effect. `frame` now defaults to `false`; use `frame="true"` to preserve a framed cover. Remove the tag itself to omit the cover.
 
 ## `<docheader>`: title block
 
@@ -465,6 +511,8 @@ lq.diagram(
 
 ## `<typ>`: Typst code or a Typst file
 
+In HTML, inline textual Typst is native selectable content, including headings and styled text. A `src` file or code containing vector-drawing operations retains framed SVG output. This affects rendering only; the tag syntax is unchanged.
+
 Puts Typst straight into the document: a fenced code block of Typst markup inside the tag, or `src="file.typ"` for a file. The result is set in place, as if the text of that file stood there.
 
 ````markdown
@@ -677,7 +725,7 @@ This English paragraph is laid out right to left.
 - `rtl` / `ltr` force that direction on everything inside, whatever its language: paragraphs, headings, lists, tables and cells, quotes, captions, alerts, boxes, steps, badges. Code stays LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keep their own direction.
 - `auto` brings back per-block detection (first letter) inside a document whose `dir` setting is `rtl` or `ltr` (config.md).
 - Write it like `<align>`: tag on its own line, blank line, content, blank line, closing tag. Tags nest; the innermost wins.
-- The page header, footer and cover are not affected; they follow only the document's `dir`.
+- The page header and footer are not affected; they follow only the document's `dir`. `<cover>` resolves direction inside the surrounding `<dir>` unless its own `dir` overrides it.
 - For a single paragraph, rephrasing or an RLM/LRM mark is usually enough; use `<dir>` for longer parts, e.g. a Persian section full of lines that start with English terms (`<dir rtl>`), or an English abstract inside a `dir: rtl` document (`<dir ltr>` or `<dir auto>`).
 
 ## `<cite>` + `<bibliography>`: citations
@@ -762,7 +810,7 @@ class Actor:
 | `id` | Id for `<ref>`; numbers the listing even without a caption. |
 | `span` | `column` (default) or `all`: in a multi-column document, across all columns at the top or bottom of a page. Use it for long code lines in two-column papers. |
 
-A plain fenced block is enough for code that needs no caption, number, range or highlight.
+A plain fenced block is enough for code that needs no caption, number, range or highlight. HTML code remains selectable text with syntax coloring, line numbers and highlight bands; a `lines` slice preserves original file numbers. The language badge and copy button have their own header above the code rows.
 
 ## `<diff>`: code and text comparison
 

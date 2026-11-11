@@ -6,7 +6,8 @@ interface EditorViewState {
   view: EditorView | null
   canUndo: boolean
   canRedo: boolean
-  set: (patch: Partial<Pick<EditorViewState, "view" | "canUndo" | "canRedo">>) => void
+  touchSelecting: boolean
+  set: (patch: Partial<Pick<EditorViewState, "view" | "canUndo" | "canRedo" | "touchSelecting">>) => void
 }
 
 /** A window from the toolbars onto the editor that has the focus of the page: its view and whether undo / redo have anything to do. */
@@ -14,5 +15,6 @@ export const useEditorViewStore = create<EditorViewState>()((set) => ({
   view: null,
   canUndo: false,
   canRedo: false,
+  touchSelecting: false,
   set: (patch) => set(patch),
 }))

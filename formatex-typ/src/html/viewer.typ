@@ -42,12 +42,14 @@
   for (name, f) in feels {
     feel-data.insert(name, (
       "r-code": css-px(f.code), "r-inline": css-px(f.inline), "r-badge": css-px(f.badge), "r-alert": css-px(f.alert),
-      "r-box": css-px(f.box), "r-image": css-px(f.image), "r-heading": css-px(f.heading), table: f.table, "font-body": feel-body-stack(f),
+      "r-frame": css-px(f.frame), "r-box": css-px(f.box), "r-image": css-px(f.image), "r-heading": css-px(f.heading), table: f.table, "font-body": feel-body-stack(f),
     ))
   }
   json.encode((
     themes: theme-data, feels: feel-data, theme: theme-name, feel: feel-name, zoom: zoom,
     toolbar: want-toolbar, progress: want-progress, outline: want-outline,
+    // The language of the viewer's own words: the app's (`--input html-ui-lang=fa|en`), else the document's
+    ui: sys.inputs.at("html-ui-lang", default: none),
   ))
 }
 
@@ -80,12 +82,21 @@
 .fxv-sw > i { flex: 1; }
 .fxv-label { flex: 1; min-width: 0; }
 .fxv-feel-icon { width: 18px; height: 18px; flex: none; border: 2px solid currentColor; opacity: .7; }
-.fxv-side { position: fixed; top: 0; right: 0; bottom: 0; width: 272px; max-width: 86vw; z-index: 40; padding: 48px 10px 24px; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); border-left: 1px solid var(--code-stroke); font-size: 13px; transition: transform .2s ease; }
+.fxv-side { position: fixed; top: 0; right: 0; bottom: 0; width: 210px; max-width: 86vw; z-index: 40; padding: 10px 0 16px; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); color: var(--fg); border-left: 1px solid var(--code-stroke); font-size: 11.5px; transition: transform .2s ease; box-sizing: border-box; }
 .fxv-side[data-open="false"] { transform: translateX(105%); visibility: hidden; transition: transform .2s ease, visibility 0s .2s; }
-.fxv-side h2 { margin: 0 0 8px; padding: 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: none; border: 0; }
-.fxv-link { display: block; padding: 6px 8px; margin: 1px 0; border-radius: 7px; color: var(--muted); text-decoration: none; unicode-bidi: plaintext; overflow-wrap: anywhere; border-inline-start: 2px solid transparent; }
+.fxv-side h2 { margin: 0 0 6px; padding: 0 10px 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: none; border: 0; border-bottom: 1px solid var(--code-stroke); }
+.fxv-link { display: block; padding: 3.5px 10px; margin: 0; border-radius: 0; color: var(--fg); text-decoration: none; text-align: start; unicode-bidi: isolate; overflow-wrap: anywhere; font-size: 11px; line-height: 1.35; }
 .fxv-link:hover { background: var(--code-bg); color: var(--fg); }
-.fxv-link[aria-current="true"] { color: var(--fg); font-weight: 700; background: var(--code-bg); border-inline-start-color: var(--accent); }
+.fxv-link[aria-current="true"] { color: #ffffff; font-weight: 700; background: var(--accent); }
+.fxv-search { position: fixed; top: 48px; inset-inline: 8px; max-width: 32rem; margin-inline: auto; z-index: 60; display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--bg); color: var(--fg); border: 1px solid var(--code-stroke); font: 13px/1.4 var(--font-body); }
+.fxv-search[hidden] { display: none; }
+.fx-footnote-popover { position: absolute; z-index: 60; max-width: 22rem; min-width: 14rem; padding: .6em .85em; font: 400 .85rem/1.6 var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--code-stroke); border-radius: var(--r-box, 6px); box-shadow: 0 4px 16px rgba(0, 0, 0, .2); pointer-events: auto; transition: opacity .15s ease, transform .15s ease; unicode-bidi: plaintext; }
+.fx-footnote-popover[data-hidden="true"] { opacity: 0; transform: translateY(4px); pointer-events: none; }
+.fx-footnote-popover p { margin: 0; }
+.fxv-search input { flex: 1; min-width: 50px; width: 100%; height: 36px; box-sizing: border-box; border: 1px solid var(--code-stroke); background: var(--bg); color: var(--fg); padding: 4px 8px; font: inherit; }
+.fxv-search output { min-width: 3em; text-align: center; font-size: 11px; }
+::highlight(fx-search) { background: var(--accent); color: var(--bg); }
+@media (max-width: 640px) { .fxv-bar .fxv-read { display: none; } }
 .fxv-shade { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .35); }
 .fxv-shade[hidden] { display: none; }
 .fxv-fab { position: fixed; top: 8px; right: 8px; z-index: 45; }
@@ -95,38 +106,38 @@ html.fxv-has-bar .fx-doc h1, html.fxv-has-bar .fx-doc h2, html.fxv-has-bar .fx-d
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .fxv-side { transition: none; } }
 @media (min-width: 1100px) {
-  html.fxv-docked body { padding-right: 272px; }
+  html.fxv-docked body { padding-right: 210px; }
   html.fxv-docked .fxv-shade { display: none; }
   .fxv-bar { right: 0; }
-  html.fxv-docked .fxv-bar { right: 272px; }
-  .fxv-side { z-index: 55; padding-top: 48px; }
+  html.fxv-docked .fxv-bar { right: 210px; }
+  .fxv-side { z-index: 55; padding-top: 10px; }
 }
 @media (max-width: 1099px) {
-  .fxv-side { box-shadow: 0 0 40px rgba(0, 0, 0, .25); padding-top: 52px; }
+  .fxv-side { box-shadow: 0 0 40px rgba(0, 0, 0, .35); } html.fxv-has-bar:not(.fxv-docked) .fxv-side { top: 40px; }
   .fxv-side[data-open="false"] { box-shadow: none; }
-  .fxv-link { padding: 10px 10px; font-size: 14px; }
+  .fxv-link { padding: 5px 8px; font-size: 12px; }
 }
 @media (max-width: 520px) { .fxv-sep { display: none; } .fxv-pct { min-width: 40px; } .fxv-bar { padding: 0 4px; } }
-@media (pointer: coarse) { .fxv-btn { min-width: 40px; height: 40px; } .fxv-item { min-height: 44px; } html.fxv-has-bar body { padding-top: 48px; } .fxv-bar { height: 48px; } html.fxv-has-bar .fx-doc h1, html.fxv-has-bar .fx-doc h2, html.fxv-has-bar .fx-doc h3, html.fxv-has-bar .fx-doc h4 { scroll-margin-top: 64px; } .fxv-side { padding-top: 56px; } }
-html[data-fxv-flip] .fx-code pre, html[data-fxv-flip] .fx-frame svg, html[data-fxv-flip] .fx-icon svg { filter: invert(1) hue-rotate(180deg); }
-html[data-fxv-flip] .fx-code pre { color: var(--fxv-pre); }
+@media (pointer: coarse) { .fxv-btn { min-width: 40px; height: 40px; } .fxv-item { min-height: 44px; } html.fxv-has-bar body { padding-top: 48px; } .fxv-bar { height: 48px; } html.fxv-has-bar .fx-doc h1, html.fxv-has-bar .fx-doc h2, html.fxv-has-bar .fx-doc h3, html.fxv-has-bar .fx-doc h4 { scroll-margin-top: 64px; } html.fxv-has-bar:not(.fxv-docked) .fxv-side { top: 48px; } }
+html[data-fxv-flip] .fx-code pre, html[data-fxv-flip] .fx-diff-text > code, html[data-fxv-flip] .fx-frame svg, html[data-fxv-flip] .fx-icon svg { filter: invert(1) hue-rotate(180deg); }
+html[data-fxv-flip] .fx-code pre, html[data-fxv-flip] .fx-diff-text > code { color: var(--fxv-pre); }
 html[data-fx-table="rules"] .fx-table { border: 0; border-radius: 0; }
 html[data-fx-table="rules"] .fx-table table { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 html[data-fx-table="rules"] .fx-table thead th { border-bottom: 1px solid var(--rule); background: none; }
 html[data-fx-table="rules"] .fx-table tbody td, html[data-fx-table="rules"] .fx-table tbody tr:nth-child(even) td { border-top: 0; background: none; }
-html[data-fx-table="rules"] .fx-table th, html[data-fx-table="rules"] .fx-table td { padding: .6em .8em; }
+html[data-fx-table="rules"] .fx-table th, html[data-fx-table="rules"] .fx-table td { padding: .35em .75em; line-height: 1.4; }
 html[data-fx-table="lined"] .fx-table { border: 1px solid var(--code-stroke); border-radius: var(--r-box); }
 html[data-fx-table="lined"] .fx-table table { border: 0; }
 html[data-fx-table="lined"] .fx-table thead th { border-bottom: 0; background: color-mix(in srgb, var(--secondary) 8%, var(--bg)); }
 html[data-fx-table="lined"] .fx-table tbody td { border-top: 1px solid var(--code-stroke); background: none; }
 html[data-fx-table="lined"] .fx-table tbody tr:nth-child(even) td { background: none; }
-html[data-fx-table="lined"] .fx-table th, html[data-fx-table="lined"] .fx-table td { padding: .6em .8em; }
+html[data-fx-table="lined"] .fx-table th, html[data-fx-table="lined"] .fx-table td { padding: .35em .75em; line-height: 1.4; }
 html[data-fx-table="card"] .fx-table { border: 1px solid var(--code-stroke); border-radius: var(--r-box); }
 html[data-fx-table="card"] .fx-table table { border: 0; }
 html[data-fx-table="card"] .fx-table thead th { border-bottom: 0; background: color-mix(in srgb, var(--secondary) 16%, var(--bg)); }
 html[data-fx-table="card"] .fx-table tbody td { border-top: 0; background: none; }
 html[data-fx-table="card"] .fx-table tbody tr:nth-child(even) td { background: var(--code-bg); }
-html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td { padding: .8em 1.3em; }
+html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td { padding: .4em .85em; line-height: 1.4; }
 @media print { .fxv-bar, .fxv-line, .fxv-side, .fxv-menu, .fxv-shade, .fxv-fab { display: none !important; } html.fxv-has-bar body, html.fxv-docked body { padding: 0; } }
 `````.text
 
@@ -136,7 +147,7 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
   if (!dataNode) return;
   var data = JSON.parse(dataNode.textContent);
   var root = document.documentElement;
-  var fa = (root.lang || "en").slice(0, 2) === "fa";
+  var fa = (data.ui || root.lang || "en").slice(0, 2) === "fa";
   var text = fa
     ? { outline: "فهرست", zoomIn: "بزرگ‌تر", zoomOut: "کوچک‌تر", theme: "تم", feel: "حال‌وهوا", read: "خوانده‌شده", close: "بستن", reset: "بازگشت به پیش‌فرض", zoom: "اندازهٔ متن (بازگشت به پیش‌فرض)" }
     : { outline: "Outline", zoomIn: "Zoom in", zoomOut: "Zoom out", theme: "Theme", feel: "Feel", read: "Read", close: "Close", reset: "Back to default", zoom: "Text size (back to default)" };
@@ -144,7 +155,13 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
     ? { paper: "کاغذ", sepia: "سپیا", ocean: "اقیانوس", sage: "سبز", midnight: "نیمه‌شب", nord: "نورد", zinc: "خاکستری", dracula: "دراکولا" }
     : {};
   var feelNames = fa ? { formal: "رسمی", standard: "استاندارد", friendly: "صمیمی" } : { formal: "Formal", standard: "Standard", friendly: "Friendly" };
+  text.find = fa ? "جست‌وجو" : "Find";
+  text.previous = fa ? "نتیجهٔ قبلی" : "Previous match";
+  text.next = fa ? "نتیجهٔ بعدی" : "Next match";
   var icons = {
+    search: "<circle cx='10' cy='10' r='6'/><path d='m15 15 6 6'/>",
+    up: "<path d='m6 15 6-6 6 6'/>",
+    down: "<path d='m6 9 6 6 6-6'/>",
     list: "<path d='M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'/>",
     minus: "<path d='M5 12h14'/>",
     plus: "<path d='M5 12h14M12 5v14'/>",
@@ -156,6 +173,8 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
   function el(tag, cls, attrs) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
+    node.lang = fa ? "fa" : "en";
+    node.dir = fa ? "rtl" : "ltr";
     for (var key in attrs || {}) node.setAttribute(key, attrs[key]);
     return node;
   }
@@ -174,7 +193,7 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
     },
     set: function (key, value) {
       try { if (value === "") localStorage.removeItem("fxv-" + key); else localStorage.setItem("fxv-" + key, value); } catch (e) {}
-      try { if (window.parent !== window) window.parent.postMessage({ fxViewerState: { key: key, value: String(value) } }, "*"); } catch (e) {}
+      try { if (window.parent !== window) window.parent.postMessage({ fxToken: window.__fxPreviewToken, fxViewerState: { key: key, value: String(value) } }, "*"); } catch (e) {}
     }
   };
 
@@ -276,6 +295,7 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
 
   // ---- the page ----
   var bar = null, fab = null;
+  var findPanel = null, refreshFind = null;
   if (data.toolbar) {
     bar = el("div", "fxv-bar", { role: "toolbar" });
     root.classList.add("fxv-has-bar");
@@ -288,6 +308,8 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
 
   if (bar) {
     if (outlineButton) bar.appendChild(outlineButton);
+    var findButton = button("search", text.find);
+    bar.appendChild(findButton);
     var readout = el("span", "fxv-read");
     if (data.progress) bar.appendChild(readout);
     bar.appendChild(el("span", "fxv-grow"));
@@ -347,10 +369,67 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
   }
 
   // ---- the outline ----
+  if (findButton) {
+    findPanel = el("div", "fxv-search", { role: "search", "aria-label": text.find });
+    findPanel.hidden = true;
+    var findInput = el("input", "", { type: "search", placeholder: text.find, "aria-label": text.find, dir: "auto" });
+    var findCount = el("output", "", { "aria-live": "polite" });
+    var findPrev = button("up", text.previous), findNext = button("down", text.next), findClose = button("x", text.close);
+    findPanel.append(findInput, findCount, findPrev, findNext, findClose);
+    document.body.appendChild(findPanel);
+    var findNodes = [], findHits = [], findIndex = -1;
+    function clearFind() {
+      if (window.CSS && CSS.highlights) CSS.highlights.delete("fx-search");
+      else { var sel = getSelection(); if (sel) sel.removeAllRanges(); }
+    }
+    function showMatch() {
+      clearFind();
+      var number = new Intl.NumberFormat(fa ? "fa" : "en");
+      findCount.textContent = number.format(findHits.length ? findIndex + 1 : 0) + "/" + number.format(findHits.length);
+      findPrev.disabled = findNext.disabled = !findHits.length;
+      if (!findHits.length) return;
+      var hit = findHits[findIndex], a = findNodes.find(function(n){return hit[0] < n.end}), b = findNodes.find(function(n){return hit[1] <= n.end});
+      if (!a || !b) return;
+      var range = document.createRange(); range.setStart(a.node, hit[0] - a.start); range.setEnd(b.node, hit[1] - b.start);
+      if (window.CSS && CSS.highlights && typeof Highlight === "function") CSS.highlights.set("fx-search", new Highlight(range));
+      else { var selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); }
+      var rect = range.getBoundingClientRect();
+      if (rect.top < 100 || rect.bottom > innerHeight - 40) scrollBy({ top: rect.top - innerHeight * .4, behavior: "instant" });
+    }
+    refreshFind = function(reset) {
+      if (findPanel.hidden) return;
+      findNodes = []; findHits = [];
+      var rootNode = document.querySelector("main.fx-doc");
+      if (!rootNode) return;
+      var walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT), joined = "", node;
+      while ((node = walker.nextNode())) {
+        if (node.parentElement.closest("script,style,.fx-copy")) continue;
+        var start = joined.length; joined += node.textContent;
+        findNodes.push({node:node,start:start,end:joined.length});
+      }
+      if (findInput.value) {
+        var pattern = Array.from(findInput.value).map(function(c){return "\\u{" + c.codePointAt(0).toString(16) + "}"}).join("");
+        for (var match of joined.matchAll(new RegExp(pattern, "giu"))) findHits.push([match.index, match.index + match[0].length]);
+      }
+      findIndex = reset ? 0 : Math.max(0, Math.min(findIndex, findHits.length - 1)); showMatch();
+    };
+    function openFind() { findPanel.hidden = false; findInput.focus(); findInput.select(); refreshFind(true); }
+    function closeFind() { findPanel.hidden = true; clearFind(); findButton.focus({preventScroll:true}); }
+    function stepFind(delta) { if (findHits.length) { findIndex = (findIndex + delta + findHits.length) % findHits.length; showMatch(); } }
+    findButton.addEventListener("click", openFind);
+    findInput.addEventListener("input", function(){refreshFind(true)});
+    findInput.addEventListener("keydown", function(e){if(e.key==="Enter"){e.preventDefault();stepFind(e.shiftKey?-1:1)}});
+    findPrev.addEventListener("click", function(){stepFind(-1)}); findNext.addEventListener("click",function(){stepFind(1)}); findClose.addEventListener("click",closeFind);
+    document.addEventListener("keydown", function(e){
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==="f") { e.preventDefault(); e.stopImmediatePropagation(); openFind(); }
+      else if(e.key==="Escape"&&!findPanel.hidden){e.preventDefault();e.stopImmediatePropagation();closeFind()}
+    }, true);
+  }
   var side = null, shade = null, links = [], heads = [];
   function docked() { return window.matchMedia("(min-width: 1100px)").matches; }
   function setOutline(open, remember) {
     if (!side) return;
+    open = !!open;
     side.setAttribute("data-open", String(open));
     if (outlineButton) outlineButton.setAttribute("aria-pressed", String(open));
     if (fab) fab.setAttribute("aria-pressed", String(open));
@@ -358,23 +437,20 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
     shade.hidden = !(open && !docked());
     if (remember && docked()) store.set("outline", open ? "1" : "0");
   }
-  if (data.outline) {
+  function outlineLinks() {
+    if (!side) return;
+    side.querySelectorAll(".fxv-link").forEach(function (link) { link.remove(); });
+    links = []; heads = [];
     var nodes = document.querySelectorAll(".fx-doc h1, .fx-doc h2, .fx-doc h3, .fx-doc h4");
     var minLevel = 6;
     for (var i = 0; i < nodes.length; i++) minLevel = Math.min(minLevel, parseInt(nodes[i].tagName.charAt(1), 10));
-    side = el("nav", "fxv-side", { "aria-label": text.outline, "data-open": "false" });
-    shade = el("div", "fxv-shade");
-    shade.hidden = true;
-    var title = el("h2");
-    title.textContent = text.outline;
-    side.appendChild(title);
     for (var j = 0; j < nodes.length; j++) {
       var h = nodes[j];
       if (h.closest(".fx-toc")) continue;
       var label = (h.textContent || "").replace(/\s+/g, " ").trim();
       if (!label) continue;
       if (!h.id) h.id = "fxv-h" + j;
-      var a = el("a", "fxv-link", { href: "#" + h.id });
+      var a = el("a", "fxv-link", { href: "#" + h.id, dir: "auto", lang: h.lang || root.lang });
       a.style.paddingInlineStart = (8 + (parseInt(h.tagName.charAt(1), 10) - minLevel) * 14) + "px";
       a.textContent = label;
       a.addEventListener("click", function (event) {
@@ -387,7 +463,18 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
       side.appendChild(a);
       links.push(a); heads.push(h);
     }
-    if (!links.length) { side = null; shade = null; if (outlineButton) { outlineButton.remove(); outlineButton = null; } }
+    if (outlineButton) outlineButton.disabled = !links.length;
+    if (fab) fab.disabled = !links.length;
+    if (!links.length) setOutline(false);
+  }
+  if (data.outline) {
+    side = el("nav", "fxv-side", { "aria-label": text.outline, "data-open": "false" });
+    shade = el("div", "fxv-shade");
+    shade.hidden = true;
+    var title = el("h2");
+    title.textContent = text.outline;
+    side.appendChild(title);
+    outlineLinks();
   }
   if (side) {
     document.body.appendChild(shade); document.body.appendChild(side);
@@ -397,13 +484,14 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
     else {
       fab = button("list", text.outline);
       fab.classList.add("fxv-fab");
+      fab.disabled = !links.length;
       fab.setAttribute("aria-pressed", "false");
       fab.addEventListener("click", toggle);
       document.body.appendChild(fab);
     }
     var saved = store.get("outline");
-    setOutline(docked() && saved !== "0");
-    window.matchMedia("(min-width: 1100px)").addEventListener("change", function () { setOutline(docked() && store.get("outline") !== "0"); });
+    setOutline(links.length && docked() && saved !== "0");
+    window.matchMedia("(min-width: 1100px)").addEventListener("change", function () { setOutline(links.length && docked() && store.get("outline") !== "0"); });
   }
 
   // ---- reading position ----
@@ -432,6 +520,70 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
   }
   window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(updateSpy); } }, { passive: true });
   window.addEventListener("resize", updateSpy);
+  document.addEventListener("fx-content-updated", function () { outlineLinks(); activeIndex = -1; updateSpy(); if (refreshFind) refreshFind(false); });
+
+  // ---- footnote popovers ----
+  var popover = el("div", "fx-footnote-popover");
+  popover.setAttribute("data-hidden", "true");
+  document.body.appendChild(popover);
+  var pinnedRef = null, activeRef = null;
+
+  function hidePopover() {
+    popover.setAttribute("data-hidden", "true");
+    pinnedRef = null;
+    activeRef = null;
+  }
+
+  function showPopoverFor(ref, pin) {
+    var text = ref.getAttribute("data-footnote-text") || ref.getAttribute("title") || "";
+    if (text) {
+      if (ref.hasAttribute("title")) {
+        ref.setAttribute("data-footnote-text", text);
+        ref.removeAttribute("title");
+      }
+      popover.textContent = text;
+    } else {
+      var href = ref.getAttribute("href") || "";
+      if (href.indexOf("#") !== 0) return;
+      var target = document.getElementById(href.slice(1)) || document.querySelector(href);
+      if (!target) return;
+      var clone = target.cloneNode(true);
+      clone.querySelectorAll("[role='doc-backlink'], .fx-backlink").forEach(function(el) { el.remove(); });
+      popover.innerHTML = clone.innerHTML;
+    }
+    var rect = ref.getBoundingClientRect();
+    var top = rect.bottom + window.scrollY + 6;
+    var left = Math.min(Math.max(8, rect.left + window.scrollX - 40), window.innerWidth - 340);
+    popover.style.top = top + "px";
+    popover.style.left = left + "px";
+    popover.removeAttribute("data-hidden");
+    activeRef = ref;
+    if (pin) pinnedRef = ref;
+  }
+
+  function attachFootnotes() {
+    document.querySelectorAll("a[href*='#fn'], [role='doc-noteref'], .fx-fn-sup, sup.fx-fn-sup, [data-footnote-text]").forEach(function(ref) {
+      if (ref.getAttribute("data-fx-popover-bound")) return;
+      ref.setAttribute("data-fx-popover-bound", "1");
+      ref.addEventListener("mouseenter", function() { if (!pinnedRef) showPopoverFor(ref, false); });
+      ref.addEventListener("mouseleave", function() { if (!pinnedRef) hidePopover(); });
+      ref.addEventListener("click", function(e) {
+        e.preventDefault();
+        if (pinnedRef === ref) { hidePopover(); }
+        else { showPopoverFor(ref, true); }
+      });
+    });
+  }
+  attachFootnotes();
+  document.addEventListener("fx-content-updated", attachFootnotes);
+  document.addEventListener("click", function(e) {
+    if (pinnedRef && !popover.contains(e.target) && !pinnedRef.contains(e.target)) {
+      hidePopover();
+    }
+  });
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && !popover.hasAttribute("data-hidden")) hidePopover();
+  });
 
   applyTheme(state.theme);
   applyFeel(state.feel);
@@ -440,9 +592,13 @@ html[data-fx-table="card"] .fx-table th, html[data-fx-table="card"] .fx-table td
 })();
 `````.text
 
-/// The parts of the viewer the export dialog turned on: the data, the style and the script (nothing at all when none is on).
-#let viewer-parts() = if want-toolbar or want-progress or want-outline {
-  html.elem("script", attrs: (type: "application/json", id: "fx-viewer-data"), viewer-data())
-  html.elem("style", viewer-css)
-  html.elem("script", viewer-script)
+/// The copy controls also need the UI language when every viewer panel is off.
+#let viewer-parts() = {
+  if want-toolbar or want-progress or want-outline or html-option("copy-code") {
+    html.elem("script", attrs: (type: "application/json", id: "fx-viewer-data"), viewer-data())
+  }
+  if want-toolbar or want-progress or want-outline {
+    html.elem("style", viewer-css)
+    html.elem("script", viewer-script)
+  }
 }

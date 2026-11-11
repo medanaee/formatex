@@ -2,6 +2,72 @@
 
 Update this file at the end of every session: tick what is done, add what you found.
 
+## HTML math bundle, font matching and native structures (2026-11-11)
+
+- [x] Added `[html] math = native | katex` to the configuration schema and documented the CLI override and Export HTML choice.
+- [x] KaTeX assets are bundled offline from `src/html/katex.assets.json` by `tools/bundle-katex.mjs`; measured generated payload is 456,963 bytes versus 664,415 bytes raw (about 31% smaller). The bundle is emitted only when KaTeX math markers occur. This compares asset sizes, not runtime speed.
+- [x] The asynchronous math renderer exposes `window.__fxMathReady`; iframe paint reporting waits for mathematical layout on initial load and live content updates.
+- [x] HTML font embedding tries the exact requested family before aliases and registers alias fallbacks under the requested CSS name; CMU Serif is not forced into every page and New Computer Modern is not duplicated under an unconditional CMU alias.
+- [x] Fixed omitted CMU Serif weight-500 regular faces with independent nearest-weight selection per style; added browser-compatible HTML-only NewCM quadratic assets and their fontTools generator/notices, preserving original PDF fonts. Browser font-load checks pass for NewCM and CMU Serif.
+- [x] Corrected the guides' outdated claim that steps and compare use a picture fallback; documented component-owned HTML/CSS handlers and the retained Typst SVG graphics path.
+- [x] Added native HTML for cover, docheader, paragraph, letter, tree, exercise/choices/answers and collected todos. Existing native handlers now preserve comparison, chat, progress, definition links, LCS diffs, responsive grid, steps, image/figure sizing and code line-number/highlight behavior. Counters/digits/lists/citations/bibliography remain native content. The demo compiles with KaTeX through the CLI; charts, CeTZ, Lilaq and arbitrary Typst graphics intentionally retain Typst SVG output.
+- [ ] Visually verify the expanded native component set, compact spacing, nested content and cover rendering on phone/tablet/desktop in both languages and light/dark themes.
+- [x] Recorded the measured size and QA checkpoint in [HTML export improvements](../html-export-improvements-2026-11-11.md): 25 KaTeX formulas with zero errors and live re-rendering, three numbered equation references, full native footnotes, phone layout/cover/code highlights and feel/font checks; 24 PDF combinations plus mobile compile.
+- [x] Visually inspected five PDF cover renders (paper formal/standard/friendly, midnight standard and mobile) without overlap/clipping. Inline textual `<typ>` now retains native selectable headings/styled text; source/vector code keeps SVG frames. Added explicit HTML spacing/page-break/rule behavior and corrected comparison markers/grid spans/alignment.
+- [ ] Complete final automated reruns and 768/1280 px browser checks after the latest changes; real Android interaction/performance remains a separate check. The report distinguishes checkpoint test counts from final approval.
+
+## List boundary detection and numbering restart (2026-11-11)
+
+- [x] Implemented list separation in `list-attrs.typ` when a numbered list restarts (e.g. `1.` / `0.` / `۱.` / `١.`) after one or more blank lines, or when any list follows two or more blank lines.
+- [x] Emitted `<!--raw-typst #none -->` between consecutive unstyled lists so CommonMark and Typst generate separate lists with fresh numbering.
+- [x] Synchronized `listSplit.ts` in the app editor and added test coverage (`listSplit.test.ts`).
+- [x] Verified in Rust unit tests (`compile_benchmark.rs`), Vitest (360 passed), HTML output, and visual PDF/SVG layout (rendering `۱. مختار`, `۲. بیست سال`, gap, `۱. nigg`).
+
+## Cover as a body component (2026-11-10)
+
+- [ ] Verify `<cover>` at its body position with optional Markdown information, explicit/`{{ }}` attributes, frame off by default and contextual direction (including surrounding `<dir>`).
+- [ ] Verify one standalone PDF cover page without header/footer/number, one column and next body page 1; native HTML keeps effective A4/custom/mobile page height and internally scrolls extra information.
+- [x] Migrated the actual English/Persian guide covers to body tags and documented the breaking migration from cover front matter/config/CLI switches; synchronized authoring/developer skills and generated writing guidance. Metadata remains top-level only, with no cover fallback.
+- [x] Migrated `docs/vars-example.md` to a body cover with explicit variable/metadata attributes, and clarified current/final page-counter placeholders when a cover resets numbering in the middle of a document.
+- [ ] Complete engine/app schema, native compile, HTML/browser and PDF appearance checks for the new tag. Old cover settings have no effect; callers must migrate fields to attributes and explicitly enable a frame when needed.
+
+## Editor navigation, source search and native HTML settings (2026-11-10)
+
+- [x] Implemented the fixed 2 px/line virtual minimap with source-scroll following and wheel/click/drag navigation. Browser source checks on 4500 lines at 1280/768 px report no sticky/minimap overlap; a 9000 px miniature scale is preserved against a 558 px viewport, and the map is removed at 360 px.
+- [x] Implemented the first Search format-bar icon and shared Ctrl / Cmd + F translated, touch-sized shadcn panel on all text kinds, including Raw Typst: next/previous, case, regex, whole-word and optional replace. Browser source Find at 360 px selects `Line 3333`.
+- [x] Implemented the HTML toolbar Find magnifier and Ctrl / Cmd + F: literal case-insensitive matches across text nodes, next/previous, localized count, Enter / Shift + Enter / Escape, and refreshed results after live content updates; excludes script/style text and copy controls. Six HTML browser cases pass, with localized `1/1` or `۱/۱` and one highlighted match.
+- [x] Implemented native HTML merged direction across main/list/table/quote/alert wrappers, paragraph justification/spacing, table head/body alignment, heading look relative to the top outlined heading, and global/local list styles with text markers; PDF-only list guides are excluded. Native configuration regression passes forced RTL, front-matter auto, spacing, lists and tables.
+- [x] Implemented transparent square selected sidebar/rail rows with an accent border. Frontend: 358 tests, typecheck/build pass; lint has nine existing warnings. Final HTML browser checks, complete Rust/PDF matrix and real-device verification are recorded separately below; historical measurements remain unchanged.
+
+## Live HTML optimization implementation (2026-11-10)
+
+- [x] Applied production engine preprocessing optimizations with unchanged authoring syntax; synchronized both guides and authoring skill. The final PDF/example matrix passed below.
+- [x] Implemented retained HTML worlds, a single-flight/latest-only scheduler with 120–250 ms adaptive debounce, and skipping hidden paged builds in HTML mode (refresh pages when returning).
+- [x] Implemented cached reusable preview font CSS; standalone Export keeps subset embedding.
+- [x] Implemented persistent sandboxed iframe content updates through a validated token/source handshake; preserve scroll/viewer/font state for ordinary edits and reload on viewer-signature changes, custom main scripts or Raw Typst without `main.fx-doc`.
+- [x] Full Rust rerun: 57 passed, zero failed, six ignored; `cargo check` passed. All 24 PDF theme/feel demo builds plus mobile passed; page 5 was visually checked in paper formal/standard/friendly, midnight standard and mobile, with readable content, square formal styling and no clipping.
+- [x] Six HTML browser cases pass (English/paper and Persian/dracula at target 360/768/1280 px, actual 360/769/1281). Patches preserve toolbar/font nodes, scroll 500, zoom 1.1 and refreshed copy/outline controls; wrong-token traffic is ignored. Iframe patch/paint measured 115.4–174.0 ms, excluding native compilation and Tauri IPC; see [the improvement report](../performance-improvements-2026-11-10.md).
+- [x] Final native release benchmark after other Cargo/PDF builds finished: live HTML warm edits 325.3–462.5 ms, median 363.2 ms versus historical 2537.8 ms (6.99× faster); warm font CSS omitted and cache work 0.0246–0.0313 ms. Paged-edit median 584.6 ms. Regex-control rerun passes byte-identical output, warm median 1261.0 → 271.2 ms. See [the improvement report](../performance-improvements-2026-11-10.md); browser and native timings are separate, not a measured end-to-end sum.
+- [ ] Measure real Android hardware interaction/performance and the full Tauri IPC-to-WebView end-to-end path. These are not established by native or browser-harness checks.
+
+## Large-document preview profiling (2026-11-10)
+
+- [x] Added opt-in native release benchmarks and per-stage HTML timing logs. Measured a 196,716-byte bilingual fixture (24,116 words, 62 pages), paged changed-page rendering, HTML with/without fonts and retained-World controls; see [measurement report](../performance-2026-11-10.md).
+- [x] Traced a retained-World HTML edit: inline regex construction in `mark-lines.typ:48` accounts for about 62% of compile time. An in-memory-only regex-hoist control reduces median warm edit compilation from 1201 to 264 ms with byte-identical HTML.
+- [x] All three diagnostic runs passed; release Rust library tests: 55 passed, 6 ignored; `cargo check` and `git diff --check` passed. Frontend code was unchanged in this profiling task.
+- [x] Applied the regex optimization in the production engine and synchronized both guides and authoring skill; implementation verification is tracked in the sections above.
+- [x] Implemented reusable/coalesced HTML builds, avoidance of hidden paged builds and adaptive preview delay. Remaining WebView/IPC end-to-end and Android hardware measurements are tracked above; the historical profiling numbers remain unchanged.
+
+## Android clipboard, selection and viewer language (2026-11-10)
+
+- [x] HTML preview/export controls follow the app language through `uiLang` / `html-ui-lang`, independently of the document language; synchronized English/Persian guides and authoring skill.
+- [x] Native text clipboard for editor and text-field menus through the official clipboard-manager plugin, with read-text / write-text permissions only ([ADR 0011](../decisions/0011-native-text-clipboard.md)).
+- [x] Hidden project directories match the existing filesystem scopes (`requireLiteralLeadingDot = false`), avoiding Android `forbidden path` on `.cache` without expanding the allowed roots.
+- [x] Touch selection is explicit, starts after the menu releases focus and uses native multiline selection without CodeMirror's drawn layer; the menu's long-press timer is disabled while native handles are active.
+- [x] Aligned whitespace in the Rust HTML CSS registry output with the engine generator, found by the full Rust test suite.
+- [x] Verification: frontend typecheck/build pass; lint passes with nine existing warnings; 344 frontend tests pass (13 new regression cases), `cargo check` passes, and Rust library tests pass (55 passed, 3 ignored). Compiled Persian-document/English-controls and English-document/Persian-copy-controls HTML and executed their scripts in happy-dom, including with all viewer panels off. Real-device Android and visual viewport checks remain pending.
+- [ ] Verify on an Android device: hold opens the menu without an automatic word selection; Select text starts native handles after the menu closes; extend across wrapped and separate lines, collapse and select again, cut/copy/paste text; reopen a project containing `.cache`; HTML controls follow both app languages.
+
 ## Done: Skeleton (M0)
 
 - [x] Tauri v2 + React 19 + Vite + Tailwind v4 + shadcn/ui project, same stack as Docium
@@ -287,6 +353,7 @@ Update this file at the end of every session: tick what is done, add what you fo
 - [x] `[html]` table in config.toml (toolbar, progress, outline, copy-code, embed-fonts): the export dialog starts from it each time and can change it for one export; live HTML preview in the preview pane (`HtmlPreview.tsx`, a sandboxed iframe, globe button). Not done: click-to-source in the HTML preview; not tried in a running app
 - [x] HTML output fixes: lists with `{numbers=abjad suffix=")"}` render (Typst's HTML export drops `align` with its content; ordered lists write their own labels), captioned tables get ids so `<ref>` works, `<picHeader>` has an HTML form, panels and badges mix their tints in CSS from a hue (a dark theme picked in the toolbar no longer leaves pastel boxes), viewer marks a changed theme / feel / zoom with a red dot and has "Back to default"; the preview keeps those choices across rebuilds. `formatex-typ/examples/demo.md` (+ `included.md`, `nested.md`, `references.bib`, `sample.py`, `images/`) is the test page for HTML, now with lists options, hr, p, digit, counter, anchor, old/new, chat, typ, lol. Not done: SVG pictures (charts, CeTZ, ...) keep the colors of the theme they were built with (inverted when light/dark flips)
 - [ ] Not run: `cargo check` / `cargo test`, `npm run typecheck` / `lint` / `test`, and the dialog in the app
-- [ ] Tags still pictures: cetz, chart, lilaq, tree, steps, compare, grid, def, theorem, todo, chat, diff, progress, picheader, ...; images in HTML (`<img>` data URIs), line numbers and highlighted lines of code, caption position of code
+- [x] Replaced the old text/structural picture fallbacks with native handlers, including code line numbers and highlight bands; see the 2026-11-11 coverage entry. Charts, CeTZ, Lilaq and arbitrary Typst graphics intentionally retain Typst SVG rendering.
+- [ ] Visually verify image data URIs and code-caption positioning in the expanded native HTML output.
 - [ ] A subset of the font glyphs instead of whole files; Android is not looked at
 - [x] The HTML form of a tag now lives in its own component file (`<name>-html`, with `<name>-css`), collected by `gen-registry.mjs` and by `components.rs` into `html-impls` / `html-css` of the registry; `src/html/kit.typ` (imported by `src/kit.typ`) holds the shared helpers, `src/html/tags.typ` only the picture fallback (`html-adapt`); a project's own components can export them too (`src/lib/local-components.typ`). Not compiled yet

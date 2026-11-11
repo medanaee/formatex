@@ -25,6 +25,8 @@ Decision record: [ADR 0004](../decisions/0004-responsive-layout-and-platforms.md
 - **Sidebar** (224 px) with labels; the user can collapse it to the rail (`useSettingsStore.sidebarOpen`, persisted).
 - Modals are centered dialogs. Editor shows source and preview side by side.
 
+Sidebar and rail links use a transparent square selected row with an accent border, without a rounded filled pill. The active destination remains distinguishable in light/dark themes and RTL/LTR layouts.
+
 ## Page patterns
 
 - **Header:** `PageHeader`, one row, `h-14`; primary action on the end side; on a phone the "New" button shows only its icon (label is `sr-only`).

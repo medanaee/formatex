@@ -18,10 +18,10 @@ Content is written in Markdown (the file named by `source` in `config.toml`) and
 | `tools/bundle.mjs` | Joins everything into one file, `dist/formatex.typ`. |
 | `tools/export-schema.mjs` | Writes `dist/tags.json`: every tag, attribute, allowed value and default (from each component's `<name>-schema`) and every component's docs (`<name>-docs`), for editor autocomplete. |
 | `src/core.typ` | Config/front matter/`<include>` loading, theme, feels, fonts, paragraph settings, direction detection. |
-| `src/page.typ` | Page size, margins, columns, header, footer, cover. |
+| `src/page.typ` | Page size, margins, columns, header and footer; cover layout lives in `components/cover.typ`. |
 | `src/conf.typ` | `conf`: document show rules (equations, code, quotes, tables, headings, footnotes). |
 | `config.toml` | Project-wide settings: `theme`, `feel`, `page`, `margin`, `scale`, `columns`, `[heading]` (numbering + look), `[font]`, `[paragraph]` (justify, letter/line/word spacing), `[list]`, `[table]`, `[equation]`, `[chat]`. |
-| Front matter of each `.md` | Per-document settings: `header`, `footer`, `cover`, `bibliography`, and overrides of any `config.toml` key (including each `heading` key). |
+| Front matter of each `.md` | Per-document settings: `header`, `footer`, `bibliography`, and overrides of any `config.toml` key (including each `heading` key). |
 | `examples/references.bib` | BibTeX entries for `<cite>` / `<bibliography>` (the default `file`). |
 | `examples/` | `demo.md` (full feature test; see below) and the files it uses (`included.md`, `nested.md`, `sample.py`, `chat.md`, `references.bib`). |
 | `examples/demo.md` | Full feature test of every component and option (compile with `--input source=examples/demo.md`, or `node tools/build-all.mjs --source examples/demo.md` for all themes × feels). |
@@ -36,7 +36,6 @@ typst compile main.typ                         # -> main.pdf
 typst compile main.typ --input theme=dracula   # override the theme without editing config.toml
 typst compile main.typ "out-{p}.png" --ppi 80  # per-page PNGs for visual checks
 typst compile main.typ demo.pdf --input source=examples/demo.md   # render another Markdown file
-typst compile main.typ --input cover=true      # force the cover page on (or cover=false)
 ```
 
 Project scripts (`tools/`, run from anywhere):
@@ -55,9 +54,9 @@ After any change, compile and look at the affected pages; Typst errors point to 
 With `dir = "auto"` (default), do not set direction manually. Every paragraph, heading, list, table, table cell, and title gets its direction from its **first letter**: Arabic-script (Persian) → RTL, anything else → LTR. Code and math are ignored when finding the first letter. Content with no letters (e.g. a list of only formulas) inherits the direction of the previous block.
 
 Forcing a direction:
-- Top-level `dir = "auto" | "rtl" | "ltr"` in `config.toml`, front matter `dir: rtl`, or `--input dir=ltr` (precedence: `--input` > front matter > config). `rtl` / `ltr` force that direction on paragraphs, headings (number digits follow: Persian in rtl), lists, tables (column order flips), table cells, quotes, figure / table / code captions and their supplement («شکل» / "Figure"), alerts, steps, boxes, badges, toc / lof / lot entries, the bibliography's default `dir`, the page header / footer / cover when their own `dir` is `auto`, and the column order when `column-dir` is `auto`. Code blocks and inline code stay LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keys keep their per-label direction.
-- `<dir to="rtl|ltr|auto">` (or bare `<dir rtl>`, default `auto`) forces it for one part; `auto` restores per-block detection inside a forced document. Nestable, innermost wins. Header / footer / cover ignore `<dir>`. See the `<dir>` component below.
-- Internals (`src/core.typ`): `doc-dir` (from `sys.inputs` / merged config, asserted), `named-dir(d)` (`"rtl"` → `rtl`, `"ltr"` → `ltr`, else `none`), `dir-stack` state pushed / popped by `<dir>`, `content-dir(body)` (needs `context`: innermost `<dir>` value, else `doc-dir`; if forced that direction, else `text-dir(body)`), `doc-text-dir(body)` (header / footer / cover; only `doc-dir`, no state). `auto-dir` is always a `context` and uses `content-dir`; the `table.cell` and `quote` show rules are `context` and use `content-dir`; the global `set text(dir:)` uses `column-dir` when `column-count > 1` and it isn't `auto`, else `doc-dir` when forced, else `auto`. In `main.typ`, `resolve-dir` uses `content-dir` (call it inside `context`); toc / lof `entry-rtl`, `<badge>` and the `<code>` caption use `content-dir`; the `<alert>` icon layout is wrapped in `context`; `<bibliography>`'s default `dir` is `doc-dir`. New components that pick a direction must go through `content-dir` (inside `context`), not `text-dir`, or they will ignore `dir` / `<dir>`.
+- Top-level `dir = "auto" | "rtl" | "ltr"` in `config.toml`, front matter `dir: rtl`, or `--input dir=ltr` (precedence: `--input` > front matter > config). `rtl` / `ltr` force that direction on paragraphs, headings (number digits follow: Persian in rtl), lists, tables (column order flips), table cells, quotes, figure / table / code captions and their supplement («شکل» / "Figure"), alerts, steps, boxes, badges, toc / lof / lot entries, the bibliography's default `dir`, the page header / footer when their own `dir` is `auto` (the `<cover>` tag resolves in context), and the column order when `column-dir` is `auto`. Code blocks and inline code stay LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keys keep their per-label direction.
+- `<dir to="rtl|ltr|auto">` (or bare `<dir rtl>`, default `auto`) forces it for one part; `auto` restores per-block detection inside a forced document. Nestable, innermost wins. Header / footer ignore `<dir>`; the `<cover>` component resolves direction inside the surrounding `<dir>`. See the `<dir>` component below.
+- Internals (`src/core.typ`): `doc-dir` (from `sys.inputs` / merged config, asserted), `named-dir(d)` (`"rtl"` → `rtl`, `"ltr"` → `ltr`, else `none`), `dir-stack` state pushed / popped by `<dir>`, `content-dir(body)` (needs `context`: innermost `<dir>` value, else `doc-dir`; if forced that direction, else `text-dir(body)`), `doc-text-dir(body)` (header / footer; only `doc-dir`, no state). `auto-dir` is always a `context` and uses `content-dir`; the `table.cell` and `quote` show rules are `context` and use `content-dir`; the global `set text(dir:)` uses `column-dir` when `column-count > 1` and it isn't `auto`, else `doc-dir` when forced, else `auto`. In `main.typ`, `resolve-dir` uses `content-dir` (call it inside `context`); toc / lof `entry-rtl`, `<badge>` and the `<code>` caption use `content-dir`; the `<alert>` icon layout is wrapped in `context`; `<bibliography>`'s default `dir` is `doc-dir`. New components that pick a direction must go through `content-dir` (inside `context`), not `text-dir`, or they will ignore `dir` / `<dir>`.
 
 Directional marks count as the first letter and override detection:
 - RLM (U+200F, or `&rlm;`) or ALM (U+061C) at the start → RTL with Persian digits.
@@ -69,6 +68,8 @@ Consequences for writing:
 - Quotes put their bar on the start side; Persian headings/figures get Persian digits.
 
 ## Global settings (`config.toml`)
+
+For HTML output, `[html] math = "native"` (default) or `"katex"` selects the math renderer; `--input html-math=...` overrides it. KaTeX's compressed offline assets are generated by `node tools/bundle-katex.mjs` from `src/html/katex.assets.json` and included only when math markers need them. The asynchronous renderer exposes `window.__fxMathReady` for preview paint coordination. Do not edit generated `src/html/katex.typ`; see [reference.md](reference.md#html-math-bundle-and-font-embedding). Structural HTML belongs in each component's `<name>-html` / `<name>-css`; charts and drawings may retain Typst SVG output.
 
 ```toml
 source = "doc_en.md"       # Markdown file main.typ compiles (default doc_en.md; --input source=... overrides; not settable in front matter)
@@ -153,9 +154,9 @@ Read in `src/conf.typ` (`paragraph-number`, `justify`) and applied in `conf` wit
 
 ### Front matter (per-document settings)
 
-Each Markdown file may start with a YAML block between `---` lines (first thing in the file). It is parsed in `src/core.typ` (`front-matter`), merged over `config.toml` (`merge-config`: tables key by key, other values replaced) and stripped before rendering (`source-body`). The header, footer, cover and bibliography live **only** here; any `config.toml` key (`theme`, `feel`, `font`, `heading`, ...) can be overridden here for one document. `heading:` is merged key by key (`heading-key` / `heading-flag` in `src/core.typ`): an empty YAML value (`color:`) means the default, and booleans must be `true` / `false`.
+Each Markdown file may start with a YAML block between `---` lines (first thing in the file). It is parsed in `src/core.typ` (`front-matter`), merged over `config.toml` (`merge-config`: tables key by key, other values replaced) and stripped before rendering (`source-body`). The header, footer and bibliography live **only** here; `<cover>` is body content, not a setting; any `config.toml` key (`theme`, `feel`, `font`, `heading`, ...) can be overridden here for one document. `heading:` is merged key by key (`heading-key` / `heading-flag` in `src/core.typ`): an empty YAML value (`color:`) means the default, and booleans must be `true` / `false`.
 
-- A `header:` / `cover:` table turns that part on; `enabled: false` inside turns it off. No table = no header / no cover.
+- A `header:` table turns the header on; `enabled: false` inside turns it off. A cover appears only where a `<cover>` block is written in the body.
 - Quote strings containing `{`, `: ` or ` #` (`end: "Page {page} of {pages}"`); unquoted `{` starts a YAML mapping.
 - Precedence: `--input` > front matter > `config.toml`.
 
@@ -204,26 +205,21 @@ footer:
 
 No `footer:` = Typst's plain centered page number (`footer: auto`). With it, `page-footer()` in `src/page.typ` (reuses `header-text`) replaces it; the cover sets `footer: none`. Side layout (start / center / end grid) only when both `start` and `end` are set in the settings; otherwise the non-empty cells are centered (decided from the settings, so an empty `{section}` doesn't move it). A placeholder-only cell has no direction, so use `digits: fa` for Persian digits. Override the style for one build with `--input header-style=band`. In `config.toml`, tables (`[heading]`, `[font]`, `[paragraph]`, `[list]`, `[table]`, `[equation]`, `[chat]`) must stay after the top-level keys (`source`, `theme`, `feel`, `page`, `margin`, `scale`, `columns`).
 
-### Cover page (`cover:` in front matter)
+### `<cover>` component
 
-```yaml
-cover:
-  # logo: images/logo.svg
-  institution: "نام دانشگاه"
-  faculty: "نام دانشکده"
-  department: ""
-  type: "گزارش پژوهشی"           # e.g. پایان‌نامه کارشناسی ارشد
-  title: "عنوان پژوهش"
-  subtitle: ""
-  author: "نام نویسنده"           # a list ["a", "b"] = one name per line
-  supervisor: "نام استاد راهنما"
-  advisor: ""
-  date: "مهر ۱۴۰۵"
-  frame: true                    # border around the page
-  dir: auto                      # rtl | ltr | auto (from the title)
+`components/cover.typ` registers the block tag and schema. Place it in the Markdown body at the desired position; it accepts optional `logo`, `institution`, `faculty`, `department`, `type`, `title`, `subtitle`, `author`, `supervisor`, `advisor`, `date`, `frame` (`false` by default) and `dir` (`auto` by default) attributes, plus an optional Markdown body for extra information.
+
+```markdown
+<cover title="عنوان پژوهش" author="نام نویسنده" frame="false" dir="auto">
+
+اطلاعات تکمیلی
+
+</cover>
 ```
 
-Empty fields are left out. The cover is its own page with no header and no page number; page 1 is the page after it, and `{pages}` doesn't count it. Labels follow the direction: «نگارش / استاد راهنما / استاد مشاور» or "Author / Supervisor / Advisor".
+Tag attributes are strings, not list literals (`author="A / B"` for several names); multiline information belongs in the optional body. Oversized PDF content is scaled down to stay on one page. The PDF is exactly one standalone single-column page, with no header/footer/printed number; it resets the page counter to 0 so the next body page is 1. HTML is a native section with the effective page height (A4: 297 mm; custom/mobile respected), responsive width and internally scrolling content. Frames use the theme and feel. Direction is resolved through `resolve-dir` inside `context`, including a surrounding `<dir>`.
+
+**Breaking migration:** `cover:` front matter, `[cover]` config and the cover CLI switch no longer generate a page and have no effect. Move fields to tag attributes, explicitly keep `frame="true"` when required, and remove the tag to omit the cover. Attributes are explicit or use declared `{{ }}` values; readonly metadata comes only from top-level document metadata and is not inferred from the cover.
 
 ### Bibliography settings (`bibliography:` in front matter)
 
@@ -293,6 +289,7 @@ The full reference manual for all HTML-like components, including attributes, sy
 
 | Category | Tags / Syntax | Purpose | Documentation Reference |
 |---|---|---|---|
+| **Document Structure** | `<cover>` | Standalone cover at its body position, optional Markdown information, frame off by default; native fixed-height HTML | [doc_en.md](../../docs/doc_en.md#cover-component) · [components.md](../bilingual-document-authoring/components.md#cover-standalone-cover-page) |
 | **Document Structure** | `<docheader>`, `<main>`, `<title>`, `<l-img>`, `<r-img>`, `<info>` | Hierarchical title block: sized titles (1-3), left / right images, Markdown `<info>` below, optional theme-aware frame (`border` = sides as letters of `lrtb`, `fill`, colors via `color` / `border-color` / `fill-color`, which only pick colors); old title / subtitle / subtitle2 attributes still work, spanning columns | [doc_en.md](../../docs/doc_en.md#docheader-title-block) · [components.md](../bilingual-document-authoring/components.md#docheader-title-block) |
 | **Document Structure** | `<picHeader>` | Full-width picture header with gradient, title, subtitle (`break`, `margin-x`, `margin-y`) | [doc_en.md](../../docs/doc_en.md#picheader-picture-header) · [components.md](../bilingual-document-authoring/components.md#picheader-picture-header) |
 | **Outlines & Lists** | `<toc>`, `<lof>`, `<lot>`, `<lol>` | Table of contents, lists of figures, tables, code listings | [doc_en.md](../../docs/doc_en.md#toc-table-of-contents) · [components.md](../bilingual-document-authoring/components.md#toc-lof-lot-contents-and-lists) |

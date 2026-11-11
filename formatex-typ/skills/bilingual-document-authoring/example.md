@@ -153,20 +153,17 @@ Points to notice:
 
 ## Variations
 
-**Thesis with a cover page** (add to the front matter; the TOC and lists get their own pages):
+**Thesis with a cover page** (put the tag in the body before the contents; the TOC and lists get their own pages):
 
-```yaml
-cover:
-  institution: "دانشگاه نمونه"
-  faculty: "دانشکدهٔ مهندسی کامپیوتر"
-  type: "پایان‌نامهٔ کارشناسی ارشد"
-  title: "عنوان پایان‌نامه"
-  author: "نام دانشجو"
-  supervisor: "دکتر الف"
-  advisor: "دکتر ب"
-  date: "مهر ۱۴۰۵"
-  frame: true
+```markdown
+<cover institution="دانشگاه نمونه" faculty="دانشکدهٔ مهندسی کامپیوتر" type="پایان‌نامهٔ کارشناسی ارشد" title="عنوان پایان‌نامه" author="نام دانشجو" supervisor="دکتر الف" advisor="دکتر ب" date="مهر ۱۴۰۵" frame="true">
+
+اطلاعات تکمیلی اختیاری
+
+</cover>
 ```
+
+The frame is explicitly enabled here; the tag defaults to `frame="false"`. Attributes are strings (`supervisor="دکتر الف / دکتر ب"` for several names), not YAML lists. Do not add a `cover:` front-matter table or use a cover CLI switch; remove the tag to omit the cover.
 
 ```markdown
 <toc break="true"></toc>

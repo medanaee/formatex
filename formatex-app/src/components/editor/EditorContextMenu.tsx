@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from "react"
 import { startCompletion } from "@codemirror/autocomplete"
+import type { EditorSelection } from "@codemirror/state"
 import { redo, selectAll, undo } from "@codemirror/commands"
 import { Bold, Clipboard, Code, Copy, Italic, Link2, LocateFixed, MousePointer2, Redo2, Scissors, TextSelect, Undo2, Tags } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -14,6 +15,7 @@ import { useEditorViewStore } from "@/stores/useEditorViewStore"
 import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
+import { enableTouchSelection, selectByTouch } from "@/lib/editor/touchSelection"
 
 /** The right-click menu of the text editor: history, clipboard, selection, and for Markdown the formatting tools. */
 export function EditorContextMenu({ markdown, children }: { markdown: boolean; children: ReactNode }) {
@@ -25,15 +27,16 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
   // Where the finger or the mouse last went down: "Select" works from there
   const point = useRef<{ x: number; y: number } | null>(null)
   const touch = !hasFinePointer()
+  // The selection when the finger went down, to restore when the menu opens
+  const selectionBefore = useRef<EditorSelection | null>(null)
+  const afterClose = useRef<(() => void) | null>(null)
+  const selecting = useEditorViewStore((state) => state.touchSelecting)
 
   /** Selects the word (or, on a blank, the line) under the last press: the start of selecting by touch, which a long press cannot do here. */
   const selectHere = () => {
     if (!view || !point.current) return
     const position = view.posAtCoords(point.current) ?? view.state.selection.main.head
-    const word = view.state.wordAt(position)
-    const line = view.state.doc.lineAt(position)
-    view.dispatch({ selection: word ? { anchor: word.from, head: word.to } : { anchor: line.from, head: line.to }, scrollIntoView: true })
-    view.focus()
+    afterClose.current = () => selectByTouch(view, position)
   }
 
   const hasPages = useEditorStore((state) => state.pages.length > 0)
@@ -55,18 +58,43 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
     usePreviewScrollStore.getState().show(place, true)
   }
 
-  const keepFocus = { onCloseAutoFocus: (event: Event) => event.preventDefault() }
+  const keepFocus = {
+    onCloseAutoFocus: (event: Event) => {
+      event.preventDefault()
+      const action = afterClose.current
+      afterClose.current = null
+      if (action) requestAnimationFrame(action)
+    },
+  }
 
   const run = (command: (target: NonNullable<typeof view>) => unknown) => () => {
     if (!view) return
-    command(view)
-    view.focus()
+    afterClose.current = () => {
+      command(view)
+      view.focus()
+    }
   }
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div className="h-full" onPointerDownCapture={(event) => (point.current = { x: event.clientX, y: event.clientY })}>
+    <ContextMenu
+      onOpenChange={(open) => {
+        // A long press also made the system select a word and show its handles: the menu has its own Select, so put the selection back
+        const before = selectionBefore.current
+        if (open && touch && view && before) {
+          // Keep an existing range for Cut/Copy; otherwise Paste belongs at the long-pressed position.
+          const at = point.current && view.posAtCoords(point.current)
+          view.dispatch({ selection: before.main.empty && at != null ? { anchor: at } : before })
+        }
+      }}
+    >
+      <ContextMenuTrigger asChild disabled={touch && selecting}>
+        <div
+          className="h-full"
+          onPointerDownCapture={(event) => {
+            point.current = { x: event.clientX, y: event.clientY }
+            selectionBefore.current = view?.state.selection ?? null
+          }}
+        >
           {children}
         </div>
       </ContextMenuTrigger>
@@ -86,16 +114,19 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
           <Redo2 /> {t("format.redo")} <ContextMenuShortcut>{mod}Y</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => void (view && cutSelection(view))}>
+        <ContextMenuItem onSelect={run(cutSelection)}>
           <Scissors /> {t("menu.cut")} <ContextMenuShortcut>{mod}X</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void (view && copySelection(view))}>
+        <ContextMenuItem onSelect={run(copySelection)}>
           <Copy /> {t("menu.copy")} <ContextMenuShortcut>{mod}C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void (view && pasteClipboard(view))}>
+        <ContextMenuItem onSelect={run(pasteClipboard)}>
           <Clipboard /> {t("menu.paste")} <ContextMenuShortcut>{mod}V</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onSelect={run(selectAll)}>
+        <ContextMenuItem onSelect={run((target) => {
+          if (touch) target.dispatch({ effects: enableTouchSelection.of(true) })
+          selectAll(target)
+        })}>
           <TextSelect /> {t("menu.selectAll")} <ContextMenuShortcut>{mod}A</ContextMenuShortcut>
         </ContextMenuItem>
         {plainTypst && (

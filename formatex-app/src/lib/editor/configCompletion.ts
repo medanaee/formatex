@@ -171,7 +171,7 @@ export function completeFrontMatter(text: string, pos: number, env: CompletionEn
     const options: Suggestion[] = Object.entries(attrs)
       .filter(([name]) => !present.has(name))
       .map(([name, spec]) => attrSuggestion(name, spec, env, `${name}: `))
-    // At the top level the blocks (header, footer, cover, ...) are keys too
+    // At the top level the blocks (header, footer, ...) are keys too
     if (!parent) {
       for (const [name, table] of Object.entries(config.tables)) {
         if (!present.has(name)) options.push({ label: name, kind: "tag", detail: "block", info: localized(table.doc, env.language), template: `${name}:\n  ${KEY_PLACEHOLDER}`, boost: 1 })

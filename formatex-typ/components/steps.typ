@@ -71,6 +71,30 @@
     },
 )
 
+#let steps-html = (
+  steps: (attrs, body) => context {
+    let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+    let first = int(attrs.at("start", default: "1"))
+    let hue = if "color" in attrs { css-color(pick-hue(attrs.color, "steps", theme.accent, attrs: attrs)) } else { "var(--accent)" }
+    html.elem("ol", attrs: (class: "fx-steps", dir: if d == rtl { "rtl" } else { "ltr" }, start: str(first), style: "counter-reset: fx-step " + str(first - 1) + "; --step-color: " + hue), body)
+  },
+  step: (attrs, body) => {
+    let title = attrs.at("title", default: none)
+    html.elem("li", attrs: (class: "fx-step"), {
+      if title != none { html.elem("div", attrs: (class: "fx-step-title"), title) }
+      html.elem("div", attrs: (class: "fx-step-body"), body)
+    })
+  },
+)
+#let steps-css = `````css
+.fx-steps { list-style: none; padding-inline-start: 0 !important; margin: .8em 0; counter-reset: fx-step; }
+.fx-step { position: relative; padding-inline-start: 2.4em; margin-bottom: .7em; counter-increment: fx-step; }
+.fx-step::before { content: counter(fx-step); position: absolute; inset-inline-start: 0; top: 0; width: 1.6em; height: 1.6em; border-radius: var(--r-badge); background: var(--step-color, var(--accent)); color: var(--bg); font-size: .85em; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.fx-step::after { content: ""; position: absolute; inset-inline-start: .75em; top: 1.8em; bottom: -0.6em; width: 2px; background: var(--rule); }
+.fx-step:last-child::after { display: none; }
+.fx-step-title { font-weight: 700; margin-bottom: .3em; color: var(--heading); }
+`````.text
+
 #let steps-schema = (
   "steps": (
     kind: "block",

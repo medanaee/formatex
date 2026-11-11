@@ -398,7 +398,9 @@
     "preview": "پیش‌نمایش HTML",
     "pagesPreview": "پیش‌نمایش صفحه‌ها",
     "previewFailed": "ساخت HTML انجام نشد",
-    "export": "خروجی"
+    "export": "خروجی",
+    "katexMath": "رندر ریاضیات با KaTeX",
+    "katexMathHint": "فرمول‌های ریاضی را با کتابخانه KaTeX رندر می‌کند. خاموش: رندر استاندارد Typst HTML."
   },
   "storage": {
     "label": "محل ذخیره",
@@ -483,5 +485,16 @@
     "fitPage": "اندازه‌ی صفحه",
     "zoom": "بزرگ‌نمایی",
     "follow": "دنبال کردن متنِ در حال ویرایش"
+  },
+  "editorSearch": {
+    "toggleReplace": "جست‌وجو و جایگزینی",
+    "replace": "جایگزین با",
+    "previous": "نتیجهٔ قبلی",
+    "next": "نتیجهٔ بعدی",
+    "replaceNext": "جایگزینی بعدی",
+    "replaceAll": "جایگزینی همه",
+    "caseSensitive": "حساس به حروف بزرگ و کوچک",
+    "regexp": "عبارت منظم",
+    "wholeWord": "کلمهٔ کامل"
   }
 }

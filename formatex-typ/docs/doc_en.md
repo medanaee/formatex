@@ -13,18 +13,6 @@ header:
   skip-first-page: false
   # logo: images/logo.svg
 
-cover:
-  type: "User Guide"
-  title: "Bilingual Typst Research Template"
-  subtitle: "Markdown in, typeset PDF out: Persian and English side by side"
-  # institution: "نام دانشگاه"
-  # faculty: "نام دانشکده"
-  # author: "نام نویسنده"
-  # supervisor: ["دکتر الف", "دکتر ب"]
-  date: "October 2026"
-  frame: true
-  dir: auto
-
 footer:
   style: plain
   start: ""
@@ -32,6 +20,8 @@ footer:
   digits: en
   
 ---
+
+<cover type="User Guide" title="Bilingual Typst Research Template" subtitle="Markdown in, typeset PDF out: Persian and English side by side" date="October 2026" frame="true" dir="auto"></cover>
 
 <toc dir="ltr" break="true"></toc>
 
@@ -76,13 +66,13 @@ doc_en.md  ──(cmarker)──▶  main.typ + src/  ──(typst)──▶  ma
 | `doc_en.md` | This guide, in English. Compiled by default when `config.toml` has no `source`. |
 | `doc_fa.md` | The same guide in Persian. |
 | `main.typ` | Entry point (a few lines). Renders the Markdown through the preprocessors in `src/preprocess/` and the tags in `components/`. |
-| `components/<name>.typ` | One Typst file per component (its tags and code). |
+| `components/<name>.typ` | One Typst file per component (its tags and code); `cover.typ` owns the standalone cover layout and schema. |
 | `src/lib/` | Helpers shared by several components. |
 | `src/kit.typ` | What a component imports (`#import "/src/kit.typ": *`): the prelude and every helper library of `src/lib/`. |
 | `tools/` | `build-all.mjs` (every theme × feel), `gen-registry.mjs` (rebuilds `components/_registry.typ` from the component files), `bundle.mjs` (one-file build, `dist/formatex.typ`) and `export-schema.mjs` (`dist/tags.json`: every tag with its attributes and allowed values, for editor autocomplete). |
-| `src/core.typ`, `src/page.typ`, `src/conf.typ`, `src/prelude.typ` | The template: `core` (config, themes, feels, fonts, direction), `page` (page, header, footer, cover), `conf` (styling of code, quotes, tables, headings), `prelude` (what every file imports). |
+| `src/core.typ`, `src/page.typ`, `src/conf.typ`, `src/prelude.typ` | The template: `core` (config, themes, feels, fonts, direction), `page` (page, header, footer), `conf` (styling of code, quotes, tables, headings), `prelude` (what every file imports). |
 | `src/themes.typ` | The eight color palettes. |
-| `config.toml` | Project-wide settings: source file, numbering, theme, feel, page size, columns, fonts, tables, equations. The header, footer, cover and bibliography live in each Markdown file's front matter. |
+| `config.toml` | Project-wide settings: source file, numbering, theme, feel, page size, columns, fonts, tables, equations. The header, footer and bibliography live in each Markdown file's front matter. |
 | `examples/references.bib` | BibTeX entries used by `<cite>` and `<bibliography>`. |
 | `examples/demo.md` | Full feature test: every component, table option, code case, theorem kind, reference and citation form. Build it with `node tools/build-all.mjs --source examples/demo.md` to check all themes and feels. |
 | `code-dark.tmTheme` | Syntax-highlighting theme used automatically on dark themes. |
@@ -103,7 +93,6 @@ typst compile main.typ --input theme=dracula            # override the theme for
 typst compile main.typ --input feel=friendly            # override the feel
 typst compile main.typ --input header-style=band        # override the header style
 typst compile main.typ --input page=mobile              # phone-sized pages
-typst compile main.typ --input cover=false              # drop (or force with true) the cover page
 typst compile main.typ --input todo=hide                # final version: no draft notes
 typst compile main.typ --input answers=end              # answers collected under <answers> (or hide / show)
 typst compile main.typ demo.pdf --input source=examples/demo.md  # render another Markdown file for this build
@@ -122,10 +111,20 @@ typst compile main.typ out.html --format html --features html --font-path fonts 
   --input source=docs/doc_en.md --input target=html --input html-copy-code=true
 ```
 
-`--input target=html` makes the engine write a page instead of paged output (`src/html/`): the theme, the feel and the fonts become CSS, headings, lists, tables, code blocks, alerts, boxes, badges, keys, links and references are real HTML, and the page reflows with the width of the window. A tag that has no HTML form yet (`<chart>`, `<cetz>`, `<steps>`, `<compare>`, ...) keeps its PDF look as an inline picture, so nothing is lost. The `[html]` table of config.toml (`toolbar`, `progress`, `outline`, `copy-code`, `embed-fonts`, all on by default) chooses what the page gets: a toolbar with zoom, theme and feel, a reading-progress line, an outline sidebar and a copy button on every code block. `--input html-copy-code=false` (and `html-toolbar`, `html-progress`, `html-outline`) overrides one of them for one build. The reader can change the theme and the feel in the toolbar; with the toolbar on, the fonts of every feel are put in the file (only the glyphs the page uses), so the feel changes the fonts as well; a red dot marks a setting changed from the page's own, and the menu has a "Back to default" item. `examples/demo.md` shows every tag and is the test page for the HTML output.
+`--input target=html` makes the engine write a page instead of paged output (`src/html/`): the theme, the feel and the fonts become CSS, headings, lists, tables, code blocks, alerts, boxes, badges, keys, links and references are real HTML, and the page reflows with the width of the window. Graphics such as `<chart>`, `<cetz>` and `<lilaq>` may retain their Typst SVG rendering; arbitrary graphics inside `<typ>` may use a frame as well. Text and structural components with native handlers, including `<steps>` and `<compare>`, use native HTML rather than a picture of their PDF layout. The `[html]` table of config.toml (`toolbar`, `progress`, `outline`, `copy-code`, `embed-fonts`, all on by default) chooses what the page gets: a toolbar with zoom, theme and feel, a reading-progress line, an outline sidebar and a copy button on every code block. `--input html-copy-code=false` (and `html-toolbar`, `html-progress`, `html-outline`) overrides one of them for one build. The reader can change the theme and the feel in the toolbar; with the toolbar on, the fonts of every feel are put in the file (only the glyphs the page uses), so the feel changes the fonts as well; a red dot marks a setting changed from the page's own, and the menu has a "Back to default" item. `examples/demo.md` shows every tag and is the test page for the HTML output.
 
+- The viewer's toolbar, menus, outline controls and code-copy buttons can use a language independently of the document: `--input html-ui-lang=en` or `--input html-ui-lang=fa`. Their labels and direction follow that language; the document keeps its own language and direction. Without this input, the controls follow the document. The app supplies its current interface language for both the HTML preview and export.
+- The app's live HTML preview reuses compilation and font data between edits and updates its existing page when possible. It uses the same Markdown, tags and settings as standalone HTML export; no preview-specific authoring syntax is needed. Export still produces a self-contained file with embedded font subsets when that option is on.
+- Native HTML blocks honor the merged document `dir` (`auto`, `rtl` or `ltr`), including the main content, lists, tables, quotes and alerts. Automatic direction remains per block; a forced direction is not reset by the browser's plaintext bidi handling. Paragraph justification and line/letter/word spacing, table `head-align` / `body-align`, and heading look settings apply to HTML too; heading `max-level` is relative to the top outlined heading. Global and per-list numbering/marker settings are shared with PDF, with unordered markers emitted as text; list `guides` are a PDF-only drawing.
+- With the HTML toolbar enabled, its magnifier opens **Find** on phone and desktop; Ctrl / Cmd + F opens the same panel. Search is literal and case-insensitive across the document's text nodes, with previous/next buttons and a localized match count. Enter finds the next result, Shift + Enter the previous result, and Escape closes the panel. Script/style text and code-copy controls are excluded. Live preview refreshes the results after content updates. This viewer search is separate from source-editor find/replace.
+- Choose HTML math with `[html] math = "katex"` or `"native"` (default), or override one build with `--input html-math=katex`. KaTeX includes its renderer, stylesheet and WOFF2 fonts in the file, with no CDN or other network request. The compressed bundle is included only when the document contains KaTeX math markers; documents without formulas do not carry it. Math renders asynchronously after loading and after live content updates.
+- Code blocks in HTML feature a clean top header bar with the language badge on one side and the copy button on the other, preventing overlay on code lines.
+- HTML footnotes keep their full content as native numbered references and one endnotes section; both Markdown footnotes and inline `<fn>` tags use this path.
+- Text and structural tags use native HTML, including `<cover>`, `<docheader>`, `<p>`, `<letter>`, `<tree>`, exercises/choices/answers and the collected todos, as well as the existing layout, chat, comparison and theorem components. Counters, digits, lists, citations and bibliography remain native content. The same documented attributes apply; only drawings (`<cetz>`, `<lilaq>`, `<chart>` and arbitrary graphics in `<typ>`) intentionally retain framed Typst output.
+- Native HTML preserves comparison columns, titles and colors; the three chat styles and their configured names/icons/colors/frame/width/title; progress bars/stars/dots with values and limits; reference-linked inline/block definitions; split/unified line-by-line diffs; grid spans/sizes/alignment with a phone layout; step numbering/color; image and figure sizing/alignment. Spacing is kept compact while content still reflows with the viewport.
+- The outline sidebar features high-contrast primary accent styling with compact navigation, and table row heights are optimized for compactness.
 - Typst still calls its HTML export incomplete, so this may change. The app's **Export HTML** button does the same and also puts the fonts inside the file (the CLI leaves them to the reader's machine).
-- A tag gets its HTML form in `src/html/tags.typ` (`html-tag-impls`) and its CSS in `src/html/style.typ`.
+- A component exports its HTML handlers as `<name>-html` and its CSS as `<name>-css` in its own file. The generated registry collects them; `src/html/kit.typ` provides shared helpers and `src/html/tags.typ` adapts tags without a native handler. `src/html/style.typ` contains the shared page styles.
 
 ### All themes and feels: `tools/build-all.mjs`
 
@@ -140,7 +139,6 @@ out/doc_en-sepia-formal.pdf   ...                             out/doc_en-dracula
 node tools/build-all.mjs                                    # all 24
 node tools/build-all.mjs --themes paper                      # paper in all three feels
 node tools/build-all.mjs --themes paper,nord --feels formal   # selected combinations only
-node tools/build-all.mjs --no-cover                           # without the cover page
 node tools/build-all.mjs --source examples/demo.md                    # out/demo-<theme>-<feel>.pdf
 node tools/build-all.mjs --out-dir pdfs                       # another output folder
 ```
@@ -151,7 +149,6 @@ node tools/build-all.mjs --out-dir pdfs                       # another output f
 | `--feels` | all three | Feels to build (comma-separated). |
 | `--source` | `source` from `config.toml` (else `doc_en.md`) | Markdown file to render. Its name is used as the file prefix. |
 | `--out-dir` | `out` | Output folder, created if missing. |
-| `--no-cover` | off | Passes `cover=false`. |
 
 The script switches to its own folder first, so it can be started from anywhere. It prints `ok` or `FAILED` for each file. At the end it lists the combinations that failed and exits with code 1 if any did.
 
@@ -172,7 +169,7 @@ Settings come from two places:
 | Where | Scope | Holds |
 |-------|-------|-------|
 | `config.toml` | Every document in the project | Headings (numbering and look), theme, feel, page size, margins, text direction, columns, draft notes and answers, fonts, list, table, equation and chat defaults |
-| Front matter at the top of each `.md` | That document only | Page header, footer, cover page, bibliography, and overrides of anything in `config.toml` |
+| Front matter at the top of each `.md` | That document only | Page header, footer, bibliography, and overrides of anything in `config.toml` |
 
 `--input` options on the command line override both.
 
@@ -190,10 +187,6 @@ header:
   start: "Bilingual Typst Template"
   end: "Page {page} of {pages}"
 
-cover:
-  type: "User Guide"
-  title: "Bilingual Typst Research Template"
-  date: "October 2026"
 ---
 
 ## First section
@@ -204,8 +197,8 @@ cover:
   - The front matter is merged over `config.toml`: tables are merged key by key, and anything else is replaced.
   - For example, `font: {latin: Lexend}` changes only the Latin font and keeps `config.toml`'s other font settings.
   - The same goes for `heading:`: any of its keys (`numbering`, `number-suffix`, `max-numbering-level`, `underline`, `fill`, `max-level`, `color`) can be set for one document, and the rest come from `config.toml`. An empty value (`color:`) means the default.
-- **Turning parts on:** a document gets a header only if it has a `header:` table, and a cover only if it has a `cover:` table. Inside either one, `enabled: false` turns it off again.
-- **Not printed:** the front matter is stripped before rendering. A document without front matter simply has no header and no cover.
+- **Turning the header on:** a document gets a header only if it has a `header:` table; `enabled: false` inside turns it off again. A cover is independent body content, written with `<cover>`.
+- **Not printed:** the front matter is stripped before rendering. A document without front matter simply has no configured header; it can still contain `<cover>`.
 - **Quoting:**
   - Quote any text that contains `{`, `: ` or ` #`, e.g. `end: "Page {page} of {pages}"`.
   - Without quotes, YAML reads `{` as the start of a table and `#` as the start of a comment.
@@ -386,7 +379,7 @@ dir = "auto"   # auto | rtl | ltr
 | `ltr` | The same, left to right (Latin digits, "Figure 1"). |
 
 - **Always left to right:** code blocks and inline code. Labels in `<cetz>` drawings, Mermaid diagrams and `<kbd>` keys keep their own direction.
-- **Page furniture:** the page header, footer and cover follow `dir` when their own `dir` is `auto`.
+- **Page furniture:** the page header and footer follow document `dir` when their own `dir` is `auto`. The `<cover>` component resolves direction in context, including a surrounding `<dir>` block.
 - **Columns:** in a multi-column document with `column-dir = "auto"`, the column order follows `dir` too.
 - **Where to set it:** usually per document in the front matter (`dir: rtl`). `--input dir=ltr` overrides it for one build. To change the direction of only part of a document, use <a href="#dir-tag">`<dir>`</a>.
 - Any other value is a compile error.
@@ -473,6 +466,8 @@ code = "Anonymous Pro"     # code blocks and inline code
 ```
 
 - Missing keys fall back to their defaults.
+- The app embeds the exact requested font family when available, including `CMU Serif`; only a missing family uses an alias fallback. A fallback is registered under the requested CSS family name, so a formal document does not silently fall through to an unrelated browser font. The default formal Latin family remains New Computer Modern.
+- HTML font embedding chooses the nearest regular/bold weights per style, including CMU Serif faces whose regular weight is 500. Stock New Computer Modern uses browser-compatible quadratic-outline copies for HTML only; its metrics and shaping are preserved and the original PDF fonts stay unchanged.
 - Each character comes from the first font that has it, with the Latin font tried before the Persian one. A Persian font that also contains Latin letters therefore doesn't change English text.
 
 ### Paragraphs
@@ -579,8 +574,8 @@ The `start`, `center` and `end` texts can contain these placeholders:
 
 | Placeholder | Value |
 |-------------|-------|
-| `{page}` | Current page number |
-| `{pages}` | Total pages (the cover is not counted) |
+| `{page}` | Current page counter; the body page immediately after a `<cover>` starts again at 1 |
+| `{pages}` | Final page counter value; with a cover at the beginning, this is the number of body pages |
 | `{section}` | Current top-level section: the first one starting on the page, otherwise the last one before it |
 | `{section-number}` | That section's number (empty when numbering is off) |
 
@@ -612,29 +607,9 @@ footer:
 - The cover never gets a footer.
 - Only the main file's front matter counts; footers in included files are ignored.
 
-### Cover page (front matter)
+### Cover migration
 
-```yaml
-cover:
-  # logo: images/logo.svg
-  institution: "نام دانشگاه"
-  faculty: "نام دانشکده"
-  department: ""
-  type: "گزارش پژوهشی"             # e.g. پایان‌نامه کارشناسی ارشد
-  title: "عنوان پژوهش"
-  subtitle: ""
-  author: "نام نویسنده"             # or a list: ["A", "B"], one per line
-  supervisor: "نام استاد راهنما"
-  advisor: ""
-  date: "مهر ۱۴۰۵"
-  frame: true                      # border around the page
-  dir: auto                        # rtl | ltr | auto (the document's dir, else from title and institution)
-  # enabled: false                 # keep the settings but hide the cover
-```
-
-- The cover is its own page, with no header and no page number. Page 1 is the page after it.
-- Empty fields are left out.
-- The labels for author, supervisor and advisor follow the cover's direction: «نگارش / استاد راهنما / استاد مشاور» in Persian, "Author / Supervisor / Advisor" in English.
+The cover is a block component, not a setting. Write `<cover ...></cover>` in the Markdown body where its page should appear; see [the cover component](#cover-component). **Breaking change:** old `cover:` front matter, `[cover]` configuration and cover CLI switches no longer create or hide a cover and have no effect. Move their fields to attributes on the tag; remove the tag to omit the cover. Keep `frame="true"` explicitly when migrating an old framed cover, because the tag defaults to no frame.
 
 ### Bibliography (front matter)
 
@@ -673,9 +648,9 @@ var-types:
 
 - A variable with no rule is what it looks like (a number, true / false, a text). A value outside its rule is an error with its line.
 - `--input var.audience=teacher` overrides a value for one build (the same file for another reader), and is read by its rule.
-- `title`, `subtitle`, `author`, `date` and the other keys of `cover` can always be read, and so can every setting as `setting.theme`, `setting.chat.frame`... (what is written, else the default; `--input theme=...` counts).
+- Readonly document metadata such as `title`, `subtitle`, `author` and `date` comes only from top-level metadata, never from a cover tag or old cover settings. Cover attributes must be explicit or use `{{ }}` values. Every setting can also be read as `setting.theme`, `setting.chat.frame`... (what is written, else the default; `--input theme=...` counts).
 
-**`{{ code }}` is Typst.** It can stand in the text and in the value of any attribute (and in the texts of the settings, `cover.title: "{{ course }}"`):
+**`{{ code }}` is Typst.** It can stand in the text and in the value of any attribute (and in the texts of the settings, `header.start: "{{ course }}"`; a cover uses `title="{{ course }}"`):
 
 ```markdown
 # {{ course }}, term {{ year }}
@@ -708,7 +683,7 @@ A name that is not a variable is an error; `let`, `if` / `else if` / `else`, `fo
 
 An unmatched bracket in the text is written `\[` or `\]`. A `{{ }}` alone on its lines gives a block (with a blank line around it); anywhere else it gives one line of text.
 
-**Local variables and changing variables.** `let x = ...` makes a variable that lives in that `{{ }}`. `n += 1` or `level = 3` on a variable of `vars` changes it for the `{{ }}`s that follow, in the order of the document (the rules are checked again after it), and prints nothing. The header, the footer and the cover are set before the text and see the values as they were written.
+**Local variables and changing variables.** `let x = ...` makes a variable that lives in that `{{ }}`. `n += 1` or `level = 3` on a variable of `vars` changes it for the `{{ }}`s that follow, in the order of the document (the rules are checked again after it), and prints nothing. The header and footer are set before the text and see the values as they were written. A `<cover>` is body content at its written position, and its `{{ }}` attributes and body use the normal document evaluation order.
 
 **Values of the page.** `PAGE`, `PAGES`, `SECTION` and `SECTION_NUMBER` are known only when the pages are made. A `{{ }}` that names one runs then, not when the text is read: `Page {{ PAGE }} of {{ PAGES }}`, `{{ if PAGE == 1 [ **first page** ] else [ later ] }}`. Because of that it cannot change variables, cannot stand in the attribute of a tag, and should give text (a heading made there is not numbered or listed). A name in capitals is for these values, so a variable cannot be named that way. The `<typ>` tag sees `vars` and `setting` as they are written.
 
@@ -822,7 +797,7 @@ Split a long document into files and pull them in where they belong:
 ```
 
 - **Same as one file:** the line is replaced by the file's text before rendering. Heading numbering, the table of contents, figure, table and equation numbers, `{#id}`s and `<ref>` all continue across files and work in both directions.
-- **Front matter is ignored.** Only the main file's settings count (theme, header, cover, ...). An included file may keep its own front matter, for example for compiling it alone.
+- **Front matter is ignored.** Only the main file's settings count (theme, header, ...). An included file may keep its own front matter, for example for compiling it alone.
 - **Paths** are relative to the project root, like image paths. A path starting with `./` or `../` is relative to the file that contains the `<include>` instead (`<include src="./part.md">` next to it). Nested includes work.
 - **Placement:** the tag must be on its own line with blank lines around it. An `<include>` inside a paragraph or list is a compile error, and so is a loop (`a.md` → `b.md` → `a.md`). Inside fenced code blocks it is left as text.
 - Headings in an included file are not shifted: write them at the level they should have in the main document.
@@ -1014,6 +989,41 @@ These apply to every tag below:
 ---
 
 ## Components
+
+### `<cover>`: standalone cover page {#cover-component}
+
+Place this block in the Markdown body exactly where the cover should appear, usually before `<toc>`:
+
+```markdown
+<cover institution="Example University" faculty="Engineering" department="Computing" type="Research report" title="Research title" subtitle="Optional subtitle" author="Author name" supervisor="Supervisor name" advisor="Advisor name" date="October 2026" frame="false" dir="auto">
+
+**Additional information** can be written as Markdown here.
+
+</cover>
+```
+
+| Attribute | Meaning | Default |
+|---|---|---|
+| `logo` | Image path from the project root | empty |
+| `institution` | University or organization | empty |
+| `faculty` | Faculty or school | empty |
+| `department` | Department | empty |
+| `type` | Document kind, such as thesis or report | empty |
+| `title` | Main cover title | empty |
+| `subtitle` | Subtitle | empty |
+| `author` | Author text | empty |
+| `supervisor` | Supervisor text | empty |
+| `advisor` | Advisor text | empty |
+| `date` | Date text | empty |
+| `frame` | Draw a theme/feel-aware frame: `true` / `false` | `false` |
+| `dir` | `auto`, `rtl` or `ltr`; `auto` resolves in context, including a surrounding `<dir>` | `auto` |
+
+- All fields are optional; empty fields are omitted. Attribute values are strings, not list literals: use `author="A / B"` for several names or put multiline information in the Markdown body. Content is not filled from metadata automatically: write attributes explicitly or interpolate declared variables/metadata with `{{ }}`, such as `title="{{ course }}"` when `course` is defined.
+- The optional body is ordinary Markdown for extra information; leave blank lines inside the block. Close an empty cover too: `<cover title="Title"></cover>`.
+- **PDF:** exactly one standalone single-column page at the tag's position, with no header, footer or printed page number. It resets the page counter to zero, so the following body page is page 1, even when the tag occurs later in the document. Oversized PDF content is scaled down to keep the cover on that single page.
+- **HTML:** a native section with the effective page height (297 mm for A4; custom and mobile heights are honored), responsive width and an internally scrolling content area, so extra information stays accessible without increasing the cover height. Its frame follows the theme and feel, with square corners in formal mode.
+- Author/supervisor/advisor labels follow the resolved direction. A surrounding `<dir>` affects the cover unless its own `dir` explicitly overrides it.
+- **Migration:** remove `cover:` front matter or `[cover]` settings and move their fields to this tag. Old cover settings and CLI switches have no effect. `frame` now defaults to `false`; use `frame="true"` to preserve a framed cover. Remove the tag itself to omit the cover.
 
 ### `<docheader>`: title block
 
@@ -1396,6 +1406,8 @@ lq.diagram(
 - **Gotchas:** `range` takes a named step (`range(0, 10, step: 2)`), and `lq.place(x, y, ...)` uses data coordinates. Typst fetches the package on the first build, so that build needs internet access.
 
 ### `<typ>`: Typst code or a Typst file
+
+In HTML, textual Typst written directly inside the tag produces native, selectable headings and styled text. Source-file inclusions and code containing vector-drawing operations retain framed SVG output; this keeps graphics independent of the native text path.
 
 `<typ>` puts Typst straight into the document. Write the Typst in a fenced code block inside the tag, or name a `.typ` file with `src`. Either way the result is set in place, as if the text of that file stood at that spot:
 
@@ -1835,7 +1847,7 @@ This English paragraph is inside `<dir rtl>`, so it is laid out right to left.
 - **Writing it:** like `<align>`: the tag on its own line, a blank line, the content, a blank line, the closing tag. The value can also be a bare attribute: `<dir rtl>`.
 - **What follows it:** the same things as the document's <a href="#dir-setting">`dir`</a> setting: paragraphs, headings, lists, tables and their cells, quotes, captions, alerts, boxes, steps and badges. Code stays left to right; `<cetz>` labels, Mermaid diagrams and `<kbd>` keys keep their own direction.
 - **Nesting:** `<dir>` tags can be nested; the innermost one wins.
-- **Not affected:** the page header, footer and cover follow only the document's `dir`.
+- **Not affected:** the page header and footer follow only the document's `dir`. `<cover>` is affected by the surrounding `<dir>` unless its own `dir` explicitly forces a direction.
 
 ### `<cite>` + `<bibliography>`: citations
 
@@ -1940,6 +1952,8 @@ const b = a + 1;
 | `lol` | `false` leaves the listing out of `<lol>`. |
 | `id` | Target for `<ref>`. Gives a number even without a caption. |
 | `span` | `column` (default) or `all`. In a multi-column document, `all` puts the listing across all columns, at the top or bottom of a page; useful for wide code. No effect with one column. |
+
+- In HTML, code remains selectable text with syntax coloring, line numbers and `highlight` bands; a `lines` slice keeps the original file numbers. The language badge and copy button sit in a separate header rather than covering code rows.
 
 ### `<diff>`: code and text comparisons
 

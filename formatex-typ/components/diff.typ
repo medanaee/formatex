@@ -63,7 +63,7 @@
 // Light pages need a stronger tint than `tinted` gives: its 10% vanishes on a pale code background.
 #let diff-style = {
   let shade(hue) = (
-    fill: color.mix((hue, if theme.dark { 20% } else { 17% }), (theme.code-bg, if theme.dark { 80% } else { 83% })),
+    fill: color.mix((hue, if theme.dark { 12% } else { 17% }), (theme.code-bg, if theme.dark { 88% } else { 83% })),
     head: color.mix((hue, if theme.dark { 14% } else { 10% }), (theme.code-bg, if theme.dark { 86% } else { 90% })),
     fg: if theme.dark { hue.lighten(30%) } else { color.mix((hue.darken(25%), 85%), (theme.fg, 15%)) },
   )
@@ -265,6 +265,87 @@
       })
     },
 )
+
+#let diff-html = (
+  del: (attrs, body) => html.elem("del", attrs: (class: "fx-del"), body),
+  ins: (attrs, body) => html.elem("ins", attrs: (class: "fx-ins"), body),
+  diff: (attrs, body) => {
+      let befores = untag(body, "diff-before").tagged
+      let afters = untag(body, "diff-after").tagged
+      let caption = attrs.at("caption", default: none)
+      let id = attrs.at("id", default: none)
+      assert(
+        befores.len() == 1 and afters.len() == 1,
+        message: at-of(attrs) + "<diff> needs one <before> and one <after>, each with a fenced code block or src=\"file\"",
+      )
+      // (text, fence language) of a <before> / <after>: its src file or its fenced code block.
+      let version(item) = {
+        if "src" in item.attrs { return (read(root-path(item.attrs.src)), item.attrs.src.split(".").last()) }
+        let r = find-raw(item.body)
+        if r == none { ("", none) } else { (r.text, r.at("lang", default: none)) }
+      }
+      let (old-text, old-lang) = version(befores.first())
+      let (new-text, new-lang) = version(afters.first())
+      let old-lines = diff-lines(old-text)
+      let new-lines = diff-lines(new-text)
+      let ops = diff-ops(old-lines, new-lines)
+      let lang = attrs.at("lang", default: if old-lang != none { old-lang } else { new-lang })
+      let mode = attrs.at("mode", default: "split")
+      assert(mode in ("split", "unified"), message: at-of(attrs) + "<diff> mode must be split or unified, got " + repr(mode))
+      let title(item, fa, en, d) = {
+        let t = item.attrs.at("title", default: none)
+        if t != none { t } else if d == rtl { fa } else { en }
+      }
+
+    context {
+      let d = resolve-dir(attrs.at("dir", default: "auto"), if caption != none { caption } else { body })
+      let cell(op, old) = {
+        let kind = if op == none { "empty" } else { op.kind }
+        html.elem("div", attrs: (class: "fx-diff-line fx-diff-" + kind, dir: "ltr"), {
+          if op != none {
+            let n = if old { op.on } else { op.nn }
+            let text = if old { old-lines.at(op.oi) } else { new-lines.at(op.ni) }
+            html.elem("span", attrs: (class: "fx-diff-num", "aria-hidden": "true"), if n == none { "" } else { str(n) })
+            html.elem("span", attrs: (class: "fx-diff-sign", "aria-hidden": "true"), if kind == "del" { "−" } else if kind == "add" { "+" } else { " " })
+            html.elem("span", attrs: (class: "fx-diff-text"), raw(text, lang: lang))
+          }
+        })
+      }
+  let rows = ()
+  let k = 0
+  while k < ops.len() {
+    let op = ops.at(k)
+    if op.kind == "eq" {
+      rows.push((left: op, right: op))
+      k += 1
+      continue
+    }
+    let (dels, adds) = ((), ())
+    while k < ops.len() and ops.at(k).kind in ("del", "add") {
+      if ops.at(k).kind == "del" { dels.push(ops.at(k)) } else { adds.push(ops.at(k)) }
+      k += 1
+    }
+    for r in range(calc.max(dels.len(), adds.len())) {
+      rows.push((left: dels.at(r, default: none), right: adds.at(r, default: none)))
+    }
+  }
+
+      let output = html.elem("div", attrs: (class: "fx-diff fx-diff-" + mode, dir: if d == rtl { "rtl" } else { "ltr" }), {
+        if mode == "split" {
+          html.elem("div", attrs: (class: "fx-diff-titles"), { html.elem("strong", title(befores.first(), "نسخه قبل", "Before", d)); html.elem("strong", title(afters.first(), "نسخه بعد", "After", d)) })
+          for row in rows { html.elem("div", attrs: (class: "fx-diff-pair"), { cell(row.left, true); cell(row.right, false) }) }
+        } else { for op in ops { cell(op, op.kind != "add") } }
+      })
+      if caption == none and id == none { output } else { captioned("figure", "diff", "تغییرات", "Diff", output, caption: caption, id: id, numbering: true) }
+    }
+  },
+)
+#let diff-css = `````css
+.fx-diff { margin-block: .8em; border: 1px solid var(--code-stroke); border-radius: var(--r-code); overflow-x: auto; background: var(--code-bg); font-family: var(--font-code); font-size: .85em; line-height: 1.6; }
+.fx-diff-titles,.fx-diff-pair { display: grid; grid-template-columns: minmax(18em,1fr) minmax(18em,1fr); } .fx-diff-titles { border-bottom: 1px solid var(--rule); } .fx-diff-titles > strong { padding: .4em .65em; font-family: var(--font-body); color: var(--muted); } .fx-diff-line { display: flex; gap: .45em; padding: .12em .45em; min-height: 1.6em; }
+.fx-diff-del,.fx-del { background: color-mix(in srgb,#e04848 14%,var(--bg)); } .fx-diff-add,.fx-ins { background: color-mix(in srgb,#27a96b 14%,var(--bg)); }
+.fx-diff-num { min-width: 2em; color: var(--muted); text-align: end; user-select: none; } .fx-diff-sign { color: var(--muted); user-select: none; } .fx-diff-text { white-space: pre; } .fx-diff .fx-diff-text > code { background: none; border: 0; padding: 0; font-size: inherit; }
+`````.text
 
 #let diff-schema = (
   "diff": (

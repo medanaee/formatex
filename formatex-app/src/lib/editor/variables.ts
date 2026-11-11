@@ -30,7 +30,7 @@ export interface VariableSpec {
   block?: boolean
 }
 
-/** What a document can always read, whatever it defines: the keys of the cover. */
+/** What a document can always read, whatever it defines: the document metadata fields. */
 export const READ_ONLY_VARIABLES = ["title", "subtitle", "author", "date", "institution", "faculty", "department", "supervisor", "advisor"]
 /** The types a `var-types` entry can name. */
 export const VARIABLE_TYPES = ["bool", "number", "int", "length", "color", "string", "markdown", "json"] as const

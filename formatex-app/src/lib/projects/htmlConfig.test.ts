@@ -10,4 +10,9 @@ describe("htmlOptionsFromConfig", () => {
     const config = 'source = "main.md"\n\n[html]\ntoolbar = false\nembed-fonts = false  # small file\ncopy-code = "yes"\n\n[table]\noutline = false\n'
     expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, toolbar: false, embedFonts: false })
   })
+
+  it("reads math renderer from config", () => {
+    const config = '[html]\nmath = "katex"\n'
+    expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, katexMath: true })
+  })
 })

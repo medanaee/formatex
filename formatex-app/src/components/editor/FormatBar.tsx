@@ -14,9 +14,11 @@ import {
   Strikethrough,
   Table2,
   Tags,
+  Search,
   Undo2,
 } from "lucide-react"
 import { redo, undo } from "@codemirror/commands"
+import { openSearchPanel } from "@codemirror/search"
 import type { EditorView } from "@codemirror/view"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -111,8 +113,8 @@ export function FormatBar() {
   const configVisual = useSettingsStore((state) => state.configVisual)
   const setConfigVisual = useSettingsStore((state) => state.setConfigVisual)
 
-  if (!activePath || plainTypst) return null
-  const isConfig = activePath === CONFIG_FILE
+  if (!activePath) return null
+  const isConfig = !plainTypst && activePath === CONFIG_FILE
   // config.toml as a settings screen has no editor behind it: its bar is only the switch back to the source
   const modeSwitch = (on: boolean, set: (next: boolean) => void) => (
     <SegmentedControl
@@ -135,7 +137,7 @@ export function FormatBar() {
     )
   }
   if (!view) return null
-  const markdown = fileKindOf(activePath) === "markdown"
+  const markdown = !plainTypst && fileKindOf(activePath) === "markdown"
   const mod = desktopOs() === "macos" ? "⌘" : "Ctrl"
   const run = (command: (view: EditorView) => unknown) => () => {
     command(view)
@@ -143,18 +145,19 @@ export function FormatBar() {
 
   return (
     <div role="toolbar" aria-label={t("format.bar")} className="flex h-10 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border bg-background px-1 select-none [scrollbar-width:none]" dir="ltr">
+      <Tool label={t("appMenu.find")} shortcut={`${mod}+F`} onClick={run(openSearchPanel)}><Search /></Tool>
       <Tool label={t("format.undo")} shortcut={`${mod}+Z`} disabled={!canUndo} onClick={run(undo)}>
         <Undo2 />
       </Tool>
       <Tool label={t("format.redo")} shortcut={`${mod}+Y`} disabled={!canRedo} onClick={run(redo)}>
         <Redo2 />
       </Tool>
-      <Tool
+      {!plainTypst && <Tool
         label={t("format.direction", { value: t(`format.dir_${direction}` as "format.dir_auto") })}
         onClick={() => setDirection(direction === "auto" ? "rtl" : direction === "rtl" ? "ltr" : "auto")}
       >
         <span className="text-[10px] font-bold leading-none">{direction === "auto" ? "A" : direction.toUpperCase()}</span>
-      </Tool>
+      </Tool>}
       {markdown && (
         <>
           <Divider />

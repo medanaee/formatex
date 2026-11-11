@@ -62,6 +62,7 @@
     }
     let numbering = "numbering" in opts or "number-suffix" in opts or "number-prefix" in opts
     let look = opts.keys().filter(k => k not in ("numbering", "number-prefix", "number-suffix", "toc")).map(k => (k, opts.at(k))).to-dict()
+    if id != none { look.insert("id", id) }
     let local = numbering or "toc" in opts
     if local or look.len() > 0 {
       let setup = ""

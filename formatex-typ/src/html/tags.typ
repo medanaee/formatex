@@ -4,7 +4,7 @@
 #import "/src/html/kit.typ": in-frame
 
 /// A tag the page must not turn into a picture: an image and a caption stay as they are (a <fig> takes them apart)
-#let html-passthrough = ("img", "caption")
+#let html-passthrough = ("img", "caption", "counter", "digit", "list", "enum", "cite", "bibliography", "listpages", "include")
 
 /// The tags of the PDF as the page needs them: `impls` (the `<name>-html` of the components, tag to function) where a tag has one, and
 /// a picture of the PDF look for each of the others. A child tag a parent reads (`scoped` in its schema) stays as it is.

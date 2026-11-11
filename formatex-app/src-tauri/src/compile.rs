@@ -314,19 +314,28 @@ pub(crate) fn compile_as(engine: &Engine, project_id: &str, main: &str, mut inpu
 /// The world kept for a project between builds; rebuilt when what it was built from changed: another main file or inputs, a new
 /// component library, new fonts. (The tools of the editor use the same world, so they see the same files as the build.)
 pub(crate) fn kept_world(engine: &Engine, project_id: &str, main: &str, inputs: &Inputs, plain: bool, dir: &std::path::Path) -> Arc<Mutex<ProjectWorld>> {
+    kept_world_for(engine, project_id, main, inputs, plain, dir, false)
+}
+
+fn kept_world_for(engine: &Engine, project_id: &str, main: &str, inputs: &Inputs, plain: bool, dir: &std::path::Path, html: bool) -> Arc<Mutex<ProjectWorld>> {
     let fonts = engine.fonts.get();
     let sorted: BTreeMap<_, _> = inputs.iter().collect();
     let key = format!("{sorted:?}|{plain}|{main}|{}|{:p}|{}", engine.components.generation(), Arc::as_ptr(&fonts), dir.display());
     let mut worlds = engine.worlds.lock().unwrap_or_else(|e| e.into_inner());
-    match worlds.get(project_id) {
+    let slot = if html { format!("{project_id}\0html") } else { project_id.to_string() };
+    match worlds.get(&slot) {
         Some((existing, world)) if *existing == key => world.clone(),
         _ => {
-            let world = Arc::new(Mutex::new(if plain {
+            let world = Arc::new(Mutex::new(if html && plain {
+                ProjectWorld::plain_html(Some(dir.to_path_buf()), main, engine.packages.clone(), fonts, engine.components.clone(), HashMap::new())
+            } else if html {
+                ProjectWorld::new_html(Some(dir.to_path_buf()), engine::ENTRY, engine.packages.clone(), fonts, engine.components.clone(), inputs, HashMap::new())
+            } else if plain {
                 ProjectWorld::plain(Some(dir.to_path_buf()), main, engine.packages.clone(), fonts, engine.components.clone(), HashMap::new())
             } else {
                 ProjectWorld::new(Some(dir.to_path_buf()), engine::ENTRY, engine.packages.clone(), fonts, engine.components.clone(), inputs, HashMap::new())
             }));
-            worlds.insert(project_id.to_string(), (key, world.clone()));
+            worlds.insert(slot, (key, world.clone()));
             world
         }
     }
@@ -421,9 +430,25 @@ pub async fn export_pdf(
     .map_err(|error| error.to_string())?
 }
 
-/// The project as one HTML file (an experiment). The engine writes the page and Typst's HTML export serializes it; with `embed_fonts` the
-/// fonts the page names are put inside, so it looks the same on any machine.
+/// Native HTML stage timings, excluding IPC and WebView rendering.
+#[derive(Default, Serialize)]
+pub(crate) struct HtmlTimings {
+    world_ms: f64,
+    compile_ms: f64,
+    serialize_ms: f64,
+    fonts_ms: f64,
+    total_ms: f64,
+    bytes: usize,
+}
+
+/// The project as one standalone HTML file, optionally with embedded fonts.
 pub(crate) fn render_html(engine: &Engine, project_id: &str, main: &str, overrides: HashMap<String, String>, plain: bool, options: HtmlExport) -> Result<String, String> {
+    render_html_profiled(engine, project_id, main, overrides, plain, options).map(|(html, _)| html)
+}
+
+fn render_html_profiled(engine: &Engine, project_id: &str, main: &str, overrides: HashMap<String, String>, plain: bool, options: HtmlExport) -> Result<(String, HtmlTimings), String> {
+    let total = Instant::now();
+    let mut timings = HtmlTimings::default();
     check_relative(main)?;
     let dir = project_dir(engine, project_id)?;
     let mut inputs = Inputs::new();
@@ -434,17 +459,22 @@ pub(crate) fn render_html(engine: &Engine, project_id: &str, main: &str, overrid
         inputs.insert("html-toolbar".into(), options.toolbar.to_string());
         inputs.insert("html-progress".into(), options.progress.to_string());
         inputs.insert("html-outline".into(), options.outline.to_string());
+        if let Some(lang) = options.ui_lang {
+            inputs.insert("html-ui-lang".into(), lang.code().into());
+        }
+        if let Some(m) = options.math {
+            inputs.insert("html-math".into(), m.as_str().into());
+        }
     }
     let extra = overrides_to_bytes(overrides, plain)?;
     let fonts = engine.fonts.get();
-    let world = if plain {
-        ProjectWorld::plain_html(Some(dir), main, engine.packages.clone(), fonts.clone(), engine.components.clone(), extra)
-    } else {
-        ProjectWorld::new_html(Some(dir), engine::ENTRY, engine.packages.clone(), fonts.clone(), engine.components.clone(), &inputs, extra)
-    };
+    let world = kept_world_for(engine, project_id, main, &inputs, plain, &dir, true);
+    let mut world = world.lock().unwrap_or_else(|e| e.into_inner());
+    world.refresh(extra);
+    timings.world_ms = total.elapsed().as_secs_f64() * 1000.0;
     let started = Instant::now();
-    let warned = typst::compile::<HtmlDocument>(&world);
-    eprintln!("[html export] compiled in {} ms", started.elapsed().as_millis());
+    let warned = typst::compile::<HtmlDocument>(&*world);
+    timings.compile_ms = started.elapsed().as_secs_f64() * 1000.0;
     let document = match warned.output {
         Ok(document) => document,
         Err(errors) => {
@@ -454,12 +484,47 @@ pub(crate) fn render_html(engine: &Engine, project_id: &str, main: &str, overrid
             return Err(first.map(|d| d.message.clone()).unwrap_or_else(|| "compilation failed".into()));
         }
     };
+    let started = Instant::now();
     let html = typst_html::html(&document, &HtmlOptions::default()).map_err(|errors| errors.iter().map(|e| e.message.to_string()).collect::<Vec<_>>().join("; "))?;
+    timings.serialize_ms = started.elapsed().as_secs_f64() * 1000.0;
     typst::comemo::evict(10);
     let started = Instant::now();
     let html = if options.embed_fonts { html_export::embed_fonts(html, &fonts) } else { html };
-    eprintln!("[html export] {} bytes, fonts put in {} ms", html.len(), started.elapsed().as_millis());
-    Ok(html)
+    timings.fonts_ms = started.elapsed().as_secs_f64() * 1000.0;
+    timings.bytes = html.len();
+    timings.total_ms = total.elapsed().as_secs_f64() * 1000.0;
+    eprintln!("[html export] {}", serde_json::to_string(&timings).unwrap_or_default());
+    Ok((html, timings))
+}
+
+#[cfg(test)]
+#[path = "compile_benchmark.rs"]
+mod benchmark;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HtmlPreviewOutput {
+    html: String,
+    font_key: String,
+    font_css: Option<String>,
+    timings: HtmlTimings,
+}
+
+fn render_preview_html(engine: &Engine, project_id: &str, main: &str, overrides: HashMap<String, String>, plain: bool, mut options: HtmlExport, known_fonts: Option<&str>) -> Result<HtmlPreviewOutput, String> {
+    options.embed_fonts = false;
+    let (html, mut timings) = render_html_profiled(engine, project_id, main, overrides, plain, options)?;
+    let started = Instant::now();
+    let (font_key, font_css) = html_export::preview_fonts(&html, &engine.fonts.get(), known_fonts);
+    timings.fonts_ms = started.elapsed().as_secs_f64() * 1000.0;
+    timings.total_ms += timings.fonts_ms;
+    Ok(HtmlPreviewOutput { html, font_key, font_css, timings })
+}
+
+#[tauri::command]
+pub async fn preview_html(engine: State<'_, Arc<Engine>>, project_id: String, main: String, overrides: Option<HashMap<String, String>>, kind: Option<String>, options: Option<HtmlExport>, known_fonts: Option<String>) -> Result<HtmlPreviewOutput, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || render_preview_html(&engine, &project_id, &main, overrides.unwrap_or_default(), is_plain(&kind), options.unwrap_or_default(), known_fonts.as_deref()))
+        .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -541,7 +606,7 @@ mod tests {
         let started = Instant::now();
         let plain = render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport { embed_fonts: false, ..HtmlExport::default() }).expect("the page");
         eprintln!("html without fonts: {} bytes in {:?}", plain.len(), started.elapsed());
-        assert!(plain.contains("<main class=\"fx-doc\">"), "the page has no <main>");
+        assert!(plain.contains("<main class=\"fx-doc\" dir=\"rtl\">"), "the starter must honor the global RTL direction");
         assert!(plain.contains("name=\"fx-fonts\""));
         assert!(plain.contains("fx-copy"), "the copy script is missing");
         assert!(!plain.contains("@font-face"));
@@ -558,7 +623,84 @@ mod tests {
         let _ = fs::remove_dir_all(&data_dir);
     }
 
-    /// Compiles a real project (the embedded engine, the default config, the starter document) end to end. Needs the Typst
+    #[test]
+    fn exports_html_with_katex_nested_divs_and_code_headers() {
+        let data_dir = std::env::temp_dir().join(format!("formatex-html-katex-test-{}", std::process::id()));
+        let project = data_dir.join("documents").join("katex_test");
+        fs::create_dir_all(project.join("images")).unwrap();
+        let config = r##"
+[document]
+title = "KaTeX Test"
+dir = "rtl"
+
+[html]
+math = "katex"
+feel = "friendly"
+"##;
+        let markdown = r##"# آزمون جامع
+
+<toc></toc>
+
+<div tailwind="w-full flex flex-col p-4" bg="#f0f0f0">
+<div tailwind="w-1/2 p-2" bg="#e0e0e0">
+متن تو در تو در دیو
+</div>
+</div>
+
+یک پاورقی[^note1] اینجا داریم.
+
+[^note1]: این توضیح پاورقی تست است.
+
+```rust
+fn main() {
+    println!("Hello World");
+}
+```
+
+معادله ریاضی به فرم درون‌خطی: $E = m c^2$
+
+و به صورت نمایشی:
+$$
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+$$
+
+1. مورد اول
+2. مورد دوم
+"##;
+        fs::write(project.join("config.toml"), config).unwrap();
+        fs::write(project.join("main.md"), markdown).unwrap();
+
+        let engine = Engine {
+            fonts: FontService::new(data_dir.join("fonts")),
+            packages: Arc::new(crate::packages::system_packages(&data_dir.join("cache"))),
+            components: Arc::new(ComponentLibrary::new(data_dir.join("components"))),
+            worlds: Mutex::new(HashMap::new()),
+            data_dir: data_dir.clone(),
+        };
+
+        let html = render_html(&engine, "katex_test", "main.md", HashMap::new(), false, HtmlExport::default()).expect("html export with katex");
+
+        // 1. Math rendered as KaTeX
+        assert!(html.contains("fx-katex-inline"), "inline math should have fx-katex-inline class");
+        assert!(html.contains("fx-katex-display"), "display math should have fx-katex-display class");
+        assert!(html.contains("KaTeX_AMS") || html.contains("katex.render"), "KaTeX bundle should be embedded");
+
+        // 2. Code block header & copy button
+        assert!(html.contains("fx-code-header"), "code block header bar should be present");
+        assert!(html.contains("fx-code-lang"), "code block language badge should be present");
+        assert!(html.contains("fx-copy"), "code block copy button/script should be present");
+
+        // 3. Nested div rendered cleanly without SVG in-frame wrapper
+        assert!(html.contains("fx-div"), "fx-div class should be used for div HTML component");
+        assert!(html.contains("متن تو در تو در دیو"), "nested div content should be present");
+
+        // 4. Footnotes
+        assert!(html.contains("fx-footnote-popover") || html.contains("data-footnote-text"), "footnote popover markup/style should exist");
+
+        let _ = fs::remove_dir_all(&data_dir);
+    }
+
+/// Compiles a real project (the embedded engine, the default config, the starter document) end to end. Needs the Typst
     /// packages of the engine: they are found in the typst cache or downloaded, so run it with network access once.
     #[test]
     fn compiles_the_starter_project() {

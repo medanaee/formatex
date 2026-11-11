@@ -20,8 +20,9 @@
       continue
     }
     let m = if fence == none and line.contains("{") { line.match(table-attrs-re-1) }
+    if m == none { out.push(line); continue }
     let next = lines.slice(i + 1).find(l => l.trim() != "")
-    if m == none or next == none or not next.contains("|") {
+    if next == none or not next.contains("|") {
       out.push(line)
       continue
     }

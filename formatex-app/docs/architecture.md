@@ -51,6 +51,22 @@ The tags come from the **component library** (`components.rs`): built-in compone
 
 The editor autosaves to the project folder; the native Typst engine ([ADR 0005](decisions/0005-native-typst-engine.md)) reads the same folder and returns SVG pages and diagnostics; export is PDF. In a browser the compiler is unavailable (`CompilerUnavailableError`) until a WebAssembly build exists. See [features/editor.md](features/editor.md).
 
+### HTML preview and standalone export
+
+The live HTML pipeline (`previewHtml` → `preview_html` → `render_preview_html`) keeps a separate incremental `ProjectWorld` slot through `kept_world_for`, so refreshing it cannot replace the world's paged-preview state. `latestTaskQueue.ts` coalesces edits into one latest pending snapshot while a build is running, including across preview remounts, and adapts its delay between 120 and 250 ms. HTML mode skips the hidden paged build; switching back requests pages for the latest source. Decision: [ADR 0012](decisions/0012-incremental-html-preview.md).
+
+`html_export.rs::preview_fonts` caches reusable full WOFF faces by weak `FontStore` identity, required families and italic need; new font stores after import/reload invalidate previous entries. `fontKey` identifies the CSS, which is omitted from a preview response when the frontend already has it. The standalone Export path still subsets and embeds fonts for a portable file. This distinction keeps export preparation out of repeated live edits without changing document syntax or `[html]` settings.
+
+`HtmlPreview` and `htmlFrame.ts` (`splitHtml`, `initialFrame`, `frameBridge`) keep a sandboxed iframe mounted. Parent and frame validate the source window and a per-document token before applying `fxPatch` main-content updates and optional font CSS. Scroll, viewer controls and the font node survive ordinary edits; `fx-content-updated` refreshes outline and copy controls. A changed viewer signature triggers a full reload, as do custom scripts in main content or Raw Typst output without `main.fx-doc`. This preserves initialization of custom interactive documents. Browser/WebView paint and device interaction checks remain separate from native compiler measurements.
+
+### HTML rendering and math readiness
+
+HTML preview and export share the engine's component-owned HTML/CSS handlers. Text and structural components use native elements when a handler is provided; charts, CeTZ, Lilaq and arbitrary Typst graphics may retain Typst SVG rendering. The app's retained HTML world and iframe content-patch path remain separate from paged compilation.
+
+`[html] math` selects Typst-native math or offline KaTeX. `tools/bundle-katex.mjs` in the engine generates the compressed KaTeX bootstrap from source assets; it is included only when the output contains KaTeX math markers. `window.__fxMathReady` coordinates asynchronous rendering after initial load and `fx-content-updated`, and the iframe bridge awaits it before reporting paint. Exact requested font families are resolved before alias fallbacks, whose CSS declarations retain the requested family name. See [editor](features/editor.md) and [fonts](features/fonts.md).
+
+HTML-only NewCM quadratic font assets in `src-tauri/web-fonts/` work around original CFF font rejection in the tested browser; they preserve metrics/shaping and do not replace PDF fonts. `scripts/prepare-html-serif.py` generates them with fontTools and carries the upstream notices. Measured payload sizes and verification boundaries are recorded in [the HTML update report](html-export-improvements-2026-11-11.md).
+
 ## 2. Routing
 
 - **Library:** TanStack Router, code-based routes in [`src/router.tsx`](../src/router.tsx): `/`, `/editor/$documentId`, `/settings`.

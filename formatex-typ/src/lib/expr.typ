@@ -164,7 +164,7 @@
   }
 }
 
-// What the code can read: the variables (as `let`s, so the code can change them), `setting`, the keys of the cover, and the readers of
+// What the code can read: the variables (as `let`s, so the code can change them), `setting`, the document metadata fields, and the readers of
 // files with their paths taken from the project root
 // `extra` is what only the page knows (PAGE, PAGES...), for the code that runs when the pages are made
 #let run-code(code, env, extra: (:)) = {

@@ -335,6 +335,5 @@
     }
   }
 
-  if sys.inputs.at("cover", default: repr(cover-config.at("enabled", default: cover-config.len() > 0))) == "true" { cover-page() }
   doc
 }

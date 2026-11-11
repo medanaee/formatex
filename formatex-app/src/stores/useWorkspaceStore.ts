@@ -14,6 +14,8 @@ interface WorkspaceState {
   htmlDialog: boolean
   /** What the preview pane shows: the typeset pages, or the live HTML page (built from the same text, with the `[html]` settings of config.toml). */
   previewMode: "pages" | "html"
+  htmlElapsedMs: number | null
+  htmlBusy: boolean
   set: (patch: Partial<Omit<WorkspaceState, "set">>) => void
 }
 
@@ -26,5 +28,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   storageDialog: null,
   htmlDialog: false,
   previewMode: "pages",
+  htmlElapsedMs: null,
+  htmlBusy: false,
   set: (patch) => set(patch),
 }))

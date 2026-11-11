@@ -44,6 +44,12 @@
       let thickness = parse-length(attrs.at("thickness", default: "1pt"), attrs: attrs)
       let width = parse-length(attrs.at("width", default: "100%"), attrs: attrs)
       let gap = parse-length(attrs.at("gap", default: "0.8em"), attrs: attrs)
+      if style in ("wavy", "dash-dot") {
+        let ink = css-color(hue)
+        let unit = css-len(thickness)
+        let background = if style == "dash-dot" { "repeating-linear-gradient(to right," + ink + " 0 6em,transparent 6em 8em," + ink + " 8em 9em,transparent 9em 11em)" } else { "radial-gradient(ellipse at 50% 0,transparent 50%," + ink + " 52%," + ink + " 65%,transparent 67%)" }
+        return html.elem("div", attrs: (class: "fx-hr", style: "height: calc(" + unit + " * " + if style == "wavy" { "5" } else { "1" } + "); width: " + css-len(width) + "; margin: " + css-len(gap) + " auto; background: " + background + "; background-size: " + if style == "wavy" { "calc(" + unit + " * 9) 100%" } else { "100% 100%" } + "; font-size: " + unit), "")
+      }
       let line = if style in ("dashed", "dotted", "double") { style } else if style == "dash-dot" { "dashed" } else { "solid" }
       html.elem("hr", attrs: (style: style-of((
         "border-top: " + css-len(if style == "double" { thickness * 3 } else { thickness }) + " " + line + " " + css-color(hue),

@@ -398,7 +398,9 @@
     "preview": "HTML preview",
     "pagesPreview": "Pages preview",
     "previewFailed": "The HTML could not be built",
-    "export": "Export"
+    "export": "Export",
+    "katexMath": "KaTeX math renderer",
+    "katexMathHint": "Renders mathematical formulas with KaTeX. Off: standard Typst HTML math."
   },
   "storage": {
     "label": "Storage",
@@ -483,5 +485,16 @@
     "fitPage": "Fit page",
     "zoom": "Zoom",
     "follow": "Follow the text you edit"
+  },
+  "editorSearch": {
+    "toggleReplace": "Find and replace",
+    "replace": "Replace with",
+    "previous": "Previous match",
+    "next": "Next match",
+    "replaceNext": "Replace next",
+    "replaceAll": "Replace all",
+    "caseSensitive": "Match case",
+    "regexp": "Regular expression",
+    "wholeWord": "Whole word"
   }
 }

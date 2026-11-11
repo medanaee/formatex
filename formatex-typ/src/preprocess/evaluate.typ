@@ -162,7 +162,7 @@
   evaluate-file(text, "", env, none, (), false, includes: false, at-line: line => at).lines.join("\n")
 }
 
-// The texts among the settings (`cover.title: "{{ course }}"`) with their `{{ }}` put in place. `vars` is left as it is.
+// The texts among the settings (`header.start: "{{ course }}"`) with their `{{ }}` put in place. `vars` is left as it is.
 #let resolve-strings(value, env, locate, path: ()) = {
   if type(value) == str {
     if value.contains("{{") { evaluate-string(value, env, locate(..path)) } else { value }

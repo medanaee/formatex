@@ -26,6 +26,24 @@ Read this only when changing `main.typ`, `src/` or `components/`, or adding a co
 - **Paths.** Typst resolves a path relative to the file whose code calls `image()` / `read()` / `csv()` / `bibliography()`, not to the project. User-supplied paths are relative to the project root, so component and `src/` code wraps them in `root-path(...)` (`src/lib/basics.typ`; `rooted(...)` in `src/core.typ`) before the call.
 - Where things live: shared helpers `src/lib/*.typ`, a helper used by one component stays in that component's file, preprocessors `src/preprocess/*.typ`.
 
+## HTML math bundle and font embedding
+
+`[html] math` is `native` (default) or `katex`, with `--input html-math=...` taking precedence. The KaTeX source assets are stored in `src/html/katex.assets.json`; `node tools/bundle-katex.mjs` generates `src/html/katex.typ` with a compressed offline bootstrap. Keep the generated file out of hand edits. The measured initial asset payload is 664,415 bytes before bundling and 456,963 bytes for the generated bundle, about 31% smaller. This is an asset-size comparison, not a compilation-speed measurement.
+
+The engine includes that bundle only when the rendered document contains KaTeX math markers. The bootstrap exposes `window.__fxMathReady`; math rendering runs asynchronously on initial load and `fx-content-updated`. The app's iframe bridge waits for math readiness before reporting paint, so its timing includes the mathematical layout instead of merely the empty marker nodes. Rendering requires no CDN or network resource.
+
+The app's `html_export.rs` resolves exact requested font families before trying aliases. A missing family that uses an alias emits a CSS `@font-face` with the requested family name, so that the page's font stack resolves. It does not force CMU Serif into every page or duplicate New Computer Modern faces under an unconditional CMU alias. Text/structural HTML belongs in component `<name>-html` / `<name>-css` exports; graphics such as chart, CeTZ and Lilaq may keep Typst SVG output, as may arbitrary `<typ>` graphics.
+
+Font faces are selected independently by nearest regular/bold weight per required style, so CMU Serif's weight-500 regular face is not omitted. The app's `scripts/prepare-html-serif.py` uses fontTools to generate four HTML-only quadratic NewCM outlines in `src-tauri/web-fonts/`, retaining metrics and GDEF/GPOS/GSUB and bounding curve approximation error at one font unit (about 0.001 em). The internal family is renamed `Formatex NewCM Web`; CSS keeps the requested family, PDF fonts are unchanged, and the generated assets carry Typst-assets notices. This works around the tested browser's rejection of original NewCM CFF outlines; separate subsetter CFF flavor normalization is unit-tested. See [the HTML measurement report](../../../formatex-app/docs/html-export-improvements-2026-11-11.md).
+
+## Native HTML component coverage
+
+The component registry now supplies native handlers for text and structural tags, including `cover`, `docheader`, `p`, `letter`, `tree`, exercise/choices/answers, collected todos, chat, compare, diff, definitions, progress, grid and steps. Their existing schema attributes control both outputs. Core counters, digits, list/enum styling, citations and bibliography pass through as native content; internal `listpages` is an HTML container. `cetz`, `lilaq`, `chart` and arbitrary graphics from `typ` intentionally retain framed Typst output.
+
+Native handlers preserve comparison columns/title/colors, chat global defaults and its three styles, progress variants and values, definition target links, LCS-based split/unified diff rows, grid spans/sizing/alignment with phone collapse, step numbering/color, image radius/sizing, figure width/height/ratio/alignment and code line-number/highlight state. Keep code as selectable text and keep the language/copy header outside its rows. CLI compilation checks establish handler coverage; final appearance and browser interaction require separate visual checks.
+
+The `typ` handler emits inline textual code as native content so headings and styled text stay selectable. Source-file inclusions and code using common vector operations (`cetz`, `lilaq`, `canvas`, `rect`, `circle`, `ellipse`, `polygon`, `curve`, `line`, `place`, `draw`) retain the SVG frame path. Native `<v>` creates height; page breaks use print-break CSS and wavy/dash-dot rules use CSS. Grid spans are bounded by the parent column count and keep height/vertical alignment.
+
 ## Parent/child tags
 
 Child tags mark their content with metadata; the parent collects them:
@@ -135,7 +153,7 @@ The code is evaluated with `eval(code, mode: "code", scope: (..dictionary(cetz.d
 
 ## Cover page
 
-`cover-page()` in `src/page.typ` reads `[cover]`, builds a `page(numbering: none, header: none, ...)` and resets `counter(page)` to 0 inside it so the next page is 1. `conf` inserts it before the document when `sys.inputs.cover` (or `[cover] enabled`) is true.
+`components/cover.typ` owns the `<cover>` block tag and its schema; it invokes cover layout at the tag's position in the Markdown body. String attributes accept explicit text or evaluated `{{ }}` values, with several names written as `A / B`; optional Markdown body holds multiline information. Oversized PDF content scales down. PDF uses exactly one standalone single-column page without header, footer or printed page number and resets `counter(page)` to 0 so the following body page is 1. Native HTML uses the effective page height (297 mm for A4, custom/mobile heights respected), responsive width and an internal scrolling area. `frame` defaults to false; theme/feel control its appearance. Direction uses `resolve-dir` in `context`, including surrounding `<dir>`. The old cover config/front matter/CLI generation path is removed; no `conf` insertion takes place. Attributes are explicit or use declared `{{ }}` values. Readonly metadata comes from top-level metadata only, with no cover fallback.
 
 ## Exports of the template (`src/core.typ`, `src/page.typ`, `src/conf.typ`, all re-exported by `src/prelude.typ`)
 
@@ -150,7 +168,7 @@ The code is evaluated with `eval(code, mode: "code", scope: (..dictionary(cetz.d
 | `named-dir(d)` | `"rtl"` → `rtl`, `"ltr"` → `ltr`, anything else → `none` |
 | `dir-stack` | State: array of the enclosing `<dir>` values (pushed / popped by the `dir` html handler) |
 | `content-dir(body)` | Direction under the current mode (needs `context`): innermost `<dir>` value, else `doc-dir`; if that is forced, that direction, else `text-dir(body)` (`none` = no letters). Use it, not `text-dir`, in anything that picks a direction |
-| `doc-text-dir(body)` | Same without the state, only `doc-dir`: page header, footer and cover (which `<dir>` must not affect) |
+| `doc-text-dir(body)` | Same without the state, only `doc-dir`: page header and footer (which `<dir>` must not affect; `<cover>` instead resolves in context) |
 | `theme` | Active palette dictionary |
 | `heading-number(nums, rtl-digits)` | Formats heading numbers (drops leading zeros, Persian digits when RTL) |
 | `page-header()` | Builds the page header from `[header]` in `config.toml`; called in `set page(header: context page-header())`. Add new styles to `header-styles` and the style branch at its end |

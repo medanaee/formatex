@@ -4,7 +4,8 @@ import { defaultKeymap, history, historyKeymap, indentWithTab, redoDepth, undoDe
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
 import { StreamLanguage } from "@codemirror/language"
 import { toml } from "@codemirror/legacy-modes/mode/toml"
-import { highlightSelectionMatches, searchKeymap } from "@codemirror/search"
+import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search"
+import { createEditorSearchPanel } from "./searchPanel"
 import { Annotation, Compartment, EditorState, Transaction, type Extension } from "@codemirror/state"
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, placeholder as placeholderExtension } from "@codemirror/view"
 import { useTranslation } from "react-i18next"
@@ -21,6 +22,8 @@ import { indentGuides } from "@/lib/editor/indentGuides"
 import { editorZoomShortcuts } from "@/lib/editor/editorZoom"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { pasteImage } from "@/lib/editor/pasteImage"
+import { hasFinePointer } from "@/lib/platform"
+import { touchSelection, touchSelecting } from "@/lib/editor/touchSelection"
 import { surroundOnType } from "@/lib/editor/surround"
 import { tagFolding, tagFoldingKeymap } from "@/lib/editor/tagFolding"
 import { tagWrapOnType } from "@/lib/editor/tagWrap"
@@ -84,8 +87,9 @@ interface CodeEditorProps {
 function publishHistory(state: EditorState): void {
   const canUndo = undoDepth(state) > 0
   const canRedo = redoDepth(state) > 0
+  const selecting = state.field(touchSelecting, false) ?? false
   const current = useEditorViewStore.getState()
-  if (current.canUndo !== canUndo || current.canRedo !== canRedo) current.set({ canUndo, canRedo })
+  if (current.canUndo !== canUndo || current.canRedo !== canRedo || current.touchSelecting !== selecting) current.set({ canUndo, canRedo, touchSelecting: selecting })
 }
 
 function languageFor(kind: FileKind, path: string): Extension {
@@ -121,6 +125,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
   }
   // The live preview is switched on and off without rebuilding the editor
   const [live] = useState(() => new Compartment())
+  const [mini] = useState(() => new Compartment())
   const liveExtension = (fileKind: FileKind, on: boolean): Extension =>
     on && fileKind === "markdown" ? livePreview(() => latest.current.schema, (request) => latest.current.onConfigure?.(request), frontMatterMount) : []
 
@@ -132,9 +137,11 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
       extensions: [
         showLineNumbers ? lineNumbers() : [],
         history(),
-        drawSelection(),
+        // A finger selects with the system's own highlight and handles: the drawn one (below the text, per line) misses lines there
+        hasFinePointer() ? drawSelection() : primary ? touchSelection : [],
         highlightActiveLine(),
         highlightSelectionMatches(),
+        search({ top: true, createPanel: createEditorSearchPanel }),
         // A bracket or a quote typed over a selection goes around it; in Markdown `<` writes a tag around it, and tags fold, with a marker beside the line
         surroundOnType,
         // A line behind every level of indentation, like VS Code
@@ -153,7 +160,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         problemExtension,
         // The settings of config.toml the main document overrides
         fileKind === "toml" ? [overrideGutter, overrideInfo.of((request) => latest.current.onOverrideInfo?.(request)), overrideLabel.of(latest.current.markLabel)] : [],
-        showMinimap ? [minimap, minimapTheme] : [],
+        mini.of(showMinimap ? [minimap, minimapTheme] : []),
         // A tile of the tag palette dropped into the text writes that tag where it landed
         EditorView.domEventHandlers({
           dragover: (event) => {
@@ -230,7 +237,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     }
     const cache = states.current
     return () => {
-      if (useEditorViewStore.getState().view === editor) useEditorViewStore.getState().set({ view: null, canUndo: false, canRedo: false })
+      if (useEditorViewStore.getState().view === editor) useEditorViewStore.getState().set({ view: null, canUndo: false, canRedo: false, touchSelecting: false })
       editor.destroy()
       view.current = null
       cache.clear()
@@ -247,6 +254,10 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
     view.current?.dispatch({ effects: dir.reconfigure(dirExtension(direction, current.current.kind)) })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the setting switches the direction
   }, [direction])
+
+  useEffect(() => {
+    view.current?.dispatch({ effects: mini.reconfigure(showMinimap ? [minimap, minimapTheme] : []) })
+  }, [showMinimap, path, mini])
 
   // Another file: keep the old one's state, restore or build the new one's
   useEffect(() => {

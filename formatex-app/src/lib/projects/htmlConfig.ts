@@ -12,19 +12,38 @@ export interface HtmlExportOptions {
   progress: boolean
   /** An outline of the headings in a sidebar on the right (a drawer on a phone). */
   outline: boolean
+  /** Render math formulas with KaTeX (off: standard HTML/SVG math). */
+  katexMath: boolean
 }
 
-/** The `[html]` keys of config.toml, by option. */
-const KEYS: Record<keyof HtmlExportOptions, string> = { embedFonts: "embed-fonts", copyCode: "copy-code", toolbar: "toolbar", progress: "progress", outline: "outline" }
+/** The `[html]` keys of config.toml, by boolean option. */
+const KEYS: Record<keyof Omit<HtmlExportOptions, "katexMath">, string> = {
+  embedFonts: "embed-fonts",
+  copyCode: "copy-code",
+  toolbar: "toolbar",
+  progress: "progress",
+  outline: "outline",
+}
 
-export const DEFAULT_HTML_OPTIONS: HtmlExportOptions = { embedFonts: true, copyCode: true, toolbar: true, progress: true, outline: true }
+export const DEFAULT_HTML_OPTIONS: HtmlExportOptions = {
+  embedFonts: true,
+  copyCode: true,
+  toolbar: true,
+  progress: true,
+  outline: true,
+  katexMath: false,
+}
 
 /** The options `config.toml` sets in `[html]`; a key it does not set (or sets to something that is not true / false) has its default. */
 export function htmlOptionsFromConfig(config: string): HtmlExportOptions {
   const options = { ...DEFAULT_HTML_OPTIONS }
-  for (const option of Object.keys(KEYS) as (keyof HtmlExportOptions)[]) {
+  for (const option of Object.keys(KEYS) as (keyof typeof KEYS)[]) {
     const value = getValue(config, "html", KEYS[option])
     if (value?.kind === "bool") options[option] = value.value
+  }
+  const mathVal = getValue(config, "html", "math")
+  if (mathVal?.kind === "string") {
+    options.katexMath = mathVal.value === "katex"
   }
   return options
 }

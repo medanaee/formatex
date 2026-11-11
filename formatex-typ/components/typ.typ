@@ -33,6 +33,17 @@
     },
 )
 
+#let typ-html = (
+  typ: (attrs, body) => {
+    let source = if "src" in attrs { read(root-path(attrs.src)) } else { let code = find-raw(body); if code == none { "" } else { code.text } }
+    let result = (typ-tags.typ)(attrs, body)
+    // Textual Typst stays selectable. Drawing programs retain Typst's vector layout.
+    let graphics = source.match(regex("\\b(cetz|lilaq|canvas|rect|circle|ellipse|polygon|curve|line|place|draw)\\s*[.(]")) != none
+    if graphics or "src" in attrs { in-frame("block", result) } else { html.elem("div", attrs: (class: "fx-typ", ..if attrs.at("dir", default: "auto") != "auto" { (dir: attrs.dir) }), result) }
+  },
+)
+#let typ-css = ".fx-typ { margin-block: .8em; }"
+
 #let typ-schema = (
   "typ": (
     kind: "block",

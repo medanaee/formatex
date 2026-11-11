@@ -120,6 +120,25 @@
     },
 )
 
+#let def-html = (
+  def: (attrs, body) => context {
+    let id = attrs.at("id", default: attrs.at("to", default: none))
+    assert(id != none, message: at-of(attrs) + "<def> requires id or to")
+    let el = find-target(id, attrs, "def")
+    let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+    let colors = resolve-def-colors(attrs.at("color", default: "accent"), attrs: attrs)
+    let mode = attrs.at("mode", default: "inline")
+    assert(mode in ("inline", "block"), message: at-of(attrs) + "<def> mode must be inline or block")
+    let title = attrs.at("title", default: reference-text(el, d == rtl))
+    html.elem(if mode == "block" { "div" } else { "span" }, attrs: (class: "fx-def fx-def-" + mode, dir: if d == rtl { "rtl" } else { "ltr" }, style: "--def-ink: " + css-color(colors.text) + "; --def-bg: " + css-color(colors.bg) + "; --def-border: " + css-color(colors.border)), {
+      html-icon(attrs.at("icon", default: "circle-question"), fill: colors.text, size: .9em)
+      link(el.location(), if title != none { title } else { id })
+      if plain-text(body).trim() != "" { ": "; body }
+    })
+  },
+)
+#let def-css = ".fx-def { color: var(--fg); } .fx-def > a { color: var(--def-ink); font-weight: 600; } .fx-def .fx-icon { margin-inline-end: .3em; } .fx-def-inline { padding: .12em .35em; border: 1px solid var(--def-border); background: var(--def-bg); border-radius: var(--r-badge); font-size: .9em; box-decoration-break: clone; } .fx-def-block { margin-block: .8em; padding-inline-start: .65em; border-inline-start: 2px solid var(--def-border); }"
+
 #let def-schema = (
   "def": (
     kind: "mixed",

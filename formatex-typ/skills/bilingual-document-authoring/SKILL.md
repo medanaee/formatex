@@ -1,6 +1,6 @@
 ---
 name: bilingual-document-authoring
-description: Writes Markdown documents (and their config.toml settings) for a bilingual Persian/English document template that turns Markdown plus HTML-like components into a typeset PDF. Covers front matter (header, footer, cover, bibliography), headings, lists, tables, math, figures, Mermaid diagrams, file trees, data charts, alerts, boxes, grids, steps, AI chat transcripts, code listings, citations, cross-references and theorem blocks. Use when asked to write, convert, translate or restructure a document, paper, report, thesis or notes into this template's Markdown format, or to choose its config settings.
+description: Writes Markdown documents (and their config.toml settings) for a bilingual Persian/English document template that turns Markdown plus HTML-like components into a typeset PDF. Covers front matter (header, footer, bibliography), standalone cover tags, headings, lists, tables, math, figures, Mermaid diagrams, file trees, data charts, alerts, boxes, grids, steps, AI chat transcripts, code listings, citations, cross-references and theorem blocks. Use when asked to write, convert, translate or restructure a document, paper, report, thesis or notes into this template's Markdown format, or to choose its config settings.
 ---
 
 # Writing documents for the bilingual Markdown template
@@ -20,7 +20,13 @@ Files in this skill:
 - Automatic text direction: Persian is right-to-left, English left-to-right, per paragraph. A `dir` setting or a `<dir>` tag can force one direction instead.
 - Automatic numbering of headings, figures, tables, captioned lists, equations, code listings and theorems, in Persian or Latin digits to match the text.
 - HTML-like components for figures, drawings, file trees, charts, callouts, boxes, layout, steps, conversations with an AI assistant, code listings, citations, references and theorem blocks.
-- A page header, footer, cover page and bibliography, configured in the front matter.
+- A page header, footer and bibliography configured in front matter, and a standalone `<cover>` block placed in the body.
+- Experimental HTML output uses the same document. Its controls can use `--input html-ui-lang=fa|en` independently of the document's language and direction; the app supplies its interface language. See [config.md](config.md#html-output-language).
+- HTML math supports `[html] math = "native"` (default) or `"katex"`. KaTeX's compressed renderer, CSS and fonts are embedded offline only when formulas need them; no CDN is required. Charts and drawings may retain Typst SVG output.
+- Live HTML preview in the app reuses compilation/font data and updates its existing page when possible. Author the same Markdown, tags and settings for preview and export; standalone export still embeds font subsets when enabled.
+- Native HTML honors merged document direction, paragraph spacing/justification, table row alignment, heading look relative to the top outlined heading, and global/local list numbering and markers. List guide drawings remain PDF-only. See [config.md](config.md#html-output-language).
+- Text and structural tags use native HTML with their existing attributes, including cover, docheader, paragraph, letter, tree, exercise/answers, todos, layout, chat, comparison, diff, definitions and progress. Code retains line numbers and highlighted rows. Charts, CeTZ, Lilaq and arbitrary Typst drawings may remain SVG graphics.
+- With the HTML toolbar on, its magnifier and Ctrl / Cmd + F open the viewer's literal, case-insensitive Find panel (previous/next and localized count, including on phones). It searches rendered document text, separately from source-editor find/replace.
 
 ## Workflow
 
@@ -59,8 +65,14 @@ bibliography:
 <bibliography></bibliography>
 ```
 
-- The front matter must be the very first thing in the file, between two `---` lines. Leave it out entirely if the document needs no header, footer, cover or bibliography.
-- Top-level sections are `##`. `#` is not used for sections (the title goes in `<docheader>` or the cover).
+- The front matter must be the very first thing in the file, between two `---` lines. Leave it out entirely if the document needs no header, footer or bibliography.
+- Top-level sections are `##`. `#` is not used for sections (the title goes in `<docheader>` or `<cover>`).
+
+## Cover page
+
+Write a block `<cover title="Title" author="Name"></cover>` in the body where the cover belongs; an optional Markdown body holds extra information. Attributes are explicit or use declared `{{ }}` values; metadata never automatically fills them. `frame` defaults to `false`, and `dir="auto"` respects the document and surrounding `<dir>`. The [component reference](components.md#cover-standalone-cover-page) lists every field. PDF makes one single-column page without header/footer/number and resets the next body page to 1. HTML keeps the effective page height and scrolls extra information internally.
+
+**Breaking change:** old `cover:` front matter, `[cover]` settings and cover CLI switches have no effect. Move their fields to the tag; use `frame="true"` explicitly to preserve a framed cover, or remove the tag to omit it. Readonly document metadata is top-level only, with no cover fallback.
 
 ## Rules that matter most
 

@@ -9,6 +9,7 @@
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::io::Write as _;
+use std::sync::{Arc, LazyLock, Mutex, Weak};
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
@@ -17,6 +18,24 @@ use flate2::write::ZlibEncoder;
 use serde::Deserialize;
 use typst::text::FontStyle;
 use typst_kit::fonts::FontStore;
+
+/// What the export dialog chose.
+/// Supported math renderers in HTML export.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HtmlMath {
+    Native,
+    Katex,
+}
+
+impl HtmlMath {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Native => "native",
+            Self::Katex => "katex",
+        }
+    }
+}
 
 /// What the export dialog chose.
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -30,20 +49,48 @@ pub struct HtmlExport {
     pub toolbar: bool,
     pub progress: bool,
     pub outline: bool,
+    /// The language of the viewer's own words (toolbar, menus): the app's language. `None`: the language of the document.
+    pub ui_lang: Option<UiLang>,
+    /// Math renderer in HTML: "native" or "katex".
+    pub math: Option<HtmlMath>,
+}
+
+/// The languages the viewer has words for.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UiLang {
+    Fa,
+    En,
+}
+
+impl UiLang {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Fa => "fa",
+            Self::En => "en",
+        }
+    }
 }
 
 impl Default for HtmlExport {
     fn default() -> Self {
-        Self { embed_fonts: true, copy_code: true, toolbar: true, progress: true, outline: true }
+        Self { embed_fonts: true, copy_code: true, toolbar: true, progress: true, outline: true, ui_lang: None, math: None }
     }
 }
 
 /// The families the engine named in `<meta name="fx-fonts">`.
 fn font_families(html: &str) -> Vec<String> {
     let marker = "name=\"fx-fonts\" content=\"";
-    let Some(start) = html.find(marker).map(|at| at + marker.len()) else { return Vec::new() };
-    let Some(length) = html[start..].find('"') else { return Vec::new() };
-    html[start..start + length].split('|').map(|name| name.trim().to_string()).filter(|name| !name.is_empty()).collect()
+    let mut families = Vec::new();
+    let mut remaining = html;
+    while let Some(start) = remaining.find(marker).map(|at| at + marker.len()) {
+        let Some(length) = remaining[start..].find('"') else { break };
+        for family in remaining[start..start + length].split('|').map(str::trim).filter(|s| !s.is_empty()) {
+            if !families.iter().any(|s: &String| s.eq_ignore_ascii_case(family)) { families.push(family.to_owned()); }
+        }
+        remaining = &remaining[start + length + 1..];
+    }
+    families
 }
 
 /// Whether the text of the page uses italic anywhere (the stylesheet always mentions it, so only the page itself is looked at).
@@ -103,6 +150,29 @@ fn be32(data: &[u8], at: usize) -> Option<u32> {
     Some(u32::from_be_bytes(data.get(at..at + 4)?.try_into().ok()?))
 }
 
+// The subsetter currently writes a TrueType flavor even when it preserves CFF outlines.
+// Browsers reject that combination. Restore the OpenType flavor and whole-font checksum.
+fn normalize_outline_flavor(data: &mut [u8]) {
+    let Some(count) = be16(data, 4) else { return };
+    let mut cff = false;
+    let mut head = None;
+    for i in 0..count {
+        let entry = 12 + i * 16;
+        let Some(tag) = data.get(entry..entry + 4) else { return };
+        if tag == b"CFF " || tag == b"CFF2" { cff = true; }
+        if tag == b"head" { head = be32(data, entry + 8).map(|v| v as usize); }
+    }
+    if !cff || data.starts_with(b"OTTO") { return; }
+    data[..4].copy_from_slice(b"OTTO");
+    let Some(adjustment) = head.map(|at| at + 8).filter(|&at| at + 4 <= data.len()) else { return };
+    data[adjustment..adjustment + 4].fill(0);
+    let sum = data.chunks(4).fold(0u32, |sum, part| {
+        let mut word = [0; 4]; word[..part.len()].copy_from_slice(part);
+        sum.wrapping_add(u32::from_be_bytes(word))
+    });
+    data[adjustment..adjustment + 4].copy_from_slice(&0xB1B0AFBAu32.wrapping_sub(sum).to_be_bytes());
+}
+
 /// A TrueType / OpenType font as WOFF 1.0: the same tables, each deflated when that makes it smaller. `None` for anything that is not a
 /// plain font file (a collection, a damaged file): the caller then keeps the font as it is.
 pub fn to_woff(font: &[u8]) -> Option<Vec<u8>> {
@@ -154,33 +224,61 @@ pub fn to_woff(font: &[u8]) -> Option<Vec<u8>> {
 
 /// `@font-face` rules for the faces of the families the page names, with the font files inside.
 pub fn font_faces(html: &str, store: &FontStore) -> String {
+    font_faces_for(html, store, true)
+}
+
+fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
     let book = store.book();
     let italic = uses_italic(html);
-    let chars = page_chars(html);
+    let chars = if subset { page_chars(html) } else { HashSet::new() };
     let mut css = String::new();
     let mut done = HashSet::new();
     for family in font_families(html) {
         // A page uses the regular and the bold face: a family with eighteen weights would add megabytes nobody reads. A family that has
         // neither gets the two faces nearest to regular. The italic faces come only when the page has italic text.
-        let all: Vec<usize> = book.select_family(&family.to_lowercase()).collect();
-        let weight = |index: usize| book.info(index).map(|info| info.variant.weight.to_number()).unwrap_or(400);
-        let upright = |index: usize| italic || book.info(index).is_some_and(|info| info.variant.style == FontStyle::Normal);
-        let mut chosen: Vec<usize> = all.iter().copied().filter(|&index| matches!(weight(index), 400 | 700) && upright(index)).collect();
-        if chosen.is_empty() {
-            let mut nearest: Vec<usize> = all.iter().copied().filter(|&index| upright(index)).collect();
-            nearest.sort_by_key(|&index| weight(index).abs_diff(400));
-            chosen = nearest.into_iter().take(2).collect();
+        let lookup_lower = family.to_lowercase();
+        let lookup_name = match lookup_lower.as_str() {
+            "cmu serif" | "cmu" | "computer modern" | "new computer modern 10" => "new computer modern",
+            "cmu sans serif" => "dejavu sans",
+            "cmu typewriter text" => "dejavu sans mono",
+            _ => lookup_lower.as_str(),
+        };
+        let mut all: Vec<usize> = book.select_family(&lookup_lower).collect();
+        if all.is_empty() && lookup_name != lookup_lower.as_str() {
+            all = book.select_family(lookup_name).collect();
         }
-        for index in chosen {
+        let weight = |index: usize| book.info(index).map(|info| info.variant.weight.to_number()).unwrap_or(400);
+        let mut chosen = Vec::new();
+        for style in [FontStyle::Normal, FontStyle::Italic] {
+            if style == FontStyle::Italic && !italic { continue; }
+            for css_weight in [400u16, 700u16] {
+                let nearest = all.iter().copied()
+                    .filter(|&index| book.info(index).is_some_and(|info| info.variant.style == style || (style == FontStyle::Italic && info.variant.style == FontStyle::Oblique)))
+                    .min_by_key(|&index| weight(index).abs_diff(css_weight));
+                if let Some(index) = nearest {
+                    if !chosen.iter().any(|&(seen, _)| seen == index) { chosen.push((index, css_weight)); }
+                }
+            }
+        }
+        for (index, css_weight) in chosen {
             let (Some(info), Some(font)) = (book.info(index), store.font(index)) else { continue };
             // A font collection holds several faces in one file: the data is the same for each
             let data = font.data();
-            if !done.insert((info.family.clone(), info.variant.weight.to_number(), info.variant.style as u8, data.len())) {
+            if !done.insert((family.to_lowercase(), css_weight, info.variant.style as u8)) {
                 continue;
             }
-            // Only the glyphs of the page, with the tables that shape them (a font that cannot be cut is kept whole)
-            let cut = fontcull::subset_font_data(data.as_slice(), &chars, &[]).ok().filter(|cut| cut.len() < data.len());
-            let source: &[u8] = cut.as_deref().unwrap_or(data.as_slice());
+            // Stock NewCM CFF faces are rejected by some WebViews. The quadratic HTML-only
+            // equivalents preserve glyph metrics and shaping; PDF continues to use the original.
+            let browser_data: &[u8] = if info.family.eq_ignore_ascii_case("new computer modern") && data.starts_with(b"OTTO") {
+                match (css_weight >= 600, info.variant.style != FontStyle::Normal) {
+                    (false, false) => include_bytes!("../web-fonts/newcm-regular.ttf"),
+                    (true, false) => include_bytes!("../web-fonts/newcm-bold.ttf"),
+                    (false, true) => include_bytes!("../web-fonts/newcm-italic.ttf"),
+                    (true, true) => include_bytes!("../web-fonts/newcm-bolditalic.ttf"),
+                }
+            } else { data.as_slice() };
+            let cut = if subset { fontcull::subset_font_data(browser_data, &chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut }) } else { None };
+            let source: &[u8] = cut.as_deref().unwrap_or(browser_data);
             let (mime, format, bytes) = match to_woff(source) {
                 Some(woff) => ("font/woff", "woff", woff),
                 None if source.starts_with(b"OTTO") => ("font/otf", "opentype", source.to_vec()),
@@ -191,19 +289,47 @@ pub fn font_faces(html: &str, store: &FontStore) -> String {
                 FontStyle::Italic => "italic",
                 FontStyle::Oblique => "oblique",
             };
+            let encoded_bytes = STANDARD.encode(&bytes);
             let _ = write!(
                 css,
                 "@font-face {{ font-family: \"{}\"; font-weight: {}; font-style: {}; font-display: swap; src: url(data:{};base64,{}) format(\"{}\"); }}\n",
-                info.family,
-                info.variant.weight.to_number(),
+                family,
+                css_weight,
                 style,
                 mime,
-                STANDARD.encode(&bytes),
+                encoded_bytes,
                 format,
             );
+
         }
     }
     css
+}
+
+struct PreviewFontEntry {
+    store: Weak<FontStore>,
+    requirements: String,
+    key: String,
+    css: String,
+}
+
+static PREVIEW_FONTS: LazyLock<Mutex<Vec<PreviewFontEntry>>> = LazyLock::new(|| Mutex::new(Vec::new()));
+
+/// Complete faces are reusable across edits; a new FontStore after import/reload invalidates its entries.
+pub fn preview_fonts(html: &str, store: &Arc<FontStore>, known: Option<&str>) -> (String, Option<String>) {
+    let requirements = format!("{:?}|{}", font_families(html), uses_italic(html));
+    let mut cache = PREVIEW_FONTS.lock().unwrap_or_else(|e| e.into_inner());
+    cache.retain(|entry| entry.store.strong_count() > 0);
+    let weak = Arc::downgrade(store);
+    if let Some(entry) = cache.iter().find(|entry| entry.store.ptr_eq(&weak) && entry.requirements == requirements) {
+        return (entry.key.clone(), (known != Some(entry.key.as_str())).then(|| entry.css.clone()));
+    }
+    let css = font_faces_for(html, store, false);
+    let key = format!("{:032x}", typst::utils::hash128(&css));
+    let response = (key.clone(), (known != Some(key.as_str())).then(|| css.clone()));
+    if cache.len() >= 8 { cache.remove(0); }
+    cache.push(PreviewFontEntry { store: weak, requirements, key, css });
+    response
 }
 
 /// The page with its fonts inside (in a `<style>` at the end of the head).
@@ -223,6 +349,23 @@ pub fn embed_fonts(html: String, store: &FontStore) -> String {
 mod tests {
     use super::*;
     use std::io::Read;
+
+    #[test]
+    fn repairs_cff_subset_flavor_and_checksum() {
+        let mut font = vec![0u8; 80];
+        font[..4].copy_from_slice(&0x00010000u32.to_be_bytes());
+        font[4..6].copy_from_slice(&2u16.to_be_bytes());
+        font[12..16].copy_from_slice(b"CFF ");
+        font[28..32].copy_from_slice(b"head");
+        font[36..40].copy_from_slice(&60u32.to_be_bytes());
+        normalize_outline_flavor(&mut font);
+        assert!(font.starts_with(b"OTTO"));
+        let sum = font.chunks_exact(4).fold(0u32, |sum, bytes| sum.wrapping_add(u32::from_be_bytes(bytes.try_into().unwrap())));
+        assert_eq!(sum, 0xB1B0AFBA);
+        let copy = font.clone();
+        normalize_outline_flavor(&mut font);
+        assert_eq!(font, copy);
+    }
 
     #[test]
     fn reads_the_families_of_the_page() {

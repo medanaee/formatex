@@ -28,7 +28,7 @@
       let frame(c, h) = if feel-name == "formal" {
         block(width: w, height: h, stroke: (top: 1.2pt * zoom + c.tint.icon), inset: (top: 0.7em, bottom: 0.4em), c.inner)
       } else if feel-name == "friendly" {
-        block(width: w, height: h, fill: color.mix((c.hue, if theme.dark { 22% } else { 14% }), (theme.bg, if theme.dark { 78% } else { 86% })), radius: feel.box, inset: 12pt * zoom, c.inner)
+        block(width: w, height: h, fill: color.mix((c.hue, if theme.dark { 12% } else { 14% }), (theme.bg, if theme.dark { 88% } else { 86% })), radius: feel.box, inset: 12pt * zoom, c.inner)
       } else {
         block(width: w, height: h, fill: c.tint.fill, stroke: 0.6pt * zoom + c.tint.border, radius: feel.box, inset: 10pt * zoom, c.inner)
       }
@@ -43,6 +43,30 @@
     cons: (attrs, body) => tag("compare-side", attrs + (side: "cons"), body),
     compare: (attrs, body) => compare-block(attrs, body),
 )
+
+#let compare-html = (
+  pros: (attrs, body) => tag("compare-side", attrs + (kind: "pros"), body),
+  cons: (attrs, body) => tag("compare-side", attrs + (kind: "cons"), body),
+  compare: (attrs, body) => context {
+    let sides = untag(body, "compare-side").tagged
+    assert(sides.len() > 0, message: at-of(attrs) + "<compare> needs <pros> or <cons>")
+    let d = resolve-dir(attrs.at("dir", default: "auto"), sides.map(s => s.body).join())
+    html.elem("div", attrs: (class: "fx-compare", dir: if d == rtl { "rtl" } else { "ltr" }, style: "--compare-cols: " + str(sides.len())), {
+      for side in sides {
+        let pros = side.attrs.kind == "pros"
+        let colors = resolve-color(side.attrs.at("color", default: if pros { "green" } else { "red" }), attrs: side.attrs)
+        html.elem("section", attrs: (class: "fx-panel fx-compare-col " + if pros { "fx-pros" } else { "fx-cons" }, style: panel-style(colors)), {
+          html.elem("header", side.attrs.at("title", default: if pros { if d == rtl { "مزایا" } else { "Pros" } } else { if d == rtl { "معایب" } else { "Cons" } }))
+          side.body
+        })
+      }
+    })
+  },
+)
+#let compare-css = `````css
+.fx-compare { display: grid; grid-template-columns: repeat(var(--compare-cols),minmax(0,1fr)); gap: .75em; margin-block: .8em; }
+.fx-compare-col { padding: .65em .75em; border-radius: var(--r-box); min-width: 0; border: 1px solid var(--panel-border); background: var(--panel-fill); } .fx-compare-col > header { font-weight: 700; color: var(--panel-icon); margin-block-end: .4em; } .fx-compare-col ul { padding-inline-start: 1.2em; margin: .4em 0; } .fx-pros li::marker { content: "✓  "; color: var(--panel-icon); } .fx-cons li::marker { content: "✗  "; color: var(--panel-icon); } .fx-compare-col .fx-ul > .fx-li > .fx-num { font-size: 0; min-width: 1.1rem; } .fx-compare-col .fx-ul > .fx-li > .fx-num::before { font-size: .9rem; color: var(--panel-icon); } .fx-pros .fx-ul > .fx-li > .fx-num::before { content: "✓"; } .fx-cons .fx-ul > .fx-li > .fx-num::before { content: "✗"; } @media(max-width:480px) { .fx-compare { grid-template-columns: 1fr; } }
+`````.text
 
 #let compare-schema = (
   "compare": (

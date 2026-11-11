@@ -31,7 +31,7 @@ function OptionRow({ checked, onChange, label, hint }: OptionRowProps) {
   )
 }
 
-const ROWS: (keyof HtmlExportOptions)[] = ["toolbar", "progress", "outline", "copyCode", "embedFonts"]
+const ROWS: (keyof HtmlExportOptions)[] = ["toolbar", "progress", "outline", "copyCode", "embedFonts", "katexMath"]
 
 /**
  * The HTML export (an experiment): its settings, then the file. Shown by `useWorkspaceStore.htmlDialog`. Every time it opens, the switches

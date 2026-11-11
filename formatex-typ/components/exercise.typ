@@ -74,7 +74,7 @@
     // The colors of an exercise are the theme's secondary color (the soft tint of tables and highlights), not the accent
     let tone = tinted(theme.secondary)
     // The box of the title: only a little deeper than the card (the card has 10% of the secondary color, 16% on dark themes)
-    let title-fill = color.mix((theme.secondary, if theme.dark { 25% } else { 17% }), (theme.bg, if theme.dark { 75% } else { 83% }))
+    let title-fill = color.mix((theme.secondary, if theme.dark { 14% } else { 17% }), (theme.bg, if theme.dark { 86% } else { 83% }))
     let card-radius = feel.box
     let pad-x = 12pt * zoom
     // Friendly: the little room around the title box inside the card
@@ -114,7 +114,7 @@
     //            under it; the last one takes the card's own radius at the bottom;
     //  friendly: a green box with the same little room around it as the title's, round in every corner (concentric with the card's).
     let green = tinted(color-presets.green)
-    let green-deep = color.mix((color-presets.green, if theme.dark { 25% } else { 17% }), (theme.bg, if theme.dark { 75% } else { 83% }))
+    let green-deep = color.mix((color-presets.green, if theme.dark { 14% } else { 17% }), (theme.bg, if theme.dark { 86% } else { 83% }))
     let answer-label = text(size: text.size * 1.2, weight: "bold", fill: green.icon, top-edge: "bounds", bottom-edge: "bounds", [#fa-icon("circle-check")#h(0.5em)#answer-word])
     let answer-area(a, last) = if feel-name == "standard" {
       let bottom = if last { card-radius } else { 0pt }
@@ -239,6 +239,95 @@
     choices: (attrs, body) => choices-block(attrs, body),
     answers: (attrs, body) => answers-list(attrs),
 )
+
+#let exercise-html = (
+  answer: (attrs, body) => tag("answer", attrs, body),
+  exercise: (attrs, body) => {
+    let c = counter("exercise")
+    c.step()
+    if "id" in attrs [#metadata((exercise-name: attrs.at("name", default: none)))#label(attrs.id)]
+    let parts = untag(body, "answer")
+    let question = parts.rest.join()
+    context {
+      let d = resolve-dir(attrs.at("dir", default: "auto"), attrs.at("title", default: "") + question)
+      let r = d == rtl
+      let word = attrs.at("name", default: if r { "تمرین" } else { "Exercise" })
+      let number = digits(c.get().first(), r)
+      let mode = attrs.at("answers", default: answers-mode)
+      assert(mode in ("show", "hide", "end"), message: at-of(attrs) + "<exercise> answers must be show, hide or end")
+      let title-text = [#word #number#if "title" in attrs [ (#attrs.title)]]
+      let listed = attrs.at("toc", default: repr(exercise-toc-default)) == "true"
+      exercise-head.update((word: word, number: number, r: r, mode: mode))
+      html.elem("section", attrs: (class: "fx-exercise", dir: if r { "rtl" } else { "ltr" }, ..if "id" in attrs { (id: attrs.id) }), {
+        html.elem("header", attrs: (class: "fx-exercise-head"), {
+          html.elem("div", {
+            if listed { set heading(numbering: none); heading(level: 2, outlined: true, title-text) } else { html.elem("strong", title-text) }
+          })
+          if "points" in attrs {
+            let n = chart-number(attrs.points, "points", attrs: attrs)
+            html.elem("span", attrs: (class: "fx-exercise-points"), if r [#chart-label(n, none, r) نمره] else [#chart-label(n, none, r) #if n == 1 [point] else [points]])
+          }
+        })
+        html.elem("div", attrs: (class: "fx-exercise-question"), question)
+        if mode == "show" {
+          for a in parts.tagged { html.elem("div", attrs: (class: "fx-exercise-answer"), { html.elem("strong", if r { "پاسخ:" } else { "Answer:" }); a.body }) }
+        }
+      })
+      if mode == "end" and parts.tagged.len() > 0 {
+        exercise-answers.update(all => all + ((word: word, number: number, body: parts.tagged.map(a => a.body).join(parbreak()), r: r),))
+      }
+      exercise-head.update(none)
+    }
+  },
+  choices: (attrs, body) => context {
+    let found = find-first(body, list)
+    if found == none { found = find-first(body, enum) }
+    assert(found != none, message: at-of(attrs) + "<choices> needs a Markdown list")
+    let items = found.children.map(it => it.body)
+    let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+    let r = d == rtl
+    let style = flag-attr(attrs, "numbers", "letters", ("letters", "numbers"), "choices")
+    let correct = if "correct" in attrs { attrs.correct.split(",").map(s => int(chart-number(s, "correct", attrs: attrs))) } else { () }
+    let head = exercise-head.get()
+    let mode = if head != none { head.mode } else { answers-mode }
+    let mark(i) = if style == "numbers" { digits(i + 1, r) } else if r { abjad-letters.at(calc.rem(i, abjad-letters.len())) } else { "abcdefghijklmnopqrstuvwxyz".at(calc.rem(i, 26)) }
+    let cols = if "cols" in attrs { assert(int(attrs.cols) > 0, message: at-of(attrs) + "<choices> cols must be positive"); "repeat(" + attrs.cols + ", minmax(0,1fr))" } else { "repeat(auto-fit,minmax(min(100%,12em),1fr))" }
+    html.elem("ol", attrs: (class: "fx-choices", dir: if r { "rtl" } else { "ltr" }, style: "grid-template-columns: " + cols), {
+      for (i, it) in items.enumerate() {
+        html.elem("li", attrs: (class: "fx-choice" + if mode == "show" and (i + 1) in correct { " fx-choice-correct" } else { "" }), {
+          html.elem("span", attrs: (class: "fx-choice-marker"), mark(i))
+          html.elem("div", it)
+        })
+      }
+    })
+    if mode == "end" and correct.len() > 0 and head != none {
+      exercise-answers.update(all => all + ((word: head.word, number: head.number, body: correct.map(k => mark(k - 1)).join(", "), r: head.r),))
+    }
+  },
+  answers: (attrs, body) => context {
+    let all = exercise-answers.final()
+    if all.len() == 0 { return }
+    let d = resolve-dir(attrs.at("dir", default: "auto"), attrs.at("title", default: all.first().word))
+    html.elem("section", attrs: (class: "fx-answers", dir: if d == rtl { "rtl" } else { "ltr" }), {
+      html.elem("h2", attrs.at("title", default: if d == rtl { "پاسخ‌ها" } else { "Answers" }))
+      for a in all { html.elem("div", attrs: (class: "fx-exercise-answer"), { html.elem("strong", [#a.word #a.number.]); a.body }) }
+    })
+  },
+)
+#let exercise-css = `````css
+.fx-exercise { margin-block: .9em; border: 1px solid var(--code-stroke); border-radius: var(--r-box); overflow: hidden; }
+.fx-exercise-head { display: flex; justify-content: space-between; gap: .75em; align-items: baseline; background: var(--code-bg); padding: .5em .75em; color: var(--heading); border-bottom: 1px solid var(--rule); }
+.fx-exercise-head h2 { font-size: 1em; margin: 0; padding: 0; border: 0; background: none; }
+.fx-exercise-points { flex: none; font-size: .85em; color: var(--muted); }
+.fx-exercise-question { padding: .65em .75em; }
+.fx-exercise-answer { padding: .55em .75em; border-top: 1px dashed var(--rule); } .fx-exercise-answer > strong { color: var(--secondary); margin-inline-end: .5em; }
+.fx-choices { display: grid; gap: .45em .8em; padding: 0 !important; list-style: none; margin: .6em 0; }
+.fx-choice { display: flex; align-items: baseline; gap: .5em; min-width: 0; }
+.fx-choice-marker { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; padding-inline: .25em; font-size: .85em; border: 1px solid var(--rule); border-radius: var(--r-badge); color: var(--muted); }
+.fx-choice-correct .fx-choice-marker { background: var(--secondary); color: var(--bg); border-color: var(--secondary); }
+.fx-exercise :is(p,ul,ol):first-child, .fx-choice p { margin-top: 0; } .fx-exercise :last-child { margin-bottom: 0; }
+html[data-fx-table="rules"] .fx-exercise { border-inline: 0; border-top: 0; } html[data-fx-table="rules"] .fx-exercise-head { padding-inline: 0; background: none; }
+`````.text
 
 #let exercise-schema = (
   "exercise": (

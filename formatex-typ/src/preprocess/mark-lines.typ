@@ -28,6 +28,8 @@
 // The first word of a list item's text when nothing in it is markup and more text follows on the line
 #let list-word-re = regex("^([^\\s`*_~\\[\\]<>$!\\\\{}|()#&]+)[ \\t]+\\S")
 #let indent-re = regex("^[ \t]*")
+#let inline-code-re = regex("`[^`\\n]*`")
+#let inline-math-re = regex("\\$[^$\\n]+\\$")
 
 // Same bytes, same lines: only the characters change.
 
@@ -45,7 +47,8 @@
     } else if fence != none {
       lines.push(blank(line))
     } else {
-      lines.push(line.replace(regex("`[^`\\n]*`"), m => blank(m.text)).replace(regex("\\$[^$\\n]+\\$"), m => blank(m.text)))
+      let code = if line.contains("`") { line.replace(inline-code-re, m => blank(m.text)) } else { line }
+      lines.push(if code.contains("$") { code.replace(inline-math-re, m => blank(m.text)) } else { code })
     }
   }
   lines.join("\n")

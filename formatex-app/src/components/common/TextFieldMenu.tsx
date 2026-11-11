@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Clipboard, Copy, Scissors, TextSelect } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { readClipboardText, writeClipboardText } from "@/lib/editor/clipboard"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 type Field = HTMLInputElement | HTMLTextAreaElement
@@ -44,20 +45,20 @@ export function TextFieldMenu() {
         <DropdownMenuItem
           disabled={!selected || field?.readOnly}
           onSelect={act(async (target) => {
-            await navigator.clipboard.writeText(selected)
+            await writeClipboardText(selected)
             document.execCommand("delete")
             void target
           })}
         >
           <Scissors /> {t("menu.cut")}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!selected} onSelect={act(() => navigator.clipboard.writeText(selected))}>
+        <DropdownMenuItem disabled={!selected} onSelect={act(() => writeClipboardText(selected))}>
           <Copy /> {t("menu.copy")}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={field?.readOnly}
           onSelect={act(async () => {
-            document.execCommand("insertText", false, await navigator.clipboard.readText())
+            document.execCommand("insertText", false, await readClipboardText())
           })}
         >
           <Clipboard /> {t("menu.paste")}

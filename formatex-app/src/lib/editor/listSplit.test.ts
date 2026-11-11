@@ -19,4 +19,14 @@ describe("listStarts", () => {
     const d = doc("- a\n\n\n  - a1\n- b")
     expect(listStarts(d, 1, d.lines)).toEqual([1])
   })
+
+  it("starts a new list when numbering restarts at 1 after a blank line", () => {
+    const d = doc("1. مختار\n2. بیست سال\n\n1. nigg")
+    expect(listStarts(d, 1, d.lines)).toEqual([1, 4])
+  })
+
+  it("starts a new list when Persian numbering restarts at ۱ after a blank line", () => {
+    const d = doc("۱. مختار\n۲. بیست سال\n\n۱. nigg")
+    expect(listStarts(d, 1, d.lines)).toEqual([1, 4])
+  })
 })

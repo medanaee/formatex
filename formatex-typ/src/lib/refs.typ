@@ -42,6 +42,9 @@
   } else if el.func() == math.equation {
     let n = counter(math.equation).at(el.location()).first()
     [#if r [رابطهٔ] else [Equation] #equation-number(n, r)]
+  } else if el.func() == metadata and type(el.value) == dictionary and "equation-id" in el.value {
+    let n = counter(math.equation).at(el.location()).first()
+    [#if r [رابطهٔ] else [Equation] #equation-number(n, r)]
   } else if el.func() == metadata and type(el.value) == dictionary and "theorem-kind" in el.value {
     let kind = el.value.theorem-kind
     let spec = theorem-kinds.at(kind)

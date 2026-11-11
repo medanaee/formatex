@@ -85,6 +85,39 @@
     letter: (attrs, body) => letter-block(attrs, body),
 )
 
+#let letter-html = (
+  letter: (attrs, body) => context {
+    let d = resolve-dir(attrs.at("dir", default: "auto"), attrs.at("subject", default: "") + body)
+    let r = d == rtl
+    let words = if r { (number: "شماره", date: "تاریخ", attachment: "پیوست", to: "به", from: "از", subject: "موضوع", cc: "رونوشت") } else { (number: "No.", date: "Date", attachment: "Attachments", to: "To", from: "From", subject: "Subject", cc: "CC") }
+    let fields(keys) = html.elem("dl", attrs: (class: "fx-letter-fields"), {
+      for k in keys { if attrs.at(k, default: "") != "" { html.elem("dt", words.at(k) + ":"); html.elem("dd", attrs: (dir: "auto"), attrs.at(k)) } }
+    })
+    html.elem("article", attrs: (class: "fx-letter", dir: if r { "rtl" } else { "ltr" }), {
+      html.elem("header", attrs: (class: "fx-letter-header"), {
+        html.elem("div", attrs: (class: "fx-letter-org"), {
+          if attrs.at("logo", default: "") != "" { image(root-path(attrs.logo), height: 1.6cm) }
+          if "org" in attrs { html.elem("div", attrs.org) }
+        })
+        html.elem("strong", attrs.at("heading", default: ""))
+        fields(("number", "date", "attachment"))
+      })
+      fields(("to", "from", "subject"))
+      let greeting = attrs.at("greeting", default: if r { "با سلام و احترام،" } else { "" })
+      if greeting != "" { html.elem("p", greeting) }
+      html.elem("div", attrs: (class: "fx-letter-body"), body)
+      html.elem("footer", attrs: (class: "fx-letter-signature"), {
+        if "closing" in attrs { html.elem("div", attrs.closing) }
+        if attrs.at("signature", default: "") != "" { image(root-path(attrs.signature), height: 1.4cm) }
+        if "signer" in attrs { html.elem("strong", attrs.signer) }
+        if "signer-title" in attrs { html.elem("div", attrs: (class: "fx-letter-role"), attrs.at("signer-title")) }
+      })
+      if "cc" in attrs { html.elem("div", attrs: (class: "fx-letter-cc"), { html.elem("strong", words.cc + ":"); html.elem("ul", attrs.cc.split(regex("[;؛]")).filter(s => s.trim() != "").map(s => html.elem("li", s.trim())).join()) }) }
+    })
+  },
+)
+#let letter-css = ".fx-letter { margin-block: .9em; } .fx-letter-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: .8em; border-bottom: 1px solid var(--rule); padding-block-end: .6em; margin-block-end: .7em; } .fx-letter-org { text-align: center; color: var(--heading); font-weight: bold; } .fx-letter-fields { display: grid; grid-template-columns: auto 1fr; gap: .3em .6em; margin: .5em 0; } .fx-letter-fields dt { font-weight: 600; } .fx-letter-fields dd { margin: 0; } .fx-letter-signature { width: fit-content; margin-inline-start: auto; display: grid; gap: .35em; text-align: center; margin-block: .8em; } .fx-letter-role { color: var(--muted); } .fx-letter-cc { border-top: 1px solid var(--rule); padding-top: .5em; } @media(max-width:480px) { .fx-letter-header { grid-template-columns: 1fr 1fr; } .fx-letter-header > strong { grid-column: 1/-1; grid-row: 1; text-align: center; } }"
+
 #let letter-schema = (
   "letter": (
     kind: "block",

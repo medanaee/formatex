@@ -26,9 +26,9 @@
       let is-preset = given != none and given in color-presets
       let border = parse-length(attrs.at("border", default: if is-preset { "0.6" } else { "0" }), attrs: attrs)
       let border-color = if "border-color" in attrs { resolve-color(attrs.at("border-color"), attrs: attrs).border } else if is-preset { colors.border } else { theme.rule }
-      let r = if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.box }
+      let r-line = if "radius" in attrs { "border-radius: " + css-len(parse-length(attrs.radius, attrs: attrs)) } else { "border-radius: var(--r-box)" }
       html.elem("div", attrs: (class: "fx-panel", style: style-of((
-        "border-radius: " + css-len(r),
+        r-line,
         "padding: " + css-len(parse-length(attrs.at("padding", default: "8pt"), attrs: attrs)),
         if colors != none { panel-style(colors) },
         if border != 0pt { "border: " + css-len(border) + " solid " + (if "border-color" in attrs { css-color(border-color) } else if is-preset { "var(--panel-border)" } else { "var(--rule)" }) },

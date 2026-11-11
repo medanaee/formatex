@@ -29,7 +29,13 @@ The text editor uses a monospace Latin font and falls back to **Vazir Code** for
 
 ## Licensing
 
-The engine's repository contains font files (Font Awesome Pro, IRANSansX, ...). **They are not bundled in the app**: redistributing them needs a license. Users install or import their own; the app only reads them.
+Fonts have separate licenses; the presence of a font in the engine does not grant a common redistribution license to the whole font collection. The HTML-only NewCM derivatives in `src-tauri/web-fonts/` carry the upstream Typst-assets NOTICE, including the applicable GUST and GPL3 font/distribution exception notices. Other bundled or imported fonts retain their own license terms.
+
+## HTML font family resolution
+
+HTML preview and export prefer the exact requested font family before alias fallbacks. If `CMU Serif` is installed or imported, its faces are used rather than replacing it with New Computer Modern. When the requested family is missing and a fallback alias is used, the embedded `@font-face` retains the requested CSS family name so the browser can resolve the document's font stack. The formal feel still defaults to New Computer Modern; unrelated pages do not embed CMU Serif automatically or duplicate the same New Computer Modern bytes under an unconditional CMU alias.
+
+Regular/bold faces are selected independently by nearest weight per required style, so a real CMU Serif regular face at weight 500 is included. Stock NewCM CFF outlines rejected by the tested browser are replaced only for HTML embedding by four quadratic-outline assets in `src-tauri/web-fonts/`, generated with fontTools by `scripts/prepare-html-serif.py`. Metrics and shaping tables are preserved, curve error is bounded at one font unit (about 0.001 em), and the internal family is renamed `Formatex NewCM Web` while CSS retains the requested family. Original PDF fonts are unchanged. See [the measured HTML update](../html-export-improvements-2026-11-11.md).
 
 ## Performance
 

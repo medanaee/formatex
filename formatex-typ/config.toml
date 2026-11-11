@@ -90,7 +90,7 @@ line-spacing = 115
 # Space between words, in percent of the font's normal space. Default: 100
 word-spacing = 100
 
-# The page header, footer, cover page and bibliography belong to each document: set them in the
+# The page header, footer page and bibliography belong to each document: set them in the
 # YAML front matter at the top of the Markdown file (see doc_en.md / doc_fa.md / demo.md).
 # Any setting in this file can also be overridden there for one document.
 
@@ -200,6 +200,8 @@ numbering = "labelled"
 
 # The HTML output: the live HTML preview and the Export HTML dialog start from these (the dialog can change them for one export).
 [html]
+# Math renderer in HTML: "native" (Typst built-in) or "katex" (embedded offline KaTeX bundle)
+math = "native"
 # A slim toolbar: zoom, theme and feel
 toolbar = true
 # A reading-progress line at the top

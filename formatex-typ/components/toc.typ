@@ -2,7 +2,7 @@
 
 #let toc-tags = (
     toc: (attrs, body) => {
-      let d = attrs.at("dir", default: "rtl")
+      let d = attrs.at("dir", default: if doc-dir != "auto" { doc-dir } else { "rtl" })
       let title = attrs.at("title", default: if d == "ltr" { "Contents" } else { "فهرست مطالب" })
       let (break-before, break-after) = page-breaks(attrs)
       // "rtl": every number Persian, section numbers on the right; "ltr": Latin, on the left;
@@ -58,7 +58,7 @@
 // The HTML form (optional, used by the HTML export): a list of links, indented by level (no page numbers: the page scrolls)
 #let toc-html = (
     toc: (attrs, body) => context {
-      let d = attrs.at("dir", default: "rtl")
+      let d = attrs.at("dir", default: if doc-dir != "auto" { doc-dir } else { "rtl" })
       let title = attrs.at("title", default: if d == "ltr" { "Contents" } else { "فهرست مطالب" })
       let fa-digits = d != "ltr"
       let all = query(heading.where(outlined: true))

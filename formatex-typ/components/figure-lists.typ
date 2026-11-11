@@ -2,14 +2,13 @@
 
 // <lof> / <lot> / <lol>: captioned figures of one kind, laid out like <toc> entries.
 #let figure-list(kind, tag-name, attrs, fa-title, en-title) = {
-  let d = attrs.at("dir", default: "rtl")
+  let d = attrs.at("dir", default: if doc-dir != "auto" { doc-dir } else { "rtl" })
   let title = attrs.at("title", default: if d == "ltr" { en-title } else { fa-title })
   let nums = list-numbers(attrs, tag-name, "auto")
   let pages = list-pages-on(attrs, tag-name)
 
   show outline.entry: it => context {
     let el = it.element
-    // A figure may have a number only, a caption only, or both; a figure with neither is not listed
     let caption = if el.caption == none { [] } else { el.caption.body }
     let has-caption = caption != []
     if el.numbering == none and not has-caption { return none }
@@ -17,7 +16,6 @@
     let entry-dir = if d == "rtl" { rtl } else if d == "ltr" { ltr } else if entry-rtl { rtl } else { ltr }
     let fa-digits = if nums == "auto" { entry-rtl } else { nums == "rtl" }
     set text(dir: entry-dir)
-    // Isolates keep a caption's own direction inside a forced-direction list.
     let number = if el.numbering != none { reference-text(el, fa-digits) }
     let shown = if number != none and has-caption [#number: #caption] else if number != none { number } else { caption }
     let isolated = [#if entry-rtl { "\u{2067}" } else { "\u{2066}" }#shown#"\u{2069}"]
@@ -35,7 +33,7 @@
 
 // The HTML form of the three lists (optional, used by the HTML export): the figures of one kind, each a link
 #let html-figure-list(kind, attrs, fa-title, en-title) = context {
-  let d = attrs.at("dir", default: "rtl")
+  let d = attrs.at("dir", default: if doc-dir != "auto" { doc-dir } else { "rtl" })
   let title = attrs.at("title", default: if d == "ltr" { en-title } else { fa-title })
   let entries = ()
   for el in query(figure.where(kind: kind)) {

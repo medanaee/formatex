@@ -5,7 +5,7 @@
 //   node tools/build-all.mjs                                  # all 24
 //   node tools/build-all.mjs --themes paper                   # paper in all 3 feels
 //   node tools/build-all.mjs --themes paper,nord --feels formal
-//   node tools/build-all.mjs --no-cover --source examples/demo.md
+//   node tools/build-all.mjs --source examples/demo.md
 //   node tools/build-all.mjs --out-dir pdfs
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
@@ -24,7 +24,6 @@ const list = (value) => value.split(",").map((item) => item.trim()).filter(Boole
 const themes = list(option("themes", "paper,sepia,ocean,sage,midnight,nord,zinc,dracula"))
 const feels = list(option("feels", "formal,standard,friendly"))
 const outDir = path.resolve(root, option("out-dir", "out"))
-const noCover = process.argv.includes("--no-cover")
 
 genRegistry(root)
 // Fonts: the engine's own folder, and the app's bundled ones when the app sits next to the engine (so a clean checkout has them)
@@ -43,7 +42,6 @@ for (const theme of themes) {
   for (const feel of feels) {
     const out = path.join(outDir, `${name}-${theme}-${feel}.pdf`)
     const args = ["compile", "main.typ", out, "--input", `theme=${theme}`, "--input", `feel=${feel}`, "--input", `source=${source}`]
-    if (noCover) args.push("--input", "cover=false")
     for (const dir of fontPaths) args.push("--font-path", dir)
     process.stdout.write(`building ${path.relative(process.cwd(), out)} ... `)
     const result = spawnSync("typst", args, { cwd: root, encoding: "utf8" })

@@ -138,6 +138,26 @@
     },
 )
 
+#let tree-html = (
+  tree: (attrs, body) => {
+    let source = if "src" in attrs { read(root-path(attrs.src)) } else { let r = find-raw(body); assert(r != none, message: at-of(attrs) + "<tree> needs a fenced code block or src"); r.text }
+    let items = tree-items(source)
+    assert(items.len() > 0, message: at-of(attrs) + "<tree> needs at least one line")
+    let icons = attrs.at("icons", default: "true") != "false"
+    caption-figure(attrs, "tree", html.elem("div", attrs: (class: "fx-tree", dir: "ltr", role: "list"), {
+      for it in items {
+        html.elem("div", attrs: (class: "fx-tree-row", role: "listitem", style: "padding-inline-start: " + str(it.depth * 1.3) + "em"), {
+          html.elem("span", attrs: (class: "fx-tree-guide", "aria-hidden": "true"), if it.depth > 0 { if it.more { "├─" } else { "└─" } } else { "" })
+          if icons { html.elem("span", attrs: (class: "fx-tree-icon", "aria-hidden": "true"), if it.folder { "▸" } else { "·" }) }
+          html.elem("span", attrs: (dir: "auto"), it.name)
+          if it.note != none { html.elem("span", attrs: (class: "fx-tree-note", dir: "auto"), it.note) }
+        })
+      }
+    }))
+  },
+)
+#let tree-css = ".fx-tree { font-family: var(--font-code); font-size: .9em; line-height: 1.65; padding: .65em .8em; background: var(--code-bg); border: 1px solid var(--code-stroke); border-radius: var(--r-code); overflow-x: auto; } .fx-tree-row { white-space: nowrap; display: flex; gap: .4em; } .fx-tree-guide { color: var(--rule); min-width: 1.2em; } .fx-tree-icon { color: var(--accent); } .fx-tree-note { color: var(--muted); margin-inline-start: .6em; font-family: var(--font-body); font-size: .9em; }"
+
 #let tree-schema = (
   "tree": (
     kind: "block",

@@ -18,6 +18,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2.7.2", features = [] }
 
+[dev-dependencies]
+# Opt-in native benchmark traces; already a transitive Typst dependency.
+typst-timing = "0.15.1"
+
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -26,6 +30,7 @@ tauri = { version = "2.12.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+tauri-plugin-clipboard-manager = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 
 # The native Typst engine (ADR 0005). typst-kit 0.15 is a set of building blocks: files, fonts, packages.

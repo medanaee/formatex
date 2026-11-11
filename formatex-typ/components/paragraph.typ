@@ -54,6 +54,32 @@
     },
 )
 
+#let paragraph-html = (
+  p: (attrs, body) => context {
+    let styles = ()
+    for (key, property) in (("above", "margin-block-start"), ("below", "margin-block-end"), ("indent", "text-indent"), ("size", "font-size")) {
+      if key in attrs { styles.push(property + ": " + css-len(parse-length(attrs.at(key), attrs: attrs))) }
+    }
+    if "font" in attrs {
+      styles.push("font-family: " + repr(attrs.font) + ", var(--font-body)")
+      html.elem("meta", attrs: (name: "fx-fonts", content: attrs.font))
+    }
+    if "weight" in attrs { styles.push("font-weight: " + str((thin: 100, extralight: 200, light: 300, regular: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800, black: 900).at(attrs.weight))) }
+    if "color" in attrs { styles.push("color: " + css-color(pick-hue(attrs.color, "p", none, attrs: attrs))) }
+    if "align" in attrs { styles.push("text-align: " + attrs.align) }
+    if "justify" in attrs { styles.push("text-align: " + if attrs.justify == "true" { "justify" } else { attrs.at("align", default: "start") }) }
+    let line = paragraph-percent(attrs, "line-spacing")
+    let letters = paragraph-percent(attrs, "letter-spacing")
+    let words = paragraph-percent(attrs, "word-spacing")
+    if line != none { styles.push("line-height: " + str(1 + .65 * line / 100)) }
+    if letters != none { styles.push("letter-spacing: " + str(letters / 100) + "em") }
+    if words != none { styles.push("word-spacing: " + str(words - 100) + "%") }
+    let d = resolve-dir(attrs.at("dir", default: "auto"), body)
+    html.elem("div", attrs: (class: "fx-paragraph", dir: if d == rtl { "rtl" } else { "ltr" }, style: styles.join("; ")), body)
+  },
+)
+#let paragraph-css = ".fx-paragraph { margin-block: .65em; } .fx-doc .fx-paragraph > p { font: inherit; line-height: inherit; letter-spacing: inherit; word-spacing: inherit; text-align: inherit; text-indent: inherit; color: inherit; } .fx-paragraph > :first-child { margin-top: 0; } .fx-paragraph > :last-child { margin-bottom: 0; }"
+
 #let paragraph-schema = (
   "p": (
     kind: "block",
