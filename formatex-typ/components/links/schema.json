@@ -1,0 +1,108 @@
+{
+  "a": {
+    "kind": "inline",
+    "needs": {
+      "keys": [
+        "href",
+        "id"
+      ],
+      "message": "<a> needs href=\"https://...\" or href=\"#id\""
+    },
+    "description": {
+      "en": "Link to a URL (href=\"https://...\") or a place in the document (href=\"#id\"); with id it is an anchor",
+      "fa": "پیوند به نشانی وب (href=\"https://...\") یا جایی از سند (href=\"#id\")؛ با id یک لنگر است"
+    },
+    "attrs": {
+      "href": {
+        "type": "string",
+        "doc": {
+          "en": "`https://...` for a web link or `#id` for a place in the document",
+          "fa": "`https://...` برای پیوند وب یا `#id` برای جایی از سند"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Makes the tag an anchor with this id",
+          "fa": "تگ را به یک لنگر با این id تبدیل می‌کند"
+        }
+      }
+    }
+  },
+  "span": {
+    "kind": "inline",
+    "description": {
+      "en": "Marks a piece of text as a reference target and/or highlights it",
+      "fa": "علامت‌گذاری یک تکه متن به‌عنوان هدف ارجاع و/یا هایلایت آن"
+    },
+    "attrs": {
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Reference target id",
+          "fa": "شناسهٔ هدف ارجاع"
+        }
+      },
+      "highlight": {
+        "type": "color",
+        "doc": {
+          "en": "Highlighter band behind the text: `true` (yellow), a color preset, Tailwind name or hex. Works with or without an `id`.",
+          "fa": "نوار هایلایت پشت متن: `true` (زرد)، رنگ آماده، نام Tailwind یا hex. با `id` یا بدون آن کار می‌کند."
+        }
+      },
+      "tailwind": {
+        "type": "string",
+        "doc": {
+          "en": "Tailwind classes, the same as on `<div>`: `border border-red-500 rounded-lg bg-yellow-100 px-2`, and for the text `text-lg text-red-600 font-bold italic underline`. A box stays on one line. Only the groups listed in `classes` are taken.",
+          "fa": "کلاس‌های Tailwind، همان‌های `<div>`: `border border-red-500 rounded-lg bg-yellow-100 px-2` و برای متن `text-lg text-red-600 font-bold italic underline`. قاب در یک خط می‌ماند. فقط گروه‌های فهرست‌شده در `classes` پذیرفته می‌شوند."
+        },
+        "classes": [
+          "padding",
+          "background",
+          "text-color",
+          "text",
+          "border",
+          "rounding"
+        ]
+      }
+    }
+  },
+  "anchor": {
+    "kind": "inline",
+    "description": {
+      "en": "Alias of <span>",
+      "fa": "نام دیگر <span>"
+    },
+    "attrs": {
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Reference target id",
+          "fa": "شناسهٔ هدف ارجاع"
+        }
+      },
+      "highlight": {
+        "type": "color",
+        "doc": {
+          "en": "Highlighter band behind the text: `true` (yellow), a color preset, Tailwind name or hex. Works with or without an `id`.",
+          "fa": "نوار هایلایت پشت متن: `true` (زرد)، رنگ آماده، نام Tailwind یا hex. با `id` یا بدون آن کار می‌کند."
+        }
+      },
+      "tailwind": {
+        "type": "string",
+        "doc": {
+          "en": "Tailwind classes, the same as on `<div>`: `border border-red-500 rounded-lg bg-yellow-100 px-2`, and for the text `text-lg text-red-600 font-bold italic underline`. A box stays on one line. Only the groups listed in `classes` are taken.",
+          "fa": "کلاس‌های Tailwind، همان‌های `<div>`: `border border-red-500 rounded-lg bg-yellow-100 px-2` و برای متن `text-lg text-red-600 font-bold italic underline`. قاب در یک خط می‌ماند. فقط گروه‌های فهرست‌شده در `classes` پذیرفته می‌شوند."
+        },
+        "classes": [
+          "padding",
+          "background",
+          "text-color",
+          "text",
+          "border",
+          "rounding"
+        ]
+      }
+    }
+  }
+}

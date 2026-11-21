@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   t: (key: string) => key,
 }))
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: mocks.t, i18n: { language: "en" } }) }))
-vi.mock("@/stores/useEditorStore", () => ({ useEditorStore: (select: (state: typeof mocks.state) => unknown) => select(mocks.state) }))
+vi.mock("@/stores/useEditorStore", () => ({ useEditorStore: Object.assign((select: (state: typeof mocks.state) => unknown) => select(mocks.state), { setState: vi.fn(), getState: () => mocks.state }) }))
 vi.mock("@/lib/projects", () => ({ CONFIG_FILE: "config.toml" }))
 vi.mock("@/lib/compiler", () => ({ previewHtml: mocks.preview, CompilerUnavailableError: class extends Error {} }))
 import { HtmlPreview } from "./HtmlPreview"

@@ -11,6 +11,7 @@ import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import type { Diagnostic, PageLink, PageMap } from "@/lib/compiler"
 import { lineFromMarker, markerAt } from "@/lib/editor/markerLookup"
 import { sourcePlaceAt } from "@/lib/editor/sourceLookup"
+import { pdfSourceAt } from "@/lib/editor/pdfSource"
 import { isTauri } from "@/lib/platform"
 import { CONFIG_FILE } from "@/lib/projects"
 import { useSettingsStore } from "@/stores/useSettingsStore"
@@ -112,6 +113,16 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
       return
     }
     const maps = pages.map((page) => page.map)
+    const exact = pdfSourceAt(map, x, y)
+    if (exact) {
+      const source = await store.load(exact.file).catch(() => undefined)
+      if (source !== undefined) {
+        const before = source.slice(0, exact.utf16Start)
+        void store.revealAt(exact.file, before.split("\n").length, before.length - before.lastIndexOf("\n"))
+        onJumpToSource?.()
+        return
+      }
+    }
     // The block the click is in comes from the engine's markers (any file of the project); the text search only finds the row in it
     const marker = markerAt(store.markers, index, x, y, maps)
     if (marker) {

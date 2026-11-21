@@ -1,0 +1,84 @@
+{
+  "picheader": {
+    "display": "picHeader",
+    "kind": "void",
+    "description": {
+      "en": "picture header",
+      "fa": "سربرگ تصویری"
+    },
+    "attrs": {
+      "src": {
+        "type": "path",
+        "required": true,
+        "doc": {
+          "en": "Image path (required)",
+          "fa": "مسیر تصویر (الزامی)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "required": true,
+        "doc": {
+          "en": "Large white title (required)",
+          "fa": "عنوان بزرگ سفید (الزامی)"
+        }
+      },
+      "subtitle": {
+        "type": "string",
+        "doc": {
+          "en": "Optional smaller line under the title",
+          "fa": "زیرعنوان کوچک‌تر زیر عنوان"
+        }
+      },
+      "height": {
+        "type": "length",
+        "default": "60mm",
+        "doc": {
+          "en": "Height of the picture (`mm`, `cm`, `pt`, ...)",
+          "fa": "ارتفاع تصویر (`mm`، `cm`، `pt`، ...)"
+        }
+      },
+      "break": {
+        "type": "enum",
+        "values": [
+          "false",
+          "before"
+        ],
+        "default": "false",
+        "doc": {
+          "en": "`false`: placed where it is written. `before`: starts a new page",
+          "fa": "`false`: همان‌جا درج می‌شود. `before`: ابتدای صفحهٔ بعد"
+        }
+      },
+      "margin-x": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true`: spans the text width. `false`: bleeds across the page margins, corners become square",
+          "fa": "`true`: عرض متن را می‌گیرد. `false`: حاشیه‌های سند را هم می‌پوشاند و گوشه‌ها تیز می‌شوند"
+        }
+      },
+      "margin-y": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "Only with `break=\"before\"`. `true`: sits at the top margin. `false`: sticks to the top edge of the page, top corners become square",
+          "fa": "فقط با `break=\"before\"`. `true`: در حاشیهٔ بالا می‌نشیند. `false`: به لبهٔ بالای صفحه می‌چسبد و گوشه‌های بالا تیز می‌شوند"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Direction of the title and subtitle (default: from the document or the title)",
+          "fa": "جهت عنوان و زیرعنوان (پیش‌فرض: از سند یا عنوان)"
+        }
+      }
+    }
+  }
+}

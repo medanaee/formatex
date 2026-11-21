@@ -2,9 +2,10 @@
 # This front matter must be ignored: only the main file's settings count.
 theme: dracula
 feel: friendly
-header:
-  style: double
-  start: "THIS SHOULD NOT APPEAR"
+typ:
+  header:
+    style: double
+    start: "THIS SHOULD NOT APPEAR"
 ---
 
 ### تیتر از فایل درج‌شده {#included-heading}

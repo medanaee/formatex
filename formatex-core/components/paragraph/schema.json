@@ -1,0 +1,130 @@
+{
+  "p": {
+    "kind": "block",
+    "description": {
+      "en": "A paragraph with its own font, size, spacing and alignment",
+      "fa": "یک پاراگراف با فونت، اندازه، فاصله‌گذاری و تراز خودش"
+    },
+    "attrs": {
+      "font": {
+        "type": "string",
+        "doc": {
+          "en": "A font for this paragraph (any installed or imported font); the document's fonts stay as fallbacks.",
+          "fa": "فونت این پاراگراف (هر فونت نصب‌شده یا واردشده)؛ فونت‌های سند به‌عنوان جایگزین می‌مانند."
+        }
+      },
+      "size": {
+        "type": "length",
+        "doc": {
+          "en": "Text size: `14pt`, `1.2em`, `120%` (of the size around it).",
+          "fa": "اندازهٔ متن: `14pt`، `1.2em`، `120%` (از اندازهٔ اطراف)."
+        }
+      },
+      "weight": {
+        "type": "enum",
+        "values": [
+          "thin",
+          "extralight",
+          "light",
+          "regular",
+          "medium",
+          "semibold",
+          "bold",
+          "extrabold",
+          "black"
+        ],
+        "default": "regular",
+        "doc": {
+          "en": "How bold the text is.",
+          "fa": "ضخامت متن."
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Text color: a preset (`blue`, `red`...), `accent` or a hex color.",
+          "fa": "رنگ متن: یک رنگ آماده (`blue`، `red`...)، `accent` یا رنگ hex."
+        }
+      },
+      "align": {
+        "type": "enum",
+        "values": [
+          "center",
+          "left",
+          "right",
+          "start",
+          "end"
+        ],
+        "doc": {
+          "en": "Where the lines sit: `start`, `end`, `center`, `left` or `right`.",
+          "fa": "جای خط‌ها: `start`، `end`، `center`، `left` یا `right`."
+        }
+      },
+      "justify": {
+        "type": "bool",
+        "doc": {
+          "en": "`true`: both edges of every line flush with the margins. Default: `[paragraph] justify`.",
+          "fa": "`true`: هر دو لبهٔ هر خط هم‌تراز حاشیه‌ها. پیش‌فرض: `[paragraph] justify`."
+        }
+      },
+      "line-spacing": {
+        "type": "number",
+        "default": "100",
+        "doc": {
+          "en": "Gap between lines in percent of the normal gap: 100 normal, 150 airier, 80 tighter. Default: `[paragraph] line-spacing`.",
+          "fa": "فاصلهٔ خط‌ها به درصد فاصلهٔ عادی: ۱۰۰ عادی، ۱۵۰ بازتر، ۸۰ فشرده‌تر. پیش‌فرض: `[paragraph] line-spacing`."
+        }
+      },
+      "letter-spacing": {
+        "type": "number",
+        "default": "0",
+        "doc": {
+          "en": "Extra space between letters in percent of the font size: 0 normal, 2 looser, -2 tighter. Default: `[paragraph] letter-spacing`.",
+          "fa": "فاصلهٔ اضافهٔ حروف به درصد اندازهٔ فونت: ۰ عادی، ۲ بازتر، ۲- فشرده‌تر. پیش‌فرض: `[paragraph] letter-spacing`."
+        }
+      },
+      "word-spacing": {
+        "type": "number",
+        "default": "100",
+        "doc": {
+          "en": "Space between words in percent of the font's normal space. Default: `[paragraph] word-spacing`.",
+          "fa": "فاصلهٔ کلمات به درصد فاصلهٔ عادی فونت. پیش‌فرض: `[paragraph] word-spacing`."
+        }
+      },
+      "indent": {
+        "type": "length",
+        "doc": {
+          "en": "Indent of the first line of each paragraph: `1.5em`, `10mm`.",
+          "fa": "تورفتگی خط اول هر پاراگراف: `1.5em`، `10mm`."
+        }
+      },
+      "above": {
+        "type": "length",
+        "doc": {
+          "en": "Space above the paragraph.",
+          "fa": "فاصلهٔ بالای پاراگراف."
+        }
+      },
+      "below": {
+        "type": "length",
+        "doc": {
+          "en": "Space below the paragraph.",
+          "fa": "فاصلهٔ پایین پاراگراف."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `auto` (from the text), `rtl` or `ltr`.",
+          "fa": "جهت متن: `auto` (از خود متن)، `rtl` یا `ltr`."
+        }
+      }
+    }
+  }
+}

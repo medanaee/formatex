@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A line across the text, in a style and color of your choice: `<hr />`, or `<hr style=\"dashed\" color=\"red\" />`.\n\n- `style`: `solid` (default), `dashed`, `dotted`, `dash-dot`, `double` or `wavy`.\n- `color`: a preset (`blue`, `red`...), `accent` or a hex color; by default the theme's rule color.\n- `width` of the line (`60%`, `5cm`; default `100%`), `thickness` (default `1pt`) and `gap`, the space above and below it (default `0.8em`)."
+  },
+  "fa": {
+    "about": "یک خط در عرض متن، با سبک و رنگ دلخواه: `<hr />` یا `<hr style=\"dashed\" color=\"red\" />`.\n\n- `style`: `solid` (پیش‌فرض)، `dashed`، `dotted`، `dash-dot`، `double` یا `wavy`.\n- `color`: یک رنگ آماده (`blue`، `red`...)، `accent` یا رنگ hex؛ به‌طور پیش‌فرض رنگ خط‌های تم.\n- `width` طول خط (`60%`، `5cm`؛ پیش‌فرض `100%`)، `thickness` ضخامت (پیش‌فرض `1pt`) و `gap` فاصلهٔ بالا و پایین آن (پیش‌فرض `0.8em`)."
+  },
+  "example": {
+    "en": "<hr style=\"dashed\" color=\"red\" />\n\n<hr style=\"double\" width=\"50%\" color=\"#1d4ed8\" thickness=\"1.5pt\" />\n\n<hr style=\"wavy\" color=\"teal\" />",
+    "fa": "<hr style=\"dashed\" color=\"red\" />\n\n<hr style=\"double\" width=\"50%\" color=\"#1d4ed8\" thickness=\"1.5pt\" />\n\n<hr style=\"wavy\" color=\"teal\" />"
+  }
+}

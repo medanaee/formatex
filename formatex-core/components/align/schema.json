@@ -1,0 +1,27 @@
+{
+  "align": {
+    "kind": "block",
+    "description": {
+      "en": "horizontal alignment",
+      "fa": "تراز افقی"
+    },
+    "attrs": {
+      "to": {
+        "type": "enum",
+        "values": [
+          "center",
+          "left",
+          "right",
+          "start",
+          "end"
+        ],
+        "default": "center",
+        "bare": true,
+        "doc": {
+          "en": "Alignment: `center`, `left`, `right`, `start` or `end`. May be written bare: `<align center>`",
+          "fa": "تراز: `center`، `left`، `right`، `start` یا `end`. می‌توان بی‌نام نوشت: `<align center>`"
+        }
+      }
+    }
+  }
+}

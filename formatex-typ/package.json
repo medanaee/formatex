@@ -1,0 +1,14 @@
+{
+  "name": "@formatex/typ",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node tools/sync.mjs",
+    "bundle": "node tools/bundle.mjs",
+    "schema": "node tools/export-schema.mjs"
+  },
+  "dependencies": {
+    "smol-toml": "^1.9.1"
+  }
+}

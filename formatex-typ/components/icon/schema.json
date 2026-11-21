@@ -1,0 +1,42 @@
+{
+  "icon": {
+    "kind": "void",
+    "description": {
+      "en": "Font Awesome icon inside a sentence",
+      "fa": "آیکن Font Awesome وسط جمله"
+    },
+    "attrs": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "doc": {
+          "en": "Font Awesome icon name, for example `check`, `triangle-exclamation`, `github`",
+          "fa": "نام آیکن Font Awesome، مثلاً `check`، `triangle-exclamation`، `github`"
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Color preset, Tailwind name or hex. Default: the surrounding text color.",
+          "fa": "رنگ آماده، نام Tailwind یا hex. پیش‌فرض: رنگ متن اطراف."
+        }
+      },
+      "size": {
+        "type": "length",
+        "default": "1em",
+        "doc": {
+          "en": "Icon size; `1em` matches the text",
+          "fa": "اندازهٔ آیکن؛ `1em` هم‌اندازهٔ متن"
+        }
+      },
+      "solid": {
+        "type": "bool",
+        "default": "false",
+        "doc": {
+          "en": "Use the solid style instead of the regular one (not every icon has both)",
+          "fa": "سبک توپر به‌جای معمولی (همهٔ آیکن‌ها هر دو را ندارند)"
+        }
+      }
+    }
+  }
+}

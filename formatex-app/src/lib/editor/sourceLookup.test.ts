@@ -18,4 +18,12 @@ describe("sourceLineAt", () => {
     const wrapped = "first part of a\nparagraph that goes on"
     expect(sourceLineAt(wrapped, [page([run("part of a paragraph", 50)])], 0, 20, 52)).toBe(1)
   })
+  it("uses ordered surrounding context when both candidates contain the same nearby words", () => {
+    const text="before\ntoken\nafter\n\nafter\ntoken\nbefore"
+    expect(sourceLineAt(text,[page([run("after",80),run("token",100),run("before",120)])],0,20,102)).toBe(6)
+  })
+  it("does not discard occurrences beyond the first 200 before comparing document progress", () => {
+    const text=Array.from({length:500},()=>"repeat").join("\n")
+    expect(sourceLineAt(text,[page([run("repeat",600)])],0,20,602)).toBeGreaterThan(400)
+  })
 })

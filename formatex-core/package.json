@@ -1,0 +1,17 @@
+{
+  "name": "@formatex/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./source": "./src/source.ts"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "cargo test --manifest-path parser/Cargo.toml"
+  },
+  "dependencies": {
+    "smol-toml": "^1.9.1"
+  }
+}

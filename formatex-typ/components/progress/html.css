@@ -1,0 +1,114 @@
+.fx-progress {
+  display: grid;
+  justify-content: start;
+  column-gap: 0.75em;
+  row-gap: 0.42em;
+  align-items: center;
+  width: 100%;
+  margin-block: 0.6em;
+  --fx-progress-strong: var(--fx-paint);
+}
+.fx-progress-mode-bar {
+  justify-content: stretch;
+}
+html.dark .fx-progress {
+  --fx-progress-strong: color-mix(in srgb, var(--fx-paint) 85%, #fff 15%);
+}
+.fx-progress-default {
+  --fx-paint: var(--accent);
+}
+html[data-feel="formal"] .fx-progress-default {
+  --fx-paint: var(--heading);
+}
+.fx-progress-label {
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.fx-progress-value {
+  font-size: 0.85em;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.fx-progress-track {
+  width: 100%;
+  height: 0.55em;
+  background: var(--fx-fill);
+  border-radius: 0.2em;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
+}
+html[data-feel="formal"] .fx-progress-track {
+  height: 0.45em;
+  border-radius: 0;
+  border: 0.05em solid var(--fx-border);
+}
+html[data-feel="friendly"] .fx-progress-track {
+  height: 0.72em;
+  border-radius: 999px;
+}
+.fx-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--fx-progress-strong);
+}
+.fx-progress-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+.fx-progress-dot {
+  width: 0.76em;
+  height: 0.76em;
+  background: var(--fx-fill);
+  border: 0.06em solid var(--fx-border);
+  border-radius: 0.2em;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
+  flex: none;
+}
+html[data-feel="formal"] .fx-progress-dot {
+  border-radius: 0;
+}
+html[data-feel="friendly"] .fx-progress-dot {
+  border-radius: 50%;
+}
+.fx-progress-dot-on {
+  border-color: var(--fx-progress-strong);
+}
+.fx-progress-dot-fill {
+  display: block;
+  height: 100%;
+  background: var(--fx-progress-strong);
+}
+.fx-progress-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12em;
+}
+.fx-progress-star {
+  position: relative;
+  width: 0.95em;
+  height: 0.95em;
+  flex: none;
+}
+.fx-progress-star-bg,
+.fx-progress-star-fg {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.fx-progress-star-bg {
+  color: var(--fx-border);
+}
+.fx-progress-star-fg {
+  color: var(--fx-progress-strong);
+}
+.fx-progress-star .fx-icon-svg {
+  width: 100%;
+  height: 100%;
+}

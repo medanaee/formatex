@@ -26,4 +26,3 @@
 #import "/src/lib/lists.typ": *
 #import "/src/lib/mitex.typ": *
 #import "/src/lib/latex-code.typ": *
-#import "/src/html/kit.typ": *

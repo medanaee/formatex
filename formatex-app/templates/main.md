@@ -1,8 +1,9 @@
 ---
-header:
-  style: line
-  start: "عنوان سند"
-  end: "صفحه {page} از {pages}"
+typ:
+  header:
+    style: line
+    start: "عنوان سند"
+    end: "صفحه {page} از {pages}"
 ---
 
 <cover title="عنوان سند" author="نام نویسنده"></cover>

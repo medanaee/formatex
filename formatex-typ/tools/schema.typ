@@ -6,7 +6,7 @@
 //   tailwind  the Tailwind classes the template reads: values, variants and groups (src/lib/tailwind.typ); a tag lists the groups it takes in `classes` of its `tailwind` attribute
 //   components  every component: its tags and its docs (what it is for in en and fa, and an example); the skill generator of the app reads them
 //   issues   things that disagree: a `children` entry that is not a tag, a `scoped` tag that no tag lists as a child
-#import "/components/_registry.typ": all-schemas as built-in-schemas, component-tags as built-in-component-tags, component-docs as built-in-component-docs
+#import "/components/_catalog.typ": all-schemas as built-in-schemas, component-tags as built-in-component-tags, component-docs as built-in-component-docs
 // The components of the project itself (the `components` setting): a tag has autocomplete when its file gives a schema
 #import "/src/lib/local-components.typ": local-schemas, local-components, local-docs
 #let all-schemas = built-in-schemas + local-schemas

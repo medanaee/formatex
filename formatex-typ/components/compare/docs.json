@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "Pros and cons side by side: `<pros>` and `<cons>` inside `<compare>`, each holding a Markdown list; `title` renames a side.\n\n- Every `<pros>` / `<cons>` is one column, in any order and number; columns get equal width and the tallest height. Text outside them is not shown. `title` renames a column.\n- List items get ✓ (pros) or ✗ (cons) instead of bullets. In RTL the columns mirror, so the first is on the right.\n- Leave blank lines inside `<compare>`, `<pros>` and `<cons>`. A `<compare>` without them is a compile error."
+  },
+  "fa": {
+    "about": "مزایا و معایب کنار هم: `<pros>` و `<cons>` داخل `<compare>`، هر کدام با یک فهرست Markdown؛ `title` نام هر طرف را عوض می‌کند.\n\n- هر `<pros>` / `<cons>` یک ستون است، با هر ترتیب و تعداد؛ ستون‌ها عرض برابر و بلندی بلندترین را می‌گیرند. متن بیرون از آن‌ها نشان داده نمی‌شود. `title` نام ستون را عوض می‌کند.\n- آیتم‌های فهرست به‌جای نقطه ✓ (مزایا) یا ✗ (معایب) می‌گیرند. در RTL ستون‌ها آینه می‌شوند و ستون اول سمت راست است.\n- داخل `<compare>`، `<pros>` و `<cons>` خط خالی بگذارید. `<compare>` بدون آن‌ها خطای ساخت است."
+  },
+  "example": {
+    "en": "<compare>\n\n<pros>\n\n- Free and open source\n- Fast compilation\n- Full Persian support\n\n</pros>\n\n<cons title=\"Limitations\">\n\n- Fewer packages than LaTeX\n- A new language to learn\n\n</cons>\n\n</compare>",
+    "fa": "<compare>\n\n<pros>\n\n- رایگان و متن‌باز\n- کامپایل سریع\n- پشتیبانی کامل از فارسی\n\n</pros>\n\n<cons title=\"محدودیت‌ها\">\n\n- بستهٔ کمتر از LaTeX\n- نیاز به یادگیری زبان تازه\n\n</cons>\n\n</compare>"
+  }
+}

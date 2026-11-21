@@ -2,6 +2,87 @@
 
 Update this file at the end of every session: tick what is done, add what you found.
 
+- [x] Keep inline icons in their Markdown paragraph when the production schema declares them void. Verified both icon sentences from the demo in the rendered PDF.
+- [x] Show component file tabs edge to edge with file-type icons and underline the selected file.
+
+## Active: PDF divider and list source mapping (2026-11-13)
+
+- [x] Give Markdown thematic breaks their own preview block marker instead of assigning divider clicks to the preceding block.
+- [x] Preserve the original text-node length and UTF-16 offset when inserting list-item markers after the first word, keeping subsequent word clicks aligned with their actual source.
+- [x] Synchronize editor documentation, both user guides and the document-authoring skill; author syntax and divider styling are unchanged.
+- [x] Verify divider navigation and list word offsets (Persian/ZWNJ, surrogate pairs, ordered/nested lists, rich text and includes), including unchanged glyph geometry with markers enabled/disabled: five targeted native PDF tests pass; full native suite passes 71 tests/five ignored.
+- [x] App engine sync (43 packages/78 tags), standalone engine sync, TypeScript, lint, production build and `cargo check` pass. Frontend suite: 380 passed/two skipped, including bidirectional divider-marker regression. Existing nine lint warnings, build bundle/dynamic-import warnings and the `ComponentLibrary.source`/`save` dead-code warning remain.
+- [ ] Rebuild/restart the running native app and verify actual PDF divider/list clicks in the GUI. Native test compilation consumed the updated embedded engine; no distributable rebuild or app restart was performed.
+
+## Active: HTML viewer reading controls (2026-11-13)
+
+- [x] Align selected/unselected appearance labels with equal flexible labels and reserved check slots.
+- [x] Replace the first-heading/document-icon toolbar label with localized scroll progress, including compact phone percentage.
+- [x] Replace partial IntersectionObserver batches with cached heading geometry, a stable explicit-navigation pin, and manual/find/source-navigation resumption.
+- [x] Add regression coverage for dense headings, intermediate/bottom-clamped scroll, outline scrolling, keyboard resumption and preview layout patches.
+- [x] Verified 380 frontend tests (one benchmark skipped), real HTML integration, typecheck/build and engine sync. Actual browser QA at 360/768/1280 px covers fa/en label alignment, 0–100% mobile progress without overflow, pinned outline destinations and manual-scroll resumption; no browser warnings/errors. Real Android device interaction remains separate.
+
+## Active: Per-component HTML ownership and background assets (2026-11-13)
+
+- [x] Documented the current limitation: most package `html.tsx` implementations delegate to central `renderBuiltin`; per-folder file presence does not establish per-component JSX ownership.
+- [ ] Extract each built-in's actual JSX/behavior from `formatex-html/src/components.tsx` into its own package `html.tsx`, retaining shared helpers/context and testing behavior parity. `alert`, `box`, `badge`, `kbd`, `code`, `theorem`, `exercise`, `fig`, `grid` and `steps` own their JSX and have been removed from `renderBuiltin`. Standard Markdown blocks now follow the PDF options and feel in `formatex-html/src/markdown.tsx`. The other 38 packages still delegate to `renderBuiltin`.
+- [x] Strengthened native provenance fixture to 120 repetitions across multiple PDF pages; full native gate: 69 passed/5 ignored.
+- [x] Header background resolves through `context.background(path)` host assets; its data URL is emitted once via a root CSS variable. Final frontend: 379 passed/1 benchmark skipped, including real integration and offline artifact-size assertion below 2 MB; typecheck/build pass (`final-mapping-tests`, `final-mapping-typecheck`, `final-mapping-build` logs).
+
+## Active: Bidirectional word provenance mapping (2026-11-12)
+
+- [x] Recorded the scoped direct-provenance-first architecture and fallback boundaries in [ADR 0014](../decisions/0014-preview-word-source-geometry.md), editor docs and shared-core plan.
+- [x] Implement/test preview-only PDF word annotations and native `PageMap.sources` extraction, internal-link filtering and `markers=0`/export absence.
+- [x] Test shared text/source helpers and half-open UTF-16 ranges for ordinary text/rich descendants, wrapping/pages, repeated/includes and RTL/LTR.
+- [x] Test direct clicks/reverse lookup and HTML DOM word-range scroll/highlight; retain fallback for raw code, math and generated labels without exact geometry.
+- [x] Targeted native provenance: bilingual repeated-word UTF-16 starts, include files, generated origins and visual rows pass; glyph IDs/positions/advances match markers off/on (TextItem grouping differs).
+- [x] Fallback tests cover ordered before/after context, distance and repeated RTL/LTR beyond 200 occurrences; PDF reverse lookup uses cached page/file intervals. Frontend: 379 passed/1 skipped including real integration; typecheck passes, lint retains nine existing warnings.
+- [x] Native 69 passed/5 ignored, including unchanged actual user-link rectangles with provenance enabled; links/ref/a/def/custom Typst handlers retain bounded fallback.
+- [x] Final provenance payload-compaction/UTF-16 recomputation rerun: 69 passed/5 ignored; final engine sync 43 packages/78 tags.
+- [x] Actual IAB 360/768/1280 px fa/en light/dark viewer menus/outlines pass after theme-grid height correction. Independent React SSR shell root fixes React 418; fresh-query browser has zero errors/warnings.
+- [x] Real mobile HTML word-range reveal/click returns the same word/file (offset 18059→18060) and highlights only the wrapped-row word. Frontend 379 passed/1 skipped including real integration/artifacts; typecheck/build pass, lint has nine existing warnings; PDF matrix 25 passed.
+- [x] HTML README maps every src file and describes live CSS variables versus render-time context snapshots and optional styled Panel versus plain section.
+- [ ] Complete named visual/platform gates; real-device phone/tablet interaction is separate from desktop/harness evidence.
+
+## Active: Post-migration PDF/HTML regressions (2026-11-12)
+
+- [x] Reproduced `window is not defined` in the real IAB browser worker using the app's Vite React configuration. React Fast Refresh injected a window preamble into renderer TSX; excluding `formatex-html` from Refresh makes the same functional harness succeed.
+- [x] Shared parser no longer treats paired `ref`/`cite` as hardcoded void tags, preserving their custom body. Pandoc-style `[@key]` becomes semantic citation IR. Parser regression suite: 11 passed.
+- [x] PDF nested Tailwind div realization now preserves child/source metadata and excludes internal metadata as flex items; equal flex-1 widths, pill rows and card layouts are corrected.
+- [x] Confirmed paired custom-ref text in PDF/HTML, semantic citations outside protected code/math, explicit ordered-marker restart versus ordinary loose continuation, and lexical direction for refs/inline definitions. Demo English section explicitly overrides forced RTL with `<dir ltr>`; native direction regression passes and full demo visual compilation has no convergence warnings.
+- [x] Synchronized EN/FA guides and authoring/developer notes for the confirmed regression behavior; app predev/prebuild/pretest/pretypecheck sync automatically.
+- [x] Current regression gates: parser 11; native 68 passed/5 ignored; frontend 372 passed/2 skipped plus opt-in real Typst→IR→HTML integration 1 passed; typecheck/build pass with existing bundle-size warnings. Native flex geometry is identical with markers off/on; full-demo English/flex visual compile has no convergence warnings.
+- [x] Final CLI PDF matrix: all 25 cases pass (24 desktop theme/feel plus `page=mobile-20-9`) with zero stderr/warnings; mobile PNG confirms equal-width cards/pills. Standalone/app sync succeeds: 43 packages/78 tags.
+- [ ] Real Android UI and the full component/property matrix remain open; mobile CLI page format is not native Android interaction.
+
+## Active: Shared Typst core with PDF/HTML backends (2026-11-12)
+
+Starting from restored main `29c4d2a` on `codex/shared-core-renderers`; the prior user backup `586d41b` stays untouched. [ADR 0013](../decisions/0013-shared-typst-core-pdf-html.md) and [the detailed plan](shared-core-pdf-html-plan.md) describe the target and verified checkpoint. Pending gates remain separate from the landed parser/core/PDF fixture.
+
+- [x] Recorded ownership, Typst-internal Rust/WASM pulldown-cmark parser, shared IR/settings/maps, separate PDF/HTML backends, shared folder packages and generated standalone assembly in the plan/ADR.
+- [x] Built the core Rust/WASM pulldown-cmark parser; nine Rust tests pass covering Markdown/tags, protected code/math, Unicode/source paths and settings namespaces. Core `document.typ` evaluates mapped source and invokes the parser inside Typst; no JS Markdown parser.
+- [x] Moved 43 shared packages / 78 schema tags to core with `typst.typ`, `html.tsx`, `manifest.toml`, `docs.json`, `schema.json` and `html.css`; generated core+pdf assembly through `formatex-typ/tools/sync.mjs` and `core/tools/assemble.mjs`.
+- [x] Direct PDF IR adapter and new normal `main.typ` path compile the full demo with includes/nesting: 261 root nodes, three source files, 903,229-byte PDF and zero errors, without cmarker in this normal path. This initial PDF fixture does not alone certify full component/property parity.
+- [x] One-file bundle embeds parser WASM, JSON contracts and dark syntax theme; modular/bundled demo, isolated custom six-file package and relocated standalone tooling checks pass. Local tools consume the synced snapshot; sync builds core WASM first. Complete property parity remains open.
+- [x] App direct core+pdf+html `engine:sync` and native `cargo check` pass. The core config template and four Markdown front matters use the `typ` namespace; root paged keys and incorrectly scoped HTML copy-button settings are rejected.
+- [x] Updated app-generated EN/FA authoring/building instructions to six-file folder packages, separate schema/docs JSON, per-backend implementations, front-matter folder paths and shared/html/typ settings. Focused skill-generator tests: 19 passed; public language/level and kit-name APIs preserved.
+- [x] Real IAB browser-worker large-IR/custom-TSX/manifest rendering succeeds without errors/warnings after browser-compatible `smol-toml` switch; final native gate: 66 passed/5 ignored.
+- [x] Final rerun after smol-toml/bytes/index: frontend 373/373 (real integration and benchmark), production build with no Node externalization warnings, native 66 passed/5 ignored and latest 24 PDF combinations. Final bundled demo and relocated/isolated custom-package paths compile.
+- [x] Shared-core app integration gates: frontend 373 passed (including real demo SVG/assets and large HTML benchmark), native 66 passed/5 ignored, typecheck and production build pass; lint has nine existing warnings.
+- [x] Recorded repeated core/HTML benchmarks, 24 PDF theme/feel builds, mobile compilation, selected PDF visual inspection and 360/768/1280 px browser checks in [the current report](../shared-core-performance-2026-11-12.md).
+- [ ] Complete every component-property/map/diagnostic/export fixture and real Android native clipboard/selection/interactive UI validation; aggregate integration tests do not close these gates.
+- [x] Recorded reproducible baseline and repeated shared-core/HTML stage timings; broader syntax/component/layout/map fixture coverage remains a separate gate.
+- [ ] Extend parser/core source-range/diagnostic fixtures and verify the embedded app host path; the nine Rust tests and Typst full-demo compilation are verified separately above.
+- [ ] Complete the full core preparation/semantics/provenance and settings precedence/domain fixture matrix; implementation and named parser/integration fixtures pass.
+- [ ] Complete shared-package behavior/user front-matter folder loading and every renderer availability case; the physical 43-package move is verified above.
+- [ ] Complete PDF IR property parity; isolated `one.typ` with embedded WASM/external document inputs is verified; the direct demo adapter and generated core+pdf source assembly are verified above.
+- [ ] Complete property-level HTML/SVG/font/math/cache fixture coverage; independent React/TSX/Tailwind/shadcn rendering and real demo SVG/assets integration are implemented and verified.
+- [ ] Complete exact bidirectional preview-map, Markdown diagnostic and stale-result fixtures; direct app core/pdf/html sync and named integration gates pass.
+- [ ] Complete clean-export/semantic-link/HTML page-value diagnostic matrix, including assertions against private source/map/preview-IPC payloads; named offline full-demo asset integration passes.
+- [ ] Complete remaining property/map/export/platform gates beyond the named passing frontend/native/standalone/visual benchmarks; real Android native interactive UI remains unverified.
+- [x] Synchronized EN/FA renderer checkpoints and authoring/developer skills for the verified Typst/WASM/core/PDF/package source ownership.
+- [ ] Continue guide/skill synchronization as remaining configuration/HTML/app/map/export/bundle contracts land; do not publish pending APIs as completed support.
+
 ## HTML math bundle, font matching and native structures (2026-11-11)
 
 - [x] Added `[html] math = native | katex` to the configuration schema and documented the CLI override and Export HTML choice.

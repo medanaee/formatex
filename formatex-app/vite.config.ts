@@ -9,8 +9,10 @@ const host = process.env.TAURI_DEV_HOST
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // Renderer TSX also runs in Web Workers, where React Refresh's window preamble is invalid.
+  plugins: [react({ exclude: /[/\\]formatex-html[/\\]/ }), tailwindcss()],
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },

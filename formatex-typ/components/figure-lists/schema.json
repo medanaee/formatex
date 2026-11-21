@@ -1,0 +1,194 @@
+{
+  "lof": {
+    "kind": "block",
+    "description": {
+      "en": "lists of figures, tables and code",
+      "fa": "فهرست شکل‌ها، جدول‌ها و کدها"
+    },
+    "attrs": {
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "rtl",
+        "doc": {
+          "en": "`rtl` (all entries RTL), `ltr`, `auto` (each entry follows its caption)",
+          "fa": "`rtl` (همهٔ ردیف‌ها راست‌به‌چپ)، `ltr`، `auto` (هر ردیف از عنوان خودش پیروی می‌کند)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Any text",
+          "fa": "هر متنی"
+        }
+      },
+      "numbers": {
+        "type": "enum",
+        "values": [
+          "rtl",
+          "ltr",
+          "auto"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`: «شکل ۱» and Persian page numbers. `ltr`: \"Figure 1\" and Latin page numbers. `auto`: each entry follows its own caption.",
+          "fa": "`rtl`: «شکل ۱» و شمارهٔ صفحهٔ فارسی. `ltr`: \"Figure 1\" و شمارهٔ صفحهٔ لاتین. `auto`: هر ردیف از عنوان خودش پیروی می‌کند."
+        }
+      },
+      "pages": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true`: dot leaders and page numbers; `false`: captions only",
+          "fa": "`true`: نقطه‌چین و شمارهٔ صفحه؛ `false`: فقط عنوان‌ها"
+        }
+      },
+      "break": {
+        "type": "enum",
+        "values": [
+          "true",
+          "false",
+          "before",
+          "after"
+        ],
+        "default": "false",
+        "doc": {
+          "en": "`true`, `before`, `after`, `false` (as on `<toc>`)",
+          "fa": "`true`، `before`، `after`، `false` (مثل `<toc>`)"
+        }
+      }
+    }
+  },
+  "lot": {
+    "kind": "block",
+    "description": {
+      "en": "lists of figures, tables and code",
+      "fa": "فهرست شکل‌ها، جدول‌ها و کدها"
+    },
+    "attrs": {
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "rtl",
+        "doc": {
+          "en": "`rtl` (all entries RTL), `ltr`, `auto` (each entry follows its caption)",
+          "fa": "`rtl` (همهٔ ردیف‌ها راست‌به‌چپ)، `ltr`، `auto` (هر ردیف از عنوان خودش پیروی می‌کند)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Any text",
+          "fa": "هر متنی"
+        }
+      },
+      "numbers": {
+        "type": "enum",
+        "values": [
+          "rtl",
+          "ltr",
+          "auto"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`: «شکل ۱» and Persian page numbers. `ltr`: \"Figure 1\" and Latin page numbers. `auto`: each entry follows its own caption.",
+          "fa": "`rtl`: «شکل ۱» و شمارهٔ صفحهٔ فارسی. `ltr`: \"Figure 1\" و شمارهٔ صفحهٔ لاتین. `auto`: هر ردیف از عنوان خودش پیروی می‌کند."
+        }
+      },
+      "pages": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true`: dot leaders and page numbers; `false`: captions only",
+          "fa": "`true`: نقطه‌چین و شمارهٔ صفحه؛ `false`: فقط عنوان‌ها"
+        }
+      },
+      "break": {
+        "type": "enum",
+        "values": [
+          "true",
+          "false",
+          "before",
+          "after"
+        ],
+        "default": "false",
+        "doc": {
+          "en": "`true`, `before`, `after`, `false` (as on `<toc>`)",
+          "fa": "`true`، `before`، `after`، `false` (مثل `<toc>`)"
+        }
+      }
+    }
+  },
+  "lol": {
+    "kind": "block",
+    "description": {
+      "en": "lists of figures, tables and code",
+      "fa": "فهرست شکل‌ها، جدول‌ها و کدها"
+    },
+    "attrs": {
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "rtl",
+        "doc": {
+          "en": "`rtl` (all entries RTL), `ltr`, `auto` (each entry follows its caption)",
+          "fa": "`rtl` (همهٔ ردیف‌ها راست‌به‌چپ)، `ltr`، `auto` (هر ردیف از عنوان خودش پیروی می‌کند)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Any text",
+          "fa": "هر متنی"
+        }
+      },
+      "numbers": {
+        "type": "enum",
+        "values": [
+          "rtl",
+          "ltr",
+          "auto"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`: «شکل ۱» and Persian page numbers. `ltr`: \"Figure 1\" and Latin page numbers. `auto`: each entry follows its own caption.",
+          "fa": "`rtl`: «شکل ۱» و شمارهٔ صفحهٔ فارسی. `ltr`: \"Figure 1\" و شمارهٔ صفحهٔ لاتین. `auto`: هر ردیف از عنوان خودش پیروی می‌کند."
+        }
+      },
+      "pages": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true`: dot leaders and page numbers; `false`: captions only",
+          "fa": "`true`: نقطه‌چین و شمارهٔ صفحه؛ `false`: فقط عنوان‌ها"
+        }
+      },
+      "break": {
+        "type": "enum",
+        "values": [
+          "true",
+          "false",
+          "before",
+          "after"
+        ],
+        "default": "false",
+        "doc": {
+          "en": "`true`, `before`, `after`, `false` (as on `<toc>`)",
+          "fa": "`true`، `before`، `after`، `false` (مثل `<toc>`)"
+        }
+      }
+    }
+  }
+}

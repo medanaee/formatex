@@ -1,0 +1,254 @@
+{
+  "theorem": {
+    "kind": "block",
+    "description": {
+      "en": "Theorem block",
+      "fa": "بلوک قضیه"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "lemma": {
+    "kind": "block",
+    "description": {
+      "en": "Lemma block",
+      "fa": "بلوک لم"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "definition": {
+    "kind": "block",
+    "description": {
+      "en": "Definition block",
+      "fa": "بلوک تعریف"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "corollary": {
+    "kind": "block",
+    "description": {
+      "en": "Corollary block",
+      "fa": "بلوک نتیجه"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "example": {
+    "kind": "block",
+    "description": {
+      "en": "Example block",
+      "fa": "بلوک مثال"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "remark": {
+    "kind": "block",
+    "description": {
+      "en": "Remark block",
+      "fa": "بلوک نکته"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  },
+  "proof": {
+    "kind": "block",
+    "description": {
+      "en": "Proof block",
+      "fa": "بلوک اثبات"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Optional title shown after the number",
+          "fa": "عنوان اختیاری بعد از شماره"
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for <ref>",
+          "fa": "هدف برای <ref>"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  }
+}

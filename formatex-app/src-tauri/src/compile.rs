@@ -28,6 +28,10 @@ use crate::html_export::{self, HtmlExport};
 use crate::links::{self, Marker, PageMap};
 use crate::world::ProjectWorld;
 
+#[cfg(test)]
+#[path = "compile_pipeline_tests.rs"]
+mod pipeline_tests;
+
 /// Everything the commands share; created once at startup.
 pub struct Engine {
     pub data_dir: PathBuf,
@@ -149,11 +153,12 @@ fn located(message: &str) -> Option<(String, usize, String)> {
     let at = message.find('@')?;
     let head = &message[..at];
     // Only Typst's own "assertion failed: " may stand before the mark
-    if !head.is_empty() && head != "assertion failed: " {
+    if !head.is_empty() && head != "assertion failed: " && head != "panicked with: " {
         return None;
     }
     let (place, text) = message[at + 1..].split_once(' ')?;
-    let (path, line) = place.rsplit_once(':')?;
+    let (path, last) = place.rsplit_once(':')?;
+    let (path, line) = if let Some((path, line)) = path.rsplit_once(':').filter(|(_, line)| line.parse::<usize>().is_ok()) { (path, line) } else { (path, last) };
     let line: usize = line.parse().ok()?;
     (!path.is_empty() && line > 0).then(|| (path.to_string(), line, format!("{head}{text}")))
 }
@@ -188,7 +193,7 @@ pub(crate) fn convert(world: &ProjectWorld, diagnostic: &SourceDiagnostic) -> Di
             message,
             path: Some(path),
             line: Some(line),
-            column: Some(1),
+            column: diagnostic.message.find('@').and_then(|at| diagnostic.message[at+1..].split_once(' ')).and_then(|(place,_)| { let parts = place.rsplitn(3, ':').collect::<Vec<_>>(); (parts.len() == 3 && parts[1].parse::<usize>().is_ok()).then(|| parts[0].parse::<usize>().ok()).flatten() }).or(Some(1)),
             hints: diagnostic.hints.iter().map(|hint| hint.v.to_string()).collect(),
         };
     }
@@ -229,7 +234,7 @@ pub(crate) fn convert_all(world: &ProjectWorld, diagnostic: &SourceDiagnostic) -
     }
     if first.message.starts_with("file not found") && is_component_import(diagnostic) {
         let mut missing = first;
-        let name = missing.message.rsplit(['\\', '/']).next().unwrap_or("").trim_end_matches(')').to_string();
+        let name = missing.message.clone();
         missing.message = format!("A component file listed in `components` was not found: {name}");
         missing.path = Some("config.toml".into());
         return vec![missing];
@@ -306,9 +311,105 @@ pub(crate) fn compile_as(engine: &Engine, project_id: &str, main: &str, mut inpu
     typst::comemo::evict(10);
     // The editor's tools (a click in the preview, the completions) look at the last build that worked
     if let Some(document) = &document {
-        crate::ide::remember(project_id, document);
+        if !inputs.contains_key("graphic") { crate::ide::remember(project_id, document); }
     }
     Ok(Compiled { document, diagnostics })
+}
+
+/// Evaluates the shared core pipeline without constructing or laying out a PDF document.
+#[tauri::command]
+pub async fn prepare_document(engine: State<'_, Arc<Engine>>, project_id: String, main: String, overrides: Option<HashMap<String, String>>) -> Result<serde_json::Value, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || prepare_document_in(&engine, &project_id, &main, overrides.unwrap_or_default())).await.map_err(|error| error.to_string())?
+}
+
+pub(crate) fn prepare_document_in(engine: &Engine, project_id: &str, main: &str, overrides: HashMap<String, String>) -> Result<serde_json::Value, String> {
+    use typst::comemo::Track;
+    use typst::engine::{Route, Sink, Traced};
+    let started = Instant::now();
+    check_relative(main)?;
+    let dir = project_dir(engine, project_id)?;
+    let inputs = Inputs::from([("source".into(), main.into()), ("target".into(), "html".into()), ("transport".into(), "bytes".into())]);
+    let world = kept_world_for(engine, project_id, main, &inputs, false, &dir, true);
+    let mut world = world.lock().unwrap_or_else(|error| error.into_inner());
+    world.set_entry("src/evaluation.typ");
+    world.refresh(overrides_to_bytes(overrides, false)?);
+    let source = world.source(world.main()).map_err(|error| error.to_string())?;
+    let mut sink = Sink::new();
+    let evaluated = typst_eval::eval((&*world as &dyn World).track(), world.library(), Traced::default().track(), sink.track_mut(), Route::default().track(), &source);
+    let mut result = match evaluated {
+        Ok(module) => {
+            match module.scope().get("transport-bytes").map(|binding| binding.read()) {
+                Some(typst::foundations::Value::Bytes(bytes)) => serde_json::from_slice(bytes.as_slice()).map_err(|error| error.to_string())?,
+                _ => serde_json::to_value(module.scope().get("parsed").ok_or("Core did not export parsed data")?.read()).map_err(|error| error.to_string())?,
+            }
+        },
+        Err(errors) => serde_json::json!({"ok": false, "diagnostics": errors.iter().flat_map(|diagnostic| convert_all(&world, diagnostic)).collect::<Vec<_>>() }),
+    };
+    result["elapsedMs"] = serde_json::json!(started.elapsed().as_secs_f64() * 1000.0);
+    if let Some(diagnostics) = result.get_mut("diagnostics").and_then(serde_json::Value::as_array_mut) {
+        for diagnostic in diagnostics { if diagnostic.get("hints").is_none() { diagnostic["hints"] = serde_json::json!([]); } }
+    }
+    typst::comemo::evict(10);
+    Ok(result)
+}
+
+/// Drawings are isolated from the editor's last successful paged document and IDE state.
+#[tauri::command]
+pub async fn render_document_graphic(engine: State<'_, Arc<Engine>>, project_id: String, main: String, node: serde_json::Value, inline: bool, overrides: Option<HashMap<String, String>>) -> Result<String, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = project_dir(&engine, &project_id)?;
+        let mut files = overrides.unwrap_or_default();
+        let json = serde_json::to_string(&node.to_string()).map_err(|error| error.to_string())?;
+        let entry = "__formatex_graphic__.typ";
+        let width = if inline { "auto" } else { "600pt" };
+        let source = format!("#import \"/src/render.typ\": render-document, conf, all-rules\n#show: conf\n#show: all-rules\n#set page(width:{width},height:auto,margin:0pt,header:none,footer:none,numbering:none)\n#let fragment=json(bytes({json}))\n#render-document((children:(fragment,)))\n");
+        files.insert(entry.into(), source);
+        let mut inputs = Inputs::from([("source".into(), main.clone()), ("graphic".into(), "1".into()), ("target".into(), "html".into())]);
+        if let Some(dir) = node.get("props").and_then(|props| props.get("_dir")).and_then(serde_json::Value::as_str) { inputs.insert("dir".into(), dir.into()); }
+        let world = kept_world_for(&engine, &format!("{project_id}\0graphic"), &main, &inputs, false, &dir, false);
+        let mut world = world.lock().unwrap_or_else(|error| error.into_inner());
+        world.set_entry(entry);
+        world.refresh(overrides_to_bytes(files, false)?);
+        let document = typst::compile::<PagedDocument>(&*world).output.map_err(|errors| errors.iter().flat_map(|diagnostic| convert_all(&world, diagnostic)).map(|diagnostic| diagnostic.message).collect::<Vec<_>>().join("\n"))?;
+        if document.pages().len() != 1 { return Err("A graphic must produce one intrinsic SVG frame".into()); }
+        Ok(typst_svg::svg(&document.pages()[0], &SvgOptions::default()))
+    }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn finish_document_html(engine: State<'_, Arc<Engine>>, html: String, embed_fonts: bool, known_fonts: Option<String>, path: Option<String>, preview: Option<bool>) -> Result<HtmlPreviewOutput, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let started = Instant::now();
+        let fonts = engine.fonts.get();
+        let (font_key, font_css) = if preview.unwrap_or(false) { html_export::preview_fonts(&html, &fonts, known_fonts.as_deref()) } else { (String::new(),None) };
+        let html = if embed_fonts { html_export::embed_fonts(html, &fonts) } else { html };
+        let bytes = html.len();
+        let html = if let Some(path) = path { std::fs::write(path, html.as_bytes()).map_err(|error| error.to_string())?; String::new() } else { html };
+        let elapsed = started.elapsed().as_secs_f64() * 1000.0;
+        Ok(HtmlPreviewOutput { html, font_key, font_css, timings: HtmlTimings { fonts_ms: elapsed, total_ms: elapsed, bytes, ..Default::default() } })
+    }).await.map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn document_asset(engine: State<'_, Arc<Engine>>, project_id: String, path: String, text: bool, overrides: Option<HashMap<String, String>>) -> Result<String, String> {
+    use base64::Engine as _;
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = project_dir(&engine, &project_id)?;
+        let bytes = if path.starts_with("https://") || path.starts_with("http://") || path.starts_with("file://") { crate::remote::fetch(&root, &path)? }
+        else {
+            let path = path.trim_start_matches('/'); check_relative(path)?;
+            if let Some(value) = overrides.as_ref().and_then(|files| files.get(path)) { value.as_bytes().to_vec() }
+            else { let world = ProjectWorld::new(Some(root), engine::ENTRY, engine.packages.clone(), engine.fonts.get(), engine.components.clone(), &Inputs::new(), HashMap::new()); world.file(ProjectWorld::project_file(path).ok_or("Invalid asset path")?).map_err(|error| error.to_string())?.as_slice().to_vec() }
+        };
+        if text { return String::from_utf8(bytes).map_err(|error| error.to_string()); }
+        let clean = path.split(['?', '#']).next().unwrap_or(&path).to_ascii_lowercase();
+        let mime = if clean.ends_with(".svg") { "image/svg+xml" } else if clean.ends_with(".png") { "image/png" } else if clean.ends_with(".webp") { "image/webp" } else if clean.ends_with(".gif") { "image/gif" } else { "image/jpeg" };
+        Ok(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
+    }).await.map_err(|error| error.to_string())?
 }
 
 /// The world kept for a project between builds; rebuilt when what it was built from changed: another main file or inputs, a new
@@ -451,21 +552,8 @@ fn render_html_profiled(engine: &Engine, project_id: &str, main: &str, overrides
     let mut timings = HtmlTimings::default();
     check_relative(main)?;
     let dir = project_dir(engine, project_id)?;
-    let mut inputs = Inputs::new();
-    if !plain {
-        inputs.insert("source".into(), main.into());
-        inputs.insert("target".into(), "html".into());
-        inputs.insert("html-copy-code".into(), options.copy_code.to_string());
-        inputs.insert("html-toolbar".into(), options.toolbar.to_string());
-        inputs.insert("html-progress".into(), options.progress.to_string());
-        inputs.insert("html-outline".into(), options.outline.to_string());
-        if let Some(lang) = options.ui_lang {
-            inputs.insert("html-ui-lang".into(), lang.code().into());
-        }
-        if let Some(m) = options.math {
-            inputs.insert("html-math".into(), m.as_str().into());
-        }
-    }
+    let inputs = Inputs::new();
+    if !plain { return Err("Formatex HTML is rendered by @formatex/html from prepare_document; native Typst HTML supports plain Typst projects only".into()); }
     let extra = overrides_to_bytes(overrides, plain)?;
     let fonts = engine.fonts.get();
     let world = kept_world_for(engine, project_id, main, &inputs, plain, &dir, true);
@@ -603,23 +691,11 @@ mod tests {
             data_dir: data_dir.clone(),
         };
 
-        let started = Instant::now();
-        let plain = render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport { embed_fonts: false, ..HtmlExport::default() }).expect("the page");
-        eprintln!("html without fonts: {} bytes in {:?}", plain.len(), started.elapsed());
-        assert!(plain.contains("<main class=\"fx-doc\" dir=\"rtl\">"), "the starter must honor the global RTL direction");
-        assert!(plain.contains("name=\"fx-fonts\""));
-        assert!(plain.contains("fx-copy"), "the copy script is missing");
-        assert!(!plain.contains("@font-face"));
-
-        let started = Instant::now();
-        let full = render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport::default()).expect("the page with fonts");
-        eprintln!("html with fonts: {} bytes in {:?}", full.len(), started.elapsed());
-        assert!(full.contains("@font-face"), "no font was put in the page");
-        assert!(full.len() > plain.len());
-
-        let target = data_dir.join("out.html");
-        fs::write(&target, full.as_bytes()).unwrap();
-        assert_eq!(fs::metadata(&target).unwrap().len() as usize, full.len());
+        let graph = prepare_document_in(&engine, "starter", "main.md", HashMap::new()).expect("shared pipeline");
+        assert_eq!(graph["ok"], true, "{}", graph.get("diagnostics").unwrap_or(&serde_json::Value::Null));
+        assert_eq!(graph["document"]["settings"]["dir"], "rtl");
+        assert!(!graph["document"]["children"].as_array().unwrap().is_empty());
+        assert!(render_html(&engine, "starter", "main.md", HashMap::new(), false, HtmlExport::default()).unwrap_err().contains("@formatex/html"));
         let _ = fs::remove_dir_all(&data_dir);
     }
 
@@ -641,8 +717,8 @@ feel = "friendly"
 
 <toc></toc>
 
-<div tailwind="w-full flex flex-col p-4" bg="#f0f0f0">
-<div tailwind="w-1/2 p-2" bg="#e0e0e0">
+<div tailwind="w-full flex flex-col p-4">
+<div tailwind="w-1/2 p-2">
 متن تو در تو در دیو
 </div>
 </div>
@@ -678,25 +754,10 @@ $$
             data_dir: data_dir.clone(),
         };
 
-        let html = render_html(&engine, "katex_test", "main.md", HashMap::new(), false, HtmlExport::default()).expect("html export with katex");
-
-        // 1. Math rendered as KaTeX
-        assert!(html.contains("fx-katex-inline"), "inline math should have fx-katex-inline class");
-        assert!(html.contains("fx-katex-display"), "display math should have fx-katex-display class");
-        assert!(html.contains("KaTeX_AMS") || html.contains("katex.render"), "KaTeX bundle should be embedded");
-
-        // 2. Code block header & copy button
-        assert!(html.contains("fx-code-header"), "code block header bar should be present");
-        assert!(html.contains("fx-code-lang"), "code block language badge should be present");
-        assert!(html.contains("fx-copy"), "code block copy button/script should be present");
-
-        // 3. Nested div rendered cleanly without SVG in-frame wrapper
-        assert!(html.contains("fx-div"), "fx-div class should be used for div HTML component");
-        assert!(html.contains("متن تو در تو در دیو"), "nested div content should be present");
-
-        // 4. Footnotes
-        assert!(html.contains("fx-footnote-popover") || html.contains("data-footnote-text"), "footnote popover markup/style should exist");
-
+        let graph = prepare_document_in(&engine, "katex_test", "main.md", HashMap::new()).unwrap();
+        assert_eq!(graph["ok"], true, "{}", graph.get("diagnostics").unwrap_or(&serde_json::Value::Null));
+        let json = serde_json::to_string(&graph["document"]["children"]).unwrap();
+        for kind in ["inlineMath", "math", "code", "footnoteDefinition", "div"] { assert!(json.contains(kind), "missing {kind}"); }
         let _ = fs::remove_dir_all(&data_dir);
     }
 
@@ -1124,6 +1185,9 @@ mod component_tests {
   ),
 )
 "#;
+        engine.components.save_file("shout", "manifest.toml", "name = \"shout\"\n", "user").unwrap();
+        engine.components.save_file("shout", "schema.json", r#"{"shout":{"kind":"inline","description":{"en":"Loud text","fa":"متن بلند"},"attrs":{}}}"#, "user").unwrap();
+        engine.components.save_file("shout", "docs.json", "{}", "user").unwrap();
         engine.components.save("shout", source, "user").unwrap();
         let (schema, diagnostics) = crate::components::compute_schema(&engine);
         assert!(diagnostics.iter().all(|d| !d.is_error()), "{:?}", diagnostics.iter().map(|d| d.message()).collect::<Vec<_>>());
@@ -1149,12 +1213,15 @@ mod component_tests {
     fn a_project_lists_component_files_of_its_own() {
         let dir = std::env::temp_dir().join(format!("formatex-local-{}", std::process::id()));
         let project = dir.join("documents").join("p");
-        fs::create_dir_all(project.join("lib")).unwrap();
+        fs::create_dir_all(project.join("lib/notes")).unwrap();
         let config = include_str!("../../engine/config.toml");
-        fs::write(project.join("config.toml"), format!("components = [\"lib/notes.typ\"]\n{config}")).unwrap();
-        // One file, two tags that have nothing to do with each other; only one has a schema
+        fs::write(project.join("config.toml"), format!("components = [\"lib/notes\"]\n{config}")).unwrap();
+        fs::write(project.join("lib/notes/manifest.toml"), "name = \"note\"\nhtml = false\n").unwrap();
+        fs::write(project.join("lib/notes/schema.json"), r#"{"note":{"kind":"block","attrs":{}},"stamp":{"kind":"inline","description":{"en":"A stamp","fa":"مهر"},"attrs":{"size":{"type":"string"}}}}"#).unwrap();
+        fs::write(project.join("lib/notes/docs.json"), "{}").unwrap();
+        // The package owns both tag schemas independently of its implementation.
         fs::write(
-            project.join("lib/notes.typ"),
+            project.join("lib/notes/typst.typ"),
             r#"#import "/src/kit.typ": *
 #let note-tags = (
   note: (attrs, body) => block(inset: 4pt, body),
@@ -1180,8 +1247,8 @@ mod component_tests {
         let (schema, _) = crate::components::schema_in(&engine, Some(project.clone()), &inputs, HashMap::new());
         let schema = schema.expect("the schema of the project");
         assert_eq!(schema["tags"]["stamp"]["description"]["en"], "A stamp");
-        assert!(schema["tags"]["note"].is_null());
-        assert_eq!(schema["components"]["note"]["file"], "lib/notes.typ");
+        assert!(schema["tags"]["note"].is_object());
+        assert_eq!(schema["components"]["note"]["file"], "lib/notes/manifest.toml");
 
         // A mistake the component finds is shown twice: where the tag stands in the document, and in the component's own code
         let broken = HashMap::from([("main.md".to_string(), "x\n\n<stamp size=\"0\">no</stamp>\n".to_string())]);
@@ -1189,7 +1256,7 @@ mod component_tests {
         assert!(failed.document.is_none());
         let places: Vec<(Option<&str>, Option<usize>)> = failed.diagnostics.iter().filter(|d| d.is_error()).map(|d| (d.path.as_deref(), d.line)).collect();
         assert!(places.contains(&(Some("main.md"), Some(3))), "{places:?}");
-        assert!(places.iter().any(|(path, line)| *path == Some("lib/notes.typ") && line.is_some()), "{places:?}");
+        assert!(places.iter().any(|(path, line)| *path == Some("lib/notes/typst.typ") && line.is_some()), "{places:?}");
 
         // A file that does not exist: the settings are blamed
         fs::write(project.join("config.toml"), format!("components = [\"nope.typ\"]\n{config}")).unwrap();

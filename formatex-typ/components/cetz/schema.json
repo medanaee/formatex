@@ -1,0 +1,26 @@
+{
+  "cetz": {
+    "kind": "block",
+    "description": {
+      "en": "drawings",
+      "fa": "رسم"
+    },
+    "attrs": {
+      "unit": {
+        "type": "length",
+        "default": "1cm",
+        "doc": {
+          "en": "Length of one coordinate unit. Default `1cm`.",
+          "fa": "طول یک واحد مختصات. پیش‌فرض `1cm`."
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "Load the code from a file (`src=\"diagrams/x.typ\"`) instead of the code block.",
+          "fa": "کد را به‌جای بلوک کد از یک فایل بخوان (`src=\"diagrams/x.typ\"`)."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "compare": {
+    "kind": "block",
+    "description": {
+      "en": "pros and cons",
+      "fa": "مزایا و معایب"
+    },
+    "attrs": {
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the content), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض: از روی محتوا)، `rtl`، `ltr`."
+        }
+      }
+    },
+    "children": [
+      "pros",
+      "cons"
+    ]
+  },
+  "pros": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Pros column of <compare>",
+      "fa": "ستون مزایای <compare>"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Column title. Default «مزایا» / \"Pros\" and «معایب» / \"Cons\", by the direction.",
+          "fa": "عنوان ستون. پیش‌فرض «مزایا» / \"Pros\" و «معایب» / \"Cons\"، بسته به جهت."
+        }
+      },
+      "color": {
+        "type": "color",
+        "default": "green",
+        "doc": {
+          "en": "A color preset, `accent`, or a hex color. Default `green` for pros, `red` for cons.",
+          "fa": "یک رنگ آماده، `accent` یا رنگ hex. پیش‌فرض `green` برای مزایا و `red` برای معایب."
+        }
+      }
+    }
+  },
+  "cons": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Cons column of <compare>",
+      "fa": "ستون معایب <compare>"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Column title. Default «مزایا» / \"Pros\" and «معایب» / \"Cons\", by the direction.",
+          "fa": "عنوان ستون. پیش‌فرض «مزایا» / \"Pros\" و «معایب» / \"Cons\"، بسته به جهت."
+        }
+      },
+      "color": {
+        "type": "color",
+        "default": "red",
+        "doc": {
+          "en": "A color preset, `accent`, or a hex color. Default `green` for pros, `red` for cons.",
+          "fa": "یک رنگ آماده، `accent` یا رنگ hex. پیش‌فرض `green` برای مزایا و `red` برای معایب."
+        }
+      }
+    }
+  }
+}

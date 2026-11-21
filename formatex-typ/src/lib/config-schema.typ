@@ -5,7 +5,7 @@
 // Two documents share most keys, so they are written once:
 //   shared-attrs / shared-tables   mean the same in config.toml (every document) and in front matter (one document)
 //   config-only                    only config.toml
-//   front-only                     only front matter (header, footer, cover, bibliography)
+//   front-only                     only front matter (header, footer, bibliography)
 // `config-schemas` is what tools/export-schema.mjs writes under `config` in dist/tags.json, and what editors read for autocomplete.
 // The code does not read this file: when a setting is added or changed in the engine, change it here too.
 // Imports nothing, so any file can use it.
@@ -221,25 +221,6 @@
         "skip-first-page": (type: "bool", default: "false", doc: d("No footer on page 1.", "صفحهٔ اول پاصفحه ندارد.")),
       ),
     ),
-    "cover": (
-      doc: d("The cover page. It is its own page with no header and no page number.", "صفحهٔ جلد. صفحهٔ جداگانه‌ای است بدون سرصفحه و شمارهٔ صفحه."),
-      attrs: (
-        "logo": (type: "path", doc: d("A logo image.", "تصویر لوگو.")),
-        "institution": (type: "string", doc: d("Name of the university or institution.", "نام دانشگاه یا مؤسسه.")),
-        "faculty": (type: "string", doc: d("Name of the faculty.", "نام دانشکده.")),
-        "department": (type: "string", doc: d("Name of the department.", "نام گروه.")),
-        "type": (type: "string", doc: d("Kind of document, e.g. «پایان‌نامه کارشناسی ارشد».", "نوع سند، مثلاً «پایان‌نامه کارشناسی ارشد».")),
-        "title": (type: "string", doc: d("The title.", "عنوان.")),
-        "subtitle": (type: "string", doc: d("The subtitle.", "زیرعنوان.")),
-        "author": (type: "string", doc: d("The author, or a list [\"A\", \"B\"], one per line.", "نویسنده، یا فهرست [\"A\", \"B\"] که هر کدام در یک خط می‌آید.")),
-        "supervisor": (type: "string", doc: d("The supervisor.", "استاد راهنما.")),
-        "advisor": (type: "string", doc: d("The advisor.", "استاد مشاور.")),
-        "date": (type: "string", doc: d("The date, written as you want it shown.", "تاریخ، همان‌طور که می‌خواهید نشان داده شود.")),
-        "frame": (type: "bool", default: "true", doc: d("A border around the page.", "قاب دور صفحه.")),
-        "dir": (type: "enum", values: dir-values, default: "auto", doc: d("Direction of the cover: the document's dir, else from the title and institution.", "جهت جلد: جهت سند، وگرنه از عنوان و نام مؤسسه.")),
-        "enabled": (type: "bool", default: "true", doc: d("false keeps the settings but hides the cover.", "false تنظیمات را نگه می‌دارد ولی جلد را پنهان می‌کند.")),
-      ),
-    ),
     "bibliography": (
       doc: d("The bibliography of this document (the file, the citation style and the title).", "منابع این سند (فایل، سبک ارجاع و عنوان)."),
       attrs: (
@@ -252,15 +233,34 @@
   ),
 )
 
-#let config-schemas = (
-  // config.toml: every document of the project
-  "config": (
-    attrs: config-only.attrs + shared-attrs,
-    tables: config-only.tables + shared-tables,
-  ),
-  // the YAML front matter at the top of a Markdown file: one document; it can override anything of config.toml
-  "front-matter": (
-    attrs: front-only.attrs + shared-attrs,
-    tables: front-only.tables + shared-tables,
-  ),
-)
+// One schema namespace for the document language, with explicit backend domains.
+#let config-schemas = {
+  let common-attrs = shared-attrs.pairs().filter(((key, _)) => key not in ("page", "page-width", "page-height", "margin", "columns", "column-dir")).to-dict()
+  let paged-attrs = shared-attrs.pairs().filter(((key, _)) => key in ("page", "page-width", "page-height", "margin", "columns", "column-dir")).map(((key, spec)) => (key, spec + (domain: "typ"))).to-dict()
+  let tables = shared-tables
+  for (name, table) in shared-tables {
+    let override = table
+    override.attrs = table.attrs.pairs().map(((key, spec)) => {
+      if "default" in spec { let _ = spec.remove("default") }
+      (key, spec)
+    }).to-dict()
+    tables.insert("html." + name, override)
+    tables.insert("typ." + name, override)
+  }
+  let html-attrs = config-only.tables.html.attrs
+  let _ = html-attrs.remove("copy-code")
+  let common-overrides = common-attrs.pairs().map(((key, spec)) => {
+    if "default" in spec { let _ = spec.remove("default") }
+    (key, spec)
+  }).to-dict()
+  tables.insert("html", (doc: d("HTML output settings", "تنظیمات خروجی HTML"), attrs: common-overrides + html-attrs))
+  let html-code = tables.at("html.code")
+  html-code.attrs.insert("copy-button", (type: "bool", domain: "html", default: "true", doc: d("Show a copy button on a code block.", "نمایش دکمهٔ کپی روی بلوک کد.")))
+  tables.insert("html.code", html-code)
+  tables.insert("typ", (doc: d("Paged output settings", "تنظیمات خروجی صفحه‌بندی‌شده"), attrs: common-overrides + paged-attrs))
+  for name in ("header", "footer") { tables.insert("typ." + name, front-only.tables.at(name)) }
+  tables.insert("bibliography", front-only.tables.bibliography)
+  let config-attrs = config-only.attrs + common-attrs
+  let document-attrs = front-only.attrs + common-attrs
+  (config: (attrs: config-attrs, tables: tables), "front-matter": (attrs: document-attrs, tables: tables))
+}

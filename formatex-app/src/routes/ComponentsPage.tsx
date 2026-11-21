@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router"
 import { AlertTriangle, ArrowLeft, Check, CircleAlert, Loader2, MoreHorizontal, Plus, RotateCcw, Search, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
+import { FileIcon } from "@/components/common/FileIcon"
 import { CodeEditor, type RevealRequest } from "@/components/editor/CodeEditor"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
 import { PageHeader } from "@/components/layout/PageHeader"
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Switch } from "@/components/ui/switch"
 import { useFormFactor } from "@/hooks/useFormFactor"
-import type { ComponentInfo } from "@/lib/components/api"
+import { COMPONENT_FILES, type ComponentFile, type ComponentInfo } from "@/lib/components/api"
 import { componentNameProblem, type ComponentKind } from "@/lib/components/template"
 import type { Diagnostic } from "@/lib/compiler"
 import { cn } from "@/lib/utils"
@@ -147,15 +148,16 @@ function ComponentEditor({ name }: { name: string }) {
   const navigate = useNavigate()
   const wide = useFormFactor() !== "phone"
   const info = useComponentsStore((state) => state.components.find((c) => c.name === name))
-  const text = useComponentsStore((state) => state.texts[name])
+  const [file, setFile] = useState<ComponentFile>("typst.typ")
+  const text = useComponentsStore((state) => state.texts[`${name}/${file}`])
   const saveState = useComponentsStore((state) => state.saveState)
   const check = useComponentsStore((state) => state.check)
   const [reveal, setReveal] = useState<RevealRequest | null>(null)
   const [confirm, setConfirm] = useState<"delete" | "revert" | null>(null)
 
   useEffect(() => {
-    void useComponentsStore.getState().open(name)
-  }, [name, info?.modified])
+    void useComponentsStore.getState().open(name, file)
+  }, [name, file, info?.modified])
 
   const go = (diagnostic: Diagnostic) => {
     const target = /^components\/(.+)\.typ$/.exec(diagnostic.path ?? "")?.[1]
@@ -213,6 +215,24 @@ function ComponentEditor({ name }: { name: string }) {
         </DropdownMenu>
       </header>
 
+      <nav className="flex h-10 shrink-0 items-stretch overflow-x-auto border-b border-border [scrollbar-width:none]" aria-label={t("components.files")}>
+        {COMPONENT_FILES.map(value => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={file === value}
+            onClick={() => setFile(value)}
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 rounded-none border-b-2 px-2.5 font-mono text-xs outline-none focus-visible:bg-accent",
+              file === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+          >
+            <FileIcon path={value} kind="file" size={14} />
+            <span dir="ltr">{value}</span>
+          </button>
+        ))}
+      </nav>
+
       {info.problem && (
         <p dir="auto" className="flex items-start gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-xs">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" /> {info.problem}
@@ -221,7 +241,7 @@ function ComponentEditor({ name }: { name: string }) {
 
       <div className="min-h-0 flex-1">
         {text !== undefined && (
-          <CodeEditor path={`component:${name}`} kind="typst" value={text} reveal={reveal} onChange={(next) => useComponentsStore.getState().edit(name, next)} />
+          <CodeEditor path={`component:${name}/${file}`} kind={file === "typst.typ" ? "typst" : file.endsWith(".toml") ? "toml" : "code"} value={text} reveal={reveal} onChange={(next) => useComponentsStore.getState().edit(name, next, file)} />
         )}
       </div>
 

@@ -1,0 +1,24 @@
+{
+  "digit": {
+    "kind": "inline",
+    "description": {
+      "en": "Digits in one kind: English, Persian or Arabic",
+      "fa": "ارقام به یک نوع: انگلیسی، فارسی یا عربی"
+    },
+    "attrs": {
+      "type": {
+        "type": "enum",
+        "values": [
+          "fa",
+          "ar",
+          "en"
+        ],
+        "default": "fa",
+        "doc": {
+          "en": "The kind of digits to show: `fa` Persian ۰۱۲۳, `ar` Arabic ٠١٢٣, `en` English 0123.",
+          "fa": "نوع ارقامی که نشان داده می‌شود: `fa` فارسی ۰۱۲۳، `ar` عربی ٠١٢٣، `en` انگلیسی 0123."
+        }
+      }
+    }
+  }
+}

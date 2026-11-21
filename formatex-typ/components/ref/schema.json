@@ -1,0 +1,19 @@
+{
+  "ref": {
+    "kind": "inline",
+    "description": {
+      "en": "Cross-reference to a heading, figure, table, equation, theorem, listing...",
+      "fa": "ارجاع متقابل به عنوان، شکل، جدول، معادله، قضیه، کد و ..."
+    },
+    "attrs": {
+      "to": {
+        "type": "string",
+        "required": true,
+        "doc": {
+          "en": "Id of the target (heading slug, figure, table, equation, theorem...)",
+          "fa": "شناسهٔ هدف (slug عنوان، شکل، جدول، معادله، قضیه ...)"
+        }
+      }
+    }
+  }
+}

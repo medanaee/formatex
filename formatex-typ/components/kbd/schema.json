@@ -1,0 +1,10 @@
+{
+  "kbd": {
+    "kind": "inline",
+    "description": {
+      "en": "Keyboard key cap",
+      "fa": "کلید صفحه‌کلید"
+    },
+    "attrs": {}
+  }
+}

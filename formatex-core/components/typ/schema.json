@@ -1,0 +1,31 @@
+{
+  "typ": {
+    "kind": "block",
+    "description": {
+      "en": "Typst code or a Typst file, set in place",
+      "fa": "کد Typst یا یک فایل Typst، در همین جا حروف‌چینی می‌شود"
+    },
+    "attrs": {
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "A Typst file (`src=\"parts/intro.typ\"`) instead of the code block. Its own `#include` and `#import` lines work as in any Typst project, however deeply nested.",
+          "fa": "یک فایل Typst (`src=\"parts/intro.typ\"`) به‌جای بلوک کد. خط‌های `#include` و `#import` خودِ فایل مثل هر پروژه‌ی Typst کار می‌کنند، هر قدر تودرتو."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction of the result. `auto` (default) leaves it to the document's rules.",
+          "fa": "جهت متن نتیجه. `auto` (پیش‌فرض) آن را به قاعده‌های سند می‌سپارد."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "steps": {
+    "kind": "block",
+    "description": {
+      "en": "numbered steps",
+      "fa": "مراحل شماره‌دار"
+    },
+    "attrs": {
+      "start": {
+        "type": "int",
+        "default": "1",
+        "doc": {
+          "en": "First number, default `1`.",
+          "fa": "شمارهٔ اول، پیش‌فرض `1`."
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Preset or hex; default the theme's accent (heading color in `formal`).",
+          "fa": "رنگ آماده یا hex؛ پیش‌فرض رنگ تأکید تم (در `formal` رنگ تیترها)."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`, `ltr`, `auto` (default: from the content).",
+          "fa": "`rtl`، `ltr`، `auto` (پیش‌فرض: از روی محتوا)."
+        }
+      }
+    },
+    "children": [
+      "step"
+    ]
+  },
+  "step": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "One step of <steps>",
+      "fa": "یک گام از <steps>"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Bold title next to the marker",
+          "fa": "عنوان پررنگ کنار نشانگر"
+        }
+      }
+    }
+  }
+}

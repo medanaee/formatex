@@ -1,0 +1,26 @@
+.fx-kbd-row {
+  display: inline-flex;
+  align-items: center;
+  direction: ltr;
+  unicode-bidi: isolate;
+  vertical-align: -0.08em;
+}
+.fx-kbd-key { display: inline-flex; align-items: center; }
+.fx-kbd-plus {
+  margin-inline: 0.15em;
+  color: var(--muted);
+  font-size: 0.8em;
+  line-height: 1;
+}
+.fx-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1em 0.4em 0.14em;
+  border: 0.06em solid var(--code-stroke);
+  border-bottom-width: 0.15em;
+  border-radius: var(--fx-radius-kbd);
+  background: var(--code-bg);
+  color: var(--fg);
+  font: 0.82em/1.1 var(--font-code);
+  unicode-bidi: isolate;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "formatex-workspace",
+  "private": true,
+  "workspaces": [
+    "formatex-core",
+    "formatex-html",
+    "formatex-app",
+    "formatex-typ"
+  ],
+  "scripts": {
+    "core:build": "npm run build --workspace @formatex/core",
+    "typ:sync": "node formatex-typ/tools/sync.mjs",
+    "html:build": "npm run build --workspace @formatex/html",
+    "test": "npm test --workspace formatex-app"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A styled container for any content, tinted from the theme. `color` sets the background (a preset name or hex); `border`, `border-color`, `radius` and `padding` fine-tune it. Boxes nest and can stand in a `<grid>`.\n\n- `color`: a preset (`blue`, `green`, ... the whole Tailwind palette; a shade like `blue-200` also works) or hex. The background is the hue mixed into the page color (about 10%, 16% on dark themes), so the same box fits every theme. An unknown name is a compile error.\n- `border` (width), `border-color`, `radius` (points, a plain number) and `padding` fine-tune it. Without `color` the box is transparent.\n- A box fills the available width and grows with its content; leave blank lines inside the tag."
+  },
+  "fa": {
+    "about": "ظرف قالب‌دار برای هر محتوا، با ته‌رنگ از تم. `color` پس‌زمینه را تعیین می‌کند (نام رنگ آماده یا hex) و `border`، `border-color`، `radius` و `padding` آن را تنظیم می‌کنند. جعبه‌ها تودرتو می‌شوند و داخل `<grid>` می‌نشینند.\n\n- `color`: یک رنگ آماده (`blue`، `green` و ... همهٔ پالت Tailwind؛ سایه‌ای مثل `blue-200` هم کار می‌کند) یا hex. پس‌زمینه همان رنگ است که با رنگ صفحه ترکیب شده (حدود ۱۰٪، روی تم تیره ۱۶٪)، پس یک جعبه با هر تم می‌خواند. نام ناشناخته خطای ساخت است.\n- `border` (ضخامت)، `border-color`، `radius` (پوینت، فقط عدد) و `padding` آن را تنظیم می‌کنند. بدون `color` جعبه شفاف است.\n- جعبه تمام عرض را می‌گیرد و با محتوا بلند می‌شود؛ داخل تگ خط خالی بگذارید."
+  },
+  "example": {
+    "en": "<box color=\"blue\">\n\nContent in a blue box that matches the theme.\n\n</box>\n\n<box color=\"#e0efff\" border=\"1\" border-color=\"#2b8cc4\" radius=\"6\" padding=\"10pt\">\n\nExact colors.\n\n</box>",
+    "fa": "<box color=\"blue\">\n\nمحتوا در یک باکس آبی که با تم جور است.\n\n</box>\n\n<box color=\"#e0efff\" border=\"1\" border-color=\"#2b8cc4\" radius=\"6\" padding=\"10pt\">\n\nرنگ‌های دقیق.\n\n</box>"
+  }
+}

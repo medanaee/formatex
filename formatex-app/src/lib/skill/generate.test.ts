@@ -66,7 +66,7 @@ describe("skill generator", () => {
     expect(text).toContain("\n# Formatex\n")
     expect(text).toContain("## Checklist")
     expect(text).toContain("## ساختن کامپوننت دلخواه")
-    expect(text).toContain("### یک فایل کامل")
+    expect(text).toContain("### یک بستهٔ کامل")
   })
 
   it("leaves a section out when it is off", () => {
@@ -117,6 +117,26 @@ describe("skill generator", () => {
     for (const language of ["en", "fa"] as const) {
       const sizes = SKILL_LEVELS.map((level) => makeBuilding(level, language).length)
       for (let i = 1; i < sizes.length; i++) expect(sizes[i]).toBeGreaterThan(sizes[i - 1])
+    }
+  })
+
+  it("teaches shared six-file packages and front-matter folder declarations", () => {
+    for (const language of ["en", "fa"] as const) {
+      const text = makeBuilding("full", language)
+      for (const file of ["manifest.toml", "schema.json", "docs.json", "typst.typ", "html.tsx", "html.css"]) expect(text).toContain(file)
+      expect(text).toContain("components:\n  - extras/note")
+      expect(text).toContain("setting.html.code.copy-button")
+      expect(text).not.toContain("#let note-schema")
+      expect(text).not.toContain('components = ["notes.typ"]')
+    }
+  })
+
+  it("keeps paged document skeleton settings under typ", () => {
+    for (const language of ["en", "fa"] as const) {
+      const text = make("standard", language, new Set(["alert"]))
+      expect(text).toContain("typ:\n  header:")
+      expect(text).toContain("setting.html.code.copy-button")
+      expect(text).not.toContain("\nheader:\n")
     }
   })
 

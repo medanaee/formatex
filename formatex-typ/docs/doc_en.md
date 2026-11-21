@@ -2,23 +2,22 @@
 # Per-document settings (YAML). Quote any text containing `{`, `:` or `#`.
 
 # theme: zinc                        # overrides config.toml for this document
-dir: auto                            # each block follows its own language, whatever config.toml says
+dir: auto # each block follows its own language, whatever config.toml says
+typ:
+  header:
+    style: line # minimal | line | band | double
+    start: "Bilingual Typst Template"
+    center: "{section}"
+    end: "Page {page} of {pages}"
+    dir: auto # rtl | ltr | auto
+    skip-first-page: false
+    # logo: images/logo.svg
 
-header:
-  style: line                      # minimal | line | band | double
-  start: "Bilingual Typst Template"
-  center: "{section}"
-  end: "Page {page} of {pages}"
-  dir: auto                        # rtl | ltr | auto
-  skip-first-page: false
-  # logo: images/logo.svg
-
-footer:
-  style: plain
-  start: ""
-  end: "— {page} —"
-  digits: en
-  
+  footer:
+    style: plain
+    start: ""
+    end: "— {page} —"
+    digits: en
 ---
 
 <cover type="User Guide" title="Bilingual Typst Research Template" subtitle="Markdown in, typeset PDF out: Persian and English side by side" date="October 2026" frame="true" dir="auto"></cover>
@@ -32,16 +31,30 @@ Write in Markdown, get a typeset PDF. The template handles Persian (RTL) and Eng
 On top of standard Markdown it adds HTML-like tags for figures, drawings, file trees, data charts, alerts, boxes, grid layouts, alignment, steps, progress bars and ratings, pros and cons, draft notes, official letters, exercises and quizzes, code listings, diff comparisons, keys and badges, footnotes, lists of figures, tables and code, numbered equations, citations, cross-references and theorem blocks. It also adds a configurable cover page, page header, eight color themes and three overall "feels".
 
 ```text
-doc_en.md  ──(cmarker)──▶  main.typ + src/  ──(typst)──▶  main.pdf
+doc_en.md -> Typst preparation -> Rust/WASM parser -> shared IR -> PDF renderer -> main.pdf
 ```
 
 ---
+
+### Shared-core renderer checkpoint (2026-11-12)
+
+The normal standalone PDF path now runs the source-mapped evaluator and embedded Rust/WASM pulldown-cmark parser inside Typst, then renders shared DocumentIR directly through the PDF backend. There is no JavaScript Markdown parser or cmarker parse in this normal path. Nine Rust parser tests pass; the full existing demo, including its nested includes, produces 261 root nodes/three source files and a 903,229-byte PDF with zero errors.
+
+Core owns 43 shared component folders (78 schema tags) with `typst.typ`, `html.tsx`, `manifest.toml`, `docs.json`, `schema.json` and `html.css`. `node tools/sync.mjs` assembles core+pdf into this `formatex-typ` directory through the core-owned assembler. Edit source owners in `formatex-core` / `formatex-pdf`, not the generated source copies here; document inputs remain external.
+
+Shared-core app integration now passes 373 frontend tests, 66 native tests (five ignored), typecheck and production build; lint has nine existing warnings. The 24 PDF theme/feel matrix and mobile compile pass, selected PDF pages and 360/768/1280 px HTML layouts were inspected, and isolated one-file/custom-package/relocated standalone tool checks pass. Config domains require `typ` for paged keys and `html.code` for copy-button. These named checks do not establish every component property, the full map/diagnostic/export matrix or real Android native interactive UI.
+
+HTML is rendered independently by `formatex-html` from the same IR. Content is static SSR; the React viewer shell hydrates. Arbitrary component events/state and live DSL variable reactivity are not implemented. Math is rendered during export, without reader-side KaTeX compilation. `node tools/sync.mjs` builds the current core WASM and assembles core+pdf into this distribution. The local `tools/registry.mjs` is copied from core: `gen-registry`, `build-all`, `bundle` and `schema` run against this synced snapshot after relocation without sibling checkouts. Sync again to consume changed core/pdf sources. Install workspace dependencies from the workspace root; a relocated standalone snapshot can install its own tooling dependency. Document inputs remain external to the bundle.
+
+Measured core/HTML timings and exact test scope are recorded in [the report](../../formatex-app/docs/shared-core-performance-2026-11-12.md). Older internal/tool descriptions below are retained reference during cleanup; use the source ownership and workflow above for current development.
+
+Latest regression verification: parser 11 passed; native 68 passed/five ignored; frontend 372 passed/two skipped plus one real integration; typecheck/build pass. All 25 CLI PDF cases (24 desktop theme/feel plus `mobile-20-9`) compile without stderr/warnings; inspected mobile cards/pills have equal widths. This verifies a page format, not real Android interaction. Final engine sync succeeds with 43 packages/78 tags.
 
 ## Requirements
 
 - **Typst** 0.15 or newer (tested with 0.15.1).
 - **Packages**, downloaded automatically on first compile:
-  - `cmarker` 0.1.10 renders the Markdown.
+  - The normal Markdown parser is the bundled Rust/WASM pulldown-cmark plugin invoked inside Typst. Legacy dependencies/files may remain during cleanup.
   - `mitex` 0.2.7 handles LaTeX math.
   - `fontawesome` 0.6.2 and `lucide` 0.1.0 provide icons.
   - `cetz` 0.5.2 renders drawings.
@@ -65,8 +78,9 @@ doc_en.md  ──(cmarker)──▶  main.typ + src/  ──(typst)──▶  ma
 |------|------|
 | `doc_en.md` | This guide, in English. Compiled by default when `config.toml` has no `source`. |
 | `doc_fa.md` | The same guide in Persian. |
-| `main.typ` | Entry point (a few lines). Renders the Markdown through the preprocessors in `src/preprocess/` and the tags in `components/`. |
-| `components/<name>.typ` | One Typst file per component (its tags and code); `cover.typ` owns the standalone cover layout and schema. |
+| `main.typ` | Generated entry point: imports core `document.typ` and PDF `render.typ`, then renders shared IR. |
+| `../formatex-core/components/<name>/` | Owned shared package: `typst.typ`, `html.tsx`, `manifest.toml`, `schema.json`, `docs.json`, `html.css`. The assembler copies package data into this distribution. |
+| `src/document.typ`, `src/parser.wasm`, `src/render.typ` | Generated core evaluator/parser and PDF IR backend; source owners live in core/pdf. |
 | `src/lib/` | Helpers shared by several components. |
 | `src/kit.typ` | What a component imports (`#import "/src/kit.typ": *`): the prelude and every helper library of `src/lib/`. |
 | `tools/` | `build-all.mjs` (every theme × feel), `gen-registry.mjs` (rebuilds `components/_registry.typ` from the component files), `bundle.mjs` (one-file build, `dist/formatex.typ`) and `export-schema.mjs` (`dist/tags.json`: every tag with its attributes and allowed values, for editor autocomplete). |
@@ -104,27 +118,16 @@ typst watch main.typ                                    # rebuild on every save
 
 The Markdown file that gets compiled is set by `source` at the top of `config.toml` (default `doc_en.md`). Change it there to make another file the default, e.g. `source = "thesis.md"`. The path is relative to `main.typ`. `--input source=...` still overrides it for a single build. The output PDF is always named after the `.typ` file (`main.pdf`) unless you give an output path.
 
-### One HTML file (experimental) {#html-export}
+### One offline HTML file {#html-export}
 
-```bash
-typst compile main.typ out.html --format html --features html --font-path fonts \
-  --input source=docs/doc_en.md --input target=html --input html-copy-code=true
-```
+The app's HTML preview/export uses the independent `formatex-html` engine, consuming the same Typst-prepared DocumentIR as PDF. The standalone `formatex-typ` assembly is the PDF distribution; the former `typst compile --input target=html` route is superseded. Engine hosts can call asynchronous `renderHtml` as documented in [the HTML engine README](../../formatex-html/README.md).
 
-`--input target=html` makes the engine write a page instead of paged output (`src/html/`): the theme, the feel and the fonts become CSS, headings, lists, tables, code blocks, alerts, boxes, badges, keys, links and references are real HTML, and the page reflows with the width of the window. Graphics such as `<chart>`, `<cetz>` and `<lilaq>` may retain their Typst SVG rendering; arbitrary graphics inside `<typ>` may use a frame as well. Text and structural components with native handlers, including `<steps>` and `<compare>`, use native HTML rather than a picture of their PDF layout. The `[html]` table of config.toml (`toolbar`, `progress`, `outline`, `copy-code`, `embed-fonts`, all on by default) chooses what the page gets: a toolbar with zoom, theme and feel, a reading-progress line, an outline sidebar and a copy button on every code block. `--input html-copy-code=false` (and `html-toolbar`, `html-progress`, `html-outline`) overrides one of them for one build. The reader can change the theme and the feel in the toolbar; with the toolbar on, the fonts of every feel are put in the file (only the glyphs the page uses), so the feel changes the fonts as well; a red dot marks a setting changed from the page's own, and the menu has a "Back to default" item. `examples/demo.md` shows every tag and is the test page for the HTML output.
-
-- The viewer's toolbar, menus, outline controls and code-copy buttons can use a language independently of the document: `--input html-ui-lang=en` or `--input html-ui-lang=fa`. Their labels and direction follow that language; the document keeps its own language and direction. Without this input, the controls follow the document. The app supplies its current interface language for both the HTML preview and export.
-- The app's live HTML preview reuses compilation and font data between edits and updates its existing page when possible. It uses the same Markdown, tags and settings as standalone HTML export; no preview-specific authoring syntax is needed. Export still produces a self-contained file with embedded font subsets when that option is on.
-- Native HTML blocks honor the merged document `dir` (`auto`, `rtl` or `ltr`), including the main content, lists, tables, quotes and alerts. Automatic direction remains per block; a forced direction is not reset by the browser's plaintext bidi handling. Paragraph justification and line/letter/word spacing, table `head-align` / `body-align`, and heading look settings apply to HTML too; heading `max-level` is relative to the top outlined heading. Global and per-list numbering/marker settings are shared with PDF, with unordered markers emitted as text; list `guides` are a PDF-only drawing.
-- With the HTML toolbar enabled, its magnifier opens **Find** on phone and desktop; Ctrl / Cmd + F opens the same panel. Search is literal and case-insensitive across the document's text nodes, with previous/next buttons and a localized match count. Enter finds the next result, Shift + Enter the previous result, and Escape closes the panel. Script/style text and code-copy controls are excluded. Live preview refreshes the results after content updates. This viewer search is separate from source-editor find/replace.
-- Choose HTML math with `[html] math = "katex"` or `"native"` (default), or override one build with `--input html-math=katex`. KaTeX includes its renderer, stylesheet and WOFF2 fonts in the file, with no CDN or other network request. The compressed bundle is included only when the document contains KaTeX math markers; documents without formulas do not carry it. Math renders asynchronously after loading and after live content updates.
-- Code blocks in HTML feature a clean top header bar with the language badge on one side and the copy button on the other, preventing overlay on code lines.
-- HTML footnotes keep their full content as native numbered references and one endnotes section; both Markdown footnotes and inline `<fn>` tags use this path.
-- Text and structural tags use native HTML, including `<cover>`, `<docheader>`, `<p>`, `<letter>`, `<tree>`, exercises/choices/answers and the collected todos, as well as the existing layout, chat, comparison and theorem components. Counters, digits, lists, citations and bibliography remain native content. The same documented attributes apply; only drawings (`<cetz>`, `<lilaq>`, `<chart>` and arbitrary graphics in `<typ>`) intentionally retain framed Typst output.
-- Native HTML preserves comparison columns, titles and colors; the three chat styles and their configured names/icons/colors/frame/width/title; progress bars/stars/dots with values and limits; reference-linked inline/block definitions; split/unified line-by-line diffs; grid spans/sizes/alignment with a phone layout; step numbering/color; image and figure sizing/alignment. Spacing is kept compact while content still reflows with the viewport.
-- The outline sidebar features high-contrast primary accent styling with compact navigation, and table row heights are optimized for compactness.
-- Typst still calls its HTML export incomplete, so this may change. The app's **Export HTML** button does the same and also puts the fonts inside the file (the CLI leaves them to the reader's machine).
-- A component exports its HTML handlers as `<name>-html` and its CSS as `<name>-css` in its own file. The generated registry collects them; `src/html/kit.typ` provides shared helpers and `src/html/tags.typ` adapts tags without a native handler. `src/html/style.typ` contains the shared page styles.
+- Text and structural content render as semantic/selectable HTML; intended drawings and Typst-only components use SVG. Complete component-property parity remains a separate gate.
+- Content is static SSR. The React viewer shell hydrates toolbar, search, outline and reader controls. Arbitrary component events/state and reactive live DSL variables are not implemented.
+- Viewer language follows app/host UI language independently of document language/direction. Shared document settings and `html` output overrides control rendering; `[html.code] copy-button` controls the code copy action.
+- `[html] math = "katex"` or `"native"` selects export-time math rendering. KaTeX HTML+MathML/CSS/fonts are packaged offline, without a reader-side KaTeX compiler, CDN or network dependency.
+- The host finishes assets/fonts for a standalone offline file. Preview maps/private source data and IPC are a preview-only concern; clean-export assertions remain part of the acceptance matrix.
+- Component HTML lives in `html.tsx`, with `html.css`, shared `schema.json`/`docs.json` and `manifest.toml`. Tailwind utilities compile to required static CSS; old Typst `<name>-html`/`<name>-css` handlers are not the current extension API.
 
 ### All themes and feels: `tools/build-all.mjs`
 
@@ -173,6 +176,12 @@ Settings come from two places:
 
 `--input` options on the command line override both.
 
+### Shared and output-specific configuration
+
+Use one config: common values at the root/common tables, output overrides under `[html]` / `[typ]`. Paged-only page/margin/column settings and header/footer belong under `typ`; the same nesting applies in YAML front matter. Root paged keys are errors. HTML-only copy-button belongs under `[html.code]` or local `html.copy-button`, never bare copy-button or old `[html] copy-code`.
+
+After schema defaults: project shared -> project output -> document shared -> document output -> local shared -> local output. Merge by key. `{{ setting.html.code.copy-button }}` remains valid kebab-case Typst access; local properties do not mutate global `setting`. The source template is `formatex-core/config.toml`; project/distribution copies are consumers.
+
 ### Front matter (per document)
 
 A Markdown file can start with a YAML block between two `---` lines. It must be the very first thing in the file:
@@ -182,10 +191,11 @@ A Markdown file can start with a YAML block between two `---` lines. It must be 
 theme: ocean                 # overrides config.toml for this document only
 feel: friendly
 
-header:
-  style: line
-  start: "Bilingual Typst Template"
-  end: "Page {page} of {pages}"
+typ:
+  header:
+    style: line
+    start: "Bilingual Typst Template"
+    end: "Page {page} of {pages}"
 
 ---
 
@@ -197,7 +207,7 @@ header:
   - The front matter is merged over `config.toml`: tables are merged key by key, and anything else is replaced.
   - For example, `font: {latin: Lexend}` changes only the Latin font and keeps `config.toml`'s other font settings.
   - The same goes for `heading:`: any of its keys (`numbering`, `number-suffix`, `max-numbering-level`, `underline`, `fill`, `max-level`, `color`) can be set for one document, and the rest come from `config.toml`. An empty value (`color:`) means the default.
-- **Turning the header on:** a document gets a header only if it has a `header:` table; `enabled: false` inside turns it off again. A cover is independent body content, written with `<cover>`.
+- **Turning the header on:** a document gets a header only if it has a `typ.header` table; `enabled: false` inside turns it off again. A cover is independent body content, written with `<cover>`.
 - **Not printed:** the front matter is stripped before rendering. A document without front matter simply has no configured header; it can still contain `<cover>`.
 - **Quoting:**
   - Quote any text that contains `{`, `: ` or ` #`, e.g. `end: "Page {page} of {pages}"`.
@@ -300,7 +310,9 @@ Each theme defines `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`
 ### Page size
 
 ```toml
+[typ]
 page = "desktop-a4"   # a desktop-* or mobile-* size, or custom
+
 ```
 
 Names start with `desktop-` for print and screen, and `mobile-` for pages made for a phone.
@@ -331,9 +343,11 @@ A **phone page** (every `mobile-*` size, and a `custom` page narrower than 120 m
 ### Custom page size
 
 ```toml
+[typ]
 page = "custom"
 page-width = "148mm"
 page-height = "210mm"
+
 ```
 
 Each is a number with `mm`, `cm`, `in` or `pt` (a bare number is points), from 40 mm to 5000 mm. The defaults are 210 mm and 297 mm. A custom page narrower than 120 mm is a phone page.
@@ -343,7 +357,9 @@ Override per build with `--input page=desktop-a5` (or `--input page=custom --inp
 ### Margins
 
 ```toml
+[typ]
 margin = "narrow"   # narrow | normal | wide
+
 ```
 
 | Value | Sides | Top / bottom |
@@ -388,8 +404,9 @@ dir = "auto"   # auto | rtl | ltr
 
 ```yaml
 ---
-columns: 2        # in a document's front matter (or `columns = 2` in config.toml)
-column-dir: rtl   # which column fills first
+typ:
+  columns: 2        # in a document's front matter (or `columns = 2` in config.toml)
+  column-dir: rtl   # which column fills first
 ---
 ```
 
@@ -550,15 +567,16 @@ caption-position = "above"
 ### Page header (front matter)
 
 ```yaml
-header:
-  style: line                       # minimal | line | band | double
-  start: "پژوهش اقیانوس‌شناسی"      # start side (right in RTL)
-  center: ""
-  end: "صفحه {page} از {pages}"
-  dir: auto                         # rtl | ltr | auto (the document's dir, else from the header text)
-  skip-first-page: true             # no header on page 1 (default true)
-  # logo: images/logo.svg           # shown before the start text
-  # enabled: false                  # keep the settings but hide the header
+typ:
+  header:
+    style: line                       # minimal | line | band | double
+    start: "پژوهش اقیانوس‌شناسی"      # start side (right in RTL)
+    center: ""
+    end: "صفحه {page} از {pages}"
+    dir: auto                         # rtl | ltr | auto (the document's dir, else from the header text)
+    skip-first-page: true             # no header on page 1 (default true)
+    # logo: images/logo.svg           # shown before the start text
+    # enabled: false                  # keep the settings but hide the header
 ```
 
 | Style | Look |
@@ -587,18 +605,19 @@ The `start`, `center` and `end` texts can contain these placeholders:
 
 ### Page footer (front matter)
 
-Without `footer:` each page shows a plain page number at the bottom center. With it, the footer is built like the header, from the same placeholders:
+Without `typ.footer` each page shows a plain page number at the bottom center. With it, the footer is built like the header, from the same placeholders:
 
 ```yaml
-footer:
-  style: line                 # plain | line (rule above)
-  start: "{section}"          # start side (right in RTL)
-  center: ""
-  end: "— {page} —"
-  digits: fa                  # fa | en | auto (Persian when the text is RTL)
-  dir: auto                   # rtl | ltr | auto (the document's dir, else from the footer text)
-  skip-first-page: false      # no footer on page 1 (default false)
-  # enabled: false            # no footer and no page number at all
+typ:
+  footer:
+    style: line                 # plain | line (rule above)
+    start: "{section}"          # start side (right in RTL)
+    center: ""
+    end: "— {page} —"
+    digits: fa                  # fa | en | auto (Persian when the text is RTL)
+    dir: auto                   # rtl | ltr | auto (the document's dir, else from the footer text)
+    skip-first-page: false      # no footer on page 1 (default false)
+    # enabled: false            # no footer and no page number at all
 ```
 
 - Every key is optional; `footer: { center: "صفحه {page} از {pages}" }` is enough.
@@ -723,6 +742,8 @@ All of these work as usual:
 - inline math `$...$` and display math `$$...$$`, written in LaTeX syntax;
 - tables.
 
+PDF preview navigation: clicking a horizontal rule reveals its own `---` source line, and list word clicks preserve their source offsets after the first word. This uses preview-only mapping; exported PDF styling and author syntax are unchanged.
+
 - **Lists** can be numbered with Persian digits too (`۱.`), and their numbers, bullets and indent are configurable (see <a href="#lists-section">Lists</a>).
 - **Tables** are centered. Align a column with its separator: `:---` left, `---:` right, `:---:` center. Their look follows the feel, and options can be set per table (see below).
 - **Code blocks** get line numbers; empty lines at the end of a block are dropped. A block with a language (` ```python `) also gets a badge in its top corner with the language name and icon.
@@ -731,7 +752,7 @@ All of these work as usual:
   - To add a language, extend `code-languages` and `code-language-aliases` in `src/core.typ`.
   - A ` ```mermaid ` block is drawn as a diagram instead (see <a href="#mermaid-diagrams">Mermaid diagrams</a>).
 - **Comments** `<!-- ... -->` are dropped, over one line or many (see <a href="#comments">Comments</a>).
-- **Citations** in Pandoc form, `[@key]`, also work.
+- **Citations** in Pandoc form, `[@key]`, become semantic citations outside protected code/math; use a key present in the bibliography. Inside code/math they remain literal.
 - **Footnotes** can be written with standard Markdown syntax (`[^label]` and `[^label]: ...`) or with inline `<fn>` tags (see <a href="#footnotes">Footnotes</a> below).
 
 ### Comments {#comments}
@@ -895,7 +916,7 @@ Rendered:
 ۲. پاک‌سازی داده
 ۳. تحلیل نتایج
 
-- **Merging:** as in any Markdown, two numbered lists separated only by a blank line become one list. Put a paragraph or a `{...}` options line between them to keep them apart.
+- **Numbering boundaries:** after a blank-line separation, an explicit marker differing from the expected next value starts a new list at that value. `۱.`, `۲.`, blank, `۲.` starts another list at 2; loose `۱.`, blank, `۲.`, blank, `۳.` remains continuous. A paragraph or `{...}` options line can also separate lists.
 - Only `.` and `)` after the number make an item; `۱-` is plain text. Inside fenced code blocks nothing is converted.
 
 **Settings for every list** come from `[list]` in `config.toml`:
@@ -1283,7 +1304,7 @@ A padded blue card.
 - **Spacing unit:** one step is `0.25em` of the surrounding text (`p-4` is `1em`), so it follows `scale`. `[...]` takes any length: `p-[10pt]`, `w-[5cm]`.
 - **Colors follow the theme:** any Tailwind color name with no shade (`blue`, `orange`, `slate`, ...) is the same soft tint `<box color>` uses. A shade (`bg-blue-100`, `text-blue-900`) is exactly Tailwind's color; on a dark theme the mirrored shade is used (`blue-100` becomes `blue-900`), so light and dark pairs keep their contrast. `/N` mixes that percent of the color into the page color (the text color for `text-*`). Theme colors: `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code`. A `[#hex]` color is used exactly.
 - **Rounding ignores the feel:** `rounded` is 6pt, `rounded-sm` 3pt, `-md` 9pt, `-lg` 12pt, `-xl` 18pt, `-2xl` 24pt, `-3xl` 36pt, `-none` 0, `rounded-[8pt]` any length, and `rounded-full` a pill (or a circle on a square), in every feel including `formal`. To change it per feel use a variant: `formal:rounded-none`.
-- **Flex items:** every nested `<div>`, and every other run of content between blank lines, is one item. Items start at their content width and shrink when the row is too narrow.
+- **Flex items:** every nested `<div>`, and every other run of content between blank lines, is one item. Source/internal metadata is not an item. Equal `flex-1` children share available width; nested card rows and pill content preserve their own layout.
 - **Columns:** a `flex-col` without `h-*` is ordinary flow and breaks across pages. With `h-*`, `justify-*` and `grow` use the extra height.
 - **Typos:** an unknown class is a compile error that names it. Grid classes (`grid-cols-*`) and shadows are not supported; use `<grid>`.
 - **Direction:** the `dir` attribute (`auto`, `rtl`, `ltr`) works as on `<grid>`.
@@ -1863,7 +1884,7 @@ As <cite key="vaswani2017attention" form="prose"></cite> showed ...
 | Attribute | On | Notes |
 |-----------|----|-------|
 | `key` | cite | BibTeX key(s), comma-separated. |
-| `page` | cite | Supplement inside the brackets: `[2, ص. ۱۲]`. |
+| `typ.page` | cite | Supplement inside the brackets: `[2, ص. ۱۲]`. |
 | `form` | cite | `normal` (default), `prose`, `author`, `year`, `full`. |
 | `file`, `style`, `title`, `dir` | bibliography | Override `bibliography:` in the front matter. |
 
@@ -1883,7 +1904,8 @@ As <cite key="vaswani2017attention" form="prose"></cite> showed ...
 ```
 
 - **Generated text** follows the language of the surrounding paragraph: «شکل ۱», «قضیه ۲», «بخش ۳» or "Figure 1", "Theorem 2", "Section 3".
-- **Custom text:** text inside the tag replaces the generated text, and the link still points at the target.
+- **Custom text:** paired `<ref to="id">custom text</ref>` preserves its body in PDF and HTML, replacing generated text while retaining the target link. The empty paired form uses the generated label.
+- **Direction:** inline references and definitions inherit their lexical paragraph/scope direction, not the preceding paragraph. To put an English section inside a forced-RTL document, wrap it in `<dir ltr> ... </dir>` (or `<dir to="ltr"> ... </dir>`); this explicitly overrides the surrounding scope.
 - **Heading ids:** end a heading line with `{#id}`.
   - The `{#id}` is removed from the printed heading, the table of contents and the page header.
   - The same braces can also hold per-heading look and numbering options: `{#id fill=true numbering=false}` (see Heading look).
@@ -2584,7 +2606,7 @@ Three first steps:
 | Compile error on `<cite>` | The key is missing from `references.bib`, or there is no `<bibliography>`. |
 | Compile error on `<ref>` | Unknown id, or the same id used twice. |
 | Literal backticks in a caption | Markdown isn't parsed inside `<caption>`. |
-| Two numbered lists became one | Only a blank line between them; Markdown merges them. Put a paragraph or a `{...}` options line in between. |
+| Two numbered lists became one | A single blank line with the expected next marker keeps one loose list. Use a different explicit start marker, a paragraph or a `{...}` options line to separate them. |
 | `۱- item` is not a list item | Only `.` or `)` after the number makes an item: `۱. item`, `۱) item`. |
 | Compile error on a `{...}` line above a list | An unknown list option, or `start` on a bulleted list. |
 | Compile error on `<chat>` | An unknown attribute, `style` or color name, or no `<user>` / `<ai>` message inside. |
@@ -2597,44 +2619,25 @@ Three first steps:
 
 ## Your own components
 
-A project can have components of its own: Typst files that define new tags, used in the Markdown like the built-in ones.
+Declare project-relative package **folders** in Markdown front matter:
 
-```toml
-# config.toml (every document), or the front matter of one document: the lists are added together
-components = ["notes.typ", "extras/stamps.typ"]
+```yaml
+---
+components:
+  - components/note
+---
 ```
 
-- The files are listed the way files are imported. A path is relative to the project folder, and a file can be **anywhere** in it; a single path or paths separated by commas are accepted too. Not under `main.typ`, `src/`, `components/` or `tools/`: those belong to the engine.
-- A file can define **any number of tags**, related or not, and **its name means nothing**: `a.typ` can hold the tags `b` and `c`, `y.typ` the tags `n` and `m`. A project can list any number of files.
-- What the file defines decides the rest. Every `#let <x>-tags = (tag: (attrs, body) => content, ...)` gives tags (`<x>` is any label). `#let <x>-schema = ("tag": (kind, description, attrs), ...)` is **optional**: with it the app completes the tag and its attributes and the engine checks them (an enum value, a bool, a number, a required attribute); without it the tag works and its attributes are not checked. `#let <x>-docs` is optional too (the same shape as the docs of the built-in components); the Skill page of the app uses it. A schema belongs to a tag by the tag's **name**, not by `<x>` or by the file.
-- A tag name is lowercase letters, digits and `-`, starting with a letter. A tag that is built in, or defined by another file, is an error that names both files.
-- The file starts with `#import "/src/kit.typ": *`, which is the whole API a component may rely on: `theme` (the colors of the theme: `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code-bg`, `code-stroke`, and `theme.dark`), `zoom` (the scale), `feel` (corner rounding), `parse-length`, `resolve-color`, `tinted`, `panel`, `root-path`, `plain-text`, `at-of`, `setting-prefix` and the helpers named in `src/kit.typ`. Never write a fixed color or size: use `theme`, `zoom` and `em`, so the component follows the theme of every document.
-- Typst has **only double-quoted strings**: `'text'` is a syntax error. The `example:` of a `-docs` holds tags with quoted attributes, so escape the quotes (`"<note kind=\"tip\">x</note>"`) or use a raw block. Persian digits and `٪` are valid only in strings and content, never in code.
-- A mistake the component finds in the document is reported with `assert(..., message: at-of(attrs) + "...")`. The app shows an error raised inside a component **twice**: on the line of the tag in the Markdown file, and on the line of the code in the component file. A file listed in `components` that does not exist is reported on `config.toml`.
-- The files are loaded when the document is built, so the project compiles with plain `typst compile` as well; the app only adds autocomplete and the error lines.
+Each folder contains `typst.typ`, `html.tsx`, `manifest.toml`, `schema.json`, `docs.json` and `html.css`. The manifest names the package/version and points `typ`, `html`, `css`, `schema` and `docs` at those files. One package can own multiple tags, but tag names must be unique. Shared schema/docs are JSON, not inline Typst declarations. Copy a small current core package as the shape reference.
 
-```typst
-#import "/src/kit.typ": *
+`typst.typ` imports `/src/kit.typ` and supplies Typst handlers; use theme/feel/zoom and project-root path helpers. `html.tsx` supplies the independent renderer's implementation and may use Tailwind utilities or `html.css`; avoid app/Tauri imports. Content is static SSR, so arbitrary event handlers/state are not hydrated. Typst-only components use explicit SVG fallback in HTML; HTML-only subtrees are omitted in PDF. Test both outputs, diagnostics and references for the selected availability.
 
-#let note-tags = (
-  note: (attrs, body) => block(width: 100%, inset: 8pt * zoom, fill: theme.secondary, radius: 4pt * zoom, body),
-  stamp: (attrs, body) => text(size: parse-length(attrs.at("size", default: "1em"), attrs: attrs), fill: theme.accent, weight: "bold", body),
-)
-#let note-schema = (
-  "stamp": (kind: "inline", description: (en: "A bold accent word", fa: "واژهٔ پررنگ"), attrs: ("size": (type: "length", default: "1em", doc: (en: "Text size", fa: "اندازهٔ متن")))),
-)
-```
+The isolated one-file PDF/custom-package fixture passes; this does not certify every custom-package property or native-device interaction. See [the package development workflow](../skills/typst-formatex-dev/extending.md#adding-a-component) for the six-file contract and verification.
 
 ## Extending the template
 
-- **New color theme:** add an entry to `src/themes.typ` with all ten keys (`dark`, `bg`, `fg`, `heading`, `muted`, `accent`, `secondary`, `rule`, `code-bg`, `code-stroke`), then set `theme = "<name>"`. Add it to the `--themes` default in `tools/build-all.mjs` if it should be part of full builds.
-- **New feel:** add an entry to `feels` in `src/core.typ` with the corner radii and the default fonts, then add it to the `--feels` default in `tools/build-all.mjs`.
-- **Components of one project:** list Typst files in `components` (see [Your own components](#your-own-components)); no change to the engine.
-- **New component:** add a file `components/<name>.typ` that exports `<name>-tags = (tag: (attrs, body) => ...)`; run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it) and the tag is available, with no change to `main.typ`. It receives `(attrs, body)`, where `body` is already rendered content. Parent and child tags (like `<fig>` and `<caption>`) communicate through `tag(...)`, `untag(...)` and `find-tagged(...)`.
-- **Docs of a component:** every component also exports `#let <name>-docs = (en: (about: "...", more: "..."), fa: (about: "...", more: "..."), example: (en: "...", fa: "..."))`: what it is for and its key rules in Markdown (`about`, short; `more`, optional and longer), in both languages, and a usage example in Markdown. Write the long texts as raw blocks (`` `````md ... `````.text ``). `tools/gen-registry.mjs` stops when a built-in component has none; `tools/export-schema.mjs` writes them into `dist/tags.json` under `components` with the component's tags. The Skill page of the Formatex app builds one Markdown file for AI agents from them and from the schema.
-- **HTML form of a component (optional):** the tags of a component also have a form in the [HTML export](#html-export): export `#let <name>-html = (tag: (attrs, body) => html.elem("div", attrs: (class: "fx-x"), body))` (the same `(attrs, body)`, or `("void", attrs => ...)`) and `#let <name>-css = `````css ... `````.text` (its CSS). The tag is then real HTML; without them it is a picture of its PDF look, and the PDF is never affected. `html.elem` is only called inside the functions, since `html` exists only in the HTML export. The helpers come with `#import "/src/kit.typ": *` (`css-color`, `css-len`, `style-of`, `panel-style`, `html-icon`, `find-target`, `html-link-list`, `in-frame`), and the theme, feel and fonts are CSS variables (`--bg --fg --heading --muted --accent --rule --code-bg --code-stroke --r-badge --r-alert --font-body ...`). A project's own components (`components` setting) can export both names too.
-- **New code language badge:** extend `code-languages` and `code-language-aliases` in `src/core.typ`.
+Edit owned sources in `formatex-core` / `formatex-pdf` / `formatex-html`, not generated standalone copies. Built-in component folders belong in core. Keep both languages in `docs.json` and `schema.json` descriptions. Change themes/feels in their source modules and verify all 24 combinations plus mobile, both directions and affected HTML layouts.
 
-The editor skill in `skills/typst-formatex-dev/` documents the internals in more detail (`reference.md`). `extending.md` there is the guide for adding themes, feels and components without breaking direction, alignment or other themes. Read it (or point an AI agent to it) before extending the template. Its first rule: everything new must fit all three feels, and `formal` stays square everywhere.
+Run `node tools/sync.mjs` from the standalone directory to build current core WASM and assemble core+PDF. Local registry/build/bundle/schema tools then work from that snapshot without sibling checkouts. The app syncs the source owners directly. Update both guides and the authoring/developer skills whenever configuration or components change.
 
-To have an AI only **write documents** (Markdown and `config.toml`) without touching the template, give it `skills/bilingual-document-authoring/` instead: it describes every component and setting from the writer's side, with no internals.
+The [developer skill](../skills/typst-formatex-dev/SKILL.md) covers internals and [safe extension rules](../skills/typst-formatex-dev/extending.md). For writing documents only, use the [authoring skill](../skills/bilingual-document-authoring/SKILL.md).

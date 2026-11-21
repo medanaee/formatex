@@ -1,0 +1,80 @@
+{
+  "counter": {
+    "kind": "void",
+    "needs": {
+      "keys": [
+        "of"
+      ],
+      "message": "<counter> needs of=\"name\": the name of the counter"
+    },
+    "description": {
+      "en": "A counter of your own: each use steps it and prints its number (exercise 1, 2, 3 ...), with levels, labels and number formats",
+      "fa": "شمارندهٔ دلخواه: هر بار نوشتن آن یکی اضافه می‌شود و عدد چاپ می‌شود (تمرین ۱، ۲، ۳ ...)، با سطح، برچسب و قالب عدد"
+    },
+    "attrs": {
+      "of": {
+        "type": "string",
+        "required": true,
+        "doc": {
+          "en": "The name of the counter: every name is a counter of its own. Its shape (levels, separator, default label and format) is set in `[counters.<name>]`.",
+          "fa": "نام شمارنده: هر نام یک شمارندهٔ جداست. شکلش (سطح‌ها، جداکننده، برچسب و قالب پیش‌فرض) در `[counters.<name>]` تنظیم می‌شود."
+        }
+      },
+      "label": {
+        "type": "string",
+        "doc": {
+          "en": "The printed text; `%1` is the number of the first level, `%2` of the second, and so on: `label=\"Exercise %1.\"`. Default: the numbers joined by the separator. `label=\"\"` counts without printing.",
+          "fa": "متن چاپی؛ `%1` عدد سطح اول، `%2` سطح دوم و ...: `label=\"تمرین %1.\"`. پیش‌فرض: عددها با جداکننده. `label=\"\"` می‌شمارد ولی چیزی چاپ نمی‌کند."
+        }
+      },
+      "format": {
+        "type": "string",
+        "values": [
+          "auto",
+          "fa",
+          "en",
+          "fatxt",
+          "rome",
+          "abc",
+          "abjad",
+          "alefba"
+        ],
+        "doc": {
+          "en": "How the numbers are written, as in numbered lists: auto (by the text's language), fa ۱ ۲ ۳, en 1 2 3, fatxt یک دو سه, rome I II III, abc a b c, abjad الف ب ج د, alefba الف ب پ ت. A comma-separated list gives one kind per level: `format=\"en,abc\"`.",
+          "fa": "قالب نوشتن عددها، مثل لیست‌های شماره‌دار: auto (از زبان متن)، fa ۱ ۲ ۳، en 1 2 3، fatxt یک دو سه، rome I II III، abc a b c، abjad الف ب ج د، alefba الف ب پ ت. فهرست جداشده با ویرگول برای هر سطح یک قالب می‌دهد: `format=\"en,abc\"`."
+        }
+      },
+      "step": {
+        "type": "int",
+        "default": "1",
+        "doc": {
+          "en": "How much this use adds to its level. `step=\"0\"` prints the number without adding.",
+          "fa": "این بار چقدر به سطحش اضافه شود. `step=\"0\"` بدون اضافه کردن، عدد را چاپ می‌کند."
+        }
+      },
+      "set": {
+        "type": "int",
+        "doc": {
+          "en": "Makes this use that number (and the next one the one after it). The other levels stay as they are.",
+          "fa": "این بار را همین عدد می‌کند (و بعدی عدد بعد از آن می‌شود). سطح‌های دیگر دست نمی‌خورند."
+        }
+      },
+      "level": {
+        "type": "int",
+        "default": "1",
+        "doc": {
+          "en": "Which level this use steps. The levels below it go back to zero.",
+          "fa": "این بار کدام سطح اضافه شود. سطح‌های پایین‌تر به صفر برمی‌گردند."
+        }
+      },
+      "hide": {
+        "type": "bool",
+        "default": "false",
+        "doc": {
+          "en": "Counts without printing anything.",
+          "fa": "می‌شمارد ولی چیزی چاپ نمی‌کند."
+        }
+      }
+    }
+  }
+}

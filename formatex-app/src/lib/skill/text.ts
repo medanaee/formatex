@@ -11,8 +11,8 @@ const DESCRIPTION = {
     fa: "برای نوشتن و ویرایش سند در فرمتکس (Formatex) به کار می‌رود، برنامه‌ای که Markdown را با کامپوننت‌های شبیه HTML به یک PDF دقیق فارسی و انگلیسی تبدیل می‌کند. هر وقت کاری به یک پروژهٔ فرمتکس مربوط شد از آن استفاده کنید: فایل اصلی Markdown، config.toml، front matter، کامپوننت‌ها (تگ‌ها)، ارجاع، استناد، شکل، جدول، فهرست، تم یا جهت متن.",
   },
   building: {
-    en: "Builds your own components (tags) for a Formatex project: Typst files that define tags, their optional schema and docs, and how the project declares them. Use it when a task asks for a new tag or changes a component file.",
-    fa: "کامپوننت (تگ) دلخواه برای یک پروژهٔ فرمتکس می‌سازد: فایل‌های Typst که تگ تعریف می‌کنند، schema و docs اختیاری آن‌ها و راهی که پروژه آن‌ها را معرفی می‌کند. وقتی کاری تگ تازه می‌خواهد یا فایل کامپوننت را عوض می‌کند از آن استفاده کنید.",
+    en: "Builds Formatex folder packages with manifest.toml, schema.json, docs.json, typst.typ, html.tsx and html.css; shared data, per-output implementations and Markdown front-matter declarations. Use it when a task asks for a new tag or edits a component package.",
+    fa: "بستهٔ پوشه‌ای فرمتکس با manifest.toml، schema.json، docs.json، typst.typ، html.tsx و html.css می‌سازد؛ دادهٔ مشترک، پیاده‌سازی جدا برای خروجی و معرفی در front matterِ Markdown. برای تگ تازه یا ویرایش بستهٔ کامپوننت به کار ببرید.",
   },
 } as const
 
@@ -51,11 +51,17 @@ A project is a folder of real files:
 - \`config.toml\`: the settings of the whole project. Its \`source\` key names the Markdown file that is compiled (\`main.md\` in a new project). Read it first.
 - The main Markdown file, and any chapters it pulls in with \`<include>\`.
 - Images (\`images/...\`), \`.bib\` files, CSV data and code files the document uses.
-- The user's own components, kept in the app (they appear in the reference below when they have docs).
+- Shared component folder packages declared in Markdown front matter (their schema/docs supply the reference below).
 
 **Every path in a document is relative to the project folder** (\`images/fig1.png\`, \`chapters/intro.md\`). URLs and absolute paths do not work for files. The app compiles as the user types and shows each error with its file and line; there is nothing for you to build.
 
-Settings live in two places. \`config.toml\` holds the defaults of every document in the project; the front matter at the top of one Markdown file overrides them for that document only, and also holds the page header, footer and bibliography. The cover is a body block \`<cover>\`, with explicit attributes or declared \`{{ }}\` values, not a front-matter/config setting. Its frame defaults to false; remove the tag to omit it. Readonly metadata is top-level only, with no cover fallback. Front matter wins. Sections (\`heading\`, \`font\`, \`paragraph\`, \`list\`, \`table\`, \`equation\`, \`chat\`) merge key by key.
+Use one \`config.toml\` for project defaults and YAML front matter for document overrides. Shared values stay at the root/common tables; output-specific values use \`html\` / \`typ\`. Paged-only keys such as page, margin, columns, header and footer must be under \`typ\`; root paged keys are rejected. HTML-only properties require the \`html\` prefix: \`[html.code] copy-button = true\`, or local \`html.copy-button="true"\`, not bare copy-button.
+
+After schema defaults the order is project shared -> project output -> document shared -> document output -> local shared -> local output, merged by key. \`{{ setting.html.code.copy-button }}\` and \`{{ setting.typ.page }}\` keep their kebab-case Typst field access. Local props do not mutate document-wide \`setting\`. Ordinary \`{{ }}\` runs in the shared Typst core; neither output adds a JavaScript Markdown parser.
+
+Declare component **folder paths in Markdown front matter** (\`components: ["extras/note"]\`), not standalone \`.typ\` files. Each package contains \`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`; shared schema/docs stay separate from the two implementations. A cover remains an explicit body \`<cover>\` tag, not configuration. Readonly metadata is top-level, without a cover fallback.
+
+\`PAGE\` / \`PAGES\` use actual paged layout and are source errors in active HTML expressions; \`SECTION\` / \`SECTION_NUMBER\` may use the shared section context. Preview mapping/private source files/IPC must not be included in exported output. HTML/native/visual/performance parity still requires verification; one successful fixture is not full approval.
 
 ## How to work
 
@@ -69,12 +75,13 @@ A document skeleton:
 
 \`\`\`markdown
 ---
-header:
-  style: line
-  start: "Short document title"
-  end: "{section}"
-footer:
-  center: "{page}"
+typ:
+  header:
+    style: line
+    start: "Short document title"
+    end: "{section}"
+  footer:
+    center: "{page}"
 bibliography:
   file: references.bib
   style: ieee
@@ -141,11 +148,17 @@ const INTRO_FA = `شما **محتوای** یک سند فرمتکس را می‌�
 - \`config.toml\`: تنظیم‌های کل پروژه. کلید \`source\` آن نام فایل Markdownی را می‌دهد که ساخته می‌شود (در پروژهٔ تازه \`main.md\`). اول آن را بخوانید.
 - فایل اصلی Markdown و فصل‌هایی که با \`<include>\` به آن می‌آیند.
 - تصویرها (\`images/...\`)، فایل‌های \`.bib\`، دادهٔ CSV و فایل‌های کدی که سند به کار می‌برد.
-- کامپوننت‌های خودِ کاربر که در برنامه نگه‌داری می‌شوند (اگر مستندات داشته باشند در مرجع زیر می‌آیند).
+- بسته‌های پوشه‌ای کامپوننت که در front matterِ Markdown معرفی می‌شوند (schema/docs آن‌ها مرجع زیر را می‌سازد).
 
 **هر مسیر در سند نسبت به پوشهٔ پروژه است** (\`images/fig1.png\`، \`chapters/intro.md\`). نشانی اینترنتی و مسیر مطلق برای فایل‌ها کار نمی‌کند. برنامه همزمان با تایپ می‌سازد و هر خطا را با فایل و شمارهٔ خط نشان می‌دهد؛ چیزی برای ساختن به عهدهٔ شما نیست.
 
-تنظیم‌ها دو جا هستند. \`config.toml\` پیش‌فرض همهٔ سندهای پروژه را دارد؛ front matter بالای یک فایل Markdown آن‌ها را فقط برای همان سند عوض می‌کند و سربرگ، پابرگ و فهرست منابع را هم نگه می‌دارد. جلد یک بلوک \`<cover>\` در متن با ویژگی‌های صریح یا مقدارهای تعریف‌شدهٔ \`{{ }}\` است، نه تنظیم front matter/config. قاب پیش‌فرض خاموش است؛ برای حذف جلد خود تگ را بردارید. فرادادهٔ فقط‌خواندنی فقط از سطح بالا می‌آید و به جلد برنمی‌گردد. front matter مقدم است. بخش‌ها (\`heading\`، \`font\`، \`paragraph\`، \`list\`، \`table\`، \`equation\`، \`chat\`) کلید به کلید ادغام می‌شوند.
+یک \`config.toml\` برای پیش‌فرض پروژه و YAML front matter برای بازنویسی سند داشته باشید. مقدار مشترک در ریشه/جدول مشترک می‌ماند و مقدار ویژهٔ خروجی زیر \`html\` / \`typ\` است. کلید فقط صفحه‌بندی مثل page، margin، columns، header و footer باید زیر \`typ\` باشد؛ کلید صفحه‌بندی در ریشه رد می‌شود. ویژگی فقط HTML پیشوند \`html\` می‌خواهد: \`[html.code] copy-button = true\` یا \`html.copy-button="true"\` محلی، نه copy-button تنها.
+
+بعد از پیش‌فرض schema تقدم این است: مشترک پروژه -> خروجی پروژه -> مشترک سند -> خروجی سند -> مشترک محلی -> خروجی محلی، با ادغام کلیدبه‌کلید. \`{{ setting.html.code.copy-button }}\` و \`{{ setting.typ.page }}\` نام kebab-case و دسترسی Typst را حفظ می‌کنند. ویژگی محلی \`setting\` سراسری را عوض نمی‌کند. \`{{ }}\` معمولی در هستهٔ مشترک Typst اجرا می‌شود؛ هیچ خروجی پارسر Markdown جاوااسکریپتی اضافه نمی‌کند.
+
+**مسیر پوشهٔ کامپوننت را در front matterِ Markdown** معرفی کنید (\`components: ["extras/note"]\`)، نه فایل \`.typ\` مستقل. هر بسته \`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\` و \`html.css\` دارد؛ schema/docs مشترک از دو پیاده‌سازی جدا می‌مانند. جلد همچنان تگ صریح \`<cover>\` در متن است، نه تنظیم. فرادادهٔ فقط‌خواندنی در سطح بالا است و به جلد برنمی‌گردد.
+
+\`PAGE\` / \`PAGES\` از صفحه‌آرایی واقعی می‌آیند و در عبارت فعال HTML خطای منبع‌اند؛ \`SECTION\` / \`SECTION_NUMBER\` می‌توانند از بافت بخش مشترک بیایند. نگاشت پیش‌نمایش/فایل خصوصی منبع/IPC نباید داخل خروجی صادرشده باشند. برابری HTML/بومی/ظاهر/کارایی همچنان بررسی می‌خواهد؛ یک نمونهٔ موفق تأیید کامل نیست.
 
 ## شیوهٔ کار
 
@@ -159,13 +172,14 @@ const INTRO_FA = `شما **محتوای** یک سند فرمتکس را می‌�
 
 \`\`\`markdown
 ---
-header:
-  style: line
-  start: "عنوان کوتاه سند"
-  end: "{section}"
-footer:
-  center: "{page}"
-  digits: fa
+typ:
+  header:
+    style: line
+    start: "عنوان کوتاه سند"
+    end: "{section}"
+  footer:
+    center: "{page}"
+    digits: fa
 bibliography:
   file: references.bib
   style: ieee
@@ -226,9 +240,13 @@ front matter باید اولین چیز فایل باشد، میان دو خط \
 
 const INTRO_SHORT_EN = `You write the **content** of a Formatex document: one Markdown file (YAML front matter on top) and, when asked, \`config.toml\`. **Use only the tags, attributes and settings listed here; do not invent any.** Paths are relative to the project folder. Read \`config.toml\` (its \`source\` is the compiled file) and the existing document first, and keep its style.
 
+Settings: shared root/tables, output overrides under \`html\` / \`typ\`; paged keys/header/footer under \`typ\`, HTML-only props with \`html\` prefix. Keep \`setting.html.code.copy-button\`. Declare six-file component folder packages in Markdown front matter.
+
 Rules: open and close every tag (\`<toc></toc>\`); leave a blank line after an opening tag and before a closing tag whenever it contains Markdown; quote every attribute value (\`radius="6"\`); give an \`id\` to what you refer to and use \`<ref to="id"></ref>\`; never type numbers into headings; a Persian paragraph must start with a Persian word; front matter is the first thing in the file, between two \`---\` lines.`
 
 const INTRO_SHORT_FA = `شما **محتوای** یک سند فرمتکس را می‌نویسید: یک فایل Markdown (با YAML front matter در بالا) و، اگر خواسته شد، \`config.toml\`. **فقط از تگ‌ها، ویژگی‌ها و تنظیم‌هایی استفاده کنید که اینجا آمده؛ هیچ‌کدام را نسازید.** مسیرها نسبت به پوشهٔ پروژه‌اند. اول \`config.toml\` (کلید \`source\` فایلِ ساخته‌شده است) و سند موجود را بخوانید و سبکش را نگه دارید.
+
+تنظیم: ریشه/جدول مشترک و بازنویسی خروجی زیر \`html\` / \`typ\`؛ کلید صفحه/سربرگ/پابرگ زیر \`typ\` و ویژگی فقط HTML با پیشوند \`html\`. \`setting.html.code.copy-button\` را نگه دارید. پوشهٔ بستهٔ شش‌فایلی را در front matterِ Markdown معرفی کنید.
 
 قاعده‌ها: هر تگ را باز و بسته کنید (\`<toc></toc>\`)؛ هر وقت داخل تگ Markdown هست بعد از تگ بازکننده و پیش از تگ بسته‌کننده خط خالی بگذارید؛ مقدار هر ویژگی را در گیومه بنویسید (\`radius="6"\`)؛ به آنچه ارجاع می‌دهید \`id\` بدهید و \`<ref to="id"></ref>\` بنویسید؛ در تیتر شماره تایپ نکنید؛ پاراگراف فارسی باید با واژهٔ فارسی شروع شود؛ front matter اولین چیز فایل است، میان دو خط \`---\`.`
 
@@ -255,6 +273,7 @@ Before you finish, check every line. Fix what fails.
 - [ ] Every \`<ref to>\` and \`<a href="#...">\` points at an id that exists; ids are unique.
 - [ ] Every \`<cite key>\` exists in the \`.bib\` file, and \`<bibliography>\` appears once, at the end.
 - [ ] Image, data, code and \`<include>\` paths are relative to the project folder and the files exist.
+- [ ] Shared/output/local precedence and \`html\` / \`typ\` domains are correct; no root paged keys or bare HTML-only props.
 - [ ] Components are used only where plain Markdown is not enough.
 - [ ] The text of the user's request is done, and nothing else was changed.`
 
@@ -281,6 +300,7 @@ const OUTRO_FA = `## اشتباهات رایج
 - [ ] هر \`<ref to>\` و \`<a href="#...">\` به شناسه‌ای اشاره می‌کند که هست؛ شناسه‌ها یکتا هستند.
 - [ ] هر \`<cite key>\` در فایل \`.bib\` هست و \`<bibliography>\` یک بار و در پایان آمده.
 - [ ] مسیر تصویر، داده، کد و \`<include>\` نسبت به پوشهٔ پروژه است و فایل‌ها هستند.
+- [ ] تقدم مشترک/خروجی/محلی و حوزهٔ \`html\` / \`typ\` درست است؛ کلید صفحه‌بندی در ریشه یا ویژگی فقط HTML بدون پیشوند نیست.
 - [ ] کامپوننت فقط جایی آمده که Markdown ساده کافی نبود.
 - [ ] خواستهٔ کاربر انجام شده و چیز دیگری عوض نشده است.`
 

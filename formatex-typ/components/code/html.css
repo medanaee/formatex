@@ -1,0 +1,91 @@
+.fx-code-figure { margin-block: 0.85em; }
+.fx-code {
+  position: relative;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.fx-code-frame {
+  position: relative;
+  overflow: hidden;
+  border: 0.05em solid var(--code-stroke);
+  border-radius: var(--fx-radius-code);
+  background: var(--code-bg);
+  color: var(--fg);
+}
+.fx-code pre {
+  margin: 0;
+  overflow-x: auto;
+  padding: 1.2em 0.8em;
+  font: 0.8em/1.45 var(--font-code);
+  direction: ltr;
+  text-align: left;
+}
+.fx-code-lang pre { padding-top: 2.5em; }
+.fx-code-line {
+  display: block;
+  position: relative;
+  padding-block: 0.3em;
+  padding-inline: 0.8em 0.4em;
+  padding-inline-start: 2.5em;
+  white-space: pre;
+}
+.fx-code-wide .fx-code-line { padding-inline-start: 3.2em; }
+.fx-code-line[data-line]::before {
+  content: attr(data-line);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.3em;
+  width: 1.5em;
+  text-align: end;
+  color: var(--muted);
+  font-size: 1em;
+  line-height: inherit;
+  font-family: inherit;
+  user-select: none;
+}
+.fx-code-wide .fx-code-line[data-line]::before { width: 2.2em; }
+.fx-code-highlight {
+  background: color-mix(in srgb, var(--secondary) 16%, var(--code-bg) 84%);
+}
+.fx-code-highlight::before { color: var(--fg); }
+.fx-code-badge {
+  position: absolute;
+  top: 0.45em;
+  right: 0.65em;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.28em 0.55em;
+  border: 0.05em solid var(--code-stroke);
+  border-radius: var(--fx-radius-badge);
+  background: color-mix(in srgb, var(--code-bg) 90%, var(--fg) 10%);
+  color: var(--fg);
+  font: 700 0.9em/1 var(--font-body);
+}
+.fx-code-badge .fx-icon-svg { width: 0.95em; height: 0.95em; }
+.fx-code .fx-copy {
+  margin-inline-start: 0.2em;
+  padding: 0 0.15em;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fx-copy-solo {
+  position: absolute;
+  top: 0.4em;
+  right: 0.5em;
+  z-index: 1;
+  padding: 0.1em 0.45em;
+  border: 0.05em solid var(--code-stroke);
+  border-radius: var(--fx-radius-badge);
+  background: color-mix(in srgb, var(--code-bg) 90%, var(--fg) 10%);
+  font-size: 0.75em;
+}
+.fx-code-caption { color: var(--fg); text-align: center; }
+.fx-code-number { font-weight: 700; }

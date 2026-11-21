@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A conversation with an AI assistant: `<user>` messages and `<ai>` replies inside one `<chat>`. Markdown, lists and code work inside a message.\n\n- `<user>` and `<ai>` take `name` and `icon` for one message. Defaults for the whole project live in `[chat]` of `config.toml`, or for one document in a `chat:` map of the front matter; attributes on the tag win.\n- Any Markdown works inside a message (paragraphs, lists, code, math). Leave blank lines inside `<chat>` and each message; text between messages is dropped.\n- An unknown attribute, `style` or color, or a `<chat>` with no messages is a compile error."
+  },
+  "fa": {
+    "about": "گفتگو با یک دستیار هوش مصنوعی: پیام‌های `<user>` و پاسخ‌های `<ai>` داخل یک `<chat>`. Markdown، فهرست و کد داخل پیام کار می‌کنند.\n\n- `<user>` و `<ai>` برای یک پیام `name` و `icon` می‌گیرند. پیش‌فرض کل پروژه در `[chat]` فایل `config.toml` است و برای یک سند در نقشهٔ `chat:` در front matter؛ ویژگی روی تگ مقدم است.\n- هر Markdownی داخل پیام کار می‌کند (پاراگراف، فهرست، کد، ریاضی). داخل `<chat>` و هر پیام خط خالی بگذارید؛ متن میان پیام‌ها حذف می‌شود.\n- ویژگی، `style` یا رنگ ناشناخته، یا `<chat>` بدون پیام، خطای ساخت است."
+  },
+  "example": {
+    "en": "<chat title=\"Literature review\">\n\n<user>\n\nHow should I start the literature review of my thesis?\n\n</user>\n\n<ai>\n\nThree first steps:\n\n1. Pull **keywords** from your research question.\n2. Search Google Scholar and keep the most cited papers.\n3. Export their references from Zotero as a `.bib` file.\n\n</ai>\n\n</chat>",
+    "fa": "<chat title=\"مرور ادبیات\">\n\n<user>\n\nبرای مرور ادبیات پایان‌نامه‌ام از کجا شروع کنم؟\n\n</user>\n\n<ai>\n\nسه قدم اول:\n\n1. **کلیدواژه‌ها** را از سؤال پژوهش دربیاورید.\n2. در گوگل اسکالر جستجو کنید و مقاله‌های پراستناد را جدا کنید.\n3. منابع آن‌ها را از زوترو به شکل فایل `.bib` بگیرید.\n\n</ai>\n\n</chat>"
+  }
+}

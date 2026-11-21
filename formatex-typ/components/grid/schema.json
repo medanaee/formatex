@@ -1,0 +1,132 @@
+{
+  "grid": {
+    "kind": "block",
+    "description": {
+      "en": "columns",
+      "fa": "ستون‌بندی"
+    },
+    "attrs": {
+      "cols": {
+        "type": "int",
+        "default": "2",
+        "doc": {
+          "en": "Number of columns",
+          "fa": "تعداد ستون‌ها"
+        }
+      },
+      "gap-x": {
+        "type": "length",
+        "default": "1em",
+        "doc": {
+          "en": "Horizontal gap between cells",
+          "fa": "فاصلهٔ افقی بین خانه‌ها"
+        }
+      },
+      "gap-y": {
+        "type": "length",
+        "default": "1em",
+        "doc": {
+          "en": "Vertical gap between cells",
+          "fa": "فاصلهٔ عمودی بین خانه‌ها"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Direction of the cells",
+          "fa": "جهت خانه‌ها"
+        }
+      },
+      "span": {
+        "type": "enum",
+        "values": [
+          "column",
+          "all"
+        ],
+        "default": "column",
+        "doc": {
+          "en": "`column` (default) or `all` to span all columns in a multi-column document",
+          "fa": "`column` (پیش‌فرض) یا `all` برای پوشاندن همهٔ ستون‌ها در سند چندستونه"
+        }
+      }
+    },
+    "children": [
+      "item"
+    ]
+  },
+  "item": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "One cell of a <grid>",
+      "fa": "یک خانه از <grid>"
+    },
+    "attrs": {
+      "span": {
+        "type": "int",
+        "default": "1",
+        "doc": {
+          "en": "Number of columns the cell covers (clamped to `cols`)",
+          "fa": "تعداد ستون‌هایی که خانه می‌پوشاند (حداکثر `cols`)"
+        }
+      },
+      "width": {
+        "type": "enum",
+        "values": [
+          "fill",
+          "auto"
+        ],
+        "default": "fill",
+        "doc": {
+          "en": "`fill` (as wide as the cell) or `auto` (as wide as its content)",
+          "fa": "`fill` (هم‌عرض خانه) یا `auto` (هم‌عرض محتوا)"
+        }
+      },
+      "height": {
+        "type": "enum",
+        "values": [
+          "fill",
+          "auto"
+        ],
+        "default": "fill",
+        "doc": {
+          "en": "`fill` (as tall as the row) or `auto` (as tall as its content)",
+          "fa": "`fill` (هم‌قد ردیف) یا `auto` (هم‌قد محتوا)"
+        }
+      },
+      "halign": {
+        "type": "enum",
+        "values": [
+          "start",
+          "center",
+          "end",
+          "left",
+          "right"
+        ],
+        "doc": {
+          "en": "Horizontal alignment inside the cell",
+          "fa": "تراز افقی داخل خانه"
+        }
+      },
+      "valign": {
+        "type": "enum",
+        "values": [
+          "start",
+          "center",
+          "end"
+        ],
+        "default": "start",
+        "doc": {
+          "en": "Vertical alignment inside the cell",
+          "fa": "تراز عمودی داخل خانه"
+        }
+      }
+    }
+  }
+}

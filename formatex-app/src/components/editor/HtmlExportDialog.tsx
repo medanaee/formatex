@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next"
 import { ResponsiveDialog } from "@/components/common/ResponsiveDialog"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { documentHtmlSettings } from "@/lib/compiler"
+import { isTauri } from "@/lib/platform"
 import { CONFIG_FILE } from "@/lib/projects"
-import { DEFAULT_HTML_OPTIONS, htmlOptionsFromConfig, type HtmlExportOptions } from "@/lib/projects/htmlConfig"
+import { DEFAULT_HTML_OPTIONS, htmlOptionsFromConfig, htmlOptionsFromSettings, type HtmlExportOptions } from "@/lib/projects/htmlConfig"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
@@ -31,7 +33,7 @@ function OptionRow({ checked, onChange, label, hint }: OptionRowProps) {
   )
 }
 
-const ROWS: (keyof HtmlExportOptions)[] = ["toolbar", "progress", "outline", "copyCode", "embedFonts", "katexMath"]
+const ROWS: ("toolbar" | "progress" | "outline" | "copyCode" | "embedFonts" | "katexMath")[] = ["toolbar", "progress", "outline", "copyCode", "embedFonts", "katexMath"]
 
 /**
  * The HTML export (an experiment): its settings, then the file. Shown by `useWorkspaceStore.htmlDialog`. Every time it opens, the switches
@@ -53,7 +55,12 @@ export function HtmlExportDialog() {
       const store = useEditorStore.getState()
       const config = store.texts[CONFIG_FILE] ?? (await store.load(CONFIG_FILE).catch(() => ""))
       if (!current) return
-      const found = htmlOptionsFromConfig(config)
+      let found = htmlOptionsFromConfig(config)
+      if (isTauri() && store.kind !== "typst" && store.projectId && store.mainFile) {
+        const settings = await documentHtmlSettings(store.projectId,store.mainFile,store.texts).catch(() => null)
+        if (!current) return
+        if (settings) found = htmlOptionsFromSettings(settings,found)
+      }
       setFromConfig(found)
       setOptions(found)
     })()
@@ -97,7 +104,7 @@ export function HtmlExportDialog() {
     >
       <div className="divide-y divide-border">
         {ROWS.map((key) => (
-          <OptionRow key={key} checked={options[key]} onChange={(next) => setOptions((state) => ({ ...state, [key]: next }))} label={t(`htmlExport.${key}`)} hint={t(`htmlExport.${key}Hint`)} />
+          <OptionRow key={key} checked={options[key]} onChange={(next) => setOptions((state) => ({ ...state, [key]: next, operationOverrides: { ...state.operationOverrides, [key]: next } }))} label={t(`htmlExport.${key}`)} hint={t(`htmlExport.${key}Hint`)} />
         ))}
       </div>
       {status === "error" && message && <p className="mt-2 break-words text-xs text-destructive">{t("editor.exportFailed")}: {message}</p>}

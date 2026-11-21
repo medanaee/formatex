@@ -1,0 +1,113 @@
+.fx-docheader {
+  margin-block: 1em 1.5em;
+  border-style: solid;
+  border-width: 0;
+  border-color: var(--fx-edge, var(--rule));
+  background: transparent;
+  min-width: 0;
+  container-type: inline-size;
+}
+.fx-docheader-filled {
+  background: var(--fx-fill, var(--code-bg));
+}
+.fx-docheader-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: 1em;
+  align-items: center;
+}
+.fx-docheader-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.fx-docheader-side-l {
+  align-items: flex-start;
+}
+.fx-docheader-side-r {
+  align-items: flex-end;
+}
+.fx-docheader-ghost {
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.fx-docheader-img {
+  display: block;
+  max-width: 30cqi;
+  object-fit: cover;
+  border-radius: var(--fx-radius-image);
+}
+.fx-docheader-titles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  text-align: center;
+  min-width: 0;
+}
+.fx-docheader-title {
+  width: 100%;
+  min-width: 0;
+}
+.fx-docheader-title > p {
+  margin: 0;
+  line-height: inherit !important;
+}
+.fx-docheader-size-1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--heading);
+}
+.fx-docheader-size-2 {
+  font-size: 1.4em;
+  font-weight: 400;
+  line-height: 1.18;
+  color: var(--muted);
+}
+.fx-docheader-size-3 {
+  font-size: 1.1em;
+  font-weight: 400;
+  line-height: 1.22;
+  color: color-mix(in srgb, var(--muted) 70%, var(--bg) 30%);
+}
+.fx-docheader-info {
+  margin-block-start: 0.55em;
+  text-align: start;
+  min-width: 0;
+}
+.fx-docheader-info p {
+  margin-block: 0 0.3em;
+}
+.fx-docheader-info > :first-child {
+  margin-block-start: 0;
+}
+.fx-docheader-info > :last-child,
+.fx-docheader-info p:last-child {
+  margin-block-end: 0;
+}
+@media (max-width: 639px) {
+  .fx-docheader-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    row-gap: 0.8em;
+    column-gap: 0.6em;
+  }
+  .fx-docheader-side {
+    flex: 0 1 auto;
+  }
+  .fx-docheader-ghost {
+    display: none;
+  }
+  .fx-docheader-img {
+    max-width: 45cqi;
+  }
+  .fx-docheader-titles {
+    order: 3;
+    flex: 1 0 100%;
+  }
+}

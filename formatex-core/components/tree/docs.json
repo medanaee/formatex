@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A file and folder tree drawn from an indented listing in a fenced block (pasted `tree` output works). `caption` makes it a numbered figure.\n\n- Put a fenced code block (any language or none) inside the tag, with blank lines around it: one file or folder per line, nested by indentation (a tab counts as 4 spaces). A name ending in `/`, or with indented lines under it, is a folder. `name  # note` prints a muted note.\n- Pasted `tree` output works as is (`│`, `├──`, `└──`, or ASCII `|`, `+--`, `\\--` count as indentation). `icons=\"false\"` drops the file-type icons.\n- Drawn like a code block with connector lines, folder icons in the accent color and an icon per file type, always left to right. `caption` and `id` make it a numbered figure (listed by `<lof>`)."
+  },
+  "fa": {
+    "about": "درخت فایل‌ها و پوشه‌ها که از یک فهرست تورفته در بلوک کد کشیده می‌شود (خروجی چسبانده‌شدهٔ `tree` هم کار می‌کند). `caption` آن را شکل شماره‌دار می‌کند.\n\n- یک بلوک کد (هر زبان یا بی‌زبان) داخل تگ بگذارید، با خط خالی دورش: هر خط یک فایل یا پوشه، با تورفتگی تودرتو (یک tab برابر ۴ فاصله). نامی که با `/` تمام شود، یا زیرش خط تورفته باشد، پوشه است. `name  # note` یادداشت کم‌رنگ چاپ می‌کند.\n- خروجی چسبانده‌شدهٔ `tree` همان‌طور کار می‌کند (`│`، `├──`، `└──` یا ASCII مثل `|`، `+--`، `\\--` تورفتگی حساب می‌شوند). `icons=\"false\"` آیکون نوع فایل را برمی‌دارد.\n- مثل بلوک کد با خط‌های اتصال، آیکون پوشه به رنگ تأکید و آیکون برای هر نوع فایل کشیده می‌شود، همیشه چپ‌به‌راست. `caption` و `id` آن را شکل شماره‌دار می‌کنند (`<lof>` فهرستش می‌کند)."
+  },
+  "example": {
+    "en": "<tree caption=\"Project layout\" id=\"fig-tree\">\n\n```text\nformatex/\n  main.typ        # entry point\n  docs/\n    doc_en.md\n  images/\n    logo.png\n  references.bib\n```\n\n</tree>",
+    "fa": "<tree caption=\"ساختار پروژه\" id=\"fig-tree\">\n\n```text\nformatex/\n  main.typ        # نقطهٔ ورود\n  docs/\n    doc_fa.md\n  images/\n    logo.png\n  references.bib\n```\n\n</tree>"
+  }
+}

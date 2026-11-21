@@ -1,0 +1,58 @@
+{
+  "hr": {
+    "kind": "void",
+    "description": {
+      "en": "A line across the text, in one of several styles and colors",
+      "fa": "یک خط در عرض متن با چند سبک و رنگ"
+    },
+    "attrs": {
+      "style": {
+        "type": "enum",
+        "values": [
+          "solid",
+          "dashed",
+          "dotted",
+          "dash-dot",
+          "double",
+          "wavy"
+        ],
+        "default": "solid",
+        "doc": {
+          "en": "Look of the line: `solid`, `dashed`, `dotted`, `dash-dot`, `double` or `wavy`.",
+          "fa": "ظاهر خط: `solid`، `dashed`، `dotted`، `dash-dot`، `double` یا `wavy`."
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Color of the line: a preset (`blue`, `red`...), `accent` or a hex color. Default: the theme's rule color.",
+          "fa": "رنگ خط: یک رنگ آماده (`blue`، `red`...)، `accent` یا رنگ hex. پیش‌فرض: رنگ خط‌های تم."
+        }
+      },
+      "width": {
+        "type": "length",
+        "default": "100%",
+        "doc": {
+          "en": "Length of the line: `60%`, `5cm`...",
+          "fa": "طول خط: `60%`، `5cm`..."
+        }
+      },
+      "thickness": {
+        "type": "length",
+        "default": "1pt",
+        "doc": {
+          "en": "How thick the line is: `0.5pt`, `2pt`...",
+          "fa": "ضخامت خط: `0.5pt`، `2pt`..."
+        }
+      },
+      "gap": {
+        "type": "length",
+        "default": "0.8em",
+        "doc": {
+          "en": "Space above and below the line",
+          "fa": "فاصلهٔ بالا و پایین خط"
+        }
+      }
+    }
+  }
+}

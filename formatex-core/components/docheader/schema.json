@@ -1,0 +1,222 @@
+{
+  "docheader": {
+    "kind": "block",
+    "description": {
+      "en": "Title block: titles, side images and extra text, optionally framed and tinted",
+      "fa": "بلوک عنوان: عنوان‌ها، تصویرهای کناری و متن اضافه، با قاب و رنگ اختیاری"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Shortcut for a first `<title size=\"1\">` (Markdown allowed)",
+          "fa": "میان‌بر برای نخستین `<title size=\"1\">` (Markdown مجاز است)"
+        }
+      },
+      "subtitle": {
+        "type": "string",
+        "doc": {
+          "en": "Shortcut for a `<title size=\"2\">`",
+          "fa": "میان‌بر برای `<title size=\"2\">`"
+        }
+      },
+      "subtitle2": {
+        "type": "string",
+        "doc": {
+          "en": "Shortcut for a `<title size=\"3\">`",
+          "fa": "میان‌بر برای `<title size=\"3\">`"
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Tailwind color name, preset or hex for both the line and the fill. It only picks the color: `border` and `fill` decide what is drawn.",
+          "fa": "نام رنگ Tailwind، رنگ آماده یا hex برای هم خط و هم پرشدگی. فقط رنگ را تعیین می‌کند: اینکه چه چیزی کشیده شود را `border` و `fill` تعیین می‌کنند."
+        }
+      },
+      "border-color": {
+        "type": "color",
+        "doc": {
+          "en": "Color of the line; overrides `color`. Default: `color`, else the theme's rule color.",
+          "fa": "رنگ خط؛ جایگزین `color`. پیش‌فرض: `color`، وگرنه رنگ خط تم."
+        }
+      },
+      "fill-color": {
+        "type": "color",
+        "doc": {
+          "en": "Color of the fill; overrides `color`. Default: `color`, else the theme's code background.",
+          "fa": "رنگ پرشدگی؛ جایگزین `color`. پیش‌فرض: `color`، وگرنه پس‌زمینهٔ کد تم."
+        }
+      },
+      "border": {
+        "type": "string",
+        "default": "",
+        "doc": {
+          "en": "Which sides get a line, as letters: `l` left, `r` right, `t` top, `b` bottom (`lrtb` = all four, `tb`, `l`, ...). Default: none. A corner is rounded only where two drawn sides meet (`lt` rounds the top-left corner, `lrtb` all four); the open ends stay square.",
+          "fa": "کدام سمت‌ها خط دارند، با حرف: `l` چپ، `r` راست، `t` بالا، `b` پایین (`lrtb` = هر چهار سمت، `tb`، `l`، ...). پیش‌فرض: هیچ. هر گوشه فقط جایی که دو سمت کشیده‌شده به هم برسند گرد می‌شود (`lt` گوشهٔ بالا-چپ را، `lrtb` هر چهار را)؛ سرِ باز خط‌ها گوشه‌تیز می‌ماند."
+        }
+      },
+      "fill": {
+        "type": "bool",
+        "default": "false",
+        "doc": {
+          "en": "Tint the inside. Default: `false`.",
+          "fa": "ته‌رنگ داخل. پیش‌فرض: `false`."
+        }
+      },
+      "radius": {
+        "type": "length",
+        "doc": {
+          "en": "Corner rounding of the frame. Default: the feel's value (square in `formal`).",
+          "fa": "گردی گوشهٔ قاب. پیش‌فرض: مقدار حالت (در `formal` گوشه‌تیز)."
+        }
+      },
+      "padding": {
+        "type": "length",
+        "default": "1em",
+        "doc": {
+          "en": "Space between the frame and its content",
+          "fa": "فاصلهٔ قاب تا محتوا"
+        }
+      }
+    },
+    "children": [
+      "main",
+      "title",
+      "l-img",
+      "r-img",
+      "info"
+    ]
+  },
+  "main": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Row of the titles and the two side images (optional wrapper)",
+      "fa": "ردیف عنوان‌ها و دو تصویر کناری (پوشش اختیاری)"
+    },
+    "attrs": {},
+    "children": [
+      "title",
+      "l-img",
+      "r-img"
+    ]
+  },
+  "title": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "One title line; the lines stack in order",
+      "fa": "یک خط عنوان؛ خط‌ها به ترتیب زیر هم می‌آیند"
+    },
+    "attrs": {
+      "size": {
+        "type": "enum",
+        "values": [
+          "1",
+          "2",
+          "3"
+        ],
+        "default": "1",
+        "doc": {
+          "en": "`1` large, in the heading color; `2` medium and muted; `3` small and more gray",
+          "fa": "`1` بزرگ با رنگ تیتر؛ `2` متوسط و کم‌رنگ؛ `3` کوچک و خاکستری‌تر"
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Override the text color (preset, Tailwind name or hex)",
+          "fa": "جایگزین رنگ متن (رنگ آماده، نام Tailwind یا hex)"
+        }
+      }
+    }
+  },
+  "l-img": {
+    "kind": "void",
+    "scoped": true,
+    "description": {
+      "en": "Image at the left edge of the header",
+      "fa": "تصویر لبهٔ چپ سربرگ"
+    },
+    "attrs": {
+      "src": {
+        "type": "path",
+        "required": true,
+        "doc": {
+          "en": "Path relative to the project root",
+          "fa": "مسیر نسبت به ریشهٔ پروژه"
+        }
+      },
+      "width": {
+        "type": "length",
+        "doc": {
+          "en": "Width",
+          "fa": "عرض"
+        }
+      },
+      "height": {
+        "type": "length",
+        "doc": {
+          "en": "Height. Default `4em` when no width is given.",
+          "fa": "ارتفاع. بدون عرض، پیش‌فرض `4em`."
+        }
+      },
+      "radius": {
+        "type": "length",
+        "doc": {
+          "en": "Corner rounding (default: the feel's value)",
+          "fa": "گردی گوشه (پیش‌فرض: مقدار حالت)"
+        }
+      }
+    }
+  },
+  "r-img": {
+    "kind": "void",
+    "scoped": true,
+    "description": {
+      "en": "Image at the right edge of the header",
+      "fa": "تصویر لبهٔ راست سربرگ"
+    },
+    "attrs": {
+      "src": {
+        "type": "path",
+        "required": true,
+        "doc": {
+          "en": "Path relative to the project root",
+          "fa": "مسیر نسبت به ریشهٔ پروژه"
+        }
+      },
+      "width": {
+        "type": "length",
+        "doc": {
+          "en": "Width",
+          "fa": "عرض"
+        }
+      },
+      "height": {
+        "type": "length",
+        "doc": {
+          "en": "Height. Default `4em` when no width is given.",
+          "fa": "ارتفاع. بدون عرض، پیش‌فرض `4em`."
+        }
+      },
+      "radius": {
+        "type": "length",
+        "doc": {
+          "en": "Corner rounding (default: the feel's value)",
+          "fa": "گردی گوشه (پیش‌فرض: مقدار حالت)"
+        }
+      }
+    }
+  },
+  "info": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Ordinary Markdown below the titles (authors, affiliations, date, abstract); wrap it in <align> to center it",
+      "fa": "Markdown معمولی زیر عنوان‌ها (نویسندگان، وابستگی، تاریخ، چکیده)؛ برای وسط‌چین کردن داخل <align> بگذارید"
+    },
+    "attrs": {}
+  }
+}

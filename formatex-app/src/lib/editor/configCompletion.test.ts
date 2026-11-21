@@ -18,7 +18,7 @@ const yaml = (text: string, override?: Partial<CompletionEnv>) => at(text, compl
 describe("the schema", () => {
   it("describes config.toml and the front matter", () => {
     expect(Object.keys(schema.config!.config.tables)).toEqual(expect.arrayContaining(["font", "paragraph", "heading", "table", "list", "chat", "equation"]))
-    expect(Object.keys(schema.config!["front-matter"].tables)).toEqual(expect.arrayContaining(["header", "footer", "cover", "bibliography"]))
+    expect(Object.keys(schema.config!["front-matter"].tables)).toEqual(expect.arrayContaining(["typ.header", "typ.footer", "html.code", "bibliography"]))
     expect(schema.config!.config.attrs.source).toBeDefined()
     expect(schema.config!["front-matter"].attrs.source).toBeUndefined()
   })
@@ -27,7 +27,7 @@ describe("the schema", () => {
 describe("config.toml", () => {
   it("suggests the top-level keys before any table, and none already written", () => {
     const result = toml('theme = "paper"\n|')!
-    expect(result.labels).toEqual(expect.arrayContaining(["feel", "page", "margin", "scale", "dir", "columns", "source"]))
+    expect(result.labels).toEqual(expect.arrayContaining(["feel", "scale", "dir", "source"]))
     expect(result.labels).not.toContain("theme")
     expect(result.options.find((o) => o.label === "feel")!.template).toBe('feel = "${}"')
     expect(result.options.find((o) => o.label === "scale")!.template).toBe("scale = ${}")
@@ -96,34 +96,34 @@ describe("front matter", () => {
 
   it("suggests the settings and the blocks at the top level", () => {
     const result = yaml("---\n|")!
-    expect(result.labels).toEqual(expect.arrayContaining(["theme", "feel", "dir", "header", "footer", "cover", "bibliography", "heading"]))
+    expect(result.labels).toEqual(expect.arrayContaining(["theme", "feel", "dir", "typ", "html", "bibliography", "heading"]))
     expect(result.labels).not.toContain("source")
     expect(result.options.find((o) => o.label === "theme")!.template).toBe("theme: ")
-    expect(result.options.find((o) => o.label === "header")!.template).toBe("header:\n  ${}")
+    expect(result.options.find((o) => o.label === "typ")!.template).toBe("typ:\n  ${}")
   })
 
   it("leaves out keys that are already there", () => {
-    const result = yaml("---\ntheme: ocean\nheader:\n  style: line\n|")!
+    const result = yaml("---\ntheme: ocean\ntyp:\n  header:\n    style: line\n|")!
     expect(result.labels).not.toContain("theme")
-    expect(result.labels).not.toContain("header")
-    expect(result.labels).toContain("cover")
+    expect(result.labels).not.toContain("typ")
+    expect(result.labels).toContain("html")
   })
 
   it("suggests the keys of a block when indented under it", () => {
-    const header = yaml("---\nheader:\n  |")!
+    const header = yaml("---\ntyp:\n  header:\n    |")!
     expect(header.labels).toEqual(expect.arrayContaining(["style", "start", "center", "end", "dir", "skip-first-page", "logo"]))
     expect(header.labels).not.toContain("theme")
     expect(header.labels).not.toContain("title")
-    const cover = yaml("---\ncover:\n  type: x\n  |")!
-    expect(cover.labels).toEqual(expect.arrayContaining(["title", "author", "supervisor", "frame"]))
+    const cover = yaml("---\nhtml:\n  code:\n    |")!
+    expect(cover.labels).toEqual(expect.arrayContaining(["copy-button"]))
     expect(cover.labels).not.toContain("type")
   })
 
   it("suggests the values of a key", () => {
     expect(yaml("---\ntheme: |")!.labels).toContain("midnight")
-    expect(yaml("---\nheader:\n  style: |")!.labels).toEqual(["minimal", "line", "band", "double"])
-    expect(yaml("---\nfooter:\n  style: |")!.labels).toEqual(["plain", "line"])
-    expect(yaml("---\ncover:\n  frame: |")!.labels).toEqual(["true", "false"])
+    expect(yaml("---\ntyp:\n  header:\n    style: |")!.labels).toEqual(["minimal", "line", "band", "double"])
+    expect(yaml("---\ntyp:\n  footer:\n    style: |")!.labels).toEqual(["plain", "line"])
+    expect(yaml("---\nhtml:\n  code:\n    copy-button: |")!.labels).toEqual(["true", "false"])
     expect(yaml("---\nbibliography:\n  style: |")!.labels).toEqual(expect.arrayContaining(["ieee", "apa"]))
   })
 

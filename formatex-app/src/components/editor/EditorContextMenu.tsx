@@ -13,6 +13,7 @@ import { desktopOs, hasFinePointer } from "@/lib/platform"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
 import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
+import { useHtmlSourceStore } from "@/stores/useHtmlSourceStore"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { enableTouchSelection, selectByTouch } from "@/lib/editor/touchSelection"
@@ -39,7 +40,9 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
     afterClose.current = () => selectByTouch(view, position)
   }
 
-  const hasPages = useEditorStore((state) => state.pages.length > 0)
+  const pagesExist = useEditorStore((state) => state.pages.length > 0)
+  const htmlAvailable = useHtmlSourceStore(state => state.available)
+  const hasPages = pagesExist || htmlAvailable
   const plainTypst = useEditorStore((state) => state.kind) === "typst"
 
   /** Shows the place of the last press in the typeset pages: the preview scrolls to it and marks it (on a narrow screen it comes up). */
@@ -49,6 +52,12 @@ export function EditorContextMenu({ markdown, children }: { markdown: boolean; c
     if (!view || !activePath || source === undefined) return
     const position = (point.current && view.posAtCoords(point.current)) ?? view.state.selection.main.head
     const line = view.state.doc.lineAt(position)
+    if (useWorkspaceStore.getState().previewMode === "html" && kind !== "typst") {
+      if (!useSettingsStore.getState().panels.preview) useSettingsStore.getState().setPanel("preview", true)
+      useWorkspaceStore.getState().set({ tab: "preview" })
+      useHtmlSourceStore.getState().show(activePath, position, true)
+      return
+    }
     // Plain Typst: Typst itself says where the text was typeset; Formatex: the engine's markers
     const place = kind === "typst" ? await typstPlaceForOffset(activePath, position) : previewPlaceForLine(activePath, source, line.number, position - line.from)
     if (!place) return

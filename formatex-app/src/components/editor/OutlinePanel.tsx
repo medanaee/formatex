@@ -6,6 +6,8 @@ import { previewPlaceForLine } from "@/lib/editor/previewPlace"
 import { fileKindOf } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
+import { useHtmlSourceStore } from "@/stores/useHtmlSourceStore"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 
 /** The headings of the open Markdown file as a tree; a click puts the editor's cursor on the heading and shows it in the preview. */
@@ -62,8 +64,11 @@ export function OutlinePanel({ onOpen }: { onOpen?: () => void }) {
                 if (path) {
                   void useEditorStore.getState().revealAt(path, heading.line, 1)
                   // The preview goes to the heading too
+                  if (useWorkspaceStore.getState().previewMode === "html") {
+                    useHtmlSourceStore.getState().show(path,heading.from,true)
+                  }
                   const place = text !== undefined ? previewPlaceForLine(path, text, heading.line, 0) : null
-                  if (place) usePreviewScrollStore.getState().show(place, true)
+                  if (place && useWorkspaceStore.getState().previewMode !== "html") usePreviewScrollStore.getState().show(place, true)
                 }
                 onOpen?.()
               }}

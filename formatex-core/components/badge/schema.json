@@ -1,0 +1,33 @@
+{
+  "badge": {
+    "kind": "inline",
+    "description": {
+      "en": "Small inline label",
+      "fa": "برچسب کوچک درون‌خطی"
+    },
+    "attrs": {
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "Color preset or hex",
+          "fa": "نام رنگ آماده یا hex"
+        }
+      },
+      "icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome icon name",
+          "fa": "نام آیکن Font Awesome"
+        }
+      },
+      "size": {
+        "type": "length",
+        "default": "1em",
+        "doc": {
+          "en": "Text size; `1em` (default) is the size of the surrounding text, `0.8em` a little smaller",
+          "fa": "اندازهٔ متن؛ `1em` (پیش‌فرض) هم‌اندازهٔ متن اطراف است، `0.8em` کمی کوچک‌تر"
+        }
+      }
+    }
+  }
+}

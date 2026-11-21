@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "Shows every digit inside in one kind, whichever kind it was written in: `<digit type=\"fa\">Room 12, ۳۴ and ٥٦</digit>` gives Persian digits for all of them.\n\n- `type`: `fa` Persian ۰۱۲۳ (default), `ar` Arabic ٠١٢٣ or `en` English 0123.\n- It works on all the text inside: paragraphs, lists, tables and other tags. Digits in math and in code blocks are left as they are."
+  },
+  "fa": {
+    "about": "همهٔ ارقام داخلش را با یک نوع نشان می‌دهد، هر نوعی که نوشته شده باشند: `<digit type=\"fa\">اتاق 12، ۳۴ و ٥٦</digit>` همه را فارسی می‌کند.\n\n- `type`: `fa` فارسی ۰۱۲۳ (پیش‌فرض)، `ar` عربی ٠١٢٣ یا `en` انگلیسی 0123.\n- روی همهٔ متن داخل کار می‌کند: پاراگراف، فهرست، جدول و تگ‌های دیگر. ارقام فرمول و بلوک کد دست نمی‌خورند."
+  },
+  "example": {
+    "en": "<digit type=\"fa\">Room 12, ۳۴ and ٥٦ — also 2026.</digit>\n\n<digit type=\"en\">اتاق ۱۲ و ٣٤</digit>",
+    "fa": "<digit type=\"fa\">اتاق 12، ۳۴ و ٥٦ — و 1405.</digit>\n\n<digit type=\"ar\">اتاق 12 و ۳۴</digit>"
+  }
+}

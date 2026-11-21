@@ -1,5 +1,7 @@
 # Settings reference
 
+Shared-core checkpoint (2026-11-12): core configuration domains are enforced. Use shared root/tables plus `html` / `typ` output overrides; paged-only keys (page, margin, columns, header/footer and related keys) belong under `typ`, and HTML-only copy-button belongs under `[html.code]` or local `html.copy-button`. Root paged keys, bare HTML copy-button and old `[html] copy-code` are rejected. The source template is `formatex-core/config.toml`; standalone/app copies consume it. Shared-core app test/build integration passes; complete property/control, map/diagnostic/export fixtures and real Android native interaction remain separate gates. See [the active plan](../../../formatex-app/docs/tasks/shared-core-pdf-html-plan.md).
+
 Settings live in two places:
 
 | Where | Scope | Holds |
@@ -7,7 +9,7 @@ Settings live in two places:
 | `config.toml` (project folder) | Every document in the project | Which file is compiled, theme, feel, page, margins, scale, text direction, columns, fonts, paragraphs, headings, list, table, equation and chat defaults |
 | Front matter (YAML at the top of a `.md`) | That document only | Page header, footer, bibliography, and overrides of any `config.toml` setting except `source` |
 
-Front matter wins over `config.toml`. Sections (`heading`, `font`, `paragraph`, `list`, `table`, `equation`, `chat`) are merged key by key: `font: {latin: Lexend}` changes only the Latin font.
+After schema defaults, precedence is project shared -> project selected output -> document shared -> document selected output -> local shared -> local selected output. Merge tables by key: `font: {latin: Lexend}` changes only the Latin font. Keep one config with common root/tables and `html` / `typ` overrides; use `{{ setting.html.code.copy-button }}` without changing kebab-case. Local props do not mutate global `setting`.
 
 Contents: [HTML output language](#html-output-language) · [config.toml](#configtoml) · [Front matter basics](#front-matter-basics) · [Header](#header) · [Footer](#footer) · [Cover migration](#cover-migration) · [Bibliography](#bibliography) · [Per-heading overrides](#per-heading-overrides) · [Choosing settings](#choosing-settings)
 
@@ -17,7 +19,7 @@ Contents: [HTML output language](#html-output-language) · [config.toml](#config
 
 HTML math is selected with `[html] math = "native"` (default) or `"katex"`; `--input html-math=katex` overrides it for one build. KaTeX's renderer, CSS and WOFF2 fonts are embedded as a compressed offline bundle only when the document contains KaTeX math markers. No CDN or other network resource is needed. Rendering is asynchronous on initial load and after live content updates. The app's Export HTML dialog exposes the same choice.
 
-For experimental HTML output (`--format html --features html --input target=html`), `--input html-ui-lang=fa` or `--input html-ui-lang=en` sets the labels and direction of the viewer's toolbar, menus, outline controls and code-copy buttons independently of the document. With no input, these controls follow the document's language. The app passes its current interface language for HTML preview and export. This is a build input, not a `config.toml` or front-matter key; changing it does not change the document's own language or direction.
+The independent HTML renderer receives `uiLanguage: "fa" | "en"` from its host. The app passes its current interface language for preview/export, independently of the document's language/direction. This controls viewer toolbar, menus, outline and copy controls. The former Typst `--input html-ui-lang`/`target=html` route is superseded; use the app export or the `formatex-html` API. `uiLanguage` is not a document configuration key.
 
 The app's live HTML preview reuses compilation and font data and updates the existing page when possible. This does not introduce a setting or a different document format: use the same Markdown, tags, front matter and `[html]` options for preview and export. The standalone Export command keeps font-subset embedding when `embed-fonts` is enabled.
 
@@ -46,12 +48,10 @@ feel = "formal"
 # desktop-legal, desktop-tabloid, desktop-square; for phones mobile-16-9, mobile-18-9, mobile-20-9, mobile-21-9
 # (110 mm wide, one column, header center hidden); or "custom" with page-width / page-height (mm, cm, in, pt).
 # A custom page narrower than 120 mm gets the phone rules too. Old names "a4" and "mobile" still work.
-page = "desktop-a4"
 # page-width = "148mm"
 # page-height = "210mm"
 
 # Page margins: "narrow" (15 mm sides), "normal" (about 25 mm), "wide" (35 mm sides)
-margin = "normal"
 
 # Size of everything on the page in percent; page size and margins stay. 90 = denser, 115 = larger.
 scale = 100
@@ -61,6 +61,10 @@ scale = 100
 dir = "auto"
 
 # Text columns (1, 2, ...) and which column fills first: "rtl" (right first), "ltr", "auto"
+
+[typ]
+page = "desktop-a4"
+margin = "normal"
 columns = 1
 column-dir = "rtl"
 
@@ -119,14 +123,14 @@ width = "80%"          # widest bubble: % of the line or a length
 | `source` | file name | `doc_en.md` | The Markdown file that is compiled. Not allowed in front matter. |
 | `theme` | `paper`, `sepia`, `ocean`, `sage`, `midnight`, `nord`, `zinc`, `dracula` | `paper` | Page, text, heading and accent colors. |
 | `feel` | `formal`, `standard`, `friendly` | `formal` | Corner rounding of every element, table style, step markers, default fonts. `formal` is fully square and always uses a plain ruled header. |
-| `page` | `desktop-a4`, `desktop-a3`, `desktop-a4-landscape`, `desktop-a5`, `desktop-a6`, `desktop-b4`, `desktop-b5`, `desktop-letter`, `desktop-legal`, `desktop-tabloid`, `desktop-square`, `mobile-16-9`, `mobile-18-9`, `mobile-20-9`, `mobile-21-9`, `custom` | `desktop-a4` | Page size. `mobile-*` and a `custom` page narrower than 120 mm are phone pages (one column, own margins, no header `center`). `a4` / `mobile` still work. |
+| `typ.page` | `desktop-a4`, `desktop-a3`, `desktop-a4-landscape`, `desktop-a5`, `desktop-a6`, `desktop-b4`, `desktop-b5`, `desktop-letter`, `desktop-legal`, `desktop-tabloid`, `desktop-square`, `mobile-16-9`, `mobile-18-9`, `mobile-20-9`, `mobile-21-9`, `custom` | `desktop-a4` | Page size. `mobile-*` and a `custom` page narrower than 120 mm are phone pages (one column, own margins, no header `center`). `a4` / `mobile` still work. |
 | `page-width`, `page-height` | length (`148mm`, `6in`, `420pt`) | `210mm`, `297mm` | Size of a `custom` page, 40–5000 mm. |
 | `components` | list of paths, or paths separated by commas | none | Typst files of the project that define tags of its own (any number of tags per file, any file name, anywhere in the project). In the front matter they are added to those of `config.toml`. Only the `.typ` files named here are loaded. |
-| `margin` | `narrow`, `normal`, `wide` | `normal` | Page margins (scale with the page). Ignored on phone pages. |
+| `typ.margin` | `narrow`, `normal`, `wide` | `normal` | Page margins (scale with the page). Ignored on phone pages. |
 | `scale` | number (percent) | `100` | Scales text, spacing, corners and rules together. |
 | `dir` | `auto`, `rtl`, `ltr` | `auto` | Text direction. `auto`: each block follows its own first letter. `rtl` / `ltr`: everything is forced to that direction, English or Persian alike: paragraphs, headings (Persian digits in `rtl`), lists, tables (column order flips) and cells, quotes, captions and their label («شکل» / "Figure"), alerts, boxes, steps, badges, toc/lof/lot entries, the bibliography, and the header and footer when their own `dir` is `auto` (the `<cover>` tag resolves in its surrounding direction context); also the column order when `column-dir = "auto"`. Code stays LTR; `<cetz>` labels, Mermaid diagrams and `<kbd>` keep their own direction. Usually set in front matter (`dir: rtl`); for one part of a document use `<dir>` (components.md). |
-| `columns` | integer ≥ 1 | `1` | Text columns. The cover is always one column; `<docheader>` spans all columns; a phone page forces 1. |
-| `column-dir` | `rtl`, `ltr`, `auto` | `auto` | Column order. Use `rtl` for Persian documents and `ltr` for English ones (set it in the front matter if the project default doesn't match). |
+| `typ.columns` | integer ≥ 1 | `1` | Text columns. The cover is always one column; `<docheader>` spans all columns; a phone page forces 1. |
+| `typ.column-dir` | `rtl`, `ltr`, `auto` | `auto` | Column order. Use `rtl` for Persian documents and `ltr` for English ones (set it in the front matter if the project default doesn't match). |
 | `[font] latin` / `persian` / `code` | font name | from the feel | Fonts. Latin is tried first for each character, then Persian. |
 | `[paragraph] justify` | `true` / `false` | `false` | Justified text. Tables and code are never justified. |
 | `[paragraph] letter-spacing` | number | `0` | Persian letters stay joined. |
@@ -168,7 +172,10 @@ HTML selects regular/bold faces by nearest weight per required style, including 
 theme: ocean
 feel: formal
 dir: rtl          # auto | rtl | ltr
-columns: 2
+typ:
+  columns: 2
+  header: ...
+  footer: ...
 heading:
   numbering: true
   number-suffix: "."
@@ -180,8 +187,6 @@ list:
 chat:
   ai-name: "دستیار پژوهشی"
 
-header: ...
-footer: ...
 bibliography: ...
 ---
 ```
@@ -190,22 +195,23 @@ bibliography: ...
 - **Quote** any text containing `{`, `: ` or ` #`: `end: "صفحه {page} از {pages}"`. Unquoted, `{` starts a YAML table and `#` starts a comment.
 - Lists: `["الف", "ب"]` or one `- item` per line.
 - An empty value (`color:`) means the default.
-- A document has a header only if it has `header:`; `enabled: false` inside turns it off while keeping the settings. A cover is a `<cover>` block in the body.
+- A document has a header only if it has `typ.header`; `enabled: false` inside turns it off while keeping the settings. A cover is a `<cover>` block in the body.
 - Booleans are `true` / `false`.
 
 ## Header
 
 ```yaml
-header:
-  style: line                       # minimal | line | band | double
-  start: "عنوان کوتاه سند"          # start side (right in RTL)
-  center: ""
-  end: "صفحه {page} از {pages}"
-  dir: auto                         # rtl | ltr | auto (the document's dir, else from the header text)
-  skip-first-page: true             # no header on page 1 (default true)
-  digits: auto                      # fa | en | auto (Persian when the text is RTL)
-  # logo: images/logo.png           # small logo before the start text
-  # enabled: false
+typ:
+  header:
+    style: line                       # minimal | line | band | double
+    start: "عنوان کوتاه سند"          # start side (right in RTL)
+    center: ""
+    end: "صفحه {page} از {pages}"
+    dir: auto                         # rtl | ltr | auto (the document's dir, else from the header text)
+    skip-first-page: true             # no header on page 1 (default true)
+    digits: auto                      # fa | en | auto (Persian when the text is RTL)
+    # logo: images/logo.png           # small logo before the start text
+    # enabled: false
 ```
 
 | Style | Look |
@@ -232,18 +238,19 @@ Placeholders in `start`, `center`, `end`:
 
 ## Footer
 
-Without `footer:` every page shows a plain centered page number. With it:
+Without `typ.footer` every page shows a plain centered page number. With it:
 
 ```yaml
-footer:
-  style: plain                # plain | line (rule above)
-  start: ""                   # start side
-  center: "{page}"
-  end: ""
-  digits: fa                  # fa | en | auto
-  dir: auto                   # rtl | ltr | auto (the document's dir, else from the footer text)
-  skip-first-page: false      # default false
-  # enabled: false            # no footer and no page number at all
+typ:
+  footer:
+    style: plain                # plain | line (rule above)
+    start: ""                   # start side
+    center: "{page}"
+    end: ""
+    digits: fa                  # fa | en | auto
+    dir: auto                   # rtl | ltr | auto (the document's dir, else from the footer text)
+    skip-first-page: false      # default false
+    # enabled: false            # no footer and no page number at all
 ```
 
 - Same placeholders as the header. Every key is optional: `footer: { center: "صفحه {page} از {pages}" }` is enough.
@@ -292,7 +299,7 @@ Any heading can override `numbering`, `number-prefix`, `number-suffix`, `toc`, `
 | Document | Suggested settings |
 |----------|--------------------|
 | Persian thesis | `feel = "formal"`, `theme = "paper"`, heading numbering on, `[list] numbers = "fa"` (or `abjad` for item lists), `<cover>` before the contents, `<toc break="true">`, `<lof>`, `<lot break="after">`, `[paragraph] justify = true` |
-| Conference-style paper | `feel = "formal"`, `columns: 2`, `column-dir = "rtl"` (Persian), `<docheader>` instead of a cover, `span=all` on wide tables and `span="all"` on wide `<fig>` / `<grid>` / `<code>`, `scale` 85–95 |
+| Conference-style paper | `feel = "formal"`, `typ: {columns: 2}`, `[typ] column-dir = "rtl"` (Persian), `<docheader>` instead of a cover, `span=all` on wide tables and `span="all"` on wide `<fig>` / `<grid>` / `<code>`, `scale` 85–95 |
 | Technical report / tutorial | `feel = "standard"`, header `style: band` or `line`, alerts and steps where useful |
 | Reading on a phone | `page = "mobile-20-9"` |
 | Slides-like handout or casual notes | `feel = "friendly"`, any theme |

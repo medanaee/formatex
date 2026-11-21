@@ -164,7 +164,7 @@ function attrDetail(spec: AttrSpec): string {
 }
 
 function attrSuggestions(attrs: Record<string, AttrSpec>, used: Set<string>, env: CompletionEnv, optionLine: boolean): Suggestion[] {
-  return Object.entries(attrs)
+  return Object.entries(outputAttrs(attrs))
     .filter(([name]) => !used.has(name))
     .map(([name, spec]) => {
       const shorthand = optionLine && spec.shorthand === "#"
@@ -177,6 +177,16 @@ function attrSuggestions(attrs: Record<string, AttrSpec>, used: Set<string>, env
         boost: spec.required ? 10 : 0,
       }
     })
+}
+
+/** Backend-only properties have no bare spelling; shared properties support both overrides. */
+function outputAttrs(attrs: Record<string, AttrSpec>): Record<string, AttrSpec> {
+  const out: Record<string, AttrSpec> = {}
+  for (const [name, spec] of Object.entries(attrs)) {
+    if (spec.domain) out[`${spec.domain}.${name}`] = spec
+    else { out[name] = spec; out[`html.${name}`] = { ...spec, required: false, shorthand: undefined }; out[`typ.${name}`] = { ...spec, required: false, shorthand: undefined } }
+  }
+  return out
 }
 
 function valueSuggestions(spec: AttrSpec, tag: string, quote: string, closed: boolean, env: CompletionEnv): Suggestion[] {
@@ -338,7 +348,7 @@ export function complete(text: string, pos: number, env: CompletionEnv): Complet
       if (name && spec && /^\s/.test(inside.slice(name.length))) {
         const context = readAttributes(inside.slice(name.length), lt + 1 + name.length)
         if (context.state === "name") return { from: context.from, options: attrSuggestions(spec.attrs, context.used, env, false) }
-        const attr = spec.attrs[context.attr]
+        const attr = outputAttrs(spec.attrs)[context.attr]
         if (!attr) return null
         const closed = context.quote !== "" && nextChar === context.quote
         const classes = tailwindAt(attr, env, context.from, text.slice(context.from, pos))
@@ -360,7 +370,7 @@ export function complete(text: string, pos: number, env: CompletionEnv): Complet
     if (spec) {
       const context = readAttributes(line.slice(brace + 1), lineStart + brace + 1)
       if (context.state === "name") return { from: context.from, options: attrSuggestions(spec.attrs, context.used, env, true) }
-      const attr = spec.attrs[context.attr]
+      const attr = outputAttrs(spec.attrs)[context.attr]
       if (!attr) return null
       const closed = context.quote !== "" && nextChar === context.quote
       const classes = tailwindAt(attr, env, context.from, line.slice(context.from - lineStart))
@@ -388,7 +398,7 @@ export function completeValue(text: string, pos: number, env: CompletionEnv): (C
   if (!spec || !/^\s/.test(inside.slice(name.length))) return null
   const context = readAttributes(inside.slice(name.length), lt + 1 + name.length)
   if (context.state !== "value") return null
-  const attr = spec.attrs[context.attr]
+  const attr = outputAttrs(spec.attrs)[context.attr]
   if (!attr) return null
   // The end of the value: its closing quote on this line, or the next space of an unquoted one
   const line = text.slice(pos).split("\n", 1)[0]

@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "Mathematical blocks: `<theorem>`, `<lemma>`, `<definition>`, `<corollary>`, `<example>`, `<remark>` and `<proof>`, numbered per kind, with optional `title` and `id`.\n\n- Seven kinds, each with its own counter: `<theorem>` «قضیه», `<lemma>` «لم», `<definition>` «تعریف», `<corollary>` «نتیجه», `<example>` «مثال», `<remark>` «نکته» (the label follows the language) and the unnumbered `<proof>` «اثبات», which ends with ∎.\n- Optional `title` and `id` (a `<ref>` target). Boxed kinds do not break across pages; the box corners and the side bar follow the feel. Leave blank lines inside the tag."
+  },
+  "fa": {
+    "about": "بلوک‌های ریاضی: `<theorem>`، `<lemma>`، `<definition>`، `<corollary>`، `<example>`، `<remark>` و `<proof>`؛ هر نوع شمارندهٔ خودش را دارد و `title` و `id` اختیاری است.\n\n- هفت نوع، هر کدام با شمارندهٔ خودش: `<theorem>` «قضیه»، `<lemma>` «لم»، `<definition>` «تعریف»، `<corollary>` «نتیجه»، `<example>` «مثال»، `<remark>` «نکته» (برچسب از زبان پیروی می‌کند) و `<proof>` «اثبات» که شماره ندارد و با ∎ پایان می‌یابد.\n- `title` و `id` (هدف `<ref>`) اختیاری‌اند. نوع‌های قاب‌دار بین دو صفحه نمی‌شکنند؛ گوشه‌ها و نوار کناری از حالت (feel) پیروی می‌کنند. داخل تگ خط خالی بگذارید."
+  },
+  "example": {
+    "en": "<theorem id=\"thm-main\" title=\"Uniqueness of limits\">\n\nA convergent sequence has exactly one limit.\n\n</theorem>\n\n<proof>\n\nSuppose it had two limits ...\n\n</proof>",
+    "fa": "<theorem id=\"thm-main\" title=\"یکتایی حد\">\n\nحد یک دنبالهٔ همگرا یکتاست.\n\n</theorem>\n\n<proof>\n\nفرض کنید دو حد داشته باشد ...\n\n</proof>"
+  }
+}

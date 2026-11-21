@@ -1,0 +1,7 @@
+name = "letter"
+version = "1.0.0"
+typ = "typst.typ"
+html = "html.tsx"
+css = "html.css"
+schema = "schema.json"
+docs = "docs.json"

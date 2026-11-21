@@ -9,6 +9,9 @@ import { initialFrame, splitHtml } from "@/lib/editor/htmlFrame"
 import { htmlPreviewQueue, previewDelay } from "@/lib/editor/latestTaskQueue"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
+import { useHtmlSourceStore } from "@/stores/useHtmlSourceStore"
+import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
+import { DocumentCompileError } from "@/lib/document/bridge"
 
 async function openExternal(url: string): Promise<void> {
   if (!/^(https?:|mailto:)/i.test(url)) return
@@ -28,6 +31,7 @@ export function HtmlPreview() {
   const [page, setPage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const sourceTarget = useHtmlSourceStore(state => state.target)
   const frame = useRef<HTMLIFrameElement>(null)
   const scroll = useRef(0)
   const viewer = useRef<Record<string, string>>({})
@@ -51,6 +55,7 @@ export function HtmlPreview() {
       scroll.current = 0
       viewer.current = {}
       useWorkspaceStore.getState().set({ htmlElapsedMs: null })
+      useHtmlSourceStore.setState({ available: false, target: null })
     }
     let valid = true
     const id = ++serial.current
@@ -66,10 +71,12 @@ export function HtmlPreview() {
         useWorkspaceStore.getState().set({ htmlElapsedMs: output.timings.total_ms })
         if (output.fontCss !== null) fonts.current = { key: output.fontKey, css: output.fontCss }
         const split = splitHtml(output.html)
+        useEditorStore.setState({ diagnostics: [], ok: true })
+        useHtmlSourceStore.setState({ available: !!split?.sourceMap })
         const patch = split && signature.current === split.signature && ready.current
         sample.current = { id, started, roundTripMs: duration.current, backendMs: output.timings.total_ms, mode: patch ? "patch" : "reload" }
         if (patch) {
-          frame.current?.contentWindow?.postMessage({ fxToken: frameToken.current, fxPatch: split.content, fontCss: output.fontCss, id }, "*")
+          frame.current?.contentWindow?.postMessage({ fxToken: frameToken.current, fxPatch: split.content, fxSourceMap: split.sourceMap, fontCss: output.fontCss, id }, "*")
         } else {
           ready.current = false
           frameToken.current = `${token}-${id}`
@@ -78,6 +85,7 @@ export function HtmlPreview() {
         }
         setError(null)
       } catch (failure) {
+        if (valid && failure instanceof DocumentCompileError) useEditorStore.setState({ diagnostics: failure.diagnostics, ok: false })
         if (valid) setError(failure instanceof CompilerUnavailableError ? t("editor.unavailable") : String((failure as Error)?.message ?? failure))
       } finally {
         if (valid) {
@@ -90,6 +98,11 @@ export function HtmlPreview() {
   }, [texts, projectId, mainFile, kind, i18n.language, t, token])
 
   useEffect(() => {
+    if (!sourceTarget || busy || !ready.current) return
+    frame.current?.contentWindow?.postMessage({ fxToken: frameToken.current, fxSourceReveal: sourceTarget }, "*")
+  }, [sourceTarget, busy, page])
+
+  useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || !event.data) return
       if (event.data.fxToken !== frameToken.current) return
@@ -100,8 +113,23 @@ export function HtmlPreview() {
         else viewer.current[key] = String(value)
         return
       }
-      if (event.data.fxReady === true) ready.current = true
-      else if (typeof event.data.fxPreviewScroll === "number") scroll.current = event.data.fxPreviewScroll
+      if (event.data.fxReady === true) {
+        ready.current = true
+        const target = useHtmlSourceStore.getState().target
+        if (target) frame.current?.contentWindow?.postMessage({ fxToken: frameToken.current, fxSourceReveal: target }, "*")
+      }
+      else if (event.data.fxSource && typeof event.data.fxSource.path === "string" && typeof event.data.fxSource.offset === "number" && Number.isFinite(event.data.fxSource.offset)) {
+        const { path, offset } = event.data.fxSource as { path: string; offset: number }
+        const store = useEditorStore.getState()
+        if (!store.files.some(file => file.path === path)) return
+        void store.load(path).then(() => {
+          const text = useEditorStore.getState().texts[path]
+          if (text === undefined || offset < 0 || offset > text.length) return
+          const before = text.slice(0, offset), line = before.split("\n").length, column = before.length - before.lastIndexOf("\n")
+          void useEditorStore.getState().revealAt(path, line, column)
+        })
+      }
+      else if (typeof event.data.fxPreviewScroll === "number") { scroll.current = event.data.fxPreviewScroll; usePreviewScrollStore.getState().manualScroll() }
       else if (typeof event.data.fxPreviewOpen === "string") void openExternal(event.data.fxPreviewOpen)
       else if (event.data.fxPainted === sample.current.id) {
         console.debug("[formatex] html-preview", { ...sample.current, endToEndMs: performance.now() - sample.current.started, applyAndPaintMs: event.data.elapsed })

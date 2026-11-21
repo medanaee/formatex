@@ -43,6 +43,17 @@ export interface PageMap {
   height: number
   links: PageLink[]
   texts: PageText[]
+  /** Preview-only semantic ranges, already split at visual line/page boundaries. */
+  sources?: PageSource[]
+}
+
+export interface PageSource {
+  x: number
+  y: number
+  w: number
+  h: number
+  node: string
+  source: { file: string; utf16Start: number; utf16End: number; generated: boolean }[]
 }
 
 /** A page the compiler sent: its content hash, and its SVG and map unless the frontend already had that hash. */
@@ -164,6 +175,11 @@ export async function exportHtml(
 ): Promise<Uint8Array> {
   // The page's own words (toolbar, menus) are in the language of the app, not of the document
   const uiLang = i18n.language?.startsWith("fa") ? "fa" : "en"
+  if (kind !== "typst") {
+    const { independentHtml } = await import("@/lib/document/bridge")
+    const output = await independentHtml(invoke, projectId, main, overrides ?? {}, options, uiLang, "", path)
+    return path ? new Uint8Array() : new TextEncoder().encode(output.html)
+  }
   return new Uint8Array(await invoke<ArrayBuffer>("export_html", { projectId, main, overrides, kind, options: { ...options, uiLang, math: options.katexMath ? 'katex' : 'native' }, path }))
 }
 
@@ -182,7 +198,15 @@ export interface HtmlPreviewOutput {
 
 export function previewHtml(projectId: string, main: string, options: HtmlExportOptions, overrides: Record<string, string>, kind: ProjectKind, knownFonts: string): Promise<HtmlPreviewOutput> {
   const uiLang = i18n.language?.startsWith("fa") ? "fa" : "en"
+  if (kind !== "typst") return import("@/lib/document/bridge").then(({ independentHtml }) => independentHtml(invoke, projectId, main, overrides, options, uiLang, knownFonts, undefined, true))
   return invoke<HtmlPreviewOutput>("preview_html", { projectId, main, overrides, kind, options: { ...options, uiLang, math: options.katexMath ? 'katex' : 'native' }, knownFonts })
+}
+
+/** Uses the same evaluated settings as HTML output, including document expressions. */
+export async function documentHtmlSettings(projectId: string, main: string, overrides: Record<string,string>): Promise<import("@formatex/core").Settings> {
+  const result = await invoke<{ok:boolean;document?:{settings:import("@formatex/core").Settings};diagnostics?:Diagnostic[]}>("prepare_document",{projectId,main,overrides})
+  if (!result.ok || !result.document) throw new Error(result.diagnostics?.map(d => d.message).join("\n") || "Document preparation failed")
+  return result.document.settings
 }
 
 export const listFonts = (): Promise<FontFamily[]> => invoke<FontFamily[]>("fonts_list", {})

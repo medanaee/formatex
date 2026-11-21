@@ -1,0 +1,24 @@
+{
+  "dir": {
+    "kind": "block",
+    "description": {
+      "en": "text direction of a part",
+      "fa": "جهت متن یک بخش"
+    },
+    "attrs": {
+      "to": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "bare": true,
+        "doc": {
+          "en": "`rtl`, `ltr` or `auto`. May be written bare: `<dir rtl>`",
+          "fa": "`rtl`، `ltr` یا `auto`. می‌توان بی‌نام نوشت: `<dir rtl>`"
+        }
+      }
+    }
+  }
+}

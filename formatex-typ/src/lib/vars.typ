@@ -12,7 +12,7 @@
 #import "/src/lib/remote.typ": is-remote, remote-path
 
 #let name-re = regex("^[\\p{L}_][\\p{L}\\p{N}_-]*$")
-#let keywords = ("if", "else", "for", "while", "in", "and", "or", "not", "let", "set", "show", "import", "include", "return", "break", "continue", "context", "true", "false", "none", "auto", "setting")
+#let var-keywords = ("if", "else", "for", "while", "in", "and", "or", "not", "let", "set", "show", "import", "include", "return", "break", "continue", "context", "true", "false", "none", "auto", "setting")
 #let metadata-names = ("title", "subtitle", "author", "date", "institution", "faculty", "department", "supervisor", "advisor")
 #let number-re = regex("^-?\\d+(\\.\\d+)?$")
 #let length-re = regex("^-?\\d+(\\.\\d+)?(pt|mm|cm|in|em|%)$")
@@ -103,6 +103,16 @@
 }
 
 #let build-settings(config, inputs) = {
+  let path-value(object, parts) = {
+    let value = object
+    for part in parts { value = if type(value) == dictionary { value.at(part, default: none) } else { none } }
+    value
+  }
+  let with-path(object, parts, value) = {
+    let key = parts.first()
+    object.insert(key, if parts.len() == 1 { if type(value) == dictionary and type(object.at(key, default: none)) == dictionary { object.at(key) + value } else { value } } else { with-path(object.at(key, default: (:)), parts.slice(1), value) })
+    object
+  }
   let document = config-schemas.at("front-matter")
   let attrs = config-schemas.config.attrs + document.attrs
   let out = (:)
@@ -112,14 +122,16 @@
     out.insert(key, if value == none { typed-setting(spec.at("default", default: none), spec) } else { value })
   }
   for (table, spec) in document.tables {
-    let written = config.at(table, default: (:))
-    let part = (:)
+    let parts = table.split(".")
+    let written = path-value(config, parts)
+    let part = if type(written) == dictionary { written } else { (:) }
     for (key, attr) in spec.attrs {
       let raw = if type(written) == dictionary { written.at(key, default: none) } else { none }
       let value = typed-setting(raw, attr)
-      part.insert(key, if value == none { typed-setting(attr.at("default", default: none), attr) } else { value })
+      let resolved = if value == none { typed-setting(attr.at("default", default: none), attr) } else { value }
+      if resolved != none { part.insert(key, resolved) }
     }
-    out.insert(table, part)
+    out = with-path(out, parts, part)
   }
   for (key, value) in config {
     if key not in out { out.insert(key, value) }
@@ -149,7 +161,7 @@
   let values = (:)
   for name in names {
     let at = locate("vars", name)
-    assert(name.match(name-re) != none and name not in keywords, message: at + "a variable name is letters, digits, - and _ (and not " + keywords.join(", ") + "), got " + repr(name))
+    assert(name.match(name-re) != none and name not in var-keywords, message: at + "a variable name is letters, digits, - and _ (and not " + var-keywords.join(", ") + "), got " + repr(name))
     assert(upper(name) != name or lower(name) == name, message: at + "a name in capitals (" + name + ") is for a value of the page (PAGE, PAGES, SECTION); give the variable a lower case letter")
     let rule = rules.at(name, default: none)
     let raw = inputs.at("var." + name, default: given.at(name, default: none))

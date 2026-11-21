@@ -1,0 +1,187 @@
+{
+  "diff": {
+    "kind": "block",
+    "description": {
+      "en": "Comparison of two versions of code or text",
+      "fa": "مقایسهٔ دو نسخه از کد یا متن"
+    },
+    "attrs": {
+      "mode": {
+        "type": "enum",
+        "values": [
+          "split",
+          "unified"
+        ],
+        "default": "split",
+        "doc": {
+          "en": "`split` (default) or `unified`. Any other value is a compile error.",
+          "fa": "`split` (پیش‌فرض) یا `unified`. هر مقدار دیگر خطای کامپایل است."
+        }
+      },
+      "lang": {
+        "type": "string",
+        "doc": {
+          "en": "Highlighting language. Default: the fence language of `<before>` (else `<after>`), or the file extension with `src`.",
+          "fa": "زبان رنگ‌آمیزی. پیش‌فرض: زبان بلوک کد `<before>` (وگرنه `<after>`)، یا پسوند فایل با `src`."
+        }
+      },
+      "caption": {
+        "type": "string",
+        "doc": {
+          "en": "Numbered caption: «تغییرات ۱: ...» / \"Diff 1: ...\".",
+          "fa": "عنوان شماره‌دار: «تغییرات ۱: ...» / \"Diff 1: ...\"."
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for `<ref>`: «تغییرات ۱» / \"Diff 1\".",
+          "fa": "هدف `<ref>`: «تغییرات ۱» / \"Diff 1\"."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`, `ltr` or `auto` (default). Decides the side order and the default titles.",
+          "fa": "`rtl`، `ltr` یا `auto` (پیش‌فرض). ترتیب دو طرف و عنوان‌های پیش‌فرض را تعیین می‌کند."
+        }
+      },
+      "span": {
+        "type": "enum",
+        "values": [
+          "column",
+          "all"
+        ],
+        "default": "column",
+        "doc": {
+          "en": "`column` (default) or `all`. In a multi-column document, `all` puts the comparison across all columns.",
+          "fa": "`column` (پیش‌فرض) یا `all`. در سند چندستونه، `all` مقایسه را روی همهٔ ستون‌ها می‌گذارد."
+        }
+      }
+    },
+    "children": [
+      "before",
+      "after",
+      "old",
+      "new"
+    ]
+  },
+  "before": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Old version of a <diff>",
+      "fa": "نسخهٔ قبلی در <diff>"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Header title in split mode",
+          "fa": "عنوان سربرگ در حالت split"
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "File to load instead of the code block",
+          "fa": "فایلی که به‌جای بلوک کد بارگذاری می‌شود"
+        }
+      }
+    }
+  },
+  "old": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "Old version of a <diff> (alias of <before>)",
+      "fa": "نسخهٔ قبلی در <diff> (نام دیگر <before>)"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Header title in split mode",
+          "fa": "عنوان سربرگ در حالت split"
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "File to load instead of the code block",
+          "fa": "فایلی که به‌جای بلوک کد بارگذاری می‌شود"
+        }
+      }
+    }
+  },
+  "after": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "New version of a <diff>",
+      "fa": "نسخهٔ جدید در <diff>"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Header title in split mode",
+          "fa": "عنوان سربرگ در حالت split"
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "File to load instead of the code block",
+          "fa": "فایلی که به‌جای بلوک کد بارگذاری می‌شود"
+        }
+      }
+    }
+  },
+  "new": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "New version of a <diff> (alias of <after>)",
+      "fa": "نسخهٔ جدید در <diff> (نام دیگر <after>)"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Header title in split mode",
+          "fa": "عنوان سربرگ در حالت split"
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "File to load instead of the code block",
+          "fa": "فایلی که به‌جای بلوک کد بارگذاری می‌شود"
+        }
+      }
+    }
+  },
+  "del": {
+    "kind": "inline",
+    "description": {
+      "en": "Inline deletion mark",
+      "fa": "علامت حذف درون‌خطی"
+    },
+    "attrs": {}
+  },
+  "ins": {
+    "kind": "inline",
+    "description": {
+      "en": "Inline insertion mark",
+      "fa": "علامت درج درون‌خطی"
+    },
+    "attrs": {}
+  }
+}

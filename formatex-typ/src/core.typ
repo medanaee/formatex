@@ -3,7 +3,6 @@
 #import "/src/themes.typ": themes
 #import "@preview/fontawesome:0.6.2": fa-icon
 #import "/src/lib/option-schema.typ": option-schemas, option-keys
-#import "/src/preprocess/comments.typ": strip-comments
 #import "/src/lib/vars.typ": make-env
 #import "/src/preprocess/evaluate.typ": resolve-strings
 
@@ -149,12 +148,29 @@
   }
   out
 }
-#let raw-config = merge-config(base-config, front-matter)
+#let document-config = merge-config(base-config, front-matter)
+#let config-target = if sys.inputs.at("target", default: "typ") == "html" { "html" } else { "typ" }
+#let raw-config = merge-config(
+  merge-config(base-config, base-config.at(config-target, default: (:))),
+  merge-config(front-matter, front-matter.at(config-target, default: (:))),
+)
+#let check-output-domains(layer) = {
+  for key in ("page", "page-width", "page-height", "margin", "columns", "column-dir", "header", "footer") {
+    assert(key not in layer, message: setting-prefix(key) + key + " is paged-only; move it under typ." + key)
+  }
+  for key in ("toolbar", "outline", "progress", "embed-fonts") {
+    assert(key not in layer, message: setting-prefix(key) + key + " is HTML-only; move it under html." + key)
+  }
+  assert("copy-button" not in layer.at("code", default: (:)), message: setting-prefix("code", "copy-button") + "Use [html.code] copy-button; this setting is HTML-only")
+  assert("copy-code" not in layer.at("html", default: (:)), message: setting-prefix("html", "copy-code") + "Use [html.code] copy-button")
+}
+#check-output-domains(base-config)
+#check-output-domains(front-matter)
 // The variables (`vars` of config.toml and of the front matter, `--input var.name=...`), and the settings with their `{{ ... }}` resolved
 #let make-var-env(config) = make-env(base-config.at("vars", default: (:)), front-matter.at("vars", default: (:)), base-config.at("var-types", default: (:)), front-matter.at("var-types", default: (:)), config, sys.inputs, setting-prefix)
 #let config = resolve-strings(raw-config, make-var-env(raw-config), setting-prefix)
 // What `{{ }}` in the text sees: the variables, and the settings as they are shown (with their own `{{ }}` put in)
-#let var-env = make-var-env(config)
+#let var-env = make-var-env(resolve-strings(document-config, make-var-env(document-config), setting-prefix))
 // Themes of the user: `[themes.<name>]` in config.toml, with hex colors (`bg = "#ffffff"`). `base` names the theme to start from;
 // a color left out comes from it (paper, or midnight when `dark = true`).
 #let theme-color-keys = ("bg", "fg", "heading", "muted", "accent", "secondary", "rule", "code-bg", "code-stroke")
@@ -372,9 +388,7 @@
 
 #let is-rtl(body) = text-dir(body) != ltr
 
-// The output is HTML (`--input target=html`, set by the app's HTML export): `src/html/` makes the page's rules and the tags
-// that have an HTML form; a tag without one is drawn as an inline picture. It is an input, not `target()`, so the PDF's code
-// never has to ask in a `context`.
+// HTML preparation and graphic fragments select HTML-specific configuration overrides.
 #let html-mode = sys.inputs.at("target", default: "pdf") == "html"
 
 // Text direction: "auto" = every block from its first letter; "rtl" / "ltr" force it on everything.

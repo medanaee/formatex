@@ -1,5 +1,9 @@
 # Components reference
 
+Most built-in `html.tsx` files currently delegate to `renderBuiltin(node, context)`; the corresponding JSX/behavior still lives centrally in `formatex-html/src/components.tsx`. Package folders are editable extension points with shared contracts, but this is not completed per-component JSX ownership. Extracting each built-in renderer into its own package remains open; custom package TSX already uses the independent renderer API.
+
+Shared component source packages now live in `formatex-core/components/<name>/` with separate `manifest.toml`, `schema.json`, `docs.json`, `typst.typ`, `html.tsx` and `html.css`. Core owns their common schema/docs, and the generated standalone distribution consumes shared IR through the PDF renderer. The full nested demo and named HTML/app integration fixtures pass; every component/option combination and real Android native interaction remain separate gates. HTML component content is static SSR, while the React viewer shell hydrates; arbitrary component events/state are not hydrated.
+
 Every component is an HTML-like tag inside the Markdown. General rules (repeated from SKILL.md):
 
 1. Always close tags: `<toc></toc>`, `<ref to="x"></ref>`. (`<img ...>` and `<include ... />` are the exceptions shown below.)
@@ -30,7 +34,7 @@ The HTML toolbar's Find magnifier searches rendered document text literally and 
 - Fenced code blocks get line numbers. With a language (` ```python `) they also get a badge with the language name and icon. Aliases like `py`, `js`, `ts`, `sh`, `yml`, `md` work; an unknown language still shows its name.
 - A ` ```mermaid ` block is not shown as code: it is drawn as a diagram (see [Mermaid diagrams](#mermaid-diagrams)).
 - Numbered list items may use Persian digits (`۱.`, `۲)`); see [Lists](#lists).
-- Pandoc-style citations `[@key]` also work, but prefer `<cite>`.
+- Pandoc-style citations `[@key]` create semantic citations outside protected code/math; inside code/math they stay literal. Keys must exist in the bibliography. `<cite>` is also available.
 - Footnotes can be written using standard Markdown syntax or inline `<fn>` tags.
 - Comments: `<!-- note -->` is removed before any other processing. It may sit mid-line or span lines (ends at the first `-->`; no nesting), so wrap a whole section in `<!--` … `-->` to switch it off: headings with `{#id}`, tables, components and `<include>` lines inside are ignored. A line holding only a comment disappears (a paragraph is not split). `<!--` inside fenced or inline code is plain text. Never write `-->` inside a comment you want to keep open. Use `<!--` for notes in the Markdown body; `#` comments belong to the YAML front matter only.
 
@@ -104,7 +108,7 @@ Bulleted (`-`, `*`, `+`) and numbered (`1.`, `1)`) Markdown lists. Numbered item
 ```
 
 - Only `.` and `)` after the number make an item; `۱- item` is plain text.
-- Two numbered lists separated only by a blank line merge into one (standard Markdown). Put a paragraph or a `{...}` line between them to keep them apart.
+- After a blank-line separation, an explicit number differing from the expected next marker starts a new list at that value: `۱.`, `۲.`, blank, `۲.` restarts at 2. Loose `۱.`, blank, `۲.`, blank, `۳.` remains continuous. A paragraph or `{...}` line can also separate lists.
 - How every list is numbered and bulleted comes from `[list]` in `config.toml` or front matter `list:` (numbers, prefix, suffix, marker, indent; see config.md). Default: Persian digits in a Persian list, Latin in an English one.
 
 Optionally, one `{...}` line directly above a list (a blank line in between is allowed) sets options for that list:
@@ -385,7 +389,7 @@ A box takes the full available width; its height follows the content.
 - Spacing is `0.25em` per step (`p-4` = `1em`) and follows `scale`; `[...]` takes any length (`p-[10pt]`).
 - A color name without a shade is the same theme-aware tint as `<box color>`; a shade (`bg-blue-100`) is exactly Tailwind's color (the mirrored shade on a dark theme); `/N` mixes that percent into the page color (text color for `text-*`). `white` is the page color, `black` the text color.
 - Rounding scales the feel's box radius, so `formal` stays square whatever the class says.
-- Every nested `<div>` and every run of content between blank lines is one flex item. Items start at their content width and shrink when the row is too narrow; `flex-col` without `h-*` is normal flow and breaks across pages.
+- Every nested `<div>` and every run of content between blank lines is one flex item; internal/source metadata does not count as another item. Equal `flex-1` children share available width, including nested card/pill rows. `flex-col` without `h-*` is normal flow and breaks across pages.
 - An unknown class is a compile error naming it. Grid classes and shadows are not supported; use `<grid>`.
 - In a `flex-col` text lines stack with no extra leading, so add `gap-1` or more between text items.
 
@@ -758,7 +762,8 @@ As <cite key="vaswani2017attention" form="prose"></cite> showed ...
 
 - Targets: headings with `{#id}`, `<fig id>`, tables with `#id`, lists with `#id`, equations with `{#id}`, `<code id>`, `<diff id>`, theorem blocks with `id`.
 - Printed text follows the language of the surrounding paragraph: «شکل ۱», «جدول ۲», «فهرست ۱», «رابطهٔ (۳)», «بخش ۴», «قضیه ۵», «کد ۱», «تغییرات ۱» or "Figure 1", "Table 2", "List 1", "Equation (3)", "Section 4", "Theorem 5", "Listing 1", "Diff 1".
-- Text inside the tag replaces the generated label; the link still works.
+- Paired `<ref to="id">custom text</ref>` preserves its body in PDF and HTML, replacing the generated label while retaining the link; empty paired tags use the generated label.
+- Inline refs and definitions inherit their own lexical paragraph/scope direction. In a forced-RTL document, explicitly wrap English sections in `<dir ltr> ... </dir>` or `<dir to="ltr"> ... </dir>`; auto direction does not silently override the forced document setting.
 - A heading without an id can be referenced by its exact text (`to="روش پیشنهادی"`), but an id is more robust.
 
 ## Marking text and defining terms: `<span>`, `<anchor>`, `<def>`

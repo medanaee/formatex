@@ -1,0 +1,175 @@
+{
+  "chart": {
+    "kind": "block",
+    "description": {
+      "en": "data charts",
+      "fa": "نمودار داده"
+    },
+    "attrs": {
+      "type": {
+        "type": "enum",
+        "values": [
+          "bar",
+          "line",
+          "pie",
+          "donut"
+        ],
+        "default": "bar",
+        "doc": {
+          "en": "`bar` (default), `line`, `pie`, `donut`.",
+          "fa": "`bar` (پیش‌فرض)، `line`، `pie`، `donut`."
+        }
+      },
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "CSV file with the same layout as the table, relative to the project root.",
+          "fa": "فایل CSV با همان چیدمان جدول، نسبت به پوشهٔ ریشهٔ پروژه."
+        }
+      },
+      "values": {
+        "type": "bool",
+        "default": "false",
+        "doc": {
+          "en": "`false` (default) or `true`: print the values on the bars / points. On pie / donut the legend shows the values too, and a donut shows the total in its centre.",
+          "fa": "`false` (پیش‌فرض) یا `true`: مقدارها روی میله‌ها / نقطه‌ها چاپ می‌شوند. در `pie` / `donut` راهنما هم مقدارها را نشان می‌دهد و نمودار حلقه‌ای جمع کل را در مرکزش می‌نویسد."
+        }
+      },
+      "legend": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "true",
+          "false"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: shown for pie / donut or when there is more than one series), `true`, `false`.",
+          "fa": "`auto` (پیش‌فرض: برای `pie` / `donut` یا وقتی بیش از یک سری هست نمایش داده می‌شود)، `true`، `false`."
+        }
+      },
+      "unit": {
+        "type": "string",
+        "doc": {
+          "en": "Suffix after values and axis ticks, e.g. `%` or `h`.",
+          "fa": "پسوند بعد از مقدارها و عددهای محور، مثلاً `%` یا `h`."
+        }
+      },
+      "width": {
+        "type": "length",
+        "default": "100%",
+        "doc": {
+          "en": "Length or `%` of the line width. Default `100%`.",
+          "fa": "طول یا `%` از پهنای خط. پیش‌فرض `100%`."
+        }
+      },
+      "height": {
+        "type": "length",
+        "doc": {
+          "en": "Bare number (points) or length. Default `150` for pie / donut, `170` otherwise.",
+          "fa": "عدد تنها (پوینت) یا طول. پیش‌فرض برای `pie` / `donut` مقدار `150` و برای بقیه `170`."
+        }
+      },
+      "x-title": {
+        "type": "string",
+        "doc": {
+          "en": "Axis titles (bar and line). The y title is rotated.",
+          "fa": "عنوان محورها (میله‌ای و خطی). عنوان محور عمودی چرخانده می‌شود."
+        }
+      },
+      "y-title": {
+        "type": "string",
+        "doc": {
+          "en": "Axis titles (bar and line). The y title is rotated.",
+          "fa": "عنوان محورها (میله‌ای و خطی). عنوان محور عمودی چرخانده می‌شود."
+        }
+      },
+      "min": {
+        "type": "number",
+        "doc": {
+          "en": "Fix the value axis range. Without them a round scale is chosen automatically; bar charts always include 0.",
+          "fa": "بازهٔ محور مقدار را ثابت می‌کنند. بدون آن‌ها یک مقیاس رُند خودکار انتخاب می‌شود؛ نمودار میله‌ای همیشه صفر را دربر دارد."
+        }
+      },
+      "max": {
+        "type": "number",
+        "doc": {
+          "en": "Fix the value axis range. Without them a round scale is chosen automatically; bar charts always include 0.",
+          "fa": "بازهٔ محور مقدار را ثابت می‌کنند. بدون آن‌ها یک مقیاس رُند خودکار انتخاب می‌شود؛ نمودار میله‌ای همیشه صفر را دربر دارد."
+        }
+      },
+      "colors": {
+        "type": "string",
+        "doc": {
+          "en": "Comma-separated colors, one per series (per slice on pie / donut), reused in turn: color presets, `accent`, or hex `#rrggbb`. Default: the theme's accent, then teal, pink, yellow, purple, green, red, blue.",
+          "fa": "رنگ‌های جداشده با ویرگول، یکی برای هر سری (در `pie` / `donut` برای هر برش)، که به نوبت تکرار می‌شوند: رنگ‌های آماده، `accent` یا hex به شکل `#rrggbb`. پیش‌فرض: رنگ تأکید تم، سپس teal، pink، yellow، purple، green، red، blue."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the caption, else the labels; follows the `dir` setting and `<dir>`), `rtl`, `ltr`.",
+          "fa": "`auto` (پیش‌فرض: از عنوان، وگرنه از برچسب‌ها؛ از تنظیم `dir` و `<dir>` پیروی می‌کند)، `rtl`، `ltr`."
+        }
+      },
+      "caption": {
+        "type": "string",
+        "doc": {
+          "en": "Numbered caption below the chart: «شکل ۱: ...» / \"Figure 1: ...\". Listed in `<lof>`. Not parsed as Markdown.",
+          "fa": "عنوان شماره‌دار زیر نمودار: «شکل ۱: ...» / \"Figure 1: ...\". در `<lof>` می‌آید. Markdown داخلش پردازش نمی‌شود."
+        }
+      },
+      "numbering": {
+        "type": "bool",
+        "doc": {
+          "en": "Number it («شکل ۱»). Default: `[figure] numbering` (on). With the number off, the caption stands alone.",
+          "fa": "شماره بخورد («شکل ۱»). پیش‌فرض: `[figure] numbering` (روشن). با شمارهٔ خاموش عنوان تنها می‌آید."
+        }
+      },
+      "caption-position": {
+        "type": "enum",
+        "values": [
+          "above",
+          "below"
+        ],
+        "doc": {
+          "en": "Where the number and caption go. Default: `[figure] caption-position` (`below`).",
+          "fa": "جای شماره و عنوان. پیش‌فرض: `[figure] caption-position` (`below`)."
+        }
+      },
+      "lof": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`false` leaves it out of `<lof>`.",
+          "fa": "`false` آن را از `<lof>` بیرون می‌گذارد."
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for `<ref>`. Gives a number even without a caption.",
+          "fa": "هدف `<ref>`. حتی بدون عنوان هم شماره می‌دهد."
+        }
+      },
+      "span": {
+        "type": "enum",
+        "values": [
+          "column",
+          "all"
+        ],
+        "default": "column",
+        "doc": {
+          "en": "`column` (default) or `all`, as on `<tree>`.",
+          "fa": "`column` (پیش‌فرض) یا `all`، مثل `<tree>`."
+        }
+      }
+    }
+  }
+}

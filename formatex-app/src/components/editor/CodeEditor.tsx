@@ -39,6 +39,9 @@ import { editorHighlighting, editorTheme } from "@/lib/editor/theme"
 import type { FileKind } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
+import { useHtmlSourceStore } from "@/stores/useHtmlSourceStore"
+import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
+import { usePreviewScrollStore } from "@/stores/usePreviewScrollStore"
 import { useSchemaStore } from "@/stores/useSchemaStore"
 
 /** Marks a change that came from outside (a rename, a reload): it is not reported back as an edit. */
@@ -203,6 +206,9 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         editorTheme,
         editorHighlighting,
         EditorView.updateListener.of((update) => {
+          if (latest.current.primary && update.view.hasFocus && (update.selectionSet || update.docChanged) && useWorkspaceStore.getState().previewMode === "html" && Date.now() >= usePreviewScrollStore.getState().manualUntil) {
+            useHtmlSourceStore.getState().show(current.current.path ?? "", update.state.selection.main.head, false)
+          }
           if (latest.current.primary) publishHistory(update.state)
           // The cursor moved into the value of an attribute: offer the values it takes, to switch to another (a click, or a key along the line)
           if (update.docChanged) valueKey = ""

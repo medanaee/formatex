@@ -17,6 +17,7 @@ use typst_kit::fonts::{self, FontPath, FontStore};
 /// The fonts that ship with the app (`formatex-app/fonts`): the families the engine's feels, code blocks and icons use, so a
 /// document looks the same on a machine, or an Android phone, that has none of them installed.
 static BUNDLED: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../fonts");
+static MATH_FONTS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../../formatex-html/assets/fonts");
 
 pub struct FontService {
     fonts_dir: PathBuf,
@@ -87,6 +88,7 @@ fn origin(store: &FontStore, index: usize, fonts_dir: &Path) -> &'static str {
 fn bundled() -> impl Iterator<Item = (Font, FontInfo)> {
     BUNDLED
         .files()
+        .chain(MATH_FONTS.files())
         .filter(|file| file.path().extension().is_some_and(|e| e == "ttf" || e == "otf"))
         .flat_map(|file| Font::iter(Bytes::new(file.contents())))
         .map(|font| {

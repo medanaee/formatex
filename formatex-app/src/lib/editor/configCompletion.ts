@@ -115,11 +115,16 @@ export function inFrontMatter(text: string, pos: number): boolean {
 /** The key of the block a line at `indent` belongs to (`header` for an indented line under `header:`), or `""` at the top level. */
 function yamlParent(lines: string[], index: number, indent: number): string {
   if (indent === 0) return ""
+  const path: string[] = []
+  let level = indent
   for (let i = index - 1; i >= 0; i--) {
     const match = /^(\s*)([\w-]+):\s*$/.exec(lines[i])
-    if (match && match[1].length < indent) return match[2]
+    if (match && match[1].length < level) {
+      path.unshift(match[2]); level = match[1].length
+      if (level === 0) break
+    }
   }
-  return ""
+  return path.join(".")
 }
 
 function yamlSiblingKeys(lines: string[], index: number, indent: number, parentIndent: number): Set<string> {
@@ -166,15 +171,21 @@ export function completeFrontMatter(text: string, pos: number, env: CompletionEn
   // A key: he
   const key = /^\s*([\w-]*)$/.exec(before)
   if (key) {
-    const parentIndent = parent ? (/^\s*/.exec(lines.slice(0, index).reverse().find((line) => new RegExp(`^\\s*${parent}:\\s*$`).test(line)) ?? "")![0].length) : -1
+    const parentIndent = parent ? Math.max(0, indent - 2) : -1
     const present = yamlSiblingKeys(lines, index, indent, parentIndent)
     const options: Suggestion[] = Object.entries(attrs)
       .filter(([name]) => !present.has(name))
       .map(([name, spec]) => attrSuggestion(name, spec, env, `${name}: `))
     // At the top level the blocks (header, footer, ...) are keys too
-    if (!parent) {
+    {
+      const offered = new Set<string>()
       for (const [name, table] of Object.entries(config.tables)) {
-        if (!present.has(name)) options.push({ label: name, kind: "tag", detail: "block", info: localized(table.doc, env.language), template: `${name}:\n  ${KEY_PLACEHOLDER}`, boost: 1 })
+        const prefix = parent ? `${parent}.` : ""
+        if (!name.startsWith(prefix)) continue
+        const child = name.slice(prefix.length).split(".")[0]
+        if (!child || offered.has(child) || present.has(child)) continue
+        offered.add(child)
+        options.push({ label: child, kind: "tag", detail: "block", info: localized(table.doc, env.language), template: `${child}:\n${" ".repeat(indent + 2)}${KEY_PLACEHOLDER}`, boost: 1 })
       }
     }
     return { from: pos - key[1].length, options }

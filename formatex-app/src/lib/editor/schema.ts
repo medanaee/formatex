@@ -9,6 +9,7 @@ export interface LocalizedText {
 export type AttrType = "enum" | "color" | "string" | "number" | "length" | "path" | "bool" | "int" | "id"
 
 export interface AttrSpec {
+  domain?: "html" | "typ"
   type: AttrType
   values?: string[]
   default?: string

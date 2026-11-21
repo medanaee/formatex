@@ -20,7 +20,6 @@ feel = "formal"
 # "desktop-letter", "desktop-legal", "desktop-tabloid", "desktop-square", or for phones "mobile-16-9", "mobile-18-9", "mobile-20-9",
 # "mobile-21-9" (110 mm wide, small margins, one column, header center item hidden), or "custom" with page-width and page-height.
 # A custom page narrower than 120 mm gets the phone rules too. The old names "a4" and "mobile" still work.
-page = "desktop-a4"
 # page-width = "148mm"    # only with page = "custom": mm, cm, in or pt
 # page-height = "210mm"
 
@@ -38,7 +37,6 @@ page = "desktop-a4"
 # audience = ["student", "teacher", "parent"]
 
 # Page margins: "narrow" (15 mm sides on A4), "normal" (about 25 mm), "wide" (35 mm sides); other sizes scale. Ignored on phone pages. Default: "normal"
-margin = "normal"
 
 # Size of everything on the page, in percent: text, headings, code, tables, paddings, corners
 # and rules grow or shrink together; the page size and margins stay the same. Default: 100
@@ -53,9 +51,7 @@ dir = "rtl"
 
 # Text columns: 1 or 2 (or more). The cover stays one column, <docheader> spans all columns,
 # and the mobile page size always uses one. Usually set per document in front matter: `columns: 2`
-columns = 1
 # Which column is filled first: "rtl" = right column first, "ltr" = left first, "auto" = Typst decides
-column-dir = "rtl"
 
 # Draft notes: "show" (default) or "hide" — "hide" removes every <todo> and the <todos> list
 # for the final version. `--input todo=hide` overrides it.
@@ -69,6 +65,12 @@ answers = "show"
 # exercise-toc = false
 
 # Fonts (any installed font; see `typst fonts`). Override the feel's fonts; leave commented to use them.
+[typ]
+page = "desktop-a4"
+margin = "normal"
+columns = 1
+column-dir = "rtl"
+
 [font]
 # # English text. Default: the feel's font
 # latin = "Lexend"
@@ -200,7 +202,7 @@ numbering = "labelled"
 
 # The HTML output: the live HTML preview and the Export HTML dialog start from these (the dialog can change them for one export).
 [html]
-# Math renderer in HTML: "native" (Typst built-in) or "katex" (embedded offline KaTeX bundle)
+# Math renderer in HTML: "native" (browser MathML) or "katex" (pre-rendered offline HTML)
 math = "native"
 # A slim toolbar: zoom, theme and feel
 toolbar = true
@@ -209,6 +211,8 @@ progress = true
 # An outline of the headings in a sidebar on the right (a drawer on a phone)
 outline = true
 # A copy button on every code block
-copy-code = true
 # The font files inside the HTML (a few MB bigger; the same look on any machine)
 embed-fonts = true
+
+[html.code]
+copy-button = true

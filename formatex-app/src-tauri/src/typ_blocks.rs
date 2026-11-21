@@ -17,7 +17,7 @@ use crate::compile::{Diagnostic, Engine, convert};
 use crate::world::ProjectWorld;
 
 /// The file the engine's `<typ>` runs `eval` in: a mistake with this path has lost its place inside the block.
-const ENGINE_FILE: &str = "components/typ.typ";
+const ENGINE_FILE: &str = "components/typ/typst.typ";
 
 /// The small file a block is built alone in (never written to disk: it is served beside the editor's unsaved texts).
 const CHECK_FILE: &str = "__typ_check.typ";

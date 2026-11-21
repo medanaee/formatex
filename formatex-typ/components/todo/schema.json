@@ -1,0 +1,96 @@
+{
+  "todo": {
+    "kind": "block",
+    "description": {
+      "en": "draft notes",
+      "fa": "یادداشت‌های پیش‌نویس"
+    },
+    "attrs": {
+      "author": {
+        "type": "string",
+        "doc": {
+          "en": "Name shown in bold before the text (`Ali: ...`).",
+          "fa": "نامی که پررنگ پیش از متن می‌آید (`علی: ...`)."
+        }
+      },
+      "color": {
+        "type": "color",
+        "default": "yellow",
+        "doc": {
+          "en": "A color preset, `accent`, or a hex color. Default `yellow`.",
+          "fa": "یک رنگ آماده، `accent` یا رنگ hex. پیش‌فرض `yellow`."
+        }
+      },
+      "type": {
+        "type": "enum",
+        "values": [
+          "note",
+          "figure"
+        ],
+        "default": "note",
+        "doc": {
+          "en": "`note` (default) or `figure`.",
+          "fa": "نوع: `note` (پیش‌فرض) یا `figure`."
+        }
+      },
+      "width": {
+        "type": "length",
+        "default": "100%",
+        "doc": {
+          "en": "Width of the placeholder. Default `100%`.",
+          "fa": "پهنای جای‌نگهدار. پیش‌فرض `100%`."
+        }
+      },
+      "height": {
+        "type": "length",
+        "default": "120",
+        "doc": {
+          "en": "Height of the placeholder; a bare number is points. Default `120`.",
+          "fa": "ارتفاع جای‌نگهدار؛ عدد تنها یعنی پوینت. پیش‌فرض `120`."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض)، `rtl`، `ltr`."
+        }
+      }
+    }
+  },
+  "todos": {
+    "kind": "block",
+    "description": {
+      "en": "draft notes",
+      "fa": "یادداشت‌های پیش‌نویس"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Title of the list. Default «کارهای باقی‌مانده» / \"To-do list\".",
+          "fa": "عنوان فهرست. پیش‌فرض «کارهای باقی‌مانده» / \"To-do list\"."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض)، `rtl`، `ltr`."
+        }
+      }
+    }
+  }
+}

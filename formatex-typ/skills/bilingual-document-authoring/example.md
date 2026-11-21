@@ -8,9 +8,11 @@ A short Persian research report: `config.toml`, `references.bib` and `report.md`
 source = "report.md"
 theme = "paper"
 feel = "formal"
+scale = 100
+
+[typ]
 page = "desktop-a4"
 margin = "normal"
-scale = 100
 columns = 1
 column-dir = "rtl"
 
@@ -52,12 +54,13 @@ numbering = "labelled"
 
 ````markdown
 ---
-header:
-  style: line
-  start: "گزارش پژوهشی: توجه گروهی"
-  end: "{section}"
-footer:
-  center: "صفحه {page} از {pages}"
+typ:
+  header:
+    style: line
+    start: "گزارش پژوهشی: توجه گروهی"
+    end: "{section}"
+  footer:
+    center: "صفحه {page} از {pages}"
 bibliography:
   file: references.bib
   style: ieee
@@ -181,10 +184,11 @@ The frame is explicitly enabled here; the tag defaults to `frame="false"`. Attri
 
 ```markdown
 ---
-header:
-  style: line
-  start: "Group-Query Attention"
-  end: "Page {page} of {pages}"
+typ:
+  header:
+    style: line
+    start: "Group-Query Attention"
+    end: "Page {page} of {pages}"
 bibliography:
   title: "References"
 ---

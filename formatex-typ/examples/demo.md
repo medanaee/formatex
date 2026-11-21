@@ -2,25 +2,25 @@
 # Feature showcase: every capability of the template on a few pages.
 # Build all themes/feels with: .\build-all.ps1 -Source demo.md
 
-header:
-  style: band
-  start: "نمونهٔ امکانات قالب"
-  center: "{section-number}. {section}"
-  end: "صفحه {page} از {pages}"
-  dir: auto
-  skip-first-page: false
-
-footer:
-  style: plain
-  start: ""
-  end: "— {page} —"
-  digits: fa
 
 bibliography:
   file: examples/references.bib
-  style: ieee                      # any Typst/CSL style: apa, chicago-author-date, ...
+  style: ieee # any Typst/CSL style: apa, chicago-author-date, ...
   title: "منابع"
-  dir: auto                        # auto (each entry by its own language) | ltr | rtl
+  dir: auto # auto (each entry by its own language) | ltr | rtl
+typ:
+  header:
+    style: band
+    start: "نمونهٔ امکانات قالب"
+    center: "{section-number}. {section}"
+    end: "صفحه {page} از {pages}"
+    dir: auto
+    skip-first-page: false
+  footer:
+    style: plain
+    start: ""
+    end: "— {page} —"
+    digits: fa
 ---
 
 <cover institution="دانشگاه نمونه"
@@ -114,7 +114,7 @@ Press <kbd>Alt</kbd> + <kbd>F4</kbd> to quit. Status: <badge color="blue" icon="
 آیکن وسط جمله: انجام شد <icon name="check" color="green" />، هشدار <icon name="triangle-exclamation" color="orange" /> و ستاره <icon name="star" solid="true" color="yellow" />.
 
 <dir ltr>
-فاصلهٔ عمودی با <v> بین دو پاراگراف:
+فاصلهٔ عمودی با `<v>` بین دو پاراگراف:
 
 <v size="1.5cm" />
 
@@ -1146,6 +1146,8 @@ lq.diagram(
 echo hi
 ```
 
+<dir ltr>
+
 ## English section {#en}
 
 As shown in <ref to="fig-gqa"></ref> and <ref to="tbl-en"></ref>, and proved in <ref to="thm-main"></ref>, see <ref to="en"></ref>. <cite key="vaswani2017attention" form="prose"></cite> introduced the Transformer; GQA came later <cite key="ainslie2023gqa"></cite>.
@@ -1173,6 +1175,8 @@ Every bounded sequence of real numbers has a convergent subsequence.
 </def>
 
 </alert>
+
+</dir>
 
 <bibliography></bibliography>
 

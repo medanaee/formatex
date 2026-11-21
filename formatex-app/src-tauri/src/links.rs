@@ -5,6 +5,8 @@
 //! - text runs: their words and boxes, which the editor uses to find the source line of a clicked word;
 //! - markers: where each block of the user's Markdown starts on the pages (the engine puts an invisible `fx-mark` there when it is
 //!   built with `markers=1`), which the editor uses to go from a source line to a place on a page and back.
+//! - sources: preview-only word provenance, split by Typst into visual line/page rectangles. These semantic ranges take priority
+//!   over markers and text matching, and are filtered out of user-facing navigation links.
 
 use serde::Serialize;
 use typst::foundations::{Label, Selector, Value};
@@ -47,6 +49,34 @@ pub struct PageMap {
     height: f64,
     links: Vec<LinkBox>,
     texts: Vec<TextBox>,
+    sources: Vec<SourceBox>,
+}
+
+/// A semantic source range attached to an actual visual line fragment by Typst.
+/// These annotations exist only in preview builds and are never user-facing links.
+#[derive(Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceRange {
+    file: String,
+    utf16_start: usize,
+    utf16_end: usize,
+    generated: bool,
+}
+
+#[derive(Serialize, serde::Deserialize)]
+struct Provenance {
+    source: Vec<SourceRange>,
+    node: String,
+}
+
+#[derive(Serialize)]
+struct SourceBox {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
+    source: Vec<SourceRange>,
+    node: String,
 }
 
 /// An affine map `x' = a x + c y + e`, `y' = b x + d y + f`.
@@ -101,6 +131,14 @@ fn walk(document: &PagedDocument, frame: &Frame, map: Affine, out: &mut PageMap)
             }
             FrameItem::Link(destination, size) => {
                 let (x, y, w, h) = here.rect(0.0, 0.0, size.x.to_pt(), size.y.to_pt());
+                if let Destination::Url(url) = destination {
+                    if let Some(payload) = url.as_str().strip_prefix("formatex-source:") {
+                        if let Ok(provenance) = serde_json::from_str::<Provenance>(payload) {
+                            out.sources.push(SourceBox { x, y, w, h, source: provenance.source, node: provenance.node });
+                        }
+                        continue;
+                    }
+                }
                 let mut link = LinkBox { x, y, w, h, url: None, page: None, px: 0.0, py: 0.0 };
                 match destination {
                     Destination::Url(url) => link.url = Some(url.to_string()),
@@ -139,6 +177,34 @@ pub fn map_page(document: &PagedDocument, page: &Page) -> PageMap {
     let mut out = PageMap { width: size.x.to_pt(), height: size.y.to_pt(), ..PageMap::default() };
     walk(document, &page.frame, Affine::IDENTITY, &mut out);
     out
+}
+
+#[cfg(test)]
+pub fn glyph_geometry(page: &Page) -> Vec<(u16, i64, i64, i64)> {
+    fn collect(frame: &Frame, map: Affine, out: &mut Vec<(u16, i64, i64, i64)>) {
+        for (position,item) in frame.items() {
+            let here=map.after(Affine::translate(position.x.to_pt(),position.y.to_pt()));
+            match item {
+                FrameItem::Group(group) => {
+                    let t=group.transform;
+                    collect(&group.frame,here.after(Affine([t.sx.get(),t.ky.get(),t.kx.get(),t.sy.get(),t.tx.to_pt(),t.ty.to_pt()])),out);
+                }
+                FrameItem::Text(text) => {
+                    let mut cursor=0.0;
+                    for glyph in &text.glyphs {
+                        let (x,y)=here.apply(cursor+glyph.x_offset.at(text.size).to_pt(),-glyph.y_offset.at(text.size).to_pt());
+                        let advance=glyph.x_advance.at(text.size).to_pt();
+                        if !text.text[glyph.range()].trim().is_empty() {
+                            out.push((glyph.id,(x*10000.0).round() as i64,(y*10000.0).round() as i64,(advance*10000.0).round() as i64));
+                        }
+                        cursor+=advance;
+                    }
+                }
+                _=>{}
+            }
+        }
+    }
+    let mut out=Vec::new(); collect(&page.frame,Affine::IDENTITY,&mut out); out.sort(); out
 }
 
 /// Where a block of the source starts in the document: the file and line the engine wrote into an invisible marker, and the place

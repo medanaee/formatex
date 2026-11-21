@@ -1,0 +1,14 @@
+.fx-box {
+  margin-block: 0.85em;
+  padding: 0.8em;
+  border: 0.06em solid transparent;
+  border-radius: var(--fx-radius-box);
+  background: transparent;
+  color: var(--fg);
+  min-width: 0;
+}
+.fx-box.fx-tint { background: var(--fx-fill); }
+.fx-box-stroke { border-color: var(--fx-edge, var(--fx-border, var(--rule))); }
+.fx-box > :first-child { margin-block-start: 0; }
+.fx-box > :last-child,
+.fx-box p:last-child { margin-block-end: 0; }

@@ -1,89 +1,53 @@
-#!/usr/bin/env node
-// Concatenates src/themes.typ, core.typ, page.typ, conf.typ, prelude.typ, src/**, every component and main.typ into ONE Typst file.
-//
-//   node tools/bundle.mjs                 # writes dist/formatex.typ
-//   node tools/bundle.mjs --out my.typ
-//
-// Compile it from the project root (it still reads config.toml, code-dark.tmTheme, images and your .md):
-//   typst compile dist/formatex.typ out.pdf --root . --input source=docs/doc_en.md
-//
-// Typst has no module bundler, so this joins the text: local #import lines are dropped (everything shares
-// one scope), @preview imports are kept once at the top, and a top-level #let name defined in two files is an
-// error (give private helpers the component's prefix).
+// Generates one Typst engine file, embedding its WASM parser, JSON contracts and syntax theme.
+// Project Markdown/config/images/fonts and @preview dependencies remain external inputs.
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { genRegistry } from "./gen-registry.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-const outIndex = process.argv.indexOf("--out")
-const outRel = outIndex >= 0 ? process.argv[outIndex + 1] : "dist/formatex.typ"
 genRegistry(root)
-
-const localImport = /^\s*#import\s+"(?!@)([^"]+)"/
-const read = (file) => fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n").split("\n")
-const typFiles = (dir) => fs.readdirSync(path.join(root, dir)).filter((name) => name.endsWith(".typ")).sort()
-
-// Library files go first, each after the library files it imports.
-const libFiles = typFiles("src/lib").map((name) => `src/lib/${name}`)
-const ordered = []
-function visit(file, trail) {
-  if (ordered.includes(file)) return
-  if (trail.includes(file)) throw new Error(`import cycle in src/lib: ${[...trail, file].join(" -> ")}`)
-  for (const line of read(file)) {
-    const match = localImport.exec(line)
-    if (match) {
-      const dep = match[1].replace(/^\/+/, "")
-      if (libFiles.includes(dep)) visit(dep, [...trail, file])
-    }
-  }
-  ordered.push(file)
+const outputIndex = process.argv.indexOf("--out")
+const output = path.resolve(root, outputIndex < 0 ? "dist/formatex.typ" : process.argv[outputIndex + 1])
+const visited = new Set(), ordered = [], externals = new Set(), definitions = new Map()
+const localImport = /^\s*#import\s+"(?!@)([^"]+)"[^\n]*$/gm
+const source = file => fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n")
+const dependency = (parent, given) => given.startsWith("/") ? given.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(parent), given))
+function visit(file, trail = []) {
+  if (visited.has(file)) return
+  if (trail.includes(file)) throw new Error(`Import cycle: ${[...trail, file].join(" -> ")}`)
+  for (const match of source(file).matchAll(localImport)) visit(dependency(file, match[1]), [...trail, file])
+  visited.add(file); ordered.push(file)
 }
-for (const file of libFiles) visit(file, [])
+visit("main.typ")
+const wasm = fs.readFileSync(path.join(root, "src/parser.wasm"))
+const bytes = buffer => `bytes((${[...buffer].join(",")},))`
+const chunks = []
+const kitFiles = new Set()
+function kit(file) { if (kitFiles.has(file)) return; kitFiles.add(file); for (const match of source(file).matchAll(localImport)) kit(dependency(file,match[1])) }
+kit("src/kit.typ")
+const kitNames = [...new Set([...kitFiles].flatMap(file => [...source(file).matchAll(/^#let\s+([\w-]+)/gm)].map(match=>match[1])))].sort()
+const kitExternal = [...new Set([...kitFiles].flatMap(file => [...source(file).matchAll(/^\s*#import\s+"(@[^"]+)"/gm)].map(match=>match[1])))].sort()
+const packageLoader = fs.readFileSync(path.join(root,"tools/package-loader.typ"),"utf8")
 
-// core.typ reads option-schema.typ at the top level (the keys of the `{...}` lines), so it goes before core.
-// It also calls preprocess/comments.typ (which uses common.typ) at the top level, to strip comments before expanding includes.
-const rest = ordered.filter((file) => file !== "src/lib/option-schema.typ")
-const files = [
-  "src/themes.typ",
-  "src/lib/option-schema.typ",
-  "src/preprocess/common.typ",
-  "src/preprocess/comments.typ",
-  "src/core.typ",
-  "src/page.typ",
-  "src/conf.typ",
-  "src/prelude.typ",
-  ...rest,
-  ...typFiles("src/preprocess").filter((name) => !["pipeline.typ", "common.typ", "comments.typ"].includes(name)).map((name) => `src/preprocess/${name}`),
-  "src/preprocess/pipeline.typ",
-  ...typFiles("components").filter((name) => !name.startsWith("_")).map((name) => `components/${name}`),
-  "components/_registry.typ",
-  "main.typ",
-]
-
-const previews = []
-const defined = new Map()
-const body = []
-for (const file of files) {
-  body.push(`// ===== ${file} =====`)
-  for (const line of read(file)) {
-    if (/^\s*#import\s+"@preview/.test(line)) {
-      if (!previews.includes(line.trim())) previews.push(line.trim())
-      continue
-    }
-    if (localImport.test(line)) continue
-    const name = /^#let\s+([A-Za-z_][\w-]*)/.exec(line)?.[1]
-    if (name) {
-      if (defined.has(name) && defined.get(name) !== file) throw new Error(`#let ${name} is defined in both ${defined.get(name)} and ${file}`)
-      defined.set(name, file)
-    }
-    body.push(line)
+for (const file of ordered) {
+  let text = source(file).replace(localImport, "").replace(/^\s*#import\s+"@[^\n]+$/gm, line => { externals.add(line.trim()); return "" })
+  text = text.replace(/json\("(\/components\/[^\"]+\.json)"\)/g, (_, asset) => `json(bytes(${JSON.stringify(fs.readFileSync(path.join(root, asset.slice(1)), "utf8"))}))`)
+  text = text.replaceAll('plugin("/src/parser.wasm")', "plugin(formatex-parser-bytes)")
+  text = text.replaceAll('"/code-dark.tmTheme"', `bytes(${JSON.stringify(fs.readFileSync(path.join(root, "code-dark.tmTheme"), "utf8"))})`)
+  for (const match of text.matchAll(/^#let\s+([\w-]+)/gm)) {
+    if (definitions.has(match[1])) throw new Error(`Duplicate binding ${match[1]} in ${definitions.get(match[1])} and ${file}`)
+    definitions.set(match[1], file)
   }
-  body.push("")
+  if (file === "src/render.typ") {
+    const scope = kitNames.map(name=>`${JSON.stringify(name)}: ${name}`).join(",")
+    const external = kitExternal.map((pkg,i)=>`#import ${JSON.stringify(pkg)} as formatex-kit-external-${i}\n`).join("")
+    const additions = kitExternal.map((_,i)=>` + dictionary(formatex-kit-external-${i})`).join("")
+    text = text.replace(/#let pdf-load-package\(path\) = \{[\s\S]*?\n\}/,packageLoader.trim())
+    text = `${external}#let formatex-package-scope = (:)${additions} + (${scope})\n${text}`
+  }
+  chunks.push(`// ===== ${file} =====\n${text}`)
 }
-
-const header = `// Single-file build of the template, generated by tools/bundle.mjs. Do not edit; edit the sources and rebuild.\n// Compile from the project root: typst compile ${outRel} out.pdf --root .\n${previews.join("\n")}\n\n`
-const out = path.join(root, outRel)
-fs.mkdirSync(path.dirname(out), { recursive: true })
-fs.writeFileSync(out, header + body.join("\n"))
-console.log(`bundle: ${files.length} files -> ${outRel} (${Math.round(fs.statSync(out).size / 1024)} KB)`)
+fs.mkdirSync(path.dirname(output), { recursive: true })
+fs.writeFileSync(output, `// Generated from formatex-core + formatex-pdf. Do not edit.\n${[...externals].join("\n")}\n#let formatex-parser-bytes = ${bytes(wasm)}\n${chunks.join("\n\n")}\n`)
+console.log(`bundle: ${ordered.length} modules, ${wasm.length} WASM bytes -> ${path.relative(root, output)} (${fs.statSync(output).size} bytes)`)

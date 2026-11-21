@@ -1,0 +1,48 @@
+{
+  "alert": {
+    "kind": "block",
+    "description": {
+      "en": "callout with icon",
+      "fa": "هشدار با آیکون"
+    },
+    "attrs": {
+      "type": {
+        "type": "enum",
+        "values": [
+          "note",
+          "info",
+          "tip",
+          "success",
+          "warning",
+          "danger",
+          "important"
+        ],
+        "doc": {
+          "en": "`note`, `info`, `tip`, `success`, `warning`, `danger`, `important`. Sets the color and icon.",
+          "fa": "`note`، `info`، `tip`، `success`، `warning`، `danger`، `important`. رنگ و آیکون را تعیین می‌کند."
+        }
+      },
+      "color": {
+        "type": "color",
+        "doc": {
+          "en": "A color preset name (`\"blue\"`) or a hex color. Overrides the type's color.",
+          "fa": "نام یک رنگ آماده (`\"blue\"`) یا یک رنگ hex. بر رنگ نوع مقدم است."
+        }
+      },
+      "icon": {
+        "type": "string",
+        "doc": {
+          "en": "A Font Awesome icon name. Overrides the type's icon.",
+          "fa": "نام یک آیکون Font Awesome. بر آیکون نوع مقدم است."
+        }
+      },
+      "radius": {
+        "type": "number",
+        "doc": {
+          "en": "Corner radius in points, plain number only (`\"6\"`, not `\"6pt\"`). Defaults to the feel's value.",
+          "fa": "شعاع گوشه به پوینت، فقط عدد تنها (`\"6\"`، نه `\"6pt\"`). پیش‌فرض: مقدار حالت."
+        }
+      }
+    }
+  }
+}

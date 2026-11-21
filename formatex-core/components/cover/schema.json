@@ -1,0 +1,109 @@
+{
+  "cover": {
+    "kind": "block",
+    "description": {
+      "en": "full-page cover",
+      "fa": "جلد تمام‌صفحه"
+    },
+    "attrs": {
+      "logo": {
+        "type": "path",
+        "doc": {
+          "en": "logo",
+          "fa": "logo"
+        }
+      },
+      "institution": {
+        "type": "string",
+        "doc": {
+          "en": "institution",
+          "fa": "institution"
+        }
+      },
+      "faculty": {
+        "type": "string",
+        "doc": {
+          "en": "faculty",
+          "fa": "faculty"
+        }
+      },
+      "department": {
+        "type": "string",
+        "doc": {
+          "en": "department",
+          "fa": "department"
+        }
+      },
+      "type": {
+        "type": "string",
+        "doc": {
+          "en": "type",
+          "fa": "type"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "title",
+          "fa": "title"
+        }
+      },
+      "subtitle": {
+        "type": "string",
+        "doc": {
+          "en": "subtitle",
+          "fa": "subtitle"
+        }
+      },
+      "author": {
+        "type": "string",
+        "doc": {
+          "en": "author",
+          "fa": "author"
+        }
+      },
+      "supervisor": {
+        "type": "string",
+        "doc": {
+          "en": "supervisor",
+          "fa": "supervisor"
+        }
+      },
+      "advisor": {
+        "type": "string",
+        "doc": {
+          "en": "advisor",
+          "fa": "advisor"
+        }
+      },
+      "date": {
+        "type": "string",
+        "doc": {
+          "en": "date",
+          "fa": "date"
+        }
+      },
+      "frame": {
+        "type": "bool",
+        "default": "false",
+        "doc": {
+          "en": "Draw a frame.",
+          "fa": "نمایش قاب."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction.",
+          "fa": "جهت متن."
+        }
+      }
+    }
+  }
+}

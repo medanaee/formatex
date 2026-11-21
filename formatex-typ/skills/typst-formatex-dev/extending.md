@@ -2,6 +2,14 @@
 
 Read this **before** creating or changing a color theme, a feel or a component. The template is used for Persian (RTL) and English (LTR) at once, on 8 themes × 3 feels × 2 page sizes. Something that looks right in one combination can easily break another. Every rule below comes from a real bug.
 
+## Shared source ownership checkpoint
+
+Core now owns `formatex-core/components/<name>/` packages containing `typst.typ`, `html.tsx`, `manifest.toml`, `schema.json`, `docs.json` and `html.css`. Keep schema/docs as shared JSON data, not duplicate renderer declarations. Regenerate the standalone distribution with `node tools/sync.mjs` from `formatex-typ/`; edit the core/pdf source owners rather than generated source copies.
+
+The normal document path invokes Rust/WASM pulldown-cmark inside Typst and feeds shared IR to independent PDF/HTML backends. Nine Rust parser tests pass, including Unicode/source spans, Persian/Arabic list restarts and rich/fenced-code properties. Frontend integration: 373 passed; native: 66 passed/5 ignored; typecheck and production build pass, with nine existing lint warnings. The 24 PDF theme/feel builds plus mobile compile, selected PDF visual checks, 360/768/1280 px browser checks and isolated one-file/custom-package/relocated standalone tools are verified. Complete component-property parity, full map/diagnostic/export coverage and real Android native interactive UI remain separate gates. HTML content is static SSR with a hydrated React viewer shell; arbitrary component events/state and live variable/DSL reactivity are not implemented. See [the active plan](../../../formatex-app/docs/tasks/shared-core-pdf-html-plan.md).
+
+`node tools/sync.mjs` builds the current core WASM and assembles core+pdf into this distribution. The local `tools/registry.mjs` is copied from core: `gen-registry`, `build-all`, `bundle` and `schema` run against this synced snapshot after relocation without sibling checkouts. Sync again to consume changed core/pdf sources. Install workspace dependencies from the workspace root; a relocated standalone snapshot can install its own tooling dependency. Document inputs remain external to the bundle.
+
 For the internals (helpers, tag mechanics) see [reference.md](reference.md); for the user-facing syntax see [SKILL.md](SKILL.md).
 
 ## Where things live
@@ -11,17 +19,17 @@ For the internals (helpers, tag mechanics) see [reference.md](reference.md); for
 | Color themes | `src/themes.typ` | `themes` dictionary |
 | Feels (radii, table style, default fonts) | `src/core.typ` | `feels` dictionary |
 | Config / front matter / `<include>`, direction detection | `src/core.typ` | `config`, `text-dir`, `content-dir`, `expand-includes` |
-| Page, header, footer, cover | `src/page.typ` and `components/cover.typ` | Page/header/footer helpers; the `<cover>` component invokes standalone cover layout at its body position |
+| Page, header, footer, cover | `src/page.typ` and `components/cover/typst.typ` | Page/header/footer helpers; the `<cover>` component invokes standalone cover layout at its body position |
 | Code / quote / table / heading styling | `src/conf.typ` | `conf` |
 | What every file imports | `src/prelude.typ` | template names + `@preview` packages |
 | What a component imports | `src/kit.typ` | the prelude plus the helper libraries (`basics`, `colors`, `widgets`, `refs`, `lists`, `mitex`, `latex-code`) |
 | Tag / attribute schema for editors | `tools/export-schema.mjs` | `dist/tags.json` |
-| Components (`<alert>`, `<fig>`, ...) | `components/<name>.typ` | exports `<name>-tags`, `<name>-schema` (tags, attributes, allowed values) and `<name>-docs` (what it is for, in en and fa, and an example) |
+| Components (`<alert>`, `<fig>`, ...) | `formatex-core/components/<name>/` | `typst.typ`/`html.tsx` implementations, `html.css`, `manifest.toml`, shared `schema.json` and `docs.json` |
 | Registry of all components | `components/_registry.typ` | **generated** by `tools/gen-registry.mjs`; do not edit |
 | Helpers used by several components | `src/lib/*.typ` | `tag`, `untag`, `parse-length`, `root-path`, `reference-text`, ... |
 | Source preprocessors | `src/preprocess/*.typ` | chain in `pipeline.typ` |
 | `{...}` option lines (tables, headings, lists, equations, spans) | `src/lib/option-schema.typ` | `option-schemas` (keys, types, values, defaults, where each may stand); the code reads its allowed keys through `option-keys`, and `export-schema.mjs` writes it under `options` in `dist/tags.json` |
-| Color presets for components | `src/core.typ` (`color-presets`), `src/lib/colors.typ` | `tinted`, `resolve-color`; `box-types` lives in `components/alert.typ` |
+| Color presets for components | `src/core.typ` (`color-presets`), `src/lib/colors.typ` | `tinted`, `resolve-color`; `box-types` lives in `components/alert/typst.typ` |
 | One-file build | `tools/bundle.mjs` | writes `dist/formatex.typ` |
 | Feature test document | `examples/demo.md` | one section per feature |
 | Full build | `tools/build-all.mjs` | `--themes` / `--feels` defaults |
@@ -103,7 +111,7 @@ A missing key is not caught where you define the theme; it fails later deep insi
 | `heading` | Corners of styled headings (`[heading] fill`) | With `underline` on, only the top corners use it; the bottom stays square under the rule. |
 | `table` | `"rules"`, `"lined"` or `"card"` | Only these three exist. A new style means new branches everywhere `style ==` appears in `conf` (fills, strokes, header cells, inset, frame). Do all of them or reuse an existing style. |
 | `header` | A header style forced by this feel (`"line"` in `formal`), or `none` to use the document's `header.style` | Must be one of `header-styles` or `none`. Precedence: `--input header-style` > feel `header` > front matter `style`. |
-| `steps` | `<steps>` marker style: `"square"`, `"soft"` or `"solid"` (`"solid"` = the `"soft"` colours and strokes on round markers) | A new value needs a branch in the `steps` component (`components/steps.typ`). |
+| `steps` | `<steps>` marker style: `"square"`, `"soft"` or `"solid"` (`"solid"` = the `"soft"` colours and strokes on round markers) | A new value needs a branch in the `steps` component (`components/steps/typst.typ`). |
 | `latin` / `persian` | Default fonts | `[font]` in `config.toml` overrides them. |
 
 ### Fonts
@@ -125,94 +133,49 @@ A missing key is not caught where you define the theme; it fails later deep insi
 
 ## Adding a component
 
-> A component that belongs to one project needs none of this: list its file in `components` (config.toml or front matter) and write `<x>-tags` / `<x>-schema` / `<x>-docs` in it; see `src/lib/local-components.typ` and "Your own components" in `docs/doc_en.md`. Everything below is for components of the template itself.
+Create a folder in `formatex-core/components/<name>/` for a built-in, or a project-local folder declared in the document's `components` front matter for a user package. Do not register a legacy standalone `.typ` component or put schema/docs declarations inline in an implementation.
 
-### Registration
+### Shared package contract
 
-- Create `components/<name>.typ`, then run `node tools/gen-registry.mjs` (`tools/build-all.mjs` does it). Nothing in `main.typ` changes.
-  - The file starts with `#import "/src/kit.typ": *` (the template's names, the `@preview` packages and every helper library; add a package to `src/prelude.typ` if a component needs a new one, and a new helper library to `src/kit.typ`: its names must differ from all the others) and exports `#let <name>-tags = ( tag: (attrs, body) => ..., ... )` (closing `)` in column 0). Self-closing tags use `tag: ("void", attrs => ...)`.
-  - **Schema (required for every tag):** also export `#let <name>-schema = ( "tag": (kind: "block" | "inline" | "void" | "mixed", description: (en: "...", fa: "..."), attrs: ( "name": (type: "enum" | "bool" | "int" | "number" | "length" | "string" | "path" | "color", values: (...) /* enum only */, default: "...", required: true, doc: (en: "...", fa: "...")) ), children: ("child-tag",), display: "camelCase" /* optional */) )`. The registry checks every attribute of every tag against it before your handler runs (enum, bool, int and number values, required attributes; unknown attributes pass), so a handler needs no `assert` for those. `tools\export-schema.mjs` writes the same data to `dist/tags.json` for editor autocomplete. Keep it in sync with the handler: a missing tag entry stops the build, a missing attribute only hides it from autocomplete.
-  - **Docs (required for built-in components):** also export `#let <name>-docs = (en: (about: `````md ... `````.text, more: ...), fa: (about: ..., more: ...), example: (en: ..., fa: ...))`: `about` is a first paragraph (what it is for) and the key rules as bullets, `more` optional longer notes, `example` a usage example in Markdown; both languages are written. `gen-registry.mjs` stops when it is missing, `tools/schema.typ` warns when a language or the example is empty, and `export-schema.mjs` puts every component's tags and docs in `dist/tags.json` under `components`. The Skill page of the app generates its single-file skill from them. A user's own component in the app may omit it.
-  - Optional exports: `#let <name>-rules(doc) = { show ...; doc }` for document-wide show rules (a `#show` inside an imported file does not leak out; put `// rules-order: N` on the line above to order it, default 100), and `#let <name>-scope = (...)` merged into cmarker's scope.
-  - **HTML form (optional):** `#let <name>-html = ( tag: (attrs, body) => html.elem(...), ... )` is what the tag is in the HTML export (`--input target=html`, see `src/html/`), and `#let <name>-css = `````css ... `````.text` its CSS (a string; the registry joins every component's and the page puts it after its own). It takes the same `(attrs, body)` as the PDF form (`("void", attrs => ...)` for a self-closing tag) and returns real elements: `html.elem("div", attrs: (class: "fx-alert", style: "..."), body)`. Without it the tag is drawn as a picture of its PDF look (`in-frame`), so nothing is lost, and the PDF form is never touched. Rules: `html` exists only in the HTML export, so use `html.elem` / `html.frame` inside the functions only, never at the top level of the file; the helpers come with `#import "/src/kit.typ": *` (`src/html/kit.typ`): `css-color`, `css-len`, `css-px`, `style-of`, `panel-style` (the CSS variables of a tinted panel, read by `.fx-panel` and `.fx-badge`), `html-icon` (a Font Awesome icon as a small picture, no icon font), `find-target` (what `<ref>` points at), `html-link-list` (a list of links), `in-frame`. The theme, feel and fonts are CSS variables (`--bg --fg --heading --muted --accent --rule --code-bg --code-stroke --r-code --r-badge --r-alert --r-box --font-body --font-code`): use them in the CSS, not literal colors, so every theme and feel works. Prefix your classes with `fx-`. A `<ref>`-able element needs `[#metadata(...)#label(id)#shown]` as in `links.typ`. The direction of a block of text is `dir="auto"` / `unicode-bidi: plaintext` in CSS, not `text(dir:)`. A user's own component can export the same two names.
-  - A tag may be declared by one component only (the generator stops on duplicates). Child tags (`<caption>`, `<item>`) belong to the file of their parent.
-  - Code needed by two or more components goes to `src/lib/`, never imported from another component. Private helpers keep a name unique across the project (prefix with the component name): the one-file bundle puts everything in one scope and `bundle.mjs` stops on a duplicate `#let`.
-  - **Paths:** Typst resolves a path relative to the file that calls `image()` / `read()` / `csv()`, not to the project. Wrap every user-supplied path with `root-path(...)` (`src/lib/basics.typ`).
-- Tag names are lowercase and must not clash with an existing key. Dictionary keys may equal Typst built-in names (`align`, `box`, `grid` exist); **local variables must not** (see [Typst pitfalls](#typst-pitfalls)).
-- **Nesting in the schema:** list the tags that may stand inside a tag in its `children`; mark a tag that only makes sense inside such a parent with `scoped: true` (`<item>` in `<grid>`). `export-schema.mjs` derives every tag's `parents` from `children` and warns about a `scoped` tag nobody lists or a `children` entry that isn't a tag.
-- Child tags (like `<caption>`, `<item>`) return `tag("kind", attrs, body)`; the parent collects them with `untag(body, "kind")` (direct children) or `find-tagged(body, "kind")` (nested, or after `.join()`).
+Every package contains these six files:
 
-### Markdown parsing (cmarker)
+| File | Responsibility |
+| --- | --- |
+| `manifest.toml` | Name/version and `typ`, `html`, `css`, `schema`, `docs` paths |
+| `schema.json` | Shared tag kinds, descriptions, attributes/types/defaults and parent/child rules |
+| `docs.json` | Shared English/Persian component explanations and examples |
+| `typst.typ` | Typst tag implementations, importing `/src/kit.typ` as needed |
+| `html.tsx` | HTML implementation using the independent engine's component API |
+| `html.css` | Component-owned CSS, using theme/feel variables and logical layout properties |
 
-- A **block** component must be written with its opening tag on its own line and blank lines inside, otherwise the Markdown inside is not parsed. The docs repeat this; keep your examples in the same form.
-- An **inline** component (like `<cite>`, `<ref>`) is used inside a paragraph. It must return inline content; a block inside a paragraph splits the paragraph.
-- `body` is already-rendered Typst content. To inspect it use `.func()`, `.has("children")`, `.children`; a sequence is `[].func()`, a space is `[ ].func()`. Leading `parbreak`s and spaces are common; skip them (see the alert icon code).
-- Markdown syntax inside attributes is **not** parsed (except where a component calls `cmarker.render` on it, like `<docheader>`).
+```toml
+name = "note"
+version = "1.0.0"
+typ = "typst.typ"
+html = "html.tsx"
+css = "html.css"
+schema = "schema.json"
+docs = "docs.json"
+```
 
-### Attributes
-
-- **All values are strings.** Convert with `parse-length` (bare number = pt; also `pt mm cm in em %`), `parse-ratio`, `int(...)`, `float(...)`, `== "true"`.
-- **Bare attributes** (`<align right>`) arrive as keys with an empty value; support them only as a convenience next to an explicit form (`to="right"`).
-- Defaults: `attrs.at("key", default: ...)`. If a project-wide default makes sense, read it from `config` (as tables read `[table]`), with the attribute taking precedence. Settings that only make sense per document (like `<bibliography>`'s) are read from `front-matter` instead and documented as front matter keys.
-- Reuse the existing vocabularies: `align` values from `align-names`, colors through `resolve-color` (preset names or hex), `dir` as `rtl` / `ltr` / `auto` through `resolve-dir`, `id` for references.
-
-### Harmony with the feels
-
-Golden rule 0 applied to components. Before writing the drawing code, decide what the component looks like in each feel:
-
-| | `formal` | `standard` | `friendly` |
-|---|---|---|---|
-| Corners | square (`0pt`) | small radius | large radius |
-| Markers, dots, numbers | outlined squares, thin rules | soft tinted shapes | solid filled shapes |
-| Lines and bars | thin, square caps | normal | thicker, may be rounded |
-| Fills | none or very light | light tint | stronger tint |
-
-- Read the radius from the closest existing key (`feel.badge` for small inline pills, `feel.box` for blocks, `feel.alert`, `feel.code`, ...). If none fits, add a new key to all three feels and document it in [the feel keys table](#the-keys-all-are-required).
-- Capping a radius (`calc.min(feel.badge, 4pt)`) is fine; a floor (`calc.max(..., 2pt)`) is not, because it rounds formal.
-- `50%` (circles, pills) and `cap: "round"` belong only in branches that run for rounded feels; see the `steps` component: formal and standard markers use `radius: feel.box` (square / rounded square), only friendly gets circles.
-- Parts that join into one shape (consecutive highlighted code lines) stay square in every feel; rounding each piece leaves notches at the joins.
-- Existing examples to copy: tables (`feel.table`), the page header (`feel.header`), `<steps>` (`feel.steps`), theorem blocks (stroke vs. pill bar by `feel.theorem`).
-
-### Colors
-
-- Container fill / border / icon: `resolve-color(name)` returns `(fill, border, icon)` for a preset or hex; `tinted(hue)` for a hue of your own. Both are theme-aware.
-- Text inside a component stays `theme.fg` (or `heading` / `muted` / `accent` by role).
-- Never put a light pastel fill on a dark theme or a dark fill on a light one; that is what `tinted` prevents.
-
-### Direction (the most common source of bugs)
-
-- Text direction is decided per paragraph, heading, list and table cell by the **first letter** (`text-dir`). Code and math are skipped. RLM (`&rlm;`) forces RTL, LRM forces LTR. A Persian paragraph that starts with an English word is LTR unless it starts with RLM; your examples in `examples/demo.md` must account for this.
-- If the **layout** depends on direction (which side an icon, bar or number goes), compute it from the content: `is-rtl(body)` / `text-dir(body)`, or `resolve-dir(attrs.at("dir", default: "auto"), body)` inside `context`. Then `set text(dir: ...)` on the container.
-- **Let Typst mirror for you.** Grid columns and `start` / `end` alignment flip automatically in RTL. Prefer `grid(columns: (auto, 1fr), icon, body)` under the right `text(dir:)` over `if rtl { right } else { left }`. Where a physical side is unavoidable (one-sided strokes), derive it from the direction as the theorem blocks do.
-- **Full width.** A container narrower than its parent shrinks RTL paragraphs and pushes them to the left. Give blocks `width: 100%` and wrap the body in `block(width: 100%, body)`.
-- **Inline components** run before the paragraph's direction is set, so `text.dir` is wrong there. Use `last-dir.get()` (inside `context`) for "the language of the surrounding sentence", as `<ref>` does.
-- **Content without letters** (only math, only an image) has no direction; fall back to `last-dir.get()`.
-- **Words and digits follow the direction**: Persian label + Persian digits (`digits(n, true)`) in RTL, English label + Latin digits in LTR (see «شکل ۱» / "Figure 1").
-- **Mixed strings in a forced-direction line** (e.g. a Persian title inside an LTR row) need Unicode isolates `\u{2067}` (RLI) or `\u{2066}` (LRI) ... `\u{2069}` (PDI), as `<toc>` does.
-- **CeTZ / positioned labels** are not paragraphs; give each one `text(dir: text-dir(label))`.
-
-### Alignment
-
-- If the component positions itself explicitly (`align(center, ...)`), it must follow an enclosing `<align>`: inside `context`, use `align(align-names.at(inherited-align("center")), ...)`, and accept all of `align-names` (`center left right start end`) in its own `align` attribute.
-- Content inside a component inherits `<align>` automatically. If some part must not move (code lines, a number column), set its alignment explicitly, as the code block rule does with `set align(left)`.
-
-### Vertical centering of icons and text
-
-- Text boxes are measured from `top-edge` to `bottom-edge` (`cap-height` to `baseline` by default), not the glyph bounds. To center an icon on a line, give the icon `top-edge: "bounds", bottom-edge: "bounds"` and center it in a box whose height is the measured line (see the code badge and the `<alert>` icon). Top-aligning an icon against text is always visibly off.
-
-### References, counters and state
-
-- To make the component referenceable: place `[#metadata((my-kind: ...))#label(id)]` (or label a `figure`), and extend `reference-text` in `src/lib/refs.typ` so `<ref>` prints «... ۱» / "... 1". Do not attach a label to content cmarker already labelled (headings have slug labels): "content labelled multiple times".
-- Counters: one per kind (`counter("theorem-" + kind)`), stepped where the element appears.
-- State is global by its key string. Reset it after use (the `table-options` pattern), and use a stack for anything that can nest (the `align-stack` pattern: push before the body, pop after).
-
-### Size and scaling
-
-- Use `layout(region => ...)` when the component needs the available width, and `measure(...)` (inside `context`) for natural sizes.
-- Never enlarge with `scale`: it scales the text too. Shrink only (`calc.min(1, ...)`), as `<fig>` does with drawings.
-- Relative heights (`%`) inside an auto-height row resolve against the page, not the row. Measure the content and use absolute lengths (see the theorem pill bar).
-
+```yaml
 ---
+components:
+  - components/note
+---
+```
+
+Copy a small current core package as the implementation shape reference. Keep schema/docs JSON as the only shared contract source; Typst imports that JSON, and HTML/editor use the same data. Tag ownership must be unique, and scoped child tags must have declared parents. Keep helper names unique for one-file bundling. Use `root-path` for project-supplied Typst paths.
+
+### Rendering and registration
+
+`typst.typ` exports the package's tag dictionary. Optional shared rules/scope must follow the current core loader contract, not a cmarker scope. `html.tsx` exports the HTML implementation; built-ins can delegate to the engine's `renderBuiltin` helper, while custom TSX uses the supplied node/context. Do not import app stores, Tauri, editor modules or app aliases. The engine supplies only serializable package/data/assets across the worker boundary.
+
+Tailwind utilities in `html.tsx` are supported: the worker compiles rendered class candidates to static required CSS using the bundled theme, without a CDN or reader-side Tailwind compiler. Use semantic colors, logical utilities, responsive classes and the `.dark` variant. Content is static SSR; event handlers/state are not hydrated. Only the viewer shell hydrates.
+
+Core's Typst/WASM parser creates mapped IR; neither renderer reparses Markdown. A Typst-only component uses explicit graphics/SVG fallback in HTML. HTML-only subtrees are omitted in PDF; references to omitted content require diagnostics. Verify these cases rather than silently swallowing an implementation error.
+
+After built-in changes, run `node tools/sync.mjs` from `formatex-typ/`: it builds current parser WASM and assembles core+PDF. The local registry/tooling then reads that synced snapshot. App sync consumes core+pdf+html directly. Test custom folders through both outputs and through isolated one-file PDF assembly. Add a representative example, inspect phone/tablet/desktop HTML and affected PDF pages, then synchronize both guides and authoring/developer skills.
 
 ## Typst pitfalls
 
@@ -257,7 +220,7 @@ Each of these has broken this template before:
 | Any | `examples/demo.md` section; `docs/doc_en.md` and `docs/doc_fa.md`; `SKILL.md`; `skills/bilingual-document-authoring/` (`components.md` or `config.md`) |
 | Theme | `src/themes.typ`, `config.toml` theme comment, `tools/build-all.mjs --themes`, theme counts and tables in `docs/doc_en.md` / `docs/doc_fa.md` / SKILL.md / `skills/bilingual-document-authoring/config.md` |
 | Feel | `feels`, `config.toml` feel comment, `tools/build-all.mjs --feels`, feel tables in `docs/doc_en.md` / `docs/doc_fa.md` / SKILL.md / `skills/bilingual-document-authoring/config.md` |
-| Component | `<name>-schema` and `<name>-docs` in `components/<name>.typ`, "Components" section of `docs/doc_en.md` and `docs/doc_fa.md`, SKILL.md component section, `skills/bilingual-document-authoring/components.md`, `reference.md` if it adds a helper or a mechanism, "Common mistakes" if it has a trap |
+| Component | `schema.json` and `docs.json` in `formatex-core/components/<name>/`, "Components" section of `docs/doc_en.md` and `docs/doc_fa.md`, SKILL.md component section, `skills/bilingual-document-authoring/components.md`, `reference.md` if it adds a helper or a mechanism, "Common mistakes" if it has a trap |
 | New `{...}` option | the group in `src/lib/option-schema.typ` (the key list in the code follows it), the code that applies it, "Table options" / "Heading look" / "Lists" in `docs/doc_en.md` / `docs/doc_fa.md`, `skills/bilingual-document-authoring/components.md` |
 | New config key | `config.toml` (commented, with default) or, if per document, the front matter docs; "Configuration" in `docs/doc_en.md` / `docs/doc_fa.md`; SKILL.md config block; `skills/bilingual-document-authoring/config.md` |
 

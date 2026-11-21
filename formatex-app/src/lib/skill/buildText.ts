@@ -15,186 +15,185 @@ interface Block {
  */
 export const KIT_NAMES = ["theme", "zoom", "feel", "doc-dir", "content-dir", "is-phone", "column-count", "color-presets", "at-of", "setting-prefix", "parse-length", "resolve-color", "tinted", "panel", "root-path", "plain-text", "span-columns", "flag-attr", "pick-hue"] as const
 
-const EXAMPLE = `\`\`\`typst
-#import "/src/kit.typ": *
+const EXAMPLE = `\`\`\`text
+extras/note/
+  manifest.toml
+  schema.json
+  docs.json
+  typst.typ
+  html.tsx
+  html.css
+\`\`\`
 
-// Two tags that have nothing to do with each other can live in one file; the name of the file does not matter.
+manifest.toml:
+\`\`\`toml
+name = "note"
+version = "1.0.0"
+typ = "typst.typ"
+html = "html.tsx"
+css = "html.css"
+schema = "schema.json"
+docs = "docs.json"
+\`\`\`
+
+schema.json:
+\`\`\`json
+{
+  "note": {
+    "kind": "block",
+    "description": { "en": "A note", "fa": "یادداشت" },
+    "attrs": {}
+  }
+}
+\`\`\`
+
+docs.json:
+\`\`\`json
+{
+  "en": { "about": "A note containing ordinary Markdown." },
+  "fa": { "about": "یادداشت با محتوای معمولی Markdown." },
+  "example": { "en": "<note>Text</note>", "fa": "<note>متن</note>" }
+}
+\`\`\`
+
+typst.typ:
+\`\`\`typst
+#import "/src/kit.typ": *
 #let note-tags = (
-  note: (attrs, body) => block(width: 100%, inset: 8pt * zoom, fill: theme.secondary, radius: 4pt * zoom, body),
-  stamp: (attrs, body) => {
-    let size = parse-length(attrs.at("size", default: "1em"), attrs: attrs)
-    text(size: size, fill: theme.accent, weight: "bold", body)
+  note: (attrs, body) => context {
+    let tone = tinted(theme.accent)
+    block(width: 100%, inset: 8pt * zoom, fill: tone.fill,
+      stroke: 0.6pt * zoom + tone.border, radius: feel.box,
+      text(fill: theme.fg, body))
   },
 )
+\`\`\`
 
-// Optional: gives autocomplete and checks the attributes written in a document.
-#let note-schema = (
-  "note": (kind: "block", description: (en: "A tinted note", fa: "یادداشت رنگی"), attrs: (:)),
-  "stamp": (
-    kind: "inline",
-    description: (en: "A bold accent word", fa: "واژهٔ پررنگ با رنگ تأکید"),
-    attrs: ("size": (type: "length", default: "1em", doc: (en: "Text size", fa: "اندازهٔ متن"))),
-  ),
-)
+html.tsx:
+\`\`\`tsx
+export default function Note({ node, context }) {
+  return <aside className="border-s-2 border-primary bg-muted/40 p-3 text-foreground">{context.children(node)}</aside>
+}
+\`\`\`
 
-// Optional: what the tags are for, in both languages, and an example; the Skill page of the app uses it.
-#let note-docs = (
-  en: (about: "A tinted note box, and a bold accent word."),
-  fa: (about: "کادر یادداشت رنگی و واژهٔ پررنگ."),
-  example: (en: "<note>Check this</note> <stamp>new</stamp>", fa: "<note>این را بررسی کنید</note> <stamp>جدید</stamp>"),
-)
-\`\`\``
+html.css:
+\`\`\`css
+/* Optional package-specific styles; preserve the document's tokens and direction. */
+\`\`\`
+`
 
 const EN: Block[] = [
   {
     min: "minimal",
     text: `## Building your own components
 
-A component is a **Typst file in the project**. It gives the document new tags (\`<note>\`, \`<stamp>\`) that are written in the Markdown file like the built-in ones. Write one only when plain Markdown and the built-in tags are not enough.
+A component is a **folder package**, not a standalone Typst file. Use one only when ordinary Markdown and existing tags cannot express the document. Shared packages contain exactly these six named files: \`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`.
 
-- A file can define **any number of tags**, related or not. The **name of the file does not matter**, and a project can have any number of files, **anywhere** in it.
-- List the files in the \`components\` setting, in \`config.toml\` (every document) or in the front matter of one document, the way you would import them: \`components = ["extras/notes.typ", "stamps.typ"]\`. Paths are relative to the project folder. Front matter adds to \`config.toml\`.
-- A tag name is lowercase letters, digits and \`-\`, starting with a letter. It must not be a built-in tag (\`alert\`, \`box\`, ...) or a tag of another file: that is an error.`,
+Declare project-relative **folder paths in Markdown front matter**:
+\`\`\`yaml
+---
+components:
+  - extras/note
+---
+\`\`\`
+
+Tag names use lowercase letters, digits and \`-\`, beginning with a letter. Check existing schemas to avoid duplicate tags. Do not use old single-file component APIs or list \`notes.typ\` as a package.`,
   },
   {
     min: "minimal",
-    text: `### What a file defines
+    text: `### Shared contract and two implementations
 
-- \`<x>-tags\` (**required**): a dictionary \`tag-name: (attrs, body) => content\`. \`attrs\` holds the attributes written on the tag, **all strings**, read with \`attrs.at("size", default: "1em")\`. \`body\` is what stands between the opening and the closing tag.
-- \`<x>-schema\` (optional): describes the tags by tag name. With it the app completes the tag and its attributes and the engine checks them; without it the tag still works and attributes are not checked.
-- \`<x>-docs\` (optional): what the tags are for and an example, in English and Persian.
+- \`manifest.toml\` names the package and references \`typ\`, \`html\`, \`css\`, \`schema\`, \`docs\` files. Use \`typ = "typst.typ"\` and \`html = "html.tsx"\`; \`typ = false\` or \`html = false\` declares an absent implementation.
+- \`schema.json\` owns tag kinds, properties, defaults, allowed values, domains and scoped-child rules. \`docs.json\` owns English/Persian Markdown descriptions and usage examples. Keep these data separate from both implementations; do not define inline Typst schema/docs or a second JSX schema.
+- \`typst.typ\` exports the package's \`<name>-tags\` handlers \`(attrs, body) => content\` for PDF; import \`/src/kit.typ\` and use its helpers. \`html.tsx\` exports a default React component receiving \`{ node, context }\`; render \`context.children(node)\` rather than parsing Markdown.
+- \`html.css\` contains component styles; Tailwind classes in TSX are compiled into the required static CSS. Do not use Typst \`-html\` / \`-css\` handlers as the independent HTML API.
 
-\`<x>\` is any label (\`note\`, \`my-tags\`); schema and docs are matched to a tag by the **tag name**, not by \`<x>\` or by the file.`,
+The common pipeline executes in Typst and invokes Rust/WASM pulldown-cmark once to build shared IR. Never add a JavaScript Markdown parser to a component.`,
   },
   {
     min: "minimal",
-    text: `### Typst is not JavaScript or Python
+    text: `### One configuration and output namespaces
 
-Nearly every compile error in a component file is one of these. Check them before you finish:
+Use one \`config.toml\`: shared root/tables plus \`[html]\` / \`[typ]\` overrides. Front matter follows the same structure. An HTML-only property must have the \`html\` prefix: \`[html.code] copy-button = true\` or local \`html.copy-button="true"\`, never bare \`copy-button\`. Paged-only settings belong under \`typ\`, for example \`[typ] page = "desktop-a4"\`; header/footer belong under \`typ.header\` / \`typ.footer\`.
 
-- **Strings use double quotes only.** \`'text'\` does not exist in Typst (the error is "the character \`'\` is not valid in code", often followed by many more). A string that holds quotes escapes them: \`"<coffee level=\\"75\\">x</coffee>"\`; or write it as a raw block, \`\` \`<coffee level="75">x</coffee>\`.text \`\` (a block of several lines: \`\`\`\`\`md ... \`\`\`\`\`.text). This is where it goes wrong most: the \`example:\` of \`<x>-docs\` always holds tags with quoted attributes, so write \`example: (en: "<coffee level=\\"75\\">Latte</coffee>", fa: "...")\`, never \`'...'\`.
-- **Code and content are two modes.** Inside \`( )\` and \`{ }\` you are in code: \`let x = 1\`, no \`#\`. Inside \`[ ]\` you are in content: code there needs \`#\` (\`#let\`, \`#if\`, \`#place(...)\`). Do not put \`#\` in code and do not leave it out in \`[ ]\`. Build the picture in a \`{ }\` block and keep \`[ ]\` for text.
-- **Code takes ASCII only.** Persian digits (۷۵), \`٪\`, curly quotes and Persian letters are fine inside a string or in content (\`"۷۵٪"\`, \`[۷۵٪]\`), never in code (\`level: ۷۵\` fails).
-- **\`75%\` without quotes is a ratio, \`"75%"\` is a string.** An attribute is always a string: \`float(attrs.at("level", default: "60").trim("%"))\`.
-- **A length in \`em\` cannot be compared or added to one in \`pt\`** ("cannot compare 1.8em with 3pt"): \`parse-length\` can return \`em\`. Write the tag as \`(attrs, body) => context { ... }\` and resolve it first: \`parse-length(...).to-absolute()\`.
-- **An argument belongs to certain functions only** ("unexpected argument: clip"). \`clip\` is an argument of \`block\` and \`box\`, not of \`rect\`; a clipped rounded shape is \`block(width: ..., height: ..., radius: ..., stroke: ..., fill: ..., clip: true, ...)\`. If you are not sure a function takes an argument, do not use it.
-- **A variable must not have the name of a Typst function.** \`let h = ...\` hides the function \`h()\` (horizontal space), so a later \`h(6pt)\` fails with "expected function, found length". The same for \`v\`, \`w\` is safe but \`text\`, \`box\`, \`block\`, \`grid\`, \`rect\`, \`line\`, \`align\`, \`image\`, \`link\`, \`par\`, \`content\`, \`str\`, \`type\`, \`numbering\`, \`counter\` are not. Give variables descriptive names (\`cup-height\`, \`bar-width\`), never one letter that is also a function.
-- **A one-item array needs its comma** \`(x,)\`; an empty dictionary is \`(:)\`.
-- A single wrong character can give a dozen errors: fix the first one and compile again.`,
+After schema defaults, precedence is project shared -> project output -> document shared -> document output -> local shared -> local output, merged by key. Keep kebab-case: \`{{ setting.html.code.copy-button }}\` is valid Typst field access. Local props do not mutate document-wide \`setting\`; vars/var-types stay shared language facilities.`,
   },
   {
     min: "minimal",
-    text: `### The document decides the look
+    text: `### Let the document decide the look
 
-A component is drawn on pages the author chose: one of eight themes (light or dark, or their own), one of three feels, any scale, either text direction, a phone-width page or columns. So **never write a fixed color, corner radius, font, size or \`left\` / \`right\`**. Take them from the document:
+PDF uses \`theme\`, \`zoom\`, \`feel\` and \`content-dir(body)\`; HTML uses the shared document tokens, logical CSS and semantic Tailwind classes. Keep text on a readable tint, not on a solid accent fill. Use \`tinted(...)\` / \`resolve-color(...)\` and \`theme.fg\` in Typst; take radii from \`feel\` (formal is square) and lengths from \`zoom\` or \`em\`.
 
-- **Colors** from \`theme\`. A fill that text sits on is a tint, \`tinted(...)\` or \`resolve-color(...)\`, and the text on it stays \`theme.fg\`. A strong color is for lines, icons and marks, never for a background under text.
-- **Corner radii** from \`feel\` (\`feel.box\`, \`feel.badge\`, ...), **sizes** as \`N * zoom\` or \`em\`.
-- **Order and sides** from the text direction (\`start\` / \`end\`, \`content-dir(body)\`), **widths** as \`100%\` or \`em\`, never a fixed width.`,
+Use start/end sides rather than fixed left/right, and responsive widths rather than a fixed width that overflows a phone. Test light/dark, Persian/English and all feels in both outputs. Renderer availability and full application parity still need verification for a new package.`,
   },
   {
     min: "compact",
-    text: `### The schema
+    text: `### schema.json and docs.json
 
-\`<x>-schema\` is a dictionary \`"tag-name": (kind, description, attrs, ...)\`:
+\`schema.json\` maps each tag name to a JSON object with \`kind\` (\`inline\`, \`block\`, \`void\` or a supported mixed kind), bilingual \`description\`, \`attrs\`, optional \`children\` and \`scoped\`. An attribute describes \`type\`, optional \`default\`, \`required\`, \`values\`, bilingual \`doc\` and \`domain\` (\`shared\`, \`html\` or \`typ\`). Types include string, number, int, bool, length, color, path and enum. JSON booleans are \`true\` / \`false\`; keep values/defaults consistent with their types and the resolver.
 
-- \`kind\`: \`"inline"\` (inside a line of text), \`"block"\` (a block on its own) or \`"void"\` (self-closing, no body, like \`<v />\`).
-- \`description\`: \`(en: "...", fa: "...")\`.
-- \`attrs\`: \`"name": (type, default, required, values, doc)\`. \`type\` is \`string\`, \`number\`, \`int\`, \`bool\`, \`length\`, \`color\`, \`path\` or \`enum\` (an enum lists its \`values\`). \`doc\` is \`(en: ..., fa: ...)\`. The engine rejects an enum value that is not in \`values\`, a bool, int or number that is not one, and a missing required attribute.
-- Optional: \`children\` (the tags it may hold), \`scoped: true\` (only valid inside its parent tags), \`display\` (how the tag is spelled when it has capitals).
+\`docs.json\` has \`en\` / \`fa\` objects with Markdown \`about\` and optional \`more\`, plus \`example.en\` / \`example.fa\` strings. Write descriptions, rules and examples in both languages. JSON uses double quotes and escaped newlines; do not place executable code or raw Typst declarations in these data files.
 
-### The docs
-
-\`<x>-docs\` is \`(en: (about: "..."), fa: (about: "..."), example: (en: "...", fa: "..."))\`. \`about\` is Markdown (add \`more:\` for details); \`example\` is what a document writes.`,
+The manifest is the authority for filenames and implementation availability. A package with neither renderer is invalid. Typst-only packages use SVG fallback in HTML; an HTML-only subtree is omitted from PDF without reserving space/counters/list entries. Diagnose references to omitted targets; an existing broken implementation is an error, not an automatic fallback.`,
   },
   {
     min: "standard",
-    text: `### Colors: what each one is for
+    text: `### Typst implementation and kit
 
-\`theme\` is a dictionary of Typst colors that differs in every theme (light: paper, sepia, ocean, sage; dark: midnight, nord, zinc, dracula; and the project's own \`[themes.x]\`); \`theme.dark\` says which kind it is.
+\`#import "/src/kit.typ": *\` supplies \`theme\`, \`zoom\`, \`feel\`, \`doc-dir\`, \`content-dir\`, \`is-phone\`, \`column-count\` and the shared helpers. Use \`parse-length(value, attrs: attrs)\` for lengths, \`resolve-color(value, attrs: attrs)\` / \`tinted(color)\` for colors, \`panel(...)\` for panels, \`root-path(path)\` for project assets and \`plain-text(body)\` for text. Other documented helpers include \`span-columns\`, \`flag-attr\`, \`pick-hue\`, \`color-presets\`, \`at-of\` and \`setting-prefix\`.
 
-- \`bg\` the page. \`fg\` the body text, and the text on any pale fill. \`heading\` titles. \`muted\` secondary text: captions, labels, hints.
-- \`accent\` what must stand out: links, marks, bars, icons, a thin border. \`secondary\` soft background tints: table header rows, highlights (it equals \`accent\` in every theme except zinc, where it is gray).
-- \`rule\` thin lines and borders. \`code-bg\` and \`code-stroke\` the fill and outline of a code box.
+Typst strings use double quotes; use ASCII digits in numeric code. Code inside \`( )\` / \`{ }\` does not take \`#\`, while code embedded in \`[ ]\` content does. Do not shadow built-in names such as \`text\`, \`box\`, \`grid\`, \`h\` or \`v\`. An \`em\` length needs context before comparison with \`pt\`; use \`context\` and \`.to-absolute()\` when necessary. Read handler attributes with \`attrs.at(...)\` and the appropriate conversion helper instead of assuming a numeric input.
 
-**The mistake that makes a component unreadable:** \`accent\` (or any strong hue) as a fill with text of the same hue, or dark text, on it, such as green text on a green card. \`accent\` is a color for text, lines and icons, not a background to write on. A colored panel is a **tint**:
-
-\`\`\`typst
-let tone = tinted(theme.accent)   // or tinted(color-presets.at("green"))
-block(fill: tone.fill, stroke: 0.6pt * zoom + tone.border, radius: feel.box, inset: 8pt * zoom, text(fill: theme.fg, body))
-\`\`\`
-
-\`tinted(hue)\` returns \`(fill, border, icon)\`: \`fill\` is the hue mixed 10% (16% on dark themes) into \`bg\`, so it is pale and \`theme.fg\` reads on it; \`border\` is a stronger mix; \`icon\` is the hue moved to read on that fill: use it for icons, numbers and marks, not for paragraphs. The engine has no "text on accent" color, so a solid strong fill under text is not possible: use a tint.
-
-A color the author gives as an attribute (\`green\`, \`blue-200\`, \`#1d4ed8\`) goes through \`resolve-color(value, attrs: attrs)\`, which returns the same \`(fill, border, icon)\`, adapted to the theme. A name is from the Tailwind palette (slate, gray, zinc, neutral, stone, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose), with an optional shade (\`blue-200\`); a hex color is used as given on light themes and toned down on dark ones.
-
-### Feels: the three looks
-
-\`feel\` is one of three, chosen per document, and a component must follow it:
-
-- \`formal\` (the default): square and official. Every radius is 0, tables are ruled, the header is a plain ruled line, fonts are New Computer Modern and XB Niloofar.
-- \`standard\`: slightly rounded (box 6pt, alert 8pt, badge 4pt, code 6pt, image 6pt), lined tables, Inter and IRANSansX.
-- \`friendly\`: very rounded (box 14pt, alert 16pt, badge 9pt, code 14pt, image 16pt, frame 24pt), card tables, Lexend and Pelak.
-
-The radii are in \`feel.<kind>\` and already scaled by \`zoom\`: \`box\`, \`alert\`, \`badge\`, \`code\`, \`inline\`, \`image\`, \`theorem\`, \`frame\`, \`band\`, \`heading\`. Take the one of the same kind: a card is \`feel.box\` (a notice, \`feel.alert\`), a pill \`feel.badge\`, a picture \`feel.image\`. \`feel.table\`, \`feel.header\` and \`feel.steps\` are style names (strings), \`feel.latin\` and \`feel.persian\` the fonts: do not set a font, the text inherits it.
-
-### Direction, page and scale
-
-- The text direction is per document (\`doc-dir\`: auto, rtl or ltr) and per block: \`content-dir(body)\` gives the direction of a piece of text. Order the parts of a component by it (an icon before the text, whatever side that is) and align with \`start\` / \`end\`, not \`left\` / \`right\`; a drawing is not mirrored, so keep it symmetric or make it direction-free.
-- \`is-phone\` is true on a narrow page (about 110 mm), and \`column-count\` is the number of text columns: \`width: 100%\` is the width of the column, so a fixed width wider than that overflows.
-- \`zoom\` is the scale of the whole document (1 at 100%); a size is \`8pt * zoom\` or in \`em\`.`,
+Core owns common preparation/parser/IR/schema; the PDF backend owns layout. Do not edit generated \`formatex-typ\` source copies or add another expression/include evaluation in the component.`,
   },
   {
     min: "standard",
-    text: `### What the engine gives a component
+    text: `### HTML implementation
 
-\`#import "/src/kit.typ": *\` is the whole public API. Use only these:
+\`html.tsx\` renders the shared IR node with \`{ node, context }\`. Use \`context.props(node)\` for resolved typed props and \`context.children(node)\` for structured children. It may use the allowed React/document runtime imports and public document UI surface, with Tailwind and \`html.css\`; it must not import app/Tauri/editor state or parse source Markdown.
 
-- \`parse-length(value, attrs: attrs)\`: a length attribute (\`"12pt"\`, \`"1em"\`, \`"5mm"\`) to a Typst length; \`resolve-color(value, attrs: attrs)\`: a color preset name or hex to \`(fill, border, icon)\`; \`tinted(color)\`, \`panel(...)\`: tinted and panel colors.
-- \`root-path(path)\`: a project-relative path (an image, a data file) to a path Typst can read; \`plain-text(body)\`: the text of a body; \`span-columns\`, \`flag-attr\`, \`pick-hue\`: helpers for columns, bool attributes and hues.
+HTML owns reflow and displayed asset dimensions; Typst owns a requested drawing's interior. Preserve intrinsic dimensions and aspect ratio and avoid duplicate captions/SVG IDs. Use the existing context/asset service rather than starting a compiler process or reading arbitrary host files.
 
-A component draws with plain Typst (\`block\`, \`box\`, \`text\`, \`grid\`, ...). The text direction follows the document: do not set it unless the tag is about direction.`,
+The base shell/viewer belongs to the independent React HTML engine, not each tag. Offline export includes its supported runtime/assets and required static Tailwind CSS, without a Tailwind CDN/compiler on the reader's device. Check custom interactive behavior explicitly; static React markup alone does not preserve arbitrary event handlers.`,
   },
   {
     min: "standard",
-    text: `### Errors
+    text: `### Diagnostics and page values
 
-Report a mistake in the document with an \`assert\` whose message starts with \`at-of(attrs)\`, so it carries the line of the tag:
+Report a Typst document error with \`assert(..., message: at-of(attrs) + "...")\` and pass \`attrs: attrs\` to helpers so errors retain the Markdown tag/property location. Keep the implementation-file trace as useful extra context, not the only diagnostic. Schema errors should name the invalid property/value and its original source.
 
-\`\`\`typst
-note: (attrs, body) => {
-  assert("kind" not in attrs or attrs.kind in ("tip", "warning"), message: at-of(attrs) + "<note>: kind must be tip or warning")
-  // ...
-}
-\`\`\`
+PDF resolves actual \`PAGE\` / \`PAGES\`. HTML must report an explicit source error for active expressions requiring page values; do not invent browser page counts. \`SECTION\` / \`SECTION_NUMBER\` may use the shared IR's section context. Deferred expressions cannot mutate ordinary document vars. Preview mapping uses core provenance; export must strip source maps/private source files/preview IPC.
 
-Give the shared helpers \`attrs: attrs\` too (\`parse-length(v, attrs: attrs)\`), so their messages carry the line. The app shows an error from a component **twice**: on the line of the tag in the Markdown file, and on the line of the code in the component's own \`.typ\` file. A tag with a schema also has its attributes checked before the code runs.`,
+A complete package check includes parsing, output-domain/default validation, PDF/HTML behavior, known source errors, Unicode/RTL, offline assets and the requested phone/tablet/desktop layouts. Do not call all of these verified merely because one demo compiles.`,
   },
   {
     min: "full",
-    text: `### A complete file
+    text: `### A complete package
 
-${EXAMPLE}
+` + EXAMPLE + `
 
-Declare it, then use the tags in the Markdown:
-
-\`\`\`toml
-# config.toml
-components = ["notes.typ"]
-\`\`\`
-
+Use it in Markdown with the front-matter folder declaration:
 \`\`\`markdown
-<note>Check the totals.</note> The release is <stamp size="0.9em">new</stamp>.
+---
+components:
+  - extras/note
+---
+
+<note>
+
+Check the totals.
+
+</note>
 \`\`\`
 
 ### Mistakes to avoid
 
-- Forgetting to list the file in \`components\`: the tag is then plain text.
-- A tag name that is already built in, or defined in two files.
-- Reading an attribute as a number: attributes are strings; convert them (\`float(attrs.at("n"))\`, \`parse-length\`).
-- A fixed color or a fixed size (\`red\`, \`12pt\`) instead of \`theme\`, \`zoom\` and \`em\`.
-- A schema \`kind\` that does not match how the tag is used (a \`block\` tag inside a line of text).
-- Importing anything but \`/src/kit.typ\` from the engine: other files are not a stable API.`,
+- Listing a \`.typ\` file instead of the package folder, or using \`component.toml\` / \`typ.typ\` instead of the agreed filenames.
+- Keeping schema/docs in renderer code or teaching old Typst HTML handlers as the TSX implementation.
+- Bare HTML-only props, root paged settings, invalid typed JSON defaults, or precedence based on source attribute order.
+- Hardcoded theme colors, rounded corners in formal mode, fixed-width overflow, duplicated captions or unmapped errors.
+- A second Markdown parser or repeated \`{{ }}\` execution; shipping private source/map/preview payloads in export.
+- Assuming full HTML/native/source-map/performance parity from one successful PDF build.`,
   },
 ]
 
@@ -203,151 +202,113 @@ const FA: Block[] = [
     min: "minimal",
     text: `## ساختن کامپوننت دلخواه
 
-کامپوننت یک **فایل Typst در پروژه** است. به سند تگ تازه می‌دهد (\`<note>\`، \`<stamp>\`) که در فایل Markdown مثل تگ‌های آماده نوشته می‌شود. فقط وقتی بسازید که Markdown ساده و تگ‌های آماده کافی نیست.
+کامپوننت یک **بستهٔ پوشه‌ای** است، نه فایل Typst مستقل. فقط وقتی بسازید که Markdown و تگ‌های موجود کافی نیستند. بستهٔ مشترک دقیقاً این شش نام فایل را دارد: \`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\` و \`html.css\`.
 
-- یک فایل می‌تواند **هر تعداد تگ** داشته باشد، مرتبط یا نامرتبط. **نام فایل مهم نیست** و یک پروژه می‌تواند هر تعداد فایل داشته باشد، **هر جای** پروژه.
-- فایل‌ها را مثل ایمپورت در تنظیم \`components\` بنویسید: در \`config.toml\` (برای همهٔ سندها) یا در front matter یک سند: \`components = ["extras/notes.typ", "stamps.typ"]\`. مسیرها نسبت به پوشهٔ پروژه‌اند. front matter به \`config.toml\` افزوده می‌شود.
-- نام تگ حرف کوچک، رقم و \`-\` است و با حرف شروع می‌شود. نباید تگ آماده (\`alert\`، \`box\`، ...) یا تگ فایل دیگر باشد: خطا می‌دهد.`,
+**مسیر پوشهٔ نسبت به پروژه را در front matter فایل Markdown** معرفی کنید:
+\`\`\`yaml
+---
+components:
+  - extras/note
+---
+\`\`\`
+
+نام تگ با حرف کوچک شروع می‌شود و حرف کوچک، رقم و \`-\` دارد. schema موجود را برای تگ تکراری بررسی کنید. API قدیمی تک‌فایل را به کار نبرید و \`notes.typ\` را به‌عنوان بسته معرفی نکنید.`,
   },
   {
     min: "minimal",
-    text: `### فایل چه چیزهایی تعریف می‌کند
+    text: `### قرارداد مشترک و دو پیاده‌سازی
 
-- \`<x>-tags\` (**الزامی**): دیکشنری \`نام-تگ: (attrs, body) => content\`. \`attrs\` ویژگی‌هایی است که روی تگ نوشته شده، **همه رشته**، با \`attrs.at("size", default: "1em")\` خوانده می‌شود. \`body\` آنچه بین تگ بازکننده و بسته‌کننده است.
-- \`<x>-schema\` (اختیاری): تگ‌ها را به‌نام تگ توصیف می‌کند. با آن اپ تگ و ویژگی‌هایش را تکمیل می‌کند و موتور آن‌ها را بررسی می‌کند؛ بدون آن تگ باز کار می‌کند و ویژگی‌ها بررسی نمی‌شوند.
-- \`<x>-docs\` (اختیاری): تگ‌ها برای چیست و یک مثال، به فارسی و انگلیسی.
+- \`manifest.toml\` نام بسته و فایل‌های \`typ\`، \`html\`، \`css\`، \`schema\` و \`docs\` را معرفی می‌کند. از \`typ = "typst.typ"\` و \`html = "html.tsx"\` استفاده کنید؛ \`typ = false\` یا \`html = false\` یعنی آن پیاده‌سازی وجود ندارد.
+- \`schema.json\` نوع تگ، ویژگی، پیش‌فرض، مقدار مجاز، حوزه و قاعدهٔ فرزند محدود به والد را دارد. \`docs.json\` توضیح Markdown و نمونهٔ فارسی/انگلیسی را نگه می‌دارد. این داده‌ها را از هر دو پیاده‌سازی جدا نگه دارید؛ schema/docs درون‌خطی Typst یا schema دومی در JSX نسازید.
+- \`typst.typ\` تابع‌های \`<name>-tags\` به‌شکل \`(attrs, body) => content\` برای PDF دارد؛ \`/src/kit.typ\` و کمک‌کننده‌هایش را به کار ببرید. \`html.tsx\` کامپوننت پیش‌فرض React با \`{ node, context }\` می‌دهد؛ \`context.children(node)\` را رندر کنید، نه اینکه Markdown را دوباره بخوانید.
+- \`html.css\` سبک کامپوننت است؛ کلاس‌های Tailwind در TSX به CSS ثابت لازم تبدیل می‌شوند. تابع‌های \`-html\` / \`-css\` قدیمی Typst، API موتور مستقل HTML نیستند.
 
-\`<x>\` هر برچسبی است (\`note\`، \`my-tags\`)؛ schema و docs با **نام تگ** به تگ وصل می‌شوند، نه با \`<x>\` و نه با فایل.`,
+خط لولهٔ مشترک در Typst اجرا می‌شود و پارسر Rust/WASM مبتنی بر pulldown-cmark را یک بار برای IR مشترک فراخوانی می‌کند. پارسر Markdown جاوااسکریپتی به کامپوننت اضافه نکنید.`,
   },
   {
     min: "minimal",
-    text: `### Typst، جاوااسکریپت یا پایتون نیست
+    text: `### یک تنظیم و حوزه‌های خروجی
 
-تقریباً هر خطای کامپایل در فایل کامپوننت یکی از این‌هاست. پیش از پایان بررسی‌شان کنید:
+یک \`config.toml\` داشته باشید: مقدارهای مشترک ریشه/جدول‌ها و بازنویسی‌های \`[html]\` / \`[typ]\`. front matter همین ساختار را دارد. ویژگی فقط HTML پیشوند \`html\` می‌خواهد: \`[html.code] copy-button = true\` یا \`html.copy-button="true"\` محلی، نه \`copy-button\` تنها. تنظیم فقط صفحه‌بندی زیر \`typ\` است؛ مثلاً \`[typ] page = "desktop-a4"\` و سربرگ/پابرگ زیر \`typ.header\` / \`typ.footer\`.
 
-- **رشته فقط با گیومهٔ دوتایی نوشته می‌شود.** \`'text'\` در Typst وجود ندارد (خطا: «the character \`'\` is not valid in code» و معمولاً ده‌ها خطای پشت‌سرش). رشته‌ای که گیومه دارد آن‌ها را escape می‌کند: \`"<coffee level=\\"75\\">x</coffee>"\`؛ یا به‌شکل بلوک raw می‌نویسد: \`\` \`<coffee level="75">x</coffee>\`.text \`\` (برای چند خط: \`\`\`\`\`md ... \`\`\`\`\`.text). بیشترین اشتباه همین‌جاست: \`example:\` در \`<x>-docs\` همیشه تگ با ویژگی‌های گیومه‌دار دارد؛ پس بنویسید \`example: (en: "<coffee level=\\"75\\">Latte</coffee>", fa: "...")\` و هرگز \`'...'\`.
-- **کد و محتوا دو حالت‌اند.** داخل \`( )\` و \`{ }\` در حالت کد هستید: \`let x = 1\`، بدون \`#\`. داخل \`[ ]\` در حالت محتوا هستید: کد آن‌جا \`#\` می‌خواهد (\`#let\`، \`#if\`، \`#place(...)\`). در کد \`#\` نگذارید و در \`[ ]\` از قلم نیندازید. تصویر را در بلوک \`{ }\` بسازید و \`[ ]\` را برای متن نگه دارید.
-- **کد فقط ASCII می‌گیرد.** رقم فارسی (۷۵)، \`٪\`، گیومهٔ خمیده و حرف فارسی داخل رشته یا محتوا درست است (\`"۷۵٪"\`، \`[۷۵٪]\`) و در کد هرگز (\`level: ۷۵\` خطا می‌دهد).
-- **\`75%\` بدون گیومه نسبت است و \`"75%"\` رشته.** ویژگی همیشه رشته است: \`float(attrs.at("level", default: "60").trim("%"))\`.
-- **طول با واحد \`em\` را نمی‌شود با طول \`pt\` مقایسه یا جمع کرد** («cannot compare 1.8em with 3pt»): \`parse-length\` ممکن است \`em\` بدهد. تگ را \`(attrs, body) => context { ... }\` بنویسید و اول مطلقش کنید: \`parse-length(...).to-absolute()\`.
-- **هر آرگومان مال چند تابع مشخص است** («unexpected argument: clip»). \`clip\` آرگومان \`block\` و \`box\` است، نه \`rect\`؛ شکل گوشه‌گرد بریده‌شده \`block(width: ..., height: ..., radius: ..., stroke: ..., fill: ..., clip: true, ...)\` است. اگر مطمئن نیستید تابعی آن آرگومان را می‌گیرد، به کار نبرید.
-- **نام متغیر نباید نام تابع Typst باشد.** \`let h = ...\` تابع \`h()\` (فاصلهٔ افقی) را می‌پوشاند و \`h(6pt)\` بعدی خطای «expected function, found length» می‌دهد. همین‌طور \`v\`، و \`text\`، \`box\`، \`block\`، \`grid\`، \`rect\`، \`line\`، \`align\`، \`image\`، \`link\`، \`par\`، \`content\`، \`str\`، \`type\`، \`numbering\`، \`counter\` (\`w\` امن است). نام توصیفی بگذارید (\`cup-height\`، \`bar-width\`)، نه یک حرف که نام تابع هم هست.
-- **آرایهٔ تک‌عضوی ویرگول می‌خواهد** \`(x,)\`؛ دیکشنری خالی \`(:)\` است.
-- یک نویسهٔ اشتباه می‌تواند ده‌ها خطا بدهد: اولین خطا را درست کنید و دوباره کامپایل کنید.`,
+بعد از پیش‌فرض schema، تقدم دقیق این است: مشترک پروژه -> خروجی پروژه -> مشترک سند -> خروجی سند -> مشترک محلی -> خروجی محلی، با ادغام کلیدبه‌کلید. kebab-case را نگه دارید: \`{{ setting.html.code.copy-button }}\` دسترسی معتبر Typst است. ویژگی محلی \`setting\` سراسری را عوض نمی‌کند؛ vars/var-types ابزار مشترک زبان‌اند.`,
   },
   {
     min: "minimal",
     text: `### ظاهر را سند تعیین می‌کند
 
-کامپوننت روی صفحه‌ای کشیده می‌شود که نویسنده انتخاب کرده: یکی از هشت تم (روشن یا تیره، یا تم خودش)، یکی از سه «حالت کلی»، هر مقیاس، هر دو جهت متن، صفحهٔ باریک موبایل یا چند ستون. پس **هرگز رنگ، شعاع گوشه، فونت، اندازه یا \`left\` / \`right\` ثابت ننویسید**. از سند بگیرید:
+PDF از \`theme\`، \`zoom\`، \`feel\` و \`content-dir(body)\` استفاده می‌کند؛ HTML از توکن مشترک، CSS منطقی و Tailwind معنایی. متن را روی ته‌رنگ خوانا بگذارید، نه رنگ تأکید توپُر. در Typst از \`tinted(...)\` / \`resolve-color(...)\` و \`theme.fg\`، شعاع از \`feel\` (رسمی مربع است) و اندازه از \`zoom\` یا \`em\` بگیرید.
 
-- **رنگ** از \`theme\`. زمینه‌ای که متن رویش می‌نشیند «تینت» است، با \`tinted(...)\` یا \`resolve-color(...)\`، و متن رویش همان \`theme.fg\` می‌ماند. رنگ قوی برای خط، آیکون و نشانه است، نه پس‌زمینهٔ زیر متن.
-- **شعاع گوشه** از \`feel\` (\`feel.box\`، \`feel.badge\`، ...)، **اندازه** به‌شکل \`N * zoom\` یا \`em\`.
-- **ترتیب و سمت‌ها** از جهت متن (\`start\` / \`end\`، \`content-dir(body)\`)، **عرض** به‌شکل \`100%\` یا \`em\`، نه عرض ثابت.`,
+سمت شروع/پایان را به‌جای چپ/راست ثابت و پهنای واکنش‌گرا را به‌جای پهنای بیرون‌زننده از گوشی به کار ببرید. روشن/تیره، فارسی/انگلیسی و همهٔ حالت‌ها را در هر دو خروجی بررسی کنید. وجود پیاده‌سازی و برابری کامل اپ برای بستهٔ تازه نیازمند آزمون است.`,
   },
   {
     min: "compact",
-    text: `### schema
+    text: `### schema.json و docs.json
 
-\`<x>-schema\` دیکشنری \`"نام-تگ": (kind, description, attrs, ...)\` است:
+\`schema.json\` هر نام تگ را به شیء JSON با \`kind\` (inline، block، void یا نوع ترکیبی پشتیبانی‌شده)، \`description\` دوزبانه، \`attrs\` و در صورت نیاز \`children\` / \`scoped\` وصل می‌کند. ویژگی \`type\`، \`default\`، \`required\`، \`values\`، \`doc\` دوزبانه و \`domain\` (shared، html یا typ) دارد. نوع‌ها string، number، int، bool، length، color، path و enum هستند. bool در JSON مقدار \`true\` / \`false\` دارد؛ مقدار و پیش‌فرض را با نوع و حل‌کننده هماهنگ نگه دارید.
 
-- \`kind\`: \`"inline"\` (درون خط)، \`"block"\` (بلوک مستقل) یا \`"void"\` (خودبسته، بدون بدنه، مثل \`<v />\`).
-- \`description\`: \`(en: "...", fa: "...")\`.
-- \`attrs\`: \`"name": (type, default, required, values, doc)\`. \`type\` یکی از \`string\`، \`number\`، \`int\`، \`bool\`، \`length\`، \`color\`، \`path\` یا \`enum\` است (enum فهرست \`values\` دارد). \`doc\` به‌شکل \`(en: ..., fa: ...)\` است. موتور مقدار enum بیرون از \`values\`، bool یا int یا number نادرست و ویژگی الزامی گم‌شده را رد می‌کند.
-- اختیاری: \`children\` (تگ‌هایی که می‌تواند داشته باشد)، \`scoped: true\` (فقط داخل تگ والد)، \`display\` (املای تگ وقتی حرف بزرگ دارد).
+\`docs.json\` شیءهای \`en\` / \`fa\` با Markdownِ \`about\` و \`more\` اختیاری و رشته‌های \`example.en\` / \`example.fa\` دارد. توضیح، قاعده و نمونه را دوزبانه بنویسید. JSON گیومهٔ دوتایی و خط جدید escape‌شده می‌خواهد؛ در این فایل‌های داده کد اجرایی یا تعریف Typst نگذارید.
 
-### docs
-
-\`<x>-docs\` به‌شکل \`(en: (about: "..."), fa: (about: "..."), example: (en: "...", fa: "..."))\` است. \`about\` Markdown است (برای جزئیات \`more:\` بیفزایید)؛ \`example\` همان است که سند می‌نویسد.`,
+manifest مرجع نام فایل و وجود پیاده‌سازی است. بستهٔ بدون هر دو رندرکننده نامعتبر است. فقط Typst در HTML از SVG استفاده می‌کند؛ زیرشاخهٔ فقط HTML از PDF بدون فضا/شمارنده/ورودی فهرست کنار می‌رود. ارجاع به هدف حذف‌شده خطای روشن می‌خواهد؛ پیاده‌سازی موجودِ خراب خطاست، نه مجوز fallback خودکار.`,
   },
   {
     min: "standard",
-    text: `### رنگ‌ها: هر کدام برای چیست
+    text: `### پیاده‌سازی Typst و kit
 
-\`theme\` دیکشنری رنگ‌های Typst است که در هر تم فرق دارد (روشن: paper، sepia، ocean، sage؛ تیره: midnight، nord، zinc، dracula؛ و \`[themes.x]\` خود پروژه)؛ \`theme.dark\` می‌گوید کدام نوع است.
+\`#import "/src/kit.typ": *\` مقدارهای \`theme\`، \`zoom\`، \`feel\`، \`doc-dir\`، \`content-dir\`، \`is-phone\`، \`column-count\` و کمک‌کننده‌های مشترک را می‌دهد. برای طول از \`parse-length(value, attrs: attrs)\`، رنگ از \`resolve-color(value, attrs: attrs)\` / \`tinted(color)\`، پنل از \`panel(...)\`، مسیر دارایی از \`root-path(path)\` و متن بدنه از \`plain-text(body)\` استفاده کنید. کمک‌کننده‌های مستند دیگر \`span-columns\`، \`flag-attr\`، \`pick-hue\`، \`color-presets\`، \`at-of\` و \`setting-prefix\` هستند.
 
-- \`bg\` صفحه. \`fg\` متن اصلی و متن روی هر زمینهٔ روشن. \`heading\` تیترها. \`muted\` متن فرعی: زیرنویس، برچسب، راهنما.
-- \`accent\` آنچه باید دیده شود: لینک، نشانه، نوار، آیکون، حاشیهٔ نازک. \`secondary\` سایه‌های ملایم پس‌زمینه: ردیف سرتیتر جدول، هایلایت (در همهٔ تم‌ها با \`accent\` یکی است جز zinc که خاکستری است).
-- \`rule\` خط و حاشیهٔ نازک. \`code-bg\` و \`code-stroke\` پر و دور کادر کد.
+رشتهٔ Typst گیومهٔ دوتایی دارد و عدد کد رقم ASCII می‌خواهد. کد در \`( )\` / \`{ }\` پیشوند \`#\` ندارد؛ کد داخل محتوای \`[ ]\` دارد. نام تابع آماده مثل \`text\`، \`box\`، \`grid\`، \`h\` یا \`v\` را نپوشانید. طول \`em\` پیش از مقایسه با \`pt\` نیازمند بافت است؛ در صورت نیاز از \`context\` و \`.to-absolute()\` استفاده کنید. ویژگی را با \`attrs.at(...)\` و کمک‌کنندهٔ تبدیل بخوانید، نه با فرض عدد بودن.
 
-**اشتباهی که کامپوننت را ناخوانا می‌کند:** \`accent\` (یا هر رنگ قوی) به‌عنوان زمینه و رویش متن هم‌رنگ یا تیره، مثل متن سبز روی کارت سبز. \`accent\` رنگ متن، خط و آیکون است، نه پس‌زمینه‌ای که رویش بنویسید. پنل رنگی یک **تینت** است:
-
-\`\`\`typst
-let tone = tinted(theme.accent)   // یا tinted(color-presets.at("green"))
-block(fill: tone.fill, stroke: 0.6pt * zoom + tone.border, radius: feel.box, inset: 8pt * zoom, text(fill: theme.fg, body))
-\`\`\`
-
-\`tinted(hue)\` مقدار \`(fill, border, icon)\` برمی‌گرداند: \`fill\` رنگ را ۱۰٪ (در تم تیره ۱۶٪) با \`bg\` مخلوط می‌کند، پس کم‌رنگ است و \`theme.fg\` رویش خوانا می‌ماند؛ \`border\` مخلوط قوی‌تر است؛ \`icon\` رنگ جابه‌جاشده تا روی آن زمینه دیده شود: برای آیکون، عدد و نشانه، نه برای پاراگراف. موتور رنگ «متن روی accent» ندارد، پس زمینهٔ توپُر قوی زیر متن ممکن نیست: تینت بگیرید.
-
-رنگی که نویسنده با ویژگی می‌دهد (\`green\`، \`blue-200\`، \`#1d4ed8\`) از \`resolve-color(value, attrs: attrs)\` رد می‌شود که همان \`(fill, border, icon)\` را، سازگار با تم، می‌دهد. نام از پالت Tailwind است (slate، gray، zinc، neutral، stone، red، orange، amber، yellow، lime، green، emerald، teal، cyan، sky، blue، indigo، violet، purple، fuchsia، pink، rose) با سایهٔ اختیاری (\`blue-200\`)؛ رنگ hex در تم روشن همان‌طور که هست و در تم تیره ملایم‌تر به کار می‌رود.
-
-### حالت‌های کلی: سه ظاهر
-
-\`feel\` یکی از سه است، برای هر سند انتخاب می‌شود، و کامپوننت باید از آن پیروی کند:
-
-- \`formal\` (پیش‌فرض): تیز و رسمی. همهٔ شعاع‌ها ۰، جدول‌ها خط‌دار، هدر یک خط ساده، فونت‌ها New Computer Modern و XB Niloofar.
-- \`standard\`: کمی گرد (box ‏۶pt، alert ‏۸pt، badge ‏۴pt، code ‏۶pt، image ‏۶pt)، جدول «lined»، فونت‌های Inter و IRANSansX.
-- \`friendly\`: بسیار گرد (box ‏۱۴pt، alert ‏۱۶pt، badge ‏۹pt، code ‏۱۴pt، image ‏۱۶pt، frame ‏۲۴pt)، جدول «card»، فونت‌های Lexend و Pelak.
-
-شعاع‌ها در \`feel.<kind>\` هستند و از پیش در \`zoom\` ضرب شده‌اند: \`box\`، \`alert\`، \`badge\`، \`code\`، \`inline\`، \`image\`، \`theorem\`، \`frame\`، \`band\`، \`heading\`. همنوع را بگیرید: کارت \`feel.box\` (اعلان \`feel.alert\`)، قرص \`feel.badge\`، تصویر \`feel.image\`. \`feel.table\`، \`feel.header\` و \`feel.steps\` نام سبک (رشته) هستند و \`feel.latin\` و \`feel.persian\` فونت‌ها: فونت تعیین نکنید، متن آن را به ارث می‌برد.
-
-### جهت، صفحه و مقیاس
-
-- جهت متن برای هر سند (\`doc-dir\`: auto، rtl یا ltr) و برای هر بلوک است: \`content-dir(body)\` جهت یک تکه متن را می‌دهد. اجزای کامپوننت را بر اساس آن مرتب کنید (آیکون پیش از متن، هر سمتی که باشد) و با \`start\` / \`end\` تراز کنید، نه \`left\` / \`right\`؛ نقاشی آینه نمی‌شود، پس متقارن نگهش دارید یا مستقل از جهتش کنید.
-- \`is-phone\` در صفحهٔ باریک (حدود ۱۱۰ میلی‌متر) درست است و \`column-count\` تعداد ستون‌های متن؛ \`width: 100%\` عرض ستون است، پس عرض ثابت بزرگ‌تر از آن بیرون می‌زند.
-- \`zoom\` مقیاس کل سند است (۱ در ۱۰۰٪)؛ اندازه \`8pt * zoom\` یا با \`em\` نوشته می‌شود.`,
+هسته مالک آماده‌سازی/پارسر/IR/schema است و PDF مالک صفحه‌آرایی. نسخهٔ تولیدشدهٔ \`formatex-typ\` را ویرایش نکنید و عبارت/include را دوباره در کامپوننت اجرا نکنید.`,
   },
   {
     min: "standard",
-    text: `### موتور چه چیزی به کامپوننت می‌دهد
+    text: `### پیاده‌سازی HTML
 
-\`#import "/src/kit.typ": *\` کل API عمومی است. فقط از این‌ها استفاده کنید:
+\`html.tsx\` گرهٔ IR مشترک را با \`{ node, context }\` رندر می‌کند. ویژگی حل‌شدهٔ نوع‌دار را با \`context.props(node)\` و فرزند ساختاری را با \`context.children(node)\` بگیرید. importهای مجاز React/زمان اجرای سند و UI عمومی، Tailwind و \`html.css\` قابل استفاده‌اند؛ import وضعیت اپ/Tauri/ویرایشگر یا پارس Markdown منبع مجاز نیست.
 
-- \`parse-length(value, attrs: attrs)\`: ویژگی طول (\`"12pt"\`، \`"1em"\`، \`"5mm"\`) را به طول Typst می‌برد؛ \`resolve-color(value, attrs: attrs)\`: نام رنگ آماده یا hex را به \`(fill, border, icon)\` می‌برد؛ \`tinted(color)\` و \`panel(...)\`: رنگ‌های ملایم و پنل.
-- \`root-path(path)\`: مسیر نسبت به پروژه (تصویر، فایل داده) را به مسیری می‌برد که Typst بخواند؛ \`plain-text(body)\`: متن یک بدنه؛ \`span-columns\`، \`flag-attr\`، \`pick-hue\`: کمک‌کننده برای ستون، ویژگی bool و رنگ‌مایه.
+HTML مالک جریان متن و اندازهٔ نمایشی دارایی است و Typst مالک داخل رسم درخواستی. اندازه و نسبت ذاتی را نگه دارید و عنوان یا شناسهٔ SVG را دوباره نسازید. از سرویس بافت/دارایی موجود استفاده کنید، نه فرایند کامپایلر یا خواندن دلخواه فایل میزبان.
 
-کامپوننت با Typst ساده می‌کشد (\`block\`، \`box\`، \`text\`، \`grid\`، ...). جهت متن از سند می‌آید؛ مگر تگ دربارهٔ جهت باشد آن را تعیین نکنید.`,
+پوسته/نمایشگر متعلق به موتور React مستقل است، نه هر تگ. خروجی آفلاین زمان اجرا/دارایی پشتیبانی‌شده و CSS ثابت Tailwind را همراه دارد؛ CDN یا کامپایلر Tailwind در دستگاه خواننده ندارد. رفتار تعاملی دلخواه را جدا بررسی کنید؛ HTML ثابت React خودبه‌خود هر event handler را حفظ نمی‌کند.`,
   },
   {
     min: "standard",
-    text: `### خطاها
+    text: `### خطاها و مقدارهای صفحه
 
-اشتباه در سند را با \`assert\` گزارش کنید که پیامش با \`at-of(attrs)\` شروع شود تا خطِ تگ را همراه داشته باشد:
+خطای سند در Typst را با \`assert(..., message: at-of(attrs) + "...")\` گزارش کنید و \`attrs: attrs\` به کمک‌کننده بدهید تا مکان اصلی تگ/ویژگی Markdown بماند. ردگیری فایل پیاده‌سازی اطلاعات تکمیلی است، نه تنها خطا. خطای schema باید نام ویژگی/مقدار و منبع اصلی را مشخص کند.
 
-\`\`\`typst
-note: (attrs, body) => {
-  assert("kind" not in attrs or attrs.kind in ("tip", "warning"), message: at-of(attrs) + "<note>: kind must be tip or warning")
-  // ...
-}
-\`\`\`
+PDF مقدار واقعی \`PAGE\` / \`PAGES\` را دارد. HTML برای عبارت فعالِ نیازمند این مقدارها خطای منبع روشن می‌دهد؛ تعداد صفحهٔ مرورگر نسازید. \`SECTION\` / \`SECTION_NUMBER\` می‌توانند از بافت بخش در IR مشترک بیایند. عبارت دیرهنگام vars عادی را تغییر نمی‌دهد. نگاشت پیش‌نمایش از منبع هسته است؛ خروجی باید نگاشت/فایل خصوصی منبع/IPC پیش‌نمایش را حذف کند.
 
-به کمک‌کننده‌های مشترک هم \`attrs: attrs\` بدهید (\`parse-length(v, attrs: attrs)\`) تا پیامشان خط را داشته باشد. اپ خطای کامپوننت را **دو بار** نشان می‌دهد: روی خط تگ در فایل Markdown و روی خط کد در فایل \`.typ\` خود کامپوننت. تگی که schema دارد پیش از اجرای کد ویژگی‌هایش هم بررسی می‌شود.`,
+بررسی کامل بسته شامل پارس، حوزه/پیش‌فرض نوع‌دار، PDF/HTML، خطاهای منبع، Unicode/راست‌به‌چپ، دارایی آفلاین و چیدمان گوشی/تبلت/دسکتاپ است. با کامپایل یک دمو همهٔ این‌ها را تأییدشده ننامید.`,
   },
   {
     min: "full",
-    text: `### یک فایل کامل
+    text: `### یک بستهٔ کامل
 
-${EXAMPLE}
+` + EXAMPLE + `
 
-آن را معرفی کنید و تگ‌ها را در Markdown بنویسید:
-
-\`\`\`toml
-# config.toml
-components = ["notes.typ"]
-\`\`\`
-
+در Markdown با پوشهٔ معرفی‌شده در front matter به کار ببرید:
 \`\`\`markdown
-<note>جمع‌ها را بررسی کنید.</note> انتشار <stamp size="0.9em">جدید</stamp> است.
+---
+components:
+  - extras/note
+---
+
+<note>
+
+جمع‌ها را بررسی کنید.
+
+</note>
 \`\`\`
 
 ### اشتباه‌هایی که باید از آن‌ها پرهیز کرد
 
-- فراموش کردن نوشتن فایل در \`components\`: تگ آن‌وقت متن ساده می‌ماند.
-- نام تگی که از پیش آماده است یا در دو فایل تعریف شده.
-- خواندن ویژگی به‌شکل عدد: ویژگی‌ها رشته‌اند؛ تبدیلشان کنید (\`float(attrs.at("n"))\`، \`parse-length\`).
-- رنگ یا اندازهٔ ثابت (\`red\`، \`12pt\`) به‌جای \`theme\`، \`zoom\` و \`em\`.
-- \`kind\` در schema که با کاربرد تگ نمی‌خواند (تگ \`block\` درون یک خط متن).
-- ایمپورت چیزی جز \`/src/kit.typ\` از موتور: فایل‌های دیگر API پایدار نیستند.`,
+- معرفی فایل \`.typ\` به‌جای پوشهٔ بسته یا نام‌های قدیمی \`component.toml\` / \`typ.typ\` به‌جای نام‌های توافق‌شده.
+- schema/docs در کد رندرکننده یا معرفی تابع HTML قدیمی Typst به‌جای پیاده‌سازی TSX.
+- ویژگی فقط HTML بدون پیشوند، تنظیم صفحه در ریشه، پیش‌فرض JSON با نوع غلط یا تقدم وابسته به ترتیب ویژگی‌ها.
+- رنگ ثابت، گوشهٔ گرد در حالت رسمی، پهنای بیرون‌زننده، عنوان تکراری یا خطای بدون منبع.
+- پارسر Markdown دوم یا اجرای دوبارهٔ \`{{ }}\`؛ فایل خصوصی منبع/نگاشت/IPC پیش‌نمایش در خروجی.
+- نتیجه‌گیری برابری کامل HTML/بومی/نگاشت/کارایی از یک PDF موفق.`,
   },
 ]
 

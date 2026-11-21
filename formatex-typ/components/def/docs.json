@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A defined term: a small badge inside a sentence (or a titled block with `mode=\"block\"`) that points at an element or a text fragment by `id` and carries its definition.\n\n- `id` names the target (a heading, figure, table, equation, theorem, listing, diff, or a text fragment marked with `<span id>`); the title links to it like `<ref>`.\n- Inline (default) it is a small badge: icon, title, a colon and the text; `mode=\"block\"` with a `title` makes a titled block. `color` takes a preset or hex."
+  },
+  "fa": {
+    "about": "اصطلاح تعریف‌شده: یک برچسب کوچک میان جمله (یا یک بلوک عنوان‌دار با `mode=\"block\"`) که با `id` به یک عنصر یا تکه‌ای از متن اشاره می‌کند و تعریفش را همراه دارد.\n\n- `id` هدف را نام می‌برد (تیتر، شکل، جدول، معادله، قضیه، کد، diff یا تکه‌ای از متن که با `<span id>` علامت خورده)؛ عنوان مثل `<ref>` به آن پیوند می‌دهد.\n- درون‌خطی (پیش‌فرض) یک برچسب کوچک است: آیکون، عنوان، دونقطه و متن؛ `mode=\"block\"` با `title` یک بلوک عنوان‌دار می‌سازد. `color` رنگ آماده یا hex می‌گیرد."
+  },
+  "example": {
+    "en": "Some call it <span id=\"span-ai\">artificial intelligence</span> today.\n\nWe use <def id=\"span-ai\" color=\"teal\">simulating human intelligence by computer systems</def>.\n\n<def id=\"span-ai\" mode=\"block\" title=\"Artificial intelligence\" color=\"blue\">\nSystems that act in ways that look intelligent.\n</def>",
+    "fa": "امروز <span id=\"span-ai\">هوش مصنوعی</span> را می‌شنوید.\n\nمنظور ما <def id=\"span-ai\" color=\"teal\">شبیه‌سازی هوش انسان با سامانه‌های رایانه‌ای</def> است.\n\n<def id=\"span-ai\" mode=\"block\" title=\"هوش مصنوعی\" color=\"blue\">\nسامانه‌هایی که رفتارشان هوشمندانه به نظر می‌رسد.\n</def>"
+  }
+}

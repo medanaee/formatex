@@ -247,7 +247,8 @@
       "empty": "Enter a name",
       "invalid": "Use lowercase letters, digits and -, starting with a letter",
       "exists": "A component with this name exists"
-    }
+    },
+    "files": "Component files"
   },
   "window": {
     "minimize": "Minimize",

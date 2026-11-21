@@ -4,6 +4,8 @@ Decision: [ADR 0007](../decisions/0007-component-library.md). Code: [`Components
 
 ## What a component is
 
+The component editor shows package files in a horizontally scrollable strip. Each file has its Material Icon Theme icon, and the selected file has an underline.
+
 One Typst file, `components/<name>.typ`:
 
 ```typst

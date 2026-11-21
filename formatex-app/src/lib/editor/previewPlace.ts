@@ -1,6 +1,7 @@
 import { placeFromMarkers } from "@/lib/editor/markerLookup"
 import { previewPlaceOf, type PreviewPlace } from "@/lib/editor/previewLookup"
 import { useEditorStore } from "@/stores/useEditorStore"
+import { pdfPlaceAt, sourceOffset } from "./pdfSource"
 
 /**
  * Where a line of a file of the open project is on the preview pages. The engine's markers give the block exactly
@@ -10,5 +11,5 @@ import { useEditorStore } from "@/stores/useEditorStore"
 export function previewPlaceForLine(file: string, source: string, line: number, column: number): PreviewPlace | null {
   const { markers, pages, mainFile } = useEditorStore.getState()
   const maps = pages.map((page) => page.map)
-  return placeFromMarkers(markers, maps, file, source, line, column) ?? previewPlaceOf(source, line, column, maps, file === mainFile)
+  return pdfPlaceAt(maps, file, sourceOffset(source, line, column)) ?? placeFromMarkers(markers, maps, file, source, line, column) ?? previewPlaceOf(source, line, column, maps, file === mainFile)
 }

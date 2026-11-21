@@ -1,0 +1,106 @@
+{
+  "fig": {
+    "kind": "block",
+    "description": {
+      "en": "numbered figure",
+      "fa": "شکل شماره‌دار"
+    },
+    "attrs": {
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for `<ref>`.",
+          "fa": "هدف `<ref>`."
+        }
+      },
+      "numbering": {
+        "type": "bool",
+        "doc": {
+          "en": "Number the figure («شکل ۱»). Default: `[figure] numbering` (on). With a `<caption>` inside, the caption follows the number: «شکل ۱: توضیح»; with the number off, the caption stands alone.",
+          "fa": "شکل شماره بخورد («شکل ۱»). پیش‌فرض: `[figure] numbering` (روشن). اگر `<caption>` داخلش باشد عنوان بعد از شماره می‌آید: «شکل ۱: توضیح»؛ با شمارهٔ خاموش عنوان تنها می‌آید."
+        }
+      },
+      "caption-position": {
+        "type": "enum",
+        "values": [
+          "above",
+          "below"
+        ],
+        "doc": {
+          "en": "Where the number and caption go. Default: `[figure] caption-position` (`below`).",
+          "fa": "جای شماره و عنوان. پیش‌فرض: `[figure] caption-position` (`below`)."
+        }
+      },
+      "lof": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`false` leaves this figure out of `<lof>`.",
+          "fa": "`false` این شکل را از `<lof>` بیرون می‌گذارد."
+        }
+      },
+      "align": {
+        "type": "enum",
+        "values": [
+          "center",
+          "left",
+          "right",
+          "start",
+          "end"
+        ],
+        "default": "center",
+        "doc": {
+          "en": "`center` (default, or the enclosing `<align>`), `left`, `right`, `start`, `end`.",
+          "fa": "`center` (پیش‌فرض، یا `<align>` دربرگیرنده)، `left`، `right`، `start`، `end`."
+        }
+      },
+      "height": {
+        "type": "length",
+        "doc": {
+          "en": "Size of the image or drawing.",
+          "fa": "اندازهٔ تصویر یا رسم."
+        }
+      },
+      "width": {
+        "type": "length",
+        "doc": {
+          "en": "Size of the image or drawing. A `%` width is relative to the text width.",
+          "fa": "اندازهٔ تصویر یا رسم. پهنای `%` نسبت به پهنای متن است."
+        }
+      },
+      "ratio": {
+        "type": "string",
+        "doc": {
+          "en": "`16/9`, `16:9` or `1.5`. Crops the image to that ratio. With `height`, the width becomes height × ratio; otherwise `width` (or the full width) is used. Images only.",
+          "fa": "`16/9`، `16:9` یا `1.5`. تصویر را به آن نسبت برش می‌دهد. با `height`، پهنا برابر ارتفاع × نسبت می‌شود؛ وگرنه `width` (یا تمام پهنا) استفاده می‌شود. فقط برای تصویر."
+        }
+      },
+      "span": {
+        "type": "enum",
+        "values": [
+          "column",
+          "all"
+        ],
+        "default": "column",
+        "doc": {
+          "en": "`column` (default) or `all`. In a multi-column document, `all` puts the figure across all columns, at the top or bottom of a page (like wide tables); a `%` width is then relative to the full text width. No effect with one column.",
+          "fa": "`column` (پیش‌فرض) یا `all`. در سند چندستونه، `all` شکل را مثل جدول‌های پهن روی همهٔ ستون‌ها، در بالا یا پایین صفحه، می‌گذارد؛ آن‌وقت پهنای `%` نسبت به کل پهنای متن است. در سند تک‌ستونه اثری ندارد."
+        }
+      }
+    },
+    "children": [
+      "caption",
+      "img",
+      "cetz",
+      "lilaq"
+    ]
+  },
+  "caption": {
+    "kind": "block",
+    "description": {
+      "en": "Numbered caption of the enclosing <fig>",
+      "fa": "عنوان شمارهٔ‌دار <fig> بیرونی"
+    },
+    "attrs": {}
+  }
+}

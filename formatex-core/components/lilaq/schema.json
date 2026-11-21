@@ -1,0 +1,18 @@
+{
+  "lilaq": {
+    "kind": "block",
+    "description": {
+      "en": "data plots (Lilaq)",
+      "fa": "نمودار داده (Lilaq)"
+    },
+    "attrs": {
+      "src": {
+        "type": "path",
+        "doc": {
+          "en": "Load the code from a file (`src=\"plots/x.typ\"`) instead of the code block.",
+          "fa": "کد را به‌جای بلوک کد از یک فایل بخوان (`src=\"plots/x.typ\"`)."
+        }
+      }
+    }
+  }
+}

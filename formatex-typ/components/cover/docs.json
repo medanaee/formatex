@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A standalone cover at this position. PDF uses one unnumbered page without header/footer; the following page starts at 1. HTML reserves the configured page height and scrolls overflowing details. Attributes are strings; the optional body is Markdown. Replace the removed cover configuration with this tag."
+  },
+  "fa": {
+    "about": "جلد مستقل در محل تگ. در PDF یک صفحهٔ بدون شماره و سرصفحه و پاصفحه می‌گیرد و صفحهٔ بعد از ۱ شروع می‌شود. در HTML ارتفاع اندازهٔ صفحه را می‌گیرد و اطلاعات بلند داخلش اسکرول می‌خورند. ویژگی‌ها رشته و بدنهٔ اختیاری Markdown است. این تگ جای تنظیم قدیمی جلد را می‌گیرد."
+  },
+  "example": {
+    "en": "<cover title=\"Research report\" author=\"A. Writer\"></cover>",
+    "fa": "<cover title=\"گزارش پژوهش\" author=\"نام نویسنده\"></cover>"
+  }
+}

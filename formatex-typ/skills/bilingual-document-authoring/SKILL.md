@@ -7,6 +7,14 @@ description: Writes Markdown documents (and their config.toml settings) for a bi
 
 You produce **content only**: one Markdown file (with a YAML front matter block at the top) and, when asked, a `config.toml`. Someone else compiles them into a PDF. You never need to know or touch how the template works inside.
 
+## Renderer checkpoint, 2026-11-12
+
+Markdown/tags/`{ ... }`/`{{ ... }}` remain the document language. The normal standalone PDF path now runs shared Typst preparation, an embedded Rust/WASM pulldown-cmark parser and direct IR rendering, without a JavaScript Markdown parser or cmarker parse. Shared component source folders belong to core and contain `manifest.toml`, `schema.json`, `docs.json`, `typst.typ`, `html.tsx` and `html.css`; the standalone engine tree is generated.
+
+Nine Rust parser tests pass, including Unicode/source spans, Persian/Arabic list restarts and rich/fenced-code properties. Frontend integration: 373 passed; native: 66 passed/5 ignored; typecheck and production build pass, with nine existing lint warnings. The 24 PDF theme/feel builds plus mobile compile, selected PDF visual checks, 360/768/1280 px browser checks and isolated one-file/custom-package/relocated standalone tools are verified. Complete component-property parity, full map/diagnostic/export coverage and real Android native interactive UI remain separate gates. HTML content is static SSR with a hydrated React viewer shell; arbitrary component events/state and live variable/DSL reactivity are not implemented. See [the active plan](../../../formatex-app/docs/tasks/shared-core-pdf-html-plan.md).
+
+Regression checkpoint (2026-11-12): paired custom references, semantic `[@key]` citations outside code/math, explicit ordered-marker restarts, nested PDF div/flex and lexical inline reference/definition direction are corrected. Parser regression suite: 11 passed; native direction regression and full-demo visual compilation pass without convergence warnings. The preceding full migration gate counts above are historical; current gates pass: parser 11, native 68/five ignored, frontend 372/two skipped plus one opt-in real integration, typecheck and build (existing bundle-size warnings). The final CLI matrix passes 25 cases (24 desktop theme/feel plus `mobile-20-9`) without warnings; inspected mobile cards/pills have equal widths. This checks page format, not real Android interaction. Standalone/app sync succeeds: 43 packages/78 tags. For an English section inside forced RTL, use `<dir ltr>` or `<dir to="ltr">` explicitly.
+
 Files in this skill:
 - [components.md](components.md): every component (tag) with all attributes. Read it before using a tag.
 - [config.md](config.md): every setting in `config.toml` and in the front matter.
@@ -15,6 +23,7 @@ Files in this skill:
 ## What the template gives you
 
 - Standard Markdown: headings, bold, italic, lists, quotes, links, inline code, fenced code blocks, tables, `---` rules, LaTeX math (`$...$`, `$$...$$`).
+- PDF preview clicks on a horizontal rule reveal its own `---` source line, and list word clicks preserve their source offsets after the first word. Preview-only mapping needs no extra author markup.
 - Lists with Persian digits (`۱.`), Persian words, abjad / alphabet letters or Roman numerals, set for every list in `[list]` or for one list with a `{...}` line; a list can get a numbered caption («فهرست ۱») and be referenced.
 - Mermaid diagrams: a ` ```mermaid ` fenced block is drawn as a diagram in the theme's colors.
 - Automatic text direction: Persian is right-to-left, English left-to-right, per paragraph. A `dir` setting or a `<dir>` tag can force one direction instead.
@@ -39,13 +48,14 @@ Files in this skill:
 
 ```markdown
 ---
-header:
-  style: line
-  start: "عنوان کوتاه سند"
-  end: "{section}"
-footer:
-  center: "{page}"
-  digits: fa
+typ:
+  header:
+    style: line
+    start: "عنوان کوتاه سند"
+    end: "{section}"
+  footer:
+    center: "{page}"
+    digits: fa
 bibliography:
   file: references.bib
   style: ieee

@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "A paragraph with a look of its own: `<p size=\"14pt\" align=\"center\" line-spacing=\"150\">`. Put a blank line after the opening tag and before the closing one; one tag can hold several paragraphs.\n\n- Text: `font`, `size` (`14pt`, `1.2em`, `120%`), `weight`, `color` (a preset, `accent` or hex) and `dir`.\n- Layout: `align`, `justify`, `indent` (first line), `above` and `below` (space around it).\n- Spacing: `line-spacing`, `letter-spacing` and `word-spacing`, in percent, like `[paragraph]` in `config.toml` (which they override for this paragraph).\n- Everything left out comes from the document."
+  },
+  "fa": {
+    "about": "پاراگرافی با ظاهر خودش: `<p size=\"14pt\" align=\"center\" line-spacing=\"150\">`. بعد از تگ باز و قبل از تگ بسته یک خط خالی بگذارید؛ یک تگ می‌تواند چند پاراگراف داشته باشد.\n\n- متن: `font`، `size` (`14pt`، `1.2em`، `120%`)، `weight`، `color` (رنگ آماده، `accent` یا hex) و `dir`.\n- چیدمان: `align`، `justify`، `indent` (خط اول)، `above` و `below` (فاصله اطراف).\n- فاصله‌گذاری: `line-spacing`، `letter-spacing` و `word-spacing` به درصد، مثل `[paragraph]` در `config.toml` (که برای این پاراگراف بازنویسی‌شان می‌کنند).\n- هر چه ننویسید از سند می‌آید."
+  },
+  "example": {
+    "en": "<p size=\"14pt\" align=\"center\" weight=\"bold\" color=\"accent\">\n\nA centered, larger, bold line in the accent color.\n\n</p>\n\n<p line-spacing=\"170\" indent=\"1.5em\" justify=\"true\">\n\nA paragraph with airy lines and an indented first line. It goes on for a while so that it wraps over several lines and the spacing shows.\n\n</p>",
+    "fa": "<p size=\"14pt\" align=\"center\" weight=\"bold\" color=\"accent\">\n\nیک خط وسط‌چین، درشت‌تر و پررنگ به رنگ تأکید.\n\n</p>\n\n<p line-spacing=\"170\" indent=\"1.5em\" justify=\"true\">\n\nپاراگرافی با خط‌های باز و تورفتگی در خط اول. آن‌قدر ادامه دارد که چند خط شود و فاصله‌گذاری دیده شود.\n\n</p>"
+  }
+}

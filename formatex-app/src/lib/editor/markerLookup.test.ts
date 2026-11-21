@@ -84,6 +84,18 @@ describe("markerAt", () => {
   })
 })
 
+it("reveals a textless divider's own line in both directions, including an included file", () => {
+  const source = "Before\n\n---\n\nAfter"
+  const markers = [marker("main.md", 1, 1, 40), marker("main.md", 3, 1, 70), marker("main.md", 5, 1, 100), marker("part.md", 3, 1, 140)]
+  const pages = [page([run("Before", 42), run("After", 102)])]
+  for (const [file, y] of [["main.md", 70], ["part.md", 140]] as const) {
+    const hit = markerAt(markers, 0, 250, y, pages)!
+    expect(hit).toMatchObject({ file, line: 3 })
+    expect(lineFromMarker(markers, pages, hit, source, 0, 250, y)).toEqual({ line: 3, column: 1 })
+    expect(placeFromMarkers(markers, pages, file, source, 3, 1)).toMatchObject({ page: 0, y, approximate: false })
+  }
+})
+
 describe("list items that wrap over several lines", () => {
   // Three items of three visual lines each: every marker is at the top of its item, so the block of an item is its own lines
   const source = ["- First item text that goes on", "- Second item text that goes on", "- Third item text that goes on"].join(String.fromCharCode(10))

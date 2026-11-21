@@ -3,17 +3,14 @@
 
 
 // Child tags (<caption>, <item>) mark their content so the parent tag can collect them.
-#let tag(kind, attrs, body) = [#metadata((component-tag: kind, attrs: attrs))#body]
+#let tag(kind, attrs, body) = metadata((component-tag: kind, attrs: attrs, body: body))
 
 #let untag(body, kind) = {
   let is-tag(c) = (
     type(c) == content
-      and c.func() == [].func()
-      and c.has("children")
-      and c.children.len() == 2
-      and c.children.at(0).func() == metadata
-      and type(c.children.at(0).value) == dictionary
-      and c.children.at(0).value.at("component-tag", default: none) == kind
+      and c.func() == metadata
+      and type(c.value) == dictionary
+      and c.value.at("component-tag", default: none) == kind
   )
   let children = if type(body) == array {
     body
@@ -28,7 +25,7 @@
   let rest = ()
   for c in children {
     if is-tag(c) {
-      tagged.push((attrs: c.children.at(0).value.attrs, body: c.children.at(1)))
+      tagged.push((attrs: c.value.attrs, body: c.value.body))
     } else {
       rest.push(c)
     }

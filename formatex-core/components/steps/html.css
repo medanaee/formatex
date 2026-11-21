@@ -1,0 +1,10 @@
+.fx-steps { list-style: none; margin-block: 0.8em; padding: 0; }
+.fx-step { display: grid; grid-template-columns: 1.7em minmax(0, 1fr); column-gap: 0.9em; position: relative; padding: 0 0 1.1em; }
+.fx-step:last-child { padding-bottom: 0; }
+.fx-step:not(:last-child)::before { content: ""; position: absolute; inset-inline-start: 0.82em; top: 1.7em; bottom: 0; width: 0.06em; background: var(--rule); }
+.fx-step-mark { display: flex; align-items: center; justify-content: center; width: 1.7em; height: 1.7em; font-weight: 700; font-size: 0.9em; border: 0.08em solid var(--heading); color: var(--heading); border-radius: var(--fx-radius-box); background: transparent; }
+.fx-steps-soft .fx-step-mark, .fx-steps-solid .fx-step-mark { background: var(--fx-fill, color-mix(in srgb, var(--accent) 10%, var(--bg))); color: var(--fx-icon, var(--accent)); border-color: var(--fx-border, color-mix(in srgb, var(--accent) 35%, var(--bg))); }
+.fx-steps-soft .fx-step:not(:last-child)::before, .fx-steps-solid .fx-step:not(:last-child)::before { background: var(--fx-border, var(--rule)); width: 0.1em; }
+.fx-steps-solid .fx-step-mark { border-radius: 50%; }
+.fx-step-title { display: block; color: var(--heading); margin-block-end: 0.35em; }
+.fx-step-body > :last-child { margin-block-end: 0; }

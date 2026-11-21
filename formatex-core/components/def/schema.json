@@ -1,0 +1,72 @@
+{
+  "def": {
+    "kind": "mixed",
+    "description": {
+      "en": "Reference to a defined element, as an inline badge or a block",
+      "fa": "ارجاع به یک عنصر تعریف‌شده، به‌صورت نشان درون‌خطی یا بلوک"
+    },
+    "attrs": {
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Id of the element to refer to",
+          "fa": "شناسهٔ عنصری که به آن ارجاع می‌شود"
+        }
+      },
+      "to": {
+        "type": "string",
+        "doc": {
+          "en": "Same as `id`",
+          "fa": "مثل `id`"
+        }
+      },
+      "mode": {
+        "type": "enum",
+        "values": [
+          "inline",
+          "block"
+        ],
+        "default": "inline",
+        "doc": {
+          "en": "`inline` badge (default) or `block`",
+          "fa": "نشان `inline` (پیش‌فرض) یا `block`"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Custom title instead of the target's name",
+          "fa": "عنوان دلخواه به‌جای نام هدف"
+        }
+      },
+      "color": {
+        "type": "color",
+        "default": "accent",
+        "doc": {
+          "en": "Color preset, `accent`, `secondary`, `heading`, `muted` or hex",
+          "fa": "نام رنگ آماده، `accent`، `secondary`، `heading`، `muted` یا hex"
+        }
+      },
+      "icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome icon name",
+          "fa": "نام آیکن Font Awesome"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Text direction: `rtl`, `ltr`, or `auto` (decided by the content)",
+          "fa": "جهت متن: `rtl`، `ltr` یا `auto` (از روی محتوا)"
+        }
+      }
+    }
+  }
+}

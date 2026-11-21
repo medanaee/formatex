@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "Automatic lists of figures (`<lof>`), tables (`<lot>`) and code listings (`<lol>`), built from the captions in the document, with page numbers.\n\n- `<lof>` lists every `<fig>`, `<tree>` and `<chart>` that has a number or a caption; `<lot>` every table that has one (`{caption=\"...\"}` above it); `<lol>` every `<code>` that has one. An entry reads «شکل ۱: توضیح», «شکل ۱» (number only) or «توضیح» (caption only). `lof=\"false\"` on a figure, `lot=\"false\"` on a table and `lol=\"false\"` on a listing leave it out.\n- `dir`, `numbers`, `title`, `pages=\"false\"` (captions only) and `break` (`true`, `before`, `after`) are the options; each entry keeps its caption's own direction. Use `break=\"after\"` on the last list to keep the lists on one page."
+  },
+  "fa": {
+    "about": "فهرست خودکار شکل‌ها (`<lof>`)، جدول‌ها (`<lot>`) و کدها (`<lol>`) که از عنوان‌های (caption) سند ساخته می‌شود، با شمارهٔ صفحه.\n\n- `<lof>` هر `<fig>`، `<tree>` و `<chart>` دارای شماره یا عنوان را فهرست می‌کند؛ `<lot>` هر جدول دارای آن را (`{caption=\"...\"}` بالای جدول)؛ `<lol>` هر `<code>` دارای آن را. هر ورودی «شکل ۱: توضیح»، «شکل ۱» (فقط شماره) یا «توضیح» (فقط عنوان) است. `lof=\"false\"` روی شکل، `lot=\"false\"` روی جدول و `lol=\"false\"` روی کد آن را بیرون می‌گذارد.\n- گزینه‌ها: `dir`، `numbers`، `title`، `pages=\"false\"` (فقط عنوان‌ها) و `break` (`true`، `before`، `after`)؛ هر ورودی جهت عنوان خودش را نگه می‌دارد. روی آخرین فهرست `break=\"after\"` بگذارید تا فهرست‌ها در یک صفحه بمانند."
+  },
+  "example": {
+    "en": "<toc break=\"true\"></toc>\n\n<lof></lof>\n\n<lot></lot>\n\n<lol break=\"after\"></lol>",
+    "fa": "<toc break=\"true\"></toc>\n\n<lof></lof>\n\n<lot></lot>\n\n<lol break=\"after\"></lol>"
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "chat": {
+    "kind": "block",
+    "description": {
+      "en": "chat with an AI",
+      "fa": "گفتگو با هوش مصنوعی"
+    },
+    "attrs": {
+      "style": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "transcript",
+          "assistant",
+          "bubbles"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default) follows the feel: `formal` → `transcript`, `standard` → `assistant`, `friendly` → `bubbles`. `transcript`: named turns with a colored bar on the start side, your turns tinted. `assistant`: your message in a bubble on the end side, the answer full width beside its avatar. `bubbles`: a messenger, both sides in bubbles with avatars, yours at the end side.",
+          "fa": "مقدار `auto` (پیش‌فرض) از حالت پیروی می‌کند: `formal` ← `transcript`، `standard` ← `assistant`، `friendly` ← `bubbles`. ظاهر `transcript`: نوبت‌های نام‌دار با نواری رنگی در سمت شروع متن، و نوبت‌های شما ته‌رنگ. ظاهر `assistant`: پیام شما در حبابی در سمت پایان متن، و پاسخ با تمام پهنا کنار آواتارش. ظاهر `bubbles`: مثل پیام‌رسان‌ها، هر دو طرف در حباب با آواتار، و پیام‌های شما در سمت پایان."
+        }
+      },
+      "user-name": {
+        "type": "string",
+        "doc": {
+          "en": "Names over the messages. Default: «شما» / \"You\" and «هوش مصنوعی» / \"AI\", by the chat's language.",
+          "fa": "نام‌های بالای پیام‌ها. پیش‌فرض: «شما» / \"You\" و «هوش مصنوعی» / \"AI\"، بسته به زبان گفتگو."
+        }
+      },
+      "ai-name": {
+        "type": "string",
+        "doc": {
+          "en": "Names over the messages. Default: «شما» / \"You\" and «هوش مصنوعی» / \"AI\", by the chat's language.",
+          "fa": "نام‌های بالای پیام‌ها. پیش‌فرض: «شما» / \"You\" و «هوش مصنوعی» / \"AI\"، بسته به زبان گفتگو."
+        }
+      },
+      "user-icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome icon names for the avatars. Default: `user` and `robot`.",
+          "fa": "نام آیکون‌های Font Awesome برای آواتارها. پیش‌فرض: `user` و `robot`."
+        }
+      },
+      "ai-icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome icon names for the avatars. Default: `user` and `robot`.",
+          "fa": "نام آیکون‌های Font Awesome برای آواتارها. پیش‌فرض: `user` و `robot`."
+        }
+      },
+      "user-color": {
+        "type": "color",
+        "doc": {
+          "en": "A color preset or a hex color. Default: the theme's accent and secondary colors.",
+          "fa": "یک رنگ آماده یا رنگ hex. پیش‌فرض: رنگ تأکید و رنگ دوم تم."
+        }
+      },
+      "ai-color": {
+        "type": "color",
+        "doc": {
+          "en": "A color preset or a hex color. Default: the theme's accent and secondary colors.",
+          "fa": "یک رنگ آماده یا رنگ hex. پیش‌فرض: رنگ تأکید و رنگ دوم تم."
+        }
+      },
+      "frame": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true` (default): a frame around the whole chat, rules above and below in `formal`, a rounded panel otherwise. `false`: no frame.",
+          "fa": "مقدار `true` (پیش‌فرض): قابی دور کل گفتگو؛ در `formal` خط‌هایی بالا و پایین، در بقیهٔ حالت‌ها یک قاب گوشه‌گرد. مقدار `false`: بدون قاب."
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "A heading with a chat icon at the top of the chat. Default: none.",
+          "fa": "عنوانی با آیکون گفتگو در بالای آن. پیش‌فرض: بدون عنوان."
+        }
+      },
+      "width": {
+        "type": "length",
+        "default": "80%",
+        "doc": {
+          "en": "Widest a bubble gets: a percentage of the line (`\"80%\"`, the default) or a length (`\"12cm\"`). Bubbles shrink to short messages.",
+          "fa": "بیشترین پهنای یک حباب: درصدی از خط (`\"80%\"`، پیش‌فرض) یا یک طول (`\"12cm\"`). حباب پیام‌های کوتاه کوچک‌تر می‌شود."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`rtl`, `ltr` or `auto` (default: from the first message).",
+          "fa": "`rtl`، `ltr` یا `auto` (پیش‌فرض: از روی پیام اول)."
+        }
+      }
+    },
+    "children": [
+      "user",
+      "ai"
+    ]
+  },
+  "user": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "A message by the user in a <chat>",
+      "fa": "پیام کاربر در <chat>"
+    },
+    "attrs": {
+      "name": {
+        "type": "string",
+        "doc": {
+          "en": "Name shown over this message",
+          "fa": "نامی که بالای این پیام نشان داده می‌شود"
+        }
+      },
+      "icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome avatar icon for this message",
+          "fa": "آیکن Font Awesome برای این پیام"
+        }
+      }
+    }
+  },
+  "ai": {
+    "kind": "block",
+    "scoped": true,
+    "description": {
+      "en": "A message by the AI in a <chat>",
+      "fa": "پیام هوش مصنوعی در <chat>"
+    },
+    "attrs": {
+      "name": {
+        "type": "string",
+        "doc": {
+          "en": "Name shown over this message",
+          "fa": "نامی که بالای این پیام نشان داده می‌شود"
+        }
+      },
+      "icon": {
+        "type": "string",
+        "doc": {
+          "en": "Font Awesome avatar icon for this message",
+          "fa": "آیکن Font Awesome برای این پیام"
+        }
+      }
+    }
+  }
+}

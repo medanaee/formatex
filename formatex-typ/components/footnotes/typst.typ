@@ -1,0 +1,54 @@
+#import "/src/kit.typ": *
+
+#let footnotes-tags = (
+    fn: (attrs, body) => {
+      let en-text = attrs.at("en", default: none)
+      let fa-text = attrs.at("fa", default: none)
+      let note-text = attrs.at("text", default: none)
+      let dir-attr = attrs.at("dir", default: "auto")
+
+      if en-text != none {
+        let note = text(dir: ltr, font: (latin-font, persian-font), en-text)
+        if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+      } else if fa-text != none {
+        let note = text(dir: rtl, font: (persian-font, latin-font), fa-text)
+        if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+      } else if note-text != none {
+        context {
+          let d = resolve-dir(dir-attr, note-text)
+          let note = text(dir: d, note-text)
+          if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+        }
+      } else {
+        context {
+          let d = resolve-dir(dir-attr, body)
+          footnote(text(dir: d, body))
+        }
+      }
+    },
+    footnote: (attrs, body) => {
+      let en-text = attrs.at("en", default: none)
+      let fa-text = attrs.at("fa", default: none)
+      let note-text = attrs.at("text", default: none)
+      let dir-attr = attrs.at("dir", default: "auto")
+
+      if en-text != none {
+        let note = text(dir: ltr, font: (latin-font, persian-font), en-text)
+        if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+      } else if fa-text != none {
+        let note = text(dir: rtl, font: (persian-font, latin-font), fa-text)
+        if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+      } else if note-text != none {
+        context {
+          let d = resolve-dir(dir-attr, note-text)
+          let note = text(dir: d, note-text)
+          if body != none and body != [] [#body#footnote(note)] else [#footnote(note)]
+        }
+      } else {
+        context {
+          let d = resolve-dir(dir-attr, body)
+          footnote(text(dir: d, body))
+        }
+      }
+    },
+)

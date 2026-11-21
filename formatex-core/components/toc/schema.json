@@ -1,0 +1,72 @@
+{
+  "toc": {
+    "kind": "block",
+    "description": {
+      "en": "table of contents",
+      "fa": "فهرست مطالب"
+    },
+    "attrs": {
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "rtl",
+        "doc": {
+          "en": "`rtl` (all entries RTL), `ltr`, `auto` (each entry follows its heading)",
+          "fa": "`rtl` (همهٔ ردیف‌ها راست‌به‌چپ)، `ltr`، `auto` (هر ردیف از تیتر خودش پیروی می‌کند)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Any text",
+          "fa": "هر متنی"
+        }
+      },
+      "numbers": {
+        "type": "enum",
+        "values": [
+          "rtl",
+          "ltr",
+          "auto"
+        ],
+        "doc": {
+          "en": "`rtl`: all numbers Persian, section numbers on the right. `ltr`: all Latin, section numbers on the left. `auto`: each entry's number follows its own title. Page numbers use the same digits.",
+          "fa": "`rtl`: همهٔ شماره‌ها فارسی و شمارهٔ بخش‌ها سمت راست. `ltr`: همه لاتین و سمت چپ. `auto`: شمارهٔ هر ردیف از عنوان خودش پیروی می‌کند. شمارهٔ صفحه‌ها هم همان رقم‌ها را می‌گیرند."
+        }
+      },
+      "depth": {
+        "type": "int",
+        "doc": {
+          "en": "How many heading levels are listed, counted from the document's top level: with headings starting at `##`, `1` = only sections (`۱`), `2` = also subsections (`۱.۱`)",
+          "fa": "چند سطح تیتر در فهرست بیاید، از بالاترین سطح سند شمرده می‌شود: اگر تیترها از `##` شروع شوند، `1` = فقط بخش‌ها (`۱`)، `2` = زیربخش‌ها هم (`۱.۱`)"
+        }
+      },
+      "pages": {
+        "type": "bool",
+        "default": "true",
+        "doc": {
+          "en": "`true`: dot leaders and page numbers; `false`: titles only",
+          "fa": "`true`: نقطه‌چین و شمارهٔ صفحه؛ `false`: فقط عنوان‌ها"
+        }
+      },
+      "break": {
+        "type": "enum",
+        "values": [
+          "true",
+          "false",
+          "before",
+          "after"
+        ],
+        "default": "false",
+        "doc": {
+          "en": "`true` (page break before and after: own page), `before`, `after`, `false`",
+          "fa": "`true` (شکست صفحه قبل و بعد: صفحهٔ جداگانه)، `before`، `after`، `false`"
+        }
+      }
+    }
+  }
+}

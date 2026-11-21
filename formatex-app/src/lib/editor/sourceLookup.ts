@@ -111,12 +111,18 @@ export function sourcePlaceAt(source: string, pages: (PageMap | null)[], pageInd
   if (!best) return null
 
   // The runs around the click (a few lines of text up and down): the neighbourhood a right place has to hold too
-  const around = map.texts.filter((run) => kept(pageIndex, run) && Math.abs(run.y + run.h / 2 - y) < best.h * 4).map((run) => normalizeText(run.text)).filter((text) => text.length >= 3)
+  const neighbourhood = map.texts.filter((run) => kept(pageIndex, run) && Math.abs(run.y + run.h / 2 - y) < best.h * 4)
+  const around = neighbourhood.map((run) => normalizeText(run.text)).filter((text) => text.length >= 3)
+  const ordered = inReadingOrder(neighbourhood.map(run => ({...run,run,page:pageIndex})), neighbourhood.map(run => ({...run,page:pageIndex})))
+  const clicked = ordered.findIndex(entry => entry.run === best.run)
+  const targetText = normalizeText(best.text)
+  const before = ordered.slice(Math.max(0,clicked-3),clicked).map(entry=>normalizeText(entry.text)).filter(text=>text.length>=2 && text!==targetText)
+  const after = ordered.slice(clicked+1,clicked+4).map(entry=>normalizeText(entry.text)).filter(text=>text.length>=2 && text!==targetText)
 
   const occurrences = (needle: string): number[] => {
     if (needle.length < 2) return []
     const found: number[] = []
-    for (let at = joined.indexOf(needle); at !== -1 && found.length < 200; at = joined.indexOf(needle, at + needle.length)) found.push(at)
+    for (let at = joined.indexOf(needle); at !== -1; at = joined.indexOf(needle, at + needle.length)) found.push(at)
     return found
   }
   const words = normalizeText(best.text).split(" ").filter(Boolean)
@@ -132,7 +138,13 @@ export function sourcePlaceAt(source: string, pages: (PageMap | null)[], pageInd
   const score = (start: number): number => {
     const offset = start + Math.floor(needle.length / 2)
     const near = joined.slice(Math.max(offset - 400, 0), offset + 400)
-    return around.reduce((sum, text) => sum + (near.includes(text) ? 1 : 0), 0)
+    const left = joined.slice(Math.max(0,start-200),start)
+    const right = joined.slice(start+needle.length,start+needle.length+200)
+    // Nearby text on the correct side is stronger evidence than a bag of words.
+    // Distance matters: repeated headings often share the same surrounding words.
+    const preceding = before.reduce((sum,text) => { const at=left.lastIndexOf(text); return sum+(at<0?0:4/(1+(left.length-at-text.length)/40)) },0)
+    const following = after.reduce((sum,text) => { const at=right.indexOf(text); return sum+(at<0?0:4/(1+at/40)) },0)
+    return preceding + following + around.reduce((sum, text) => sum + (near.includes(text) ? 1 : 0), 0)
   }
   const total = lines.length
   let winner = hits[0]

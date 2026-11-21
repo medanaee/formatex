@@ -195,8 +195,8 @@
   for (name, value) in env.values {
     if code.contains(name) { used.insert(name, value) }
   }
-  let body = (string-literal(code) + ", " + repr(used)).replace("-->", "--\\u{3e}")
-  "<!--raw-typst #fx-deferred(" + body + ") -->"
+  let body = json.encode((code: code, values: repr(used)), pretty: false).replace("-->", "--\\u003e")
+  "<!--fx-deferred:" + body + "-->"
 }
 
 // A name, or a name and some keys after it (`audience`, `setting.chat.frame`), and nothing else

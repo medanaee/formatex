@@ -1,0 +1,191 @@
+.fx-letter {
+  margin-block: 0.75em;
+  --fx-paint: var(--accent);
+  min-width: 0;
+  line-height: 1.48;
+}
+html[data-feel="formal"] .fx-letter {
+  --fx-paint: var(--heading);
+}
+.fx-letter-label {
+  font-weight: 700;
+  color: var(--fx-icon);
+  white-space: nowrap;
+}
+html[data-feel="formal"] .fx-letter-label {
+  color: var(--fg);
+}
+.fx-letter-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.8em;
+}
+.fx-letter-org {
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.3em;
+  min-width: 0;
+}
+.fx-letter-logo {
+  height: 3.9em;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.fx-letter-org-name {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--heading);
+  line-height: 1.35;
+}
+.fx-letter-heading {
+  align-self: start;
+  justify-self: center;
+  font-weight: 700;
+  text-align: center;
+  min-width: 0;
+}
+.fx-letter-meta-wrap {
+  justify-self: end;
+  min-width: 0;
+}
+.fx-letter-meta {
+  min-width: 0;
+}
+html[data-feel="formal"] .fx-letter-meta {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+html[data-feel="standard"] .fx-letter-meta {
+  padding: 0.55em 0.85em;
+  border: 0.06em solid var(--fx-border);
+  border-radius: var(--fx-radius-box);
+  background: transparent;
+}
+html[data-feel="friendly"] .fx-letter-meta {
+  padding: 0.55em 0.85em;
+  border: 0;
+  border-radius: var(--fx-radius-box);
+  background: var(--fx-fill);
+}
+.fx-letter-meta-grid {
+  display: grid;
+  grid-template-columns: max-content auto;
+  column-gap: 0.55em;
+  row-gap: 0.28em;
+  margin: 0;
+  line-height: 1.4;
+}
+.fx-letter-meta-grid dd {
+  margin: 0;
+  min-width: 0;
+}
+.fx-letter-rule {
+  border: 0;
+  margin: 0.45em 0 0.5em;
+  height: 0.06em;
+  background: var(--fx-border);
+  border-radius: 0;
+}
+html[data-feel="formal"] .fx-letter-rule {
+  height: 0.08em;
+  background: var(--rule);
+}
+html[data-feel="friendly"] .fx-letter-rule {
+  height: 0.16em;
+  background: var(--fx-border);
+  border-radius: 999px;
+}
+.fx-letter-address {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 0.55em;
+  row-gap: 0.35em;
+  margin: 0 0 0.8em;
+  line-height: 1.42;
+}
+.fx-letter-address dd {
+  margin: 0;
+  min-width: 0;
+}
+.fx-letter-subject {
+  font-weight: 700;
+}
+.fx-letter-greeting {
+  margin: 0 0 0.55em;
+}
+.fx-letter-body {
+  min-width: 0;
+}
+.fx-letter-body p {
+  margin-block: 0 0.45em;
+}
+.fx-letter-body > :first-child {
+  margin-block-start: 0;
+}
+.fx-letter-body > :last-child,
+.fx-letter-body p:last-child {
+  margin-block-end: 0;
+}
+.fx-letter-signature {
+  margin: 0.75em 0 0;
+  margin-inline-start: auto;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.28em;
+  line-height: 1.4;
+}
+.fx-letter-sig-img {
+  height: 3.97em;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.fx-letter-sig-gap {
+  height: 0.55em;
+}
+.fx-letter-signer-title {
+  color: var(--muted);
+}
+.fx-letter-cc {
+  margin-block-start: 0.8em;
+  line-height: 1.42;
+}
+.fx-letter-cc-list {
+  list-style: none;
+  margin: 0.2em 0 0;
+  padding-inline-start: 0.8em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12em;
+}
+.fx-letter-cc-list > li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+  margin: 0;
+}
+.fx-letter-cc-dash {
+  color: var(--muted);
+  flex: none;
+}
+@media (max-width: 639px) {
+  .fx-letter-header {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: 0.7em;
+  }
+  .fx-letter-heading {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}

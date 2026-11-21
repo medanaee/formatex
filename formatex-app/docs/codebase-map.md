@@ -2,6 +2,10 @@
 
 A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 
+## Shared source owners
+
+`../formatex-core/` owns Typst preparation, Rust/WASM parsing, IR/settings/maps and six-file component packages. `../formatex-pdf/` owns pure Typst layout/PDF. `../formatex-html/` owns React/TSX/Tailwind rendering, viewer/runtime and offline math assets. `../formatex-typ/` is their generated core+PDF standalone assembly. Install npm dependencies at the workspace root; its lockfile covers core, HTML, app and `@formatex/typ` (PDF has no npm package). See [the architecture checkpoint](architecture.md#shared-core-architecture-and-verified-scope).
+
 ## Root
 
 | Path | What |
@@ -14,7 +18,7 @@ A lookup table so nobody has to scan the tree. Keep it in sync when files move.
 | `tsconfig*.json` | `tsconfig.app.json` (src), `tsconfig.node.json` (vite config). |
 | `.oxlintrc.json` | Lint rules. |
 | `.github/workflows/ci.yml` | Frontend gate + desktop builds on 3 OSes. |
-| `scripts/sync-engine.mjs` | Copies the Typst engine from the sibling `../formatex-typ` folder into `engine/` and writes `engine/tags.json`. |
+| `scripts/sync-engine.mjs` | Synchronizes core+PDF+HTML source owners directly, builds the engine-owned HTML runtime and writes generated engine/schema assets. |
 | `engine/` | Generated, git-ignored: `bundle/` (embedded by Rust), `config.toml` (default), `tags.json` (autocomplete). |
 | `templates/main.md` | The starter document of a new project. |
 | `scripts/make-icons.mjs` | Builds all icons from `src/assets/icon.png` (desktop, iOS, web) and `maskable.png` (Android). |

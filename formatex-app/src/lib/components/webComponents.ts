@@ -5,7 +5,7 @@ import type { CheckOutput, ComponentInfo, ComponentSource } from "./api"
  * components live in localStorage. There is no compiler, so nothing is checked and the registry is not generated; this exists to
  * run the Components screen, not to hold real work.
  */
-const builtinFiles = import.meta.glob("../../../engine/bundle/components/*.typ", { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>
+const builtinFiles = import.meta.glob("../../../engine/bundle/components/*/*", { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>
 
 const KEY = "formatex_web_components"
 interface Stored {
@@ -26,12 +26,12 @@ const write = (stored: Stored) => localStorage.setItem(KEY, JSON.stringify(store
 
 const builtinNames = (): string[] =>
   Object.keys(builtinFiles)
-    .map((path) => path.slice(path.lastIndexOf("/") + 1, -4))
+    .map((path) => path.split("/").at(-2)!)
     .filter((name) => !name.startsWith("_"))
     .sort()
 
-const builtinSource = async (name: string): Promise<string | null> => {
-  const loader = Object.entries(builtinFiles).find(([path]) => path.endsWith(`/${name}.typ`))?.[1]
+const builtinSource = async (name: string, file = "typst.typ"): Promise<string | null> => {
+  const loader = Object.entries(builtinFiles).find(([path]) => path.endsWith(`/${name}/${file}`))?.[1]
   return loader ? loader() : null
 }
 
@@ -56,38 +56,39 @@ const ok: CheckOutput = { ok: true, diagnostics: [] }
 
 export async function list(): Promise<ComponentInfo[]> {
   const stored = read()
-  const names = [...new Set([...builtinNames(), ...Object.keys(stored.files)])].sort()
+  const names = [...new Set([...builtinNames(), ...Object.keys(stored.files).map(key => key.split("/")[0])])].sort()
   return Promise.all(
     names.map(async (name) => {
       const builtin = await builtinSource(name)
-      const source = stored.files[name] ?? builtin ?? ""
+      const source = stored.files[`${name}/typst.typ`] ?? builtin ?? ""
+      const schema = stored.files[`${name}/schema.json`] ?? await builtinSource(name, "schema.json")
       return {
         name,
         origin: builtin !== null ? "builtin" : "user",
-        modified: builtin !== null && name in stored.files,
+        modified: builtin !== null && Object.keys(stored.files).some(key => key.startsWith(`${name}/`)),
         enabled: !stored.disabled.includes(name),
-        tags: tagsOf(name, source),
+        tags: schema ? Object.keys(JSON.parse(schema)) : tagsOf(name, source),
         problem: null,
       } satisfies ComponentInfo
     })
   )
 }
 
-export async function source(name: string): Promise<ComponentSource> {
-  const builtin = await builtinSource(name)
-  return { source: read().files[name] ?? builtin ?? "", builtin }
+export async function source(name: string, file = "typst.typ"): Promise<ComponentSource> {
+  const builtin = await builtinSource(name, file)
+  return { source: read().files[`${name}/${file}`] ?? builtin ?? "", builtin }
 }
 
-export async function save(name: string, text: string): Promise<CheckOutput> {
+export async function save(name: string, text: string, file = "typst.typ"): Promise<CheckOutput> {
   const stored = read()
-  stored.files[name] = text
+  stored.files[`${name}/${file}`] = text
   write(stored)
   return ok
 }
 
 export async function remove(name: string): Promise<CheckOutput> {
   const stored = read()
-  delete stored.files[name]
+  for (const key of Object.keys(stored.files)) if (key.startsWith(`${name}/`)) delete stored.files[key]
   stored.disabled = stored.disabled.filter((item) => item !== name)
   write(stored)
   return ok

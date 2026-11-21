@@ -1,6 +1,6 @@
 import { create } from "zustand"
-import { componentsApi, type CheckOutput, type ComponentInfo } from "@/lib/components/api"
-import { newComponentSource, type ComponentKind } from "@/lib/components/template"
+import { componentsApi, type CheckOutput, type ComponentInfo, type ComponentFile } from "@/lib/components/api"
+import { newComponentFiles, type ComponentKind } from "@/lib/components/template"
 import { useSchemaStore } from "@/stores/useSchemaStore"
 
 /** Typing is saved after a pause; the save also checks that the whole library still loads. */
@@ -20,8 +20,8 @@ interface ComponentsState {
   check: CheckOutput | null
 
   refresh: () => Promise<void>
-  open: (name: string) => Promise<void>
-  edit: (name: string, text: string) => void
+  open: (name: string, file?: ComponentFile) => Promise<void>
+  edit: (name: string, text: string, file?: ComponentFile) => void
   create: (name: string, kind: ComponentKind) => Promise<void>
   remove: (name: string) => Promise<void>
   setEnabled: (name: string, enabled: boolean) => Promise<void>
@@ -37,11 +37,11 @@ export const useComponentsStore = create<ComponentsState>()((set, get) => {
     await useSchemaStore.getState().refresh()
   }
 
-  async function save(name: string): Promise<void> {
-    const text = get().texts[name]
+  async function save(name: string, file: ComponentFile): Promise<void> {
+    const text = get().texts[`${name}/${file}`]
     if (text === undefined) return
     try {
-      await applied(await componentsApi.save(name, text))
+      await applied(await componentsApi.save(name, text, "user", file))
       if (pending.size === 0) set({ saveState: "saved" })
     } catch (error) {
       console.error("[formatex] could not save the component", name, error)
@@ -59,36 +59,38 @@ export const useComponentsStore = create<ComponentsState>()((set, get) => {
 
     refresh: async () => set({ components: await componentsApi.list(), loaded: true }),
 
-    open: async (name) => {
-      if (get().texts[name] !== undefined) return
-      const { source, builtin } = await componentsApi.source(name)
-      set((state) => ({ texts: { ...state.texts, [name]: source }, builtins: { ...state.builtins, [name]: builtin } }))
+    open: async (name, file = "typst.typ") => {
+      const key = `${name}/${file}`
+      if (get().texts[key] !== undefined) return
+      const { source, builtin } = await componentsApi.source(name, file)
+      set((state) => ({ texts: { ...state.texts, [key]: source }, builtins: { ...state.builtins, [key]: builtin } }))
     },
 
-    edit: (name, text) => {
-      set((state) => ({ texts: { ...state.texts, [name]: text }, saveState: "saving" }))
-      clearTimeout(pending.get(name))
+    edit: (name, text, file = "typst.typ") => {
+      const key = `${name}/${file}`
+      set((state) => ({ texts: { ...state.texts, [key]: text }, saveState: "saving" }))
+      clearTimeout(pending.get(key))
       pending.set(
-        name,
+        key,
         setTimeout(() => {
-          pending.delete(name)
-          void save(name)
+          pending.delete(key)
+          void save(name, file)
         }, SAVE_DELAY_MS)
       )
     },
 
     create: async (name, kind) => {
-      const source = newComponentSource(name, kind)
-      set((state) => ({ texts: { ...state.texts, [name]: source }, builtins: { ...state.builtins, [name]: null } }))
-      await applied(await componentsApi.save(name, source))
+      const files = newComponentFiles(name, kind)
+      let check: CheckOutput = { ok: true, diagnostics: [] }
+      for (const [file, source] of Object.entries(files)) check = await componentsApi.save(name, source, "user", file as ComponentFile)
+      await applied(check)
     },
 
     remove: async (name) => {
-      clearTimeout(pending.get(name))
-      pending.delete(name)
+      for (const key of pending.keys()) if (key.startsWith(`${name}/`)) { clearTimeout(pending.get(key)); pending.delete(key) }
       // The text in use may change (a built-in comes back): read it again when it is opened
       set((state) => {
-        const { [name]: _removed, ...texts } = state.texts
+        const texts = Object.fromEntries(Object.entries(state.texts).filter(([key]) => !key.startsWith(`${name}/`)))
         return { texts }
       })
       await applied(await componentsApi.remove(name))

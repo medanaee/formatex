@@ -1,0 +1,129 @@
+{
+  "letter": {
+    "kind": "block",
+    "description": {
+      "en": "official letter",
+      "fa": "نامهٔ اداری"
+    },
+    "attrs": {
+      "heading": {
+        "type": "string",
+        "doc": {
+          "en": "A line centered at the top, e.g. «بسمه تعالی».",
+          "fa": "خطی در وسط بالای نامه، مثلاً «بسمه تعالی»."
+        }
+      },
+      "logo": {
+        "type": "path",
+        "doc": {
+          "en": "Image path (relative to the project root), 1.6 cm high, on the start side.",
+          "fa": "مسیر تصویر آرم (نسبت به پوشهٔ ریشهٔ پروژه)، با ارتفاع ۱٫۶ سانتی‌متر، در سمت شروع."
+        }
+      },
+      "org": {
+        "type": "string",
+        "doc": {
+          "en": "Organisation name, on the start side (under the logo).",
+          "fa": "نام سازمان، در سمت شروع (زیر آرم)."
+        }
+      },
+      "number": {
+        "type": "string",
+        "doc": {
+          "en": "On the end side, labelled «شماره / تاریخ / پیوست» or \"No. / Date / Attachments\".",
+          "fa": "در سمت پایان، با برچسب‌های «شماره / تاریخ / پیوست» یا \"No. / Date / Attachments\"."
+        }
+      },
+      "date": {
+        "type": "string",
+        "doc": {
+          "en": "On the end side, labelled «شماره / تاریخ / پیوست» or \"No. / Date / Attachments\".",
+          "fa": "در سمت پایان، با برچسب‌های «شماره / تاریخ / پیوست» یا \"No. / Date / Attachments\"."
+        }
+      },
+      "attachment": {
+        "type": "string",
+        "doc": {
+          "en": "On the end side, labelled «شماره / تاریخ / پیوست» or \"No. / Date / Attachments\".",
+          "fa": "در سمت پایان، با برچسب‌های «شماره / تاریخ / پیوست» یا \"No. / Date / Attachments\"."
+        }
+      },
+      "to": {
+        "type": "string",
+        "doc": {
+          "en": "Below the rule, labelled «به / از / موضوع» or \"To / From / Subject\". The subject is bold.",
+          "fa": "زیر خط، با برچسب‌های «به / از / موضوع» یا \"To / From / Subject\". موضوع پررنگ است."
+        }
+      },
+      "from": {
+        "type": "string",
+        "doc": {
+          "en": "Below the rule, labelled «به / از / موضوع» or \"To / From / Subject\". The subject is bold.",
+          "fa": "زیر خط، با برچسب‌های «به / از / موضوع» یا \"To / From / Subject\". موضوع پررنگ است."
+        }
+      },
+      "subject": {
+        "type": "string",
+        "doc": {
+          "en": "Below the rule, labelled «به / از / موضوع» or \"To / From / Subject\". The subject is bold.",
+          "fa": "زیر خط، با برچسب‌های «به / از / موضوع» یا \"To / From / Subject\". موضوع پررنگ است."
+        }
+      },
+      "greeting": {
+        "type": "string",
+        "doc": {
+          "en": "A line before the body. Default «با سلام و احترام،» in a Persian letter, none in an English one; `greeting=\"\"` removes it.",
+          "fa": "خطی پیش از متن. پیش‌فرض در نامهٔ فارسی «با سلام و احترام،» و در نامهٔ انگلیسی هیچ؛ `greeting=\"\"` آن را حذف می‌کند."
+        }
+      },
+      "closing": {
+        "type": "string",
+        "doc": {
+          "en": "After the body on the end side, e.g. «با تشکر» or \"Sincerely,\".",
+          "fa": "بعد از متن در سمت پایان، مثلاً «با تشکر» یا \"Sincerely,\"."
+        }
+      },
+      "signature": {
+        "type": "path",
+        "doc": {
+          "en": "Image path of the signature, 1.4 cm high.",
+          "fa": "مسیر تصویر امضا، با ارتفاع ۱٫۴ سانتی‌متر."
+        }
+      },
+      "signer": {
+        "type": "string",
+        "doc": {
+          "en": "The signer's name (bold) and position.",
+          "fa": "نام امضاکننده (پررنگ) و سمت او."
+        }
+      },
+      "signer-title": {
+        "type": "string",
+        "doc": {
+          "en": "The signer's name (bold) and position.",
+          "fa": "نام امضاکننده (پررنگ) و سمت او."
+        }
+      },
+      "cc": {
+        "type": "string",
+        "doc": {
+          "en": "Copies, separated by `;` or `؛`, listed under «رونوشت» / \"CC\" with dashes.",
+          "fa": "رونوشت‌ها، جداشده با `؛` یا `;`، که زیر «رونوشت» / \"CC\" با خط تیره فهرست می‌شوند."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the subject and the body), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض: از روی موضوع و متن)، `rtl`، `ltr`."
+        }
+      }
+    }
+  }
+}

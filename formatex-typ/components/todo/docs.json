@@ -1,0 +1,12 @@
+{
+  "en": {
+    "about": "Draft notes for the writer, inline or as a block; the `todo` setting hides them all from the final PDF, and `<todos>` lists them in one place.\n\n- Three forms: inline (a small yellow label with a pin icon), on its own lines (a dashed full-width note, blank lines inside) and `type=\"figure\"` (a dashed placeholder box for a figure that does not exist yet; `height` sets its size). `author` names who wrote it.\n- `<todos></todos>` lists every `<todo>` with page numbers and links.\n- `todo = \"hide\"` (in `config.toml`, front matter `todo: hide`, or `--input todo=hide`) removes every `<todo>` and the `<todos>` list from the final PDF."
+  },
+  "fa": {
+    "about": "یادداشت‌های پیش‌نویس برای نویسنده، درون‌خطی یا بلوک؛ تنظیم `todo` همه را از PDF نهایی برمی‌دارد و `<todos>` همه را یک‌جا فهرست می‌کند.\n\n- سه شکل: درون‌خطی (برچسب کوچک زرد با آیکون سنجاق)، در خط‌های خودش (یادداشت تمام‌عرض با حاشیهٔ خط‌چین، با خط خالی در داخل) و `type=\"figure\"` (جعبهٔ خط‌چین به‌جای شکلی که هنوز نیست؛ `height` اندازه‌اش را می‌دهد). `author` نویسنده را نام می‌برد.\n- ‏`<todos></todos>` همهٔ `<todo>`ها را با شمارهٔ صفحه و پیوند فهرست می‌کند.\n- ‏`todo = \"hide\"` (در `config.toml`، یا `todo: hide` در front matter، یا `--input todo=hide`) همهٔ `<todo>` و فهرست `<todos>` را از PDF نهایی برمی‌دارد."
+  },
+  "example": {
+    "en": "This sentence <todo>add a source</todo> is unfinished, and <todo author=\"Ali\">check the numbers</todo> too.\n\n<todo>\n\nUpdate this section with the results of the second experiment.\n\n</todo>\n\n<todo type=\"figure\" height=\"90\">Runtime comparison chart</todo>\n\n<todos></todos>",
+    "fa": "این جمله <todo>منبع اضافه شود</todo> هنوز ناقص است و <todo author=\"علی\">عددها بررسی شوند</todo> هم.\n\n<todo>\n\nاین بخش باید با نتایج آزمایش دوم به‌روز شود.\n\n</todo>\n\n<todo type=\"figure\" height=\"90\">نمودار مقایسهٔ زمان اجرا</todo>\n\n<todos></todos>"
+  }
+}

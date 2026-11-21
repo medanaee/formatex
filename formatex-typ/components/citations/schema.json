@@ -1,0 +1,84 @@
+{
+  "cite": {
+    "kind": "inline",
+    "description": {
+      "en": "citations",
+      "fa": "استناد"
+    },
+    "attrs": {
+      "key": {
+        "type": "string",
+        "required": true,
+        "doc": {
+          "en": "BibTeX key(s), comma-separated",
+          "fa": "کلید(های) BibTeX با جداکنندهٔ ویرگول"
+        }
+      },
+      "page": {
+        "type": "string",
+        "doc": {
+          "en": "Page supplement inside the brackets",
+          "fa": "توضیح صفحه داخل کروشه"
+        }
+      },
+      "form": {
+        "type": "enum",
+        "values": [
+          "normal",
+          "prose",
+          "author",
+          "year",
+          "full"
+        ],
+        "default": "normal",
+        "doc": {
+          "en": "`normal`, `prose`, `author`, `year` or `full`",
+          "fa": "`normal`، `prose`، `author`، `year` یا `full`"
+        }
+      }
+    }
+  },
+  "bibliography": {
+    "kind": "block",
+    "description": {
+      "en": "citations",
+      "fa": "استناد"
+    },
+    "attrs": {
+      "file": {
+        "type": "path",
+        "doc": {
+          "en": "BibTeX file (overrides the front matter)",
+          "fa": "فایل BibTeX (جایگزین front matter)"
+        }
+      },
+      "style": {
+        "type": "string",
+        "doc": {
+          "en": "Citation style, e.g. `ieee`",
+          "fa": "سبک ارجاع، مثلاً `ieee`"
+        }
+      },
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Title of the bibliography",
+          "fa": "عنوان فهرست منابع"
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "Direction",
+          "fa": "جهت"
+        }
+      }
+    }
+  }
+}

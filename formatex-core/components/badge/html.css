@@ -1,0 +1,16 @@
+.fx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  margin-inline: 0.08em;
+  padding: 0.16em 0.5em 0.18em;
+  border: 0.05em solid var(--fx-border);
+  border-radius: var(--fx-radius-badge);
+  background: var(--fx-fill);
+  color: color-mix(in srgb, var(--fx-icon) 70%, var(--fg) 30%);
+  font-weight: 700;
+  line-height: 1.15;
+  vertical-align: -0.12em;
+}
+html.dark .fx-badge { color: var(--fx-icon); }
+.fx-badge .fx-icon-svg { width: 1em; height: 1em; }

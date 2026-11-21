@@ -106,6 +106,7 @@ pub struct ProjectWorld {
 }
 
 impl ProjectWorld {
+    pub(crate) fn set_entry(&mut self, entry: &str) { self.entry = entry.to_string(); }
     /// `project_dir` is the user's project folder (`None` for a probe); `entry` is the file to compile; `inputs` become
     /// `sys.inputs` (the engine reads `source` from it); `extra` are files served before anything else.
     pub fn new(

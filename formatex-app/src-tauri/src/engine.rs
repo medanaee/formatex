@@ -1,4 +1,4 @@
-//! The Formatex engine (the Typst project in the parent folder), compiled into the binary.
+//! The directly assembled shared core and PDF backend embedded in the native application.
 //!
 //! `npm run engine:sync` copies it to `engine/`; `include_dir!` embeds `engine/bundle`. A project folder holds only the
 //! user's files (config.toml, Markdown, images, ...): the engine files are served from here, so the user cannot break them.
@@ -27,16 +27,14 @@ pub const ENTRY: &str = "main.typ";
 /// The entry that exposes every component's schema as data (`#metadata(...) <schemas>`).
 pub const SCHEMA_ENTRY: &str = "tools/schema.typ";
 
-/// The components that ship with the engine: name and source, from `components/*.typ` (the generated `_registry.typ` excluded).
+/// The components that ship with the engine: name and source, from six-file `components/<name>/` packages.
 pub fn builtin_components() -> Vec<(String, &'static str)> {
     let Some(dir) = BUNDLE.get_dir("components") else { return Vec::new() };
-    let mut out: Vec<(String, &'static str)> = dir
-        .files()
-        .filter_map(|file| {
-            let name = file.path().file_stem()?.to_str()?;
-            (file.path().extension()? == "typ" && !name.starts_with('_')).then_some((name.to_string(), file.contents_utf8()?))
-        })
-        .collect();
+    let mut out: Vec<(String, &'static str)> = dir.dirs().filter_map(|folder| {
+        let name = folder.path().file_name()?.to_str()?;
+        let source = file(&format!("components/{name}/typst.typ")).and_then(|bytes| std::str::from_utf8(bytes).ok()).unwrap_or("");
+        Some((name.to_string(), source))
+    }).collect();
     out.sort();
     out
 }

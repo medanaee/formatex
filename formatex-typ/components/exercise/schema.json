@@ -1,0 +1,160 @@
+{
+  "exercise": {
+    "kind": "block",
+    "description": {
+      "en": "exercises and quizzes",
+      "fa": "تمرین و آزمون"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Shown in parentheses after the number.",
+          "fa": "در پرانتز بعد از شماره می‌آید."
+        }
+      },
+      "points": {
+        "type": "number",
+        "doc": {
+          "en": "Score on the end side of the head: \"2 points\", \"1 point\" («۲ نمره» in Persian).",
+          "fa": "نمره در سمت پایان سرعنوان: «۲ نمره» / \"2 points\" (\"1 point\")."
+        }
+      },
+      "name": {
+        "type": "string",
+        "doc": {
+          "en": "Replaces the word «تمرین» / \"Exercise\", e.g. `name=\"سؤال\"`. The number still comes from the same counter.",
+          "fa": "جایگزین کلمهٔ «تمرین» / \"Exercise\"، مثلاً `name=\"سؤال\"`. شماره همچنان از همان شمارنده می‌آید."
+        }
+      },
+      "id": {
+        "type": "string",
+        "doc": {
+          "en": "Target for `<ref>`: «تمرین ۱» / \"Exercise 1\" (or the `name` word).",
+          "fa": "هدف `<ref>`: «تمرین ۱» / \"Exercise 1\" (یا کلمهٔ `name`)."
+        }
+      },
+      "answers": {
+        "type": "enum",
+        "values": [
+          "show",
+          "hide",
+          "end"
+        ],
+        "doc": {
+          "en": "What happens to the answers of this question, instead of the document's `answers` setting: `show` (under the question, the right option highlighted), `hide` (left out) or `end` (collected where `<answers></answers>` stands).",
+          "fa": "پاسخ‌های همین سؤال چه شوند، به‌جای تنظیم `answers` سند: `show` (زیر سؤال، با گزینهٔ درست برجسته)، `hide` (نمایش داده نشوند) یا `end` (جایی جمع شوند که `<answers></answers>` نوشته شده)."
+        }
+      },
+      "toc": {
+        "type": "bool",
+        "doc": {
+          "en": "`true`: the title of this question («تمرین ۱») is listed in the table of contents like a first-level heading; `false`: not. Default: the document's `exercise-toc` setting (`false`).",
+          "fa": "`true`: عنوان همین سؤال («تمرین ۱») مثل یک تیتر سطح اول در فهرست مطالب بیاید؛ `false`: نیاید. پیش‌فرض: تنظیم `exercise-toc` سند (`false`)."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the title or the content), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض: از روی عنوان یا محتوا)، `rtl`، `ltr`."
+        }
+      }
+    },
+    "children": [
+      "choices",
+      "answer"
+    ]
+  },
+  "choices": {
+    "kind": "block",
+    "description": {
+      "en": "exercises and quizzes",
+      "fa": "تمرین و آزمون"
+    },
+    "attrs": {
+      "correct": {
+        "type": "string",
+        "doc": {
+          "en": "Number of the right option, counted from 1; several separated by commas (`\"1,3\"`). Persian digits work.",
+          "fa": "شمارهٔ گزینهٔ درست از ۱؛ چند گزینه با ویرگول (`\"1,3\"`). رقم فارسی هم پذیرفته می‌شود."
+        }
+      },
+      "numbers": {
+        "type": "enum",
+        "values": [
+          "letters",
+          "numbers"
+        ],
+        "default": "letters",
+        "doc": {
+          "en": "`letters` (default: «الف ب ج د» in RTL, a b c d in LTR) or `numbers` (۱ ۲ / 1 2).",
+          "fa": "نشانگر گزینه‌ها: `letters` (پیش‌فرض: «الف ب ج د» در راست‌به‌چپ، a b c d در چپ‌به‌راست) یا `numbers` (۱ ۲ / 1 2)."
+        }
+      },
+      "cols": {
+        "type": "int",
+        "doc": {
+          "en": "Number of columns. Default automatic: 4 when there are at least 4 options and they fit, else 2 if they fit, else 1, so options adapt to the `mobile` page.",
+          "fa": "تعداد ستون‌ها. پیش‌فرض خودکار: اگر دست‌کم ۴ گزینه باشد و جا شوند ۴ ستون، وگرنه اگر جا شوند ۲، وگرنه ۱؛ پس گزینه‌ها با صفحهٔ `mobile` هم جور می‌شوند."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the title or the content), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض: از روی عنوان یا محتوا)، `rtl`، `ltr`."
+        }
+      }
+    }
+  },
+  "answer": {
+    "kind": "block",
+    "description": {
+      "en": "Answer of an <exercise>, shown or hidden by the `answers` setting",
+      "fa": "پاسخ یک <exercise> که با تنظیم `answers` نشان داده یا پنهان می‌شود"
+    },
+    "attrs": {}
+  },
+  "answers": {
+    "kind": "block",
+    "description": {
+      "en": "exercises and quizzes",
+      "fa": "تمرین و آزمون"
+    },
+    "attrs": {
+      "title": {
+        "type": "string",
+        "doc": {
+          "en": "Title of the list. Default «پاسخ‌ها» / \"Answers\".",
+          "fa": "عنوان فهرست. پیش‌فرض «پاسخ‌ها» / \"Answers\"."
+        }
+      },
+      "dir": {
+        "type": "enum",
+        "values": [
+          "auto",
+          "rtl",
+          "ltr"
+        ],
+        "default": "auto",
+        "doc": {
+          "en": "`auto` (default: from the title or the content), `rtl`, `ltr`.",
+          "fa": "جهت: `auto` (پیش‌فرض: از روی عنوان یا محتوا)، `rtl`، `ltr`."
+        }
+      }
+    }
+  }
+}

@@ -1,10 +1,6 @@
-//! HTML export (an experiment): the engine compiles to Typst's own HTML (`--input target=html`, see `formatex-typ/src/html/`), and this puts
-//! the fonts the page names inside the file, so one file shows the same fonts anywhere, with nothing next to it.
-//!
-//! The engine writes `<meta name="fx-fonts" content="Inter|IRANSansX|Anonymous Pro">` with the families its stylesheet uses; each face of
-//! each family becomes a base64 `@font-face`. The fonts are the biggest part of the file, so three things keep it small: only the regular
-//! and the bold face of a family (and the italics only when the text has italic), each file packed as WOFF (its tables deflated), and
-//! nothing else in the page that is big.
+//! Font finishing for HTML produced by the independent React renderer or plain Typst.
+//! The renderer names its required families in fx-fonts. Export embeds subset WOFF faces;
+//! preview caches complete faces across edits and sends them only when requirements change.
 
 use std::collections::HashSet;
 use std::fmt::Write;
@@ -19,64 +15,13 @@ use serde::Deserialize;
 use typst::text::FontStyle;
 use typst_kit::fonts::FontStore;
 
-/// What the export dialog chose.
-/// Supported math renderers in HTML export.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HtmlMath {
-    Native,
-    Katex,
-}
-
-impl HtmlMath {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Native => "native",
-            Self::Katex => "katex",
-        }
-    }
-}
-
-/// What the export dialog chose.
+/// Native finishing options for plain Typst HTML. Formatex view options belong to its HTML engine.
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct HtmlExport {
-    /// Put the fonts in the file (off: the page names them and the reader's own fonts are used).
     pub embed_fonts: bool,
-    /// A copy button on every code block.
-    pub copy_code: bool,
-    /// The viewer's toolbar (zoom, theme, feel), reading-progress line and outline sidebar (drawn by the engine, see `src/html/viewer.typ`).
-    pub toolbar: bool,
-    pub progress: bool,
-    pub outline: bool,
-    /// The language of the viewer's own words (toolbar, menus): the app's language. `None`: the language of the document.
-    pub ui_lang: Option<UiLang>,
-    /// Math renderer in HTML: "native" or "katex".
-    pub math: Option<HtmlMath>,
 }
-
-/// The languages the viewer has words for.
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum UiLang {
-    Fa,
-    En,
-}
-
-impl UiLang {
-    pub fn code(self) -> &'static str {
-        match self {
-            Self::Fa => "fa",
-            Self::En => "en",
-        }
-    }
-}
-
-impl Default for HtmlExport {
-    fn default() -> Self {
-        Self { embed_fonts: true, copy_code: true, toolbar: true, progress: true, outline: true, ui_lang: None, math: None }
-    }
-}
+impl Default for HtmlExport { fn default() -> Self { Self { embed_fonts: true } } }
 
 /// The families the engine named in `<meta name="fx-fonts">`.
 fn font_families(html: &str) -> Vec<String> {
@@ -96,7 +41,7 @@ fn font_families(html: &str) -> Vec<String> {
 /// Whether the text of the page uses italic anywhere (the stylesheet always mentions it, so only the page itself is looked at).
 fn uses_italic(html: &str) -> bool {
     let body = html.find("<main").map(|at| &html[at..]).unwrap_or(html);
-    ["<em>", "<em ", "<i>", "<i ", "<cite", "<blockquote", "<dfn", "<var", "font-style: italic"].iter().any(|marker| body.contains(marker))
+    ["<em>", "<em ", "<i>", "<i ", "<cite", "<blockquote", "<dfn", "<var", "font-style: italic", "mathnormal", "mathit", "textit", "boldsymbol"].iter().any(|marker| body.contains(marker))
 }
 
 /// The characters the page shows: its text with the tags taken out and the entities decoded, the script's words (the copy button), the
