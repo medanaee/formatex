@@ -1,5 +1,5 @@
 .fx-docheader {
-  margin-block: 1em 1.5em;
+  margin-block: calc(1em * var(--fx-space, 1)) calc(1.5em * var(--fx-space, 1));
   border-style: solid;
   border-width: 0;
   border-color: var(--fx-edge, var(--rule));
@@ -13,7 +13,7 @@
 .fx-docheader-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  column-gap: 1em;
+  column-gap: calc(1em * var(--fx-space, 1));
   align-items: center;
 }
 .fx-docheader-side {
@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35em;
+  gap: calc(0.35em * var(--fx-space, 1));
   text-align: center;
   min-width: 0;
 }
@@ -75,12 +75,12 @@
   color: color-mix(in srgb, var(--muted) 70%, var(--bg) 30%);
 }
 .fx-docheader-info {
-  margin-block-start: 0.55em;
+  margin-block-start: calc(0.55em * var(--fx-space, 1));
   text-align: start;
   min-width: 0;
 }
 .fx-docheader-info p {
-  margin-block: 0 0.3em;
+  margin-block: 0 calc(0.3em * var(--fx-space, 1));
 }
 .fx-docheader-info > :first-child {
   margin-block-start: 0;
@@ -94,8 +94,8 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    row-gap: 0.8em;
-    column-gap: 0.6em;
+    row-gap: calc(0.8em * var(--fx-space, 1));
+    column-gap: calc(0.6em * var(--fx-space, 1));
   }
   .fx-docheader-side {
     flex: 0 1 auto;

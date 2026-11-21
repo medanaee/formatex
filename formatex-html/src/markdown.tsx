@@ -1,7 +1,7 @@
 import React, { type CSSProperties, type ReactNode } from "react"
 import { textOf, type Node, type Settings } from "@formatex/core"
 import type { RenderContext } from "./components"
-import { Icon, arabicScript, captionPosition, codeCaptionPosition, codeIsNumbered, codeLanguage, digits, flowDir, lengthCss, presetHex } from "./kit"
+import { Icon, arabicScript, captionPosition, codeCaptionPosition, codeIsNumbered, codeLanguageInfo, digits, flowDir, lengthCss, presetHex } from "./kit"
 
 const on = (value: unknown) => value === true || value === "true"
 const ABJAD = ["الف", "ب", "ج", "د", "ه", "و", "ز", "ح", "ط", "ی", "ک", "ل", "م", "ن", "س", "ع", "ف", "ص", "ق", "ر", "ش", "ت", "ث", "خ", "ذ", "ض", "ظ", "غ"]
@@ -88,7 +88,7 @@ function columnCount(document: RenderContext["document"]): number {
 export function renderParagraph(node: Node, c: RenderContext, props: Settings): ReactNode {
   const onlyImage = node.children?.length === 1 && node.children[0]?.type === "image"
   return (
-    <p className={onlyImage ? "fx-figure" : undefined} style={{ textAlign: on(props.justify) ? "justify" : undefined, letterSpacing: props["letter-spacing"] ? `${Number(props["letter-spacing"]) / 100}em` : undefined, lineHeight: props["line-spacing"] ? Number((1 + 0.52 * Number(props["line-spacing"]) / 100).toFixed(3)) : undefined, wordSpacing: props["word-spacing"] ? `${Number(props["word-spacing"]) - 100}%` : undefined }} dir={spokenDir(node, c.document.settings.dir)}>
+    <p className={onlyImage ? "fx-figure" : undefined} style={{ textAlign: on(props.justify) ? "justify" : undefined, letterSpacing: props["letter-spacing"] ? `${Number(props["letter-spacing"]) / 100}em` : undefined, lineHeight: props["line-spacing"] ? Number((1 + 0.42 * Number(props["line-spacing"]) / 100).toFixed(3)) : undefined, wordSpacing: props["word-spacing"] ? `${Number(props["word-spacing"]) - 100}%` : undefined }} dir={spokenDir(node, c.document.settings.dir)}>
       {c.children(node)}
     </p>
   )
@@ -134,7 +134,7 @@ function escapeHtml(text: string): string {
 }
 
 export function renderFence(node: Node, c: RenderContext, props: Settings): ReactNode {
-  const lang = codeLanguage(props.lang || node.lang)
+  const langInfo = codeLanguageInfo(props.lang || node.lang)
   const stored = c.assets[`code:${node.key}`]
   const source = (node.value ?? "").replace(/^\s*(```|~~~)[^\n]*\n?/, "").replace(/\n?(```|~~~)\s*$/, "").replace(/\n$/, "")
   const lines: string[] = stored ? JSON.parse(stored) : source.split("\n").map(escapeHtml)
@@ -156,15 +156,14 @@ export function renderFence(node: Node, c: RenderContext, props: Settings): Reac
   return (
     <figure id={props.id ? String(props.id) : undefined} className="fx-code-figure" dir={dir}>
       {position === "above" && captionNode}
-      <div className={`fx-code${lang ? " fx-code-lang" : ""}${wide ? " fx-code-wide" : ""}`} dir="ltr">
+      <div className={`fx-code${langInfo ? " fx-code-lang" : ""}${wide ? " fx-code-wide" : ""}`} dir="ltr">
         <div className="fx-code-frame">
-          {lang ? (
-            <div className="fx-code-badge">
-              <Icon name="code" />
-              <span>{lang}</span>
-              {copy && <button type="button" className="fx-copy">{copyLabel}</button>}
+          {(langInfo || copy) && (
+            <div className={`fx-code-corner${langInfo && copy ? " fx-code-corner-both" : ""}`}>
+              {copy && <button type="button" className="fx-copy" aria-label={copyLabel} title={copyLabel}><Icon name="copy" /></button>}
+              {langInfo && <span className="fx-code-badge"><Icon name={langInfo.icon} /><span>{langInfo.name}</span></span>}
             </div>
-          ) : copy && <button type="button" className="fx-copy fx-copy-solo">{copyLabel}</button>}
+          )}
           <pre><code>{lines.map((line, index) => <span key={index} className={`fx-code-line${marked(props.highlight, index + 1) ? " fx-code-highlight" : ""}`} data-line={index + 1} dangerouslySetInnerHTML={{ __html: line || " " }} />)}</code></pre>
         </div>
       </div>

@@ -1,6 +1,6 @@
 .fx-alert {
-  margin-block: 0.85em;
-  padding: 1.2em;
+  margin-block: var(--fx-gap-block, 0.76em);
+  padding: calc(1.2em * var(--fx-space, 1));
   border: 0.06em solid var(--fx-border);
   border-radius: var(--fx-radius-alert);
   background: var(--fx-fill);
@@ -10,7 +10,7 @@
 .fx-alert-iconed {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 1.2em;
+  column-gap: calc(1.1em * var(--fx-space, 1));
   align-items: start;
 }
 .fx-alert-icon {
@@ -18,10 +18,10 @@
   align-items: center;
   justify-content: center;
   width: 1.2em;
-  height: 1.7em;
+  height: 1.55em;
   color: var(--fx-icon);
 }
-.fx-alert-icon .fx-icon-svg { width: 1.2em; height: 1.2em; }
+.fx-alert-icon .fx-icon-svg { width: 1.2em; height: 1.2em; font-size: 1.2em; }
 .fx-alert-body { min-width: 0; }
 .fx-alert-body > :first-child { margin-block-start: 0; }
 .fx-alert-body > :last-child,

@@ -1,4 +1,4 @@
-import { Icon, arabicScript, codeCaptionPosition, codeIsNumbered, codeLanguage, digits, flowDir } from "formatex"
+import { Icon, arabicScript, codeCaptionPosition, codeIsNumbered, codeLanguageInfo, digits, flowDir } from "formatex"
 
 function marked(value, line) {
   return String(value ?? "").split(",").some(range => {
@@ -16,7 +16,7 @@ function sourceText(node, context, props) {
 
 export default function Component({ node, context }) {
   const p = context.props(node)
-  const lang = codeLanguage(p.lang || node.lang || node.children?.find(child => child.type === "code")?.lang)
+  const langInfo = codeLanguageInfo(p.lang || node.lang || node.children?.find(child => child.type === "code")?.lang)
   const stored = context.assets[`code:${node.key}`]
   const lines = stored ? JSON.parse(stored) : sourceText(node, context, p).replace(/\n$/, "").split("\n").map(line => line.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"))
   const range = /^(\d+)(?:-(\d+))?$/.exec(String(p.lines ?? ""))
@@ -43,15 +43,14 @@ export default function Component({ node, context }) {
   return (
     <figure id={p.id ? String(p.id) : undefined} dir={dir} className="fx-code-figure">
       {position === "above" && captionNode}
-      <div className={`fx-code${lang ? " fx-code-lang" : ""}${wide ? " fx-code-wide" : ""}`} dir="ltr">
+      <div className={`fx-code${langInfo ? " fx-code-lang" : ""}${wide ? " fx-code-wide" : ""}`} dir="ltr">
         <div className="fx-code-frame">
-          {lang ? (
-            <div className="fx-code-badge">
-              <Icon name="code" />
-              <span>{lang}</span>
-              {copy && <button type="button" className="fx-copy">{copyLabel}</button>}
+          {(langInfo || copy) && (
+            <div className={`fx-code-corner${langInfo && copy ? " fx-code-corner-both" : ""}`}>
+              {copy && <button type="button" className="fx-copy" aria-label={copyLabel} title={copyLabel}><Icon name="copy" /></button>}
+              {langInfo && <span className="fx-code-badge"><Icon name={langInfo.icon} /><span>{langInfo.name}</span></span>}
             </div>
-          ) : copy && <button type="button" className="fx-copy fx-copy-solo">{copyLabel}</button>}
+          )}
           <pre><code>{shown.map((line, index) => <span key={index} className={`fx-code-line${marked(p.highlight, first + index) ? " fx-code-highlight" : ""}`} data-line={first + index} dangerouslySetInnerHTML={{ __html: line || " " }} />)}</code></pre>
         </div>
       </div>

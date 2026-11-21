@@ -103,6 +103,8 @@ it("renders alert, box, badge, kbd and code with the PDF padding, tint and feel 
     node({ type: "component", name: "box", key: "plain", children: [text("plain-t", "Open")] }),
     node({ type: "component", name: "box", key: "hex", props: { color: "#dbeafe" }, children: [text("hex-t", "Hex")] }),
     node({ type: "code", key: "fence", lang: "py", value: "print(1)\nprint(2)\n", props: { highlight: "2" } }),
+    node({ type: "code", key: "typ-fence", lang: "typst", value: "// note\n#let run(x: Box) = call(42, true, \"ok\")\n" }),
+    node({ type: "code", key: "plain-fence", lang: "plaintext", value: "if true return 1\n" }),
     node({ type: "component", name: "code", key: "listing", props: { lang: "python", caption: "نمونه" }, children: [node({ type: "code", key: "listing-code", value: "x = 1\n", lang: "python" })] }),
   ]
   const packages: Record<string, Record<string, string>> = {}
@@ -113,11 +115,14 @@ it("renders alert, box, badge, kbd and code with the PDF padding, tint and feel 
   const catalog = componentCatalog(packages)
   const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, ...catalog, uiLanguage: "fa" })
   expect(html).toContain('data-feel="standard"')
+  expect(html).toContain("--fx-space: 0.9")
+  expect(html).toContain("--fx-syn-keyword: #a626a4")
+  expect(html).toContain("--fx-syn-function: #4078f2")
   expect(html).toContain("--fx-radius-alert: 0.8em")
   expect(html).toContain("--fx-radius-box: 0.6em")
   expect(html).toContain("--fx-radius-kbd: 0.4em")
-  expect(html).toContain("padding: 1.2em")
-  expect(html).toContain("padding: 0.8em")
+  expect(html).toContain("padding: calc(1.2em * var(--fx-space, 1))")
+  expect(html).toContain("padding: calc(0.8em * var(--fx-space, 1))")
   expect(html).toContain('class="fx-alert fx-tint fx-alert-iconed"')
   expect(html).toContain("--fx-paint:#a855f7")
   expect(html).toContain('class="fx-alert-icon"')
@@ -130,7 +135,13 @@ it("renders alert, box, badge, kbd and code with the PDF padding, tint and feel 
   expect(html.match(/class="fx-kbd"/g)?.length).toBe(2)
   expect(html).toContain('class="fx-kbd-plus"')
   expect(html).toContain("Python")
+  expect(html).toContain('class="fx-code-corner fx-code-corner-both"')
   expect(html).toContain('class="fx-code-badge"')
+  expect(html).toContain('data-fa="\uf3e2"')
+  expect(html).toContain("Font Awesome 7 Pro|Font Awesome 7 Brands")
+  expect(html).toContain('<span class="hljs-comment">// note</span>')
+  expect(html).toContain('<span class="hljs-keyword">let</span> <span class="hljs-title function_">run</span>(x: <span class="hljs-type">Box</span>) = <span class="hljs-title function_">call</span>(<span class="hljs-number">42</span>, <span class="hljs-literal">true</span>, <span class="hljs-string">"ok"</span>)')
+  expect(html).toContain("if true return 1")
   expect(html).toContain('data-line="2"')
   expect(html).toContain("fx-code-highlight")
   expect(html).toContain("کد ۱")
@@ -434,6 +445,242 @@ it("renders compare, progress, chat, docheader and letter from their own package
   expect(html.match(/class="fx-letter-greeting"/g)?.length).toBe(1)
 
   for (const tag of ["compare", "progress", "chat", "docheader", "letter"]) {
+    await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
+  }
+})
+
+it("renders picheader, cover, tree, todo and diff from their own packages and updates letter header layout", async () => {
+  const at = { file: "next5.md", line: 1, column: 1 }
+  const text = (key: string, value: string): Node => ({ type: "text", key, value, at })
+  const para = (key: string, value: string): Node => ({ type: "paragraph", key, at, children: [text(`${key}-t`, value)] })
+  const input = document()
+  input.settings = { feel: "standard", dir: "rtl" }
+  input.tokens = {
+    bg: "#fff", fg: "#1c1917", muted: "#78716c", accent: "#2563eb", secondary: "#0f766e",
+    heading: "#1c1917", rule: "#e7e5e4", "code-bg": "#f6f8fa", "code-stroke": "#d0d7de",
+    radius: 6, dark: false, "feel-name": "standard",
+  }
+  input.children = [
+    {
+      type: "component", name: "cover", key: "cv1", at,
+      props: { frame: "true", logo: "logo.png", institution: "دانشگاه نمونه", title: "معماری رندر", author: "علی", date: "۱۴۰۵" },
+      children: [para("cv1-p", "توضیح جلد")],
+    },
+    {
+      type: "component", name: "letter", key: "lt-h", at,
+      props: { heading: "بسمه تعالی", org: "دانشگاه نمونه", number: "۱۲", date: "۱۴۰۵", to: "مدیر", subject: "موضوع", signer: "احمدی" },
+      children: [para("lt-hp", "متن نامه")],
+    },
+    {
+      type: "component", name: "picheader", key: "ph1", at,
+      props: { src: "banner.jpg", title: "سربرگ تصویری", subtitle: "زیرعنوان", height: "55mm", "margin-x": "false" },
+    },
+    {
+      type: "component", name: "tree", key: "tr1", at,
+      props: { caption: "درخت پروژه" },
+      children: [{ type: "code", key: "tr1-c", at, value: "root/\n  src/\n    main.ts  # نقطه ورود\n  README.md" }],
+    },
+    {
+      type: "paragraph", key: "p-inline", at,
+      children: [
+        text("p1", "این "),
+        { type: "component", name: "todo", key: "td1", at, props: { author: "علی" }, children: [text("td1-t", "بررسی شود")] },
+        text("p2", " و "),
+        { type: "component", name: "del", key: "dl1", at, children: [text("dl1-t", "قدیمی")] },
+        text("p3", " "),
+        { type: "component", name: "ins", key: "in1", at, children: [text("in1-t", "جدید")] },
+      ],
+    },
+    {
+      type: "component", name: "todo", key: "td2", at,
+      children: [para("td2-p", "پاراگراف یادداشت")],
+    },
+    {
+      type: "component", name: "todo", key: "td3", at,
+      props: { type: "figure", height: "90" },
+      children: [text("td3-t", "شکل موقت")],
+    },
+    { type: "component", name: "todos", key: "tds", at },
+    {
+      type: "component", name: "diff", key: "df1", at,
+      props: { caption: "مقایسه کد", dir: "rtl" },
+      children: [
+        { type: "component", name: "before", key: "df1-b", at, children: [{ type: "code", key: "df1-bc", at, lang: "python", value: "a = 1\nb = 2" }] },
+        { type: "component", name: "after", key: "df1-a", at, children: [{ type: "code", key: "df1-ac", at, lang: "python", value: "a = 1\nb = 3\nc = 4" }] },
+      ],
+    },
+    {
+      type: "component", name: "diff", key: "df2", at,
+      props: { mode: "unified" },
+      children: [
+        { type: "component", name: "old", key: "df2-o", at, children: [{ type: "code", key: "df2-oc", at, lang: "ts", value: "const x = 1" }] },
+        { type: "component", name: "new", key: "df2-n", at, children: [{ type: "code", key: "df2-nc", at, lang: "ts", value: "const x = 2" }] },
+      ],
+    },
+  ]
+
+  const packages: Record<string, Record<string, string>> = {}
+  for (const name of ["picheader", "cover", "tree", "todo", "diff", "letter"]) {
+    const directory = path.resolve("../formatex-core/components", name)
+    packages[name] = Object.fromEntries(fs.readdirSync(directory).map(file => [file, fs.readFileSync(path.join(directory, file), "utf8")]))
+  }
+  const catalog = componentCatalog(packages)
+  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, ...catalog, uiLanguage: "fa", assets: { "logo.png": "data:image/png;base64,xx", "banner.jpg": "data:image/jpeg;base64,yy" } })
+
+  expect(html).toContain("fx-cover fx-cover-frame")
+  expect(html).toContain("معماری رندر")
+  expect(html).not.toContain("استاد راهنما")
+  expect(html).toContain("نگارش:")
+  expect(html.indexOf('class="fx-letter-heading"')).toBeGreaterThan(-1)
+  expect(html.indexOf('class="fx-letter-heading"')).toBeLessThan(html.indexOf('class="fx-letter-header"'))
+  expect(html).toContain("fx-picheader fx-picheader-bleed")
+  expect(html).toContain("fx-picheader-scrim")
+  expect(html).toContain("fx-tree-figure")
+  expect(html).toContain("شکل ۱")
+  expect(html).toContain("نقطه ورود")
+  expect(html).toContain("fx-todo-inline")
+  expect(html).toContain("fx-todo-block")
+  expect(html).toContain("fx-todo-figure")
+  expect(html).toContain("min-height:9em")
+  expect(html).toContain("کارهای باقی‌مانده")
+  expect(html).toContain("fx-todos-list")
+  expect(html).toContain("fx-diff-del")
+  expect(html).toContain("fx-diff-ins")
+  expect(html).toContain("fx-diff-grid fx-diff-split")
+  expect(html).toContain("--fx-diff-num-w:")
+  expect(html).toContain("fx-diff-empty")
+  expect(html).toContain("نسخه قبل")
+  expect(html).toContain("نسخه بعد")
+  expect(html).toContain("تغییرات ۱")
+  expect(html).toContain("fx-diff-grid fx-diff-unified")
+  expect(html).toContain("fx-diff-lang")
+  expect(html).toContain("TypeScript")
+  expect(html).toContain('data-fa="\ue840"')
+
+  const hidden = document()
+  hidden.settings = { dir: "rtl", todo: "hide" }
+  hidden.tokens = input.tokens
+  hidden.children = [
+    para("hp", "متن"),
+    { type: "component", name: "todo", key: "htd", at, children: [text("htd-t", "باید پنهان شود")] },
+    { type: "component", name: "todos", key: "htds", at },
+  ]
+  const hiddenHtml = await renderHtml(hidden, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, ...catalog, uiLanguage: "fa" })
+  expect(hiddenHtml).not.toContain("باید پنهان شود")
+  expect(hiddenHtml).not.toContain("کارهای باقی‌مانده")
+
+  for (const tag of ["picheader", "cover", "tree", "todo", "todos", "diff", "del", "ins"]) {
+    await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
+  }
+})
+
+it("renders chart, cetz, lilaq, typ and internal from their own packages with PDF parity", async () => {
+  const at = { file: "cat3.md", line: 1, column: 1 }
+  const text = (key: string, value: string): Node => ({ type: "text", key, value, at })
+  const cell = (key: string, value: string): Node => ({ type: "tableCell", key, at, children: [text(`${key}-t`, value)] })
+  const row = (key: string, values: string[]): Node => ({ type: "tableRow", key, at, children: values.map((v, i) => cell(`${key}-${i}`, v)) })
+  const input = document()
+  input.settings = { feel: "standard", dir: "rtl" }
+  input.tokens = {
+    bg: "#fff", fg: "#1c1917", muted: "#78716c", accent: "#2563eb", secondary: "#0f766e",
+    heading: "#1c1917", rule: "#e7e5e4", "code-bg": "#f6f8fa", "code-stroke": "#d0d7de",
+    radius: 6, dark: false, "feel-name": "standard",
+  }
+  input.children = [
+    {
+      type: "component", name: "cetz", key: "cz-solo", at,
+      children: [{ type: "code", key: "cz-c", at, lang: "typ", value: "circle((0, 0), radius: 1)" }],
+    },
+    {
+      type: "component", name: "fig", key: "fg-lq", at, props: { id: "fig-lq", width: "80%" },
+      children: [
+        { type: "component", name: "lilaq", key: "lq1", at, children: [{ type: "code", key: "lq-c", at, lang: "typ", value: "lq.diagram()" }] },
+        { type: "component", name: "caption", key: "lq-cap", at, children: [text("lq-capt", "نمودار لیلاک")] },
+      ],
+    },
+    {
+      type: "component", name: "chart", key: "ch-bar", at,
+      props: { caption: "ورودی‌ها", "y-title": "نفر", values: "true" },
+      children: [{
+        type: "table", key: "ch-bar-t", at,
+        children: [
+          row("r0", ["رشته", "۱۴۰۳", "۱۴۰۴"]),
+          row("r1", ["کامپیوتر", "۱۲۰", "۱۵۰"]),
+          row("r2", ["برق", "۹۰", "۹۵"]),
+        ],
+      }],
+    },
+    {
+      type: "component", name: "chart", key: "ch-line", at,
+      props: { type: "line", caption: "دقت مدل", "x-title": "دوره", unit: "%", values: "true" },
+      children: [{
+        type: "table", key: "ch-line-t", at,
+        children: [
+          row("lr0", ["دوره", "آموزش", "تست"]),
+          row("lr1", ["۱", "۶۰", "۵۵"]),
+          row("lr2", ["۲", "۸۰", "۷۵"]),
+        ],
+      }],
+    },
+    {
+      type: "component", name: "chart", key: "ch-donut", at,
+      props: { type: "donut", caption: "Time spent", values: "true", unit: "h", dir: "ltr" },
+      children: [{
+        type: "table", key: "ch-donut-t", at,
+        children: [
+          row("dr0", ["Task", "Hours"]),
+          row("dr1", ["Coding", "14"]),
+          row("dr2", ["Writing", "6"]),
+        ],
+      }],
+    },
+    {
+      type: "component", name: "typ", key: "tp1", at,
+      children: [{ type: "code", key: "tp1-c", at, lang: "typ", value: "== تیتر" }],
+    },
+    {
+      type: "component", name: "listpages", key: "lp1", at,
+      children: [{ type: "paragraph", key: "lp1-p", at, children: [text("lp1-t", "فهرست تک‌ستونی")] }],
+    },
+  ]
+
+  const packages: Record<string, Record<string, string>> = {}
+  for (const name of ["chart", "cetz", "lilaq", "typ", "internal", "fig"]) {
+    const directory = path.resolve("../formatex-core/components", name)
+    packages[name] = Object.fromEntries(fs.readdirSync(directory).map(file => [file, fs.readFileSync(path.join(directory, file), "utf8")]))
+  }
+  const catalog = componentCatalog(packages)
+  const html = await renderHtml(input, {
+    html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false },
+    ...catalog,
+    uiLanguage: "fa",
+    assets: {
+      "cz-solo:body": '<svg viewBox="0 0 40 40"></svg>',
+      "lq1:body": '<svg viewBox="0 0 100 50"></svg>',
+      "tp1:body": '<svg viewBox="0 0 200 30"></svg>',
+    },
+  })
+
+  // Standalone <cetz> must NOT steal a figure number; <fig> gets شکل ۱, <chart> gets شکل ۲, شکل ۳, Figure 4
+  expect(html).toContain('class="fx-cetz"')
+  expect(html).toContain('class="fx-lilaq"')
+  expect(html).toContain("--fx-fig-w:80%")
+  expect(html).toContain('<span class="fx-fig-number">شکل ۱</span>: نمودار لیلاک')
+  expect(html).toContain("fx-chart-svg-cartesian")
+  expect(html).toContain('<span class="fx-fig-number">شکل ۲</span>: ورودی‌ها')
+  expect(html).toContain('<span class="fx-fig-number">شکل ۳</span>: دقت مدل')
+  expect(html).toContain("fx-chart-svg-round")
+  expect(html).toContain("fx-chart-donut-total")
+  expect(html).toContain("20h")
+  expect(html).toContain('<span class="fx-fig-number">Figure 4</span>: Time spent')
+  expect(html).toContain('class="fx-typ"')
+  expect(html).toContain('class="fx-listpages"')
+
+  const badInclude = document()
+  badInclude.children = [{ type: "component", name: "include", key: "inc", at, props: { src: "part.md" } }]
+  await expect(renderHtml(badInclude, { html: DEFAULT_HTML_OPTIONS, ...catalog })).rejects.toThrow('<include src="part.md"> must stand alone on its own line')
+
+  for (const tag of ["chart", "cetz", "lilaq", "typ", "listpages", "include"]) {
     await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
   }
 })

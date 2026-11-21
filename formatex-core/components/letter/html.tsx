@@ -42,30 +42,36 @@ export default function Component({ node, context }) {
 
   return (
     <article id={p.id ? String(p.id) : undefined} dir={dir} className="fx-letter fx-tint">
-      <header className="fx-letter-header">
-        <div className="fx-letter-org">
-          {logoSrc && <img className="fx-letter-logo" src={logoSrc} alt="" />}
-          {org && <div className="fx-letter-org-name" dir={ownDir(org)}>{org}</div>}
+      {heading && (
+        <div className="fx-letter-heading">
+          <span dir={ownDir(heading)}>{heading}</span>
         </div>
-        <div className="fx-letter-heading" dir={heading ? ownDir(heading) : dir}>{heading || null}</div>
-        <div className="fx-letter-meta-wrap">
-          {metaKeys.length > 0 && (
-            <div className="fx-letter-meta">
-              <dl className="fx-letter-meta-grid">
-                {metaKeys.map(key => {
-                  const val = get(key)
-                  return (
-                    <React.Fragment key={key}>
-                      <dt className="fx-letter-label">{words[key]}:</dt>
-                      <dd><span dir={ownDir(val)}>{val}</span></dd>
-                    </React.Fragment>
-                  )
-                })}
-              </dl>
-            </div>
-          )}
-        </div>
-      </header>
+      )}
+      {(logoSrc || org || metaKeys.length > 0) && (
+        <header className="fx-letter-header">
+          <div className="fx-letter-org">
+            {logoSrc && <img className="fx-letter-logo" src={logoSrc} alt="" />}
+            {org && <div className="fx-letter-org-name" dir={ownDir(org)}>{org}</div>}
+          </div>
+          <div className="fx-letter-meta-wrap">
+            {metaKeys.length > 0 && (
+              <div className="fx-letter-meta">
+                <dl className="fx-letter-meta-grid">
+                  {metaKeys.map(key => {
+                    const val = get(key)
+                    return (
+                      <React.Fragment key={key}>
+                        <dt className="fx-letter-label">{words[key]}:</dt>
+                        <dd><span dir={ownDir(val)}>{val}</span></dd>
+                      </React.Fragment>
+                    )
+                  })}
+                </dl>
+              </div>
+            )}
+          </div>
+        </header>
+      )}
 
       <hr className="fx-letter-rule" />
 

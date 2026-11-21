@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react"
 import { renderToStaticMarkup, renderToString } from "react-dom/server"
 import { transform } from "sucrase"
-import { DocumentError, textOf, type DocumentIR, type Node, type Settings } from "@formatex/core"
+import { DocumentError, textOf, unfence, type DocumentIR, type Node, type Settings } from "@formatex/core"
 import { componentLayers, resolve, outputSettings, type Properties } from "@formatex/core"
 import { renderBuiltin, renderFootnote, graphicTags, type RenderContext } from "./components"
 import { renderFence, renderHeading, renderList, renderMath, renderParagraph, renderQuote, renderTable } from "./markdown"
@@ -119,8 +119,15 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
       }
     }
     const kind = node.type === "math" ? "equation" : node.type === "table" || node.type === "code" || node.type === "list" ? node.type : node.name
-    if (!(owner && ["cetz", "lilaq", "chart"].includes(kind ?? "")) && kind && ["table", "code", "list", "equation", "exercise", "theorem", "lemma", "definition", "corollary", "example", "remark", "counter", "fig", "chart", "cetz", "lilaq", "todo", "fn", "footnote"].includes(kind) && (kind !== "code" || Kit.codeIsNumbered(document.settings, node.props ?? {})) && (kind !== "table" || Kit.captionedNumber(document.settings, "table", node.props ?? {})) && (kind !== "list" || Kit.captionedNumber(document.settings, "list", node.props ?? {}))) {
-      const counter = ["fn", "footnote"].includes(kind) ? "footnote" : ["fig", "chart", "cetz", "lilaq"].includes(kind) ? "figure" : kind
+    const figGlobal = (document.settings.figure as Settings | undefined)?.numbering !== false && (document.settings.figure as Settings | undefined)?.numbering !== "false"
+    const figNumbered = kind !== "fig" || (node.props?.numbering !== false && node.props?.numbering !== "false" && (node.props?.numbering === true || node.props?.numbering === "true" || figGlobal))
+    const treeChartNumbered = (kind !== "tree" && kind !== "chart") || (
+      node.props?.numbering === true || node.props?.numbering === "true" ||
+      (node.props?.numbering !== false && node.props?.numbering !== "false" && figGlobal && !!(node.props?.caption || node.props?.id))
+    )
+    const diffNumbered = kind !== "diff" || !!(node.props?.caption || node.props?.id)
+    if (!(owner && kind === "chart") && kind && ["table", "code", "list", "equation", "exercise", "theorem", "lemma", "definition", "corollary", "example", "remark", "counter", "fig", "chart", "tree", "diff", "todo", "fn", "footnote"].includes(kind) && (kind !== "code" || Kit.codeIsNumbered(document.settings, node.props ?? {})) && (kind !== "table" || Kit.captionedNumber(document.settings, "table", node.props ?? {})) && (kind !== "list" || Kit.captionedNumber(document.settings, "list", node.props ?? {})) && figNumbered && treeChartNumbered && diffNumbered) {
+      const counter = ["fn", "footnote"].includes(kind) ? "footnote" : ["fig", "chart", "tree"].includes(kind) ? "figure" : kind
       const n = (counts.get(counter) ?? 0) + 1
       counts.set(counter, n); numbers.set(node.key, n)
       if (!node.props.id) { node.props._generatedId = true; node.props.id = `fx-${kind}-${n}` }
@@ -173,7 +180,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
       const inline = options.schemas?.[node.name ?? ""]?.kind === "inline"
       const Tag = inline ? "span" : "div"
       if (c.assets[key] !== undefined) return <Tag className={inline ? "fx-graphic-inline" : "fx-graphic"} dangerouslySetInnerHTML={{ __html: c.assets[key] }} />
-      requests.set(key, { kind: "graphic", node, key, bodyOnly, inline: inline || bodyOnly && ["cetz", "lilaq", "typ"].includes(node.name ?? "") })
+      requests.set(key, { kind: "graphic", node, key, bodyOnly, inline: inline || bodyOnly && ["cetz", "lilaq"].includes(node.name ?? "") })
       return null
     },
     props: effective,
@@ -229,6 +236,22 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
       return <Tag data-fx-node={node.key} style={node.type === "text" ? undefined : { display: "contents" }}>{result}</Tag>
     },
   }
+  const trimDiffLines = (value: string): string => {
+    const lines = value.replace(/\r/g, "").split("\n")
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop()
+    return lines.join("\n")
+  }
+  const diffSideSource = (side: Node | undefined): { value: string; lang: string } => {
+    if (!side) return { value: "", lang: "" }
+    const sp = effective(side)
+    if (sp.src) {
+      const srcPath = String(sp.src)
+      return { value: c.asset(srcPath, true), lang: srcPath.split(".").pop() ?? "" }
+    }
+    const codeNode = side.children?.find(ch => ch.type === "code")
+    if (codeNode) return { value: codeNode.value ?? "", lang: codeNode.lang ?? "" }
+    return { value: side.value !== undefined ? unfence(side.value) : "", lang: "" }
+  }
   const prepareCode = async (nodes: Node[]): Promise<void> => {
     for (const node of nodes) {
       if (node.type === "code" || node.name === "code") {
@@ -236,6 +259,18 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         const value = p.src ? c.asset(String(p.src), true) : node.value ?? node.children?.find(n => n.type === "code")?.value ?? ""
         const language = String(p.lang ?? node.lang ?? node.children?.find(n => n.type === "code")?.lang ?? "")
         c.assets[`code:${node.key}`] = JSON.stringify(await (await import("./highlight")).highlight(value.replace(/\n$/, ""), language))
+      } else if (node.name === "diff") {
+        const p = effective(node)
+        const beforeNode = node.children?.find(ch => ch.name === "before" || ch.name === "old")
+        const afterNode = node.children?.find(ch => ch.name === "after" || ch.name === "new")
+        const oldSrc = diffSideSource(beforeNode)
+        const newSrc = diffSideSource(afterNode)
+        const language = String(p.lang ?? (oldSrc.lang || newSrc.lang || ""))
+        const { highlight } = await import("./highlight")
+        const oldText = trimDiffLines(oldSrc.value)
+        const newText = trimDiffLines(newSrc.value)
+        c.assets[`diff-old:${node.key}`] = JSON.stringify(oldText ? await highlight(oldText, language) : [])
+        c.assets[`diff-new:${node.key}`] = JSON.stringify(newText ? await highlight(newText, language) : [])
       }
       if (node.children) await prepareCode(node.children)
     }
@@ -252,10 +287,13 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
   // Background images may recur in several headers. Embed each once, not once per element.
   const backgroundCss=backgrounds.size?`:root{${[...backgrounds].map(([asset,name])=>`${name}:url(${JSON.stringify(asset)})`).join(";")}}`:""
   const viewerFonts = options.html.toolbar ? Object.values(data.feels ?? {}).flatMap(feel => [feel.latin, feel.persian]) : []
+  const iconFonts = content.includes("fx-icon-svg")
+    ? ["Font Awesome 7 Pro", "Font Awesome 7 Brands", ...(content.includes("fx-icon-solid") ? ["Font Awesome 7 Pro Solid"] : [])]
+    : []
   // The shell is hydrated: preserve React's text boundaries and useId markers.
   // Document components above remain static and independently patchable.
   const shell = renderToString(<DocumentShell data={data} content={content} />)
-  const html = renderToStaticMarkup(<html lang={language} dir={dir} className={document.tokens.dark ? "dark" : undefined} data-feel={data.feel}><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="fx-fonts" content={fontNames([document.tokens.latin, document.tokens.persian, document.tokens.code, ...viewerFonts, ...math.families]).join("|")} /><style dangerouslySetInnerHTML={{ __html: style + backgroundCss }} /></head><body><div id="fx-shell" dangerouslySetInnerHTML={{ __html: shell }} /></body></html>)
+  const html = renderToStaticMarkup(<html lang={language} dir={dir} className={document.tokens.dark ? "dark" : undefined} data-feel={data.feel}><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="fx-fonts" content={fontNames([document.tokens.latin, document.tokens.persian, document.tokens.code, ...viewerFonts, ...math.families, ...iconFonts]).join("|")} /><style dangerouslySetInnerHTML={{ __html: style + backgroundCss }} /></head><body><div id="fx-shell" dangerouslySetInnerHTML={{ __html: shell }} /></body></html>)
   const payload = `<script id="fx-shell-data" type="application/json">${JSON.stringify(data).replace(/</g, "\\u003c")}</script>`
   const runtime = options.runtime ? `<script>${options.runtime.replace(/<\/script/gi, "<\\/script")}</script>` : ""
   const sourceMap: Record<string, unknown> = {}

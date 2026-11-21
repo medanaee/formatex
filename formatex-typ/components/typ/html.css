@@ -1,0 +1,21 @@
+.fx-typ {
+  margin-block: var(--fx-gap-block, 0.76em);
+  min-width: 0;
+  max-width: 100%;
+  text-align: start;
+}
+.fx-typ .fx-graphic,
+.fx-typ .fx-graphic-inline {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  line-height: 0;
+}
+.fx-typ svg {
+  display: block;
+  margin-inline: 0;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0;
+}

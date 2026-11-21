@@ -1,0 +1,77 @@
+.fx-tree {
+  overflow-x: auto;
+  margin-block: calc(0.7em * var(--fx-space, 1));
+  padding: calc(0.55em * var(--fx-space, 1)) calc(0.8em * var(--fx-space, 1));
+  background: var(--code-bg);
+  border: 0.05em solid var(--code-stroke);
+  border-radius: var(--fx-radius-code);
+  font: 0.85em/1.42 var(--font-code);
+  direction: ltr;
+  text-align: left;
+}
+.fx-fig .fx-tree {
+  margin-block: 0;
+}
+.fx-tree-row {
+  display: flex;
+  align-items: center;
+  min-height: 1.5em;
+  white-space: nowrap;
+}
+.fx-tree-slot {
+  position: relative;
+  width: 1.55em;
+  height: 1.5em;
+  flex: none;
+  color: color-mix(in srgb, var(--muted) 55%, var(--code-bg) 45%);
+}
+.fx-tree-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fx-tree-elbow-sharp {
+  display: none;
+}
+html[data-feel="formal"] .fx-tree-elbow-sharp {
+  display: inline;
+}
+html[data-feel="formal"] .fx-tree-elbow-round {
+  display: none;
+}
+.fx-tree-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  flex: none;
+  margin-inline-end: 0.42em;
+  color: var(--muted);
+}
+.fx-tree-icon-folder {
+  color: var(--accent);
+}
+.fx-tree-icon .fx-icon-svg {
+  width: 0.95em;
+  height: 0.95em;
+}
+.fx-tree-name {
+  color: var(--fg);
+}
+.fx-tree-name-folder {
+  font-weight: 700;
+}
+.fx-tree-figure {
+  margin-block: calc(0.7em * var(--fx-space, 1));
+}
+.fx-tree-figure > .fx-fig-caption {
+  text-align: center;
+  margin-block-start: calc(0.45em * var(--fx-space, 1));
+}
+.fx-tree-note {
+  margin-left: 1.4em;
+  font-family: var(--font-body);
+  font-size: 0.94em;
+  color: var(--muted);
+  unicode-bidi: isolate;
+}

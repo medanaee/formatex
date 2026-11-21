@@ -1,5 +1,12 @@
-import { renderBuiltin } from "formatex"
-
 export default function Component({ node, context }) {
-  return renderBuiltin(node, context)
+  const p = context.props(node)
+  const hasCode = !!(p.src || node.value !== undefined || node.children?.some(child => child.type === "code"))
+  if (!hasCode) {
+    throw new Error('<cetz> needs a fenced code block inside it, or src="file.typ"')
+  }
+  return (
+    <div id={p.id ? String(p.id) : undefined} className="fx-cetz">
+      {context.graphic(node, { bodyOnly: true })}
+    </div>
+  )
 }

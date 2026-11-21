@@ -1,7 +1,7 @@
 // Input and look of the whole document: config, front matter, <include> expansion, theme, feel, fonts,
 // paragraph settings and text direction.
 #import "/src/themes.typ": themes
-#import "@preview/fontawesome:0.6.2": fa-icon
+#import "@preview/fontawesome:0.6.2": fa-icon, fa-use-pro
 #import "/src/lib/option-schema.typ": option-schemas, option-keys
 #import "/src/lib/vars.typ": make-env
 #import "/src/preprocess/evaluate.typ": resolve-strings

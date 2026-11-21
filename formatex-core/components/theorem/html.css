@@ -1,20 +1,20 @@
-.fx-theorem { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.7em; margin-block: 0.85em; }
+.fx-theorem { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(0.7em * var(--fx-space, 1)); margin-block: var(--fx-gap-block, 0.76em); }
 .fx-theorem-main { min-width: 0; }
 html[data-feel="formal"] .fx-theorem-boxed,
 .fx-theorem-plain,
 .fx-theorem-proof { grid-template-columns: minmax(0, 1fr); }
 .fx-theorem-bar { display: none; }
-.fx-theorem header { font-weight: 700; margin-block-end: 0.7em; }
+.fx-theorem header { font-weight: 700; margin-block-end: calc(0.7em * var(--fx-space, 1)); }
 .fx-theorem-heading header { color: var(--heading); }
 .fx-theorem-accent header { color: var(--accent); }
 .fx-theorem-muted header { color: var(--muted); }
-.fx-theorem-boxed { background: color-mix(in srgb, var(--fx-theorem-ink, var(--accent)) 8%, var(--bg)); border-radius: var(--fx-radius-theorem); padding: 1em 1.2em; }
+.fx-theorem-boxed { background: color-mix(in srgb, var(--fx-theorem-ink, var(--accent)) 8%, var(--bg)); border-radius: var(--fx-radius-theorem); padding: calc(1em * var(--fx-space, 1)) calc(1.2em * var(--fx-space, 1)); }
 .fx-theorem-heading { --fx-theorem-ink: var(--heading); }
 .fx-theorem-accent { --fx-theorem-ink: var(--accent); }
 html[data-feel="formal"] .fx-theorem-boxed { border-inline-start: 0.25em solid var(--fx-theorem-ink, var(--accent)); border-radius: 0; }
 html[data-feel="standard"] .fx-theorem-boxed .fx-theorem-bar,
-html[data-feel="friendly"] .fx-theorem-boxed .fx-theorem-bar { display: block; width: 0.3em; margin-block: 0.45em; border-radius: 1em; background: var(--fx-theorem-ink, var(--accent)); }
-.fx-theorem-plain { border-inline-start: 0.1em dashed var(--accent); padding-inline-start: 1.2em; padding-block: 0.6em; }
+html[data-feel="friendly"] .fx-theorem-boxed .fx-theorem-bar { display: block; width: 0.3em; margin-block: calc(0.45em * var(--fx-space, 1)); border-radius: 1em; background: var(--fx-theorem-ink, var(--accent)); }
+.fx-theorem-plain { border-inline-start: 0.1em dashed var(--accent); padding-inline-start: calc(1.2em * var(--fx-space, 1)); padding-block: calc(0.6em * var(--fx-space, 1)); }
 .fx-theorem-proof { display: block; }
 .fx-theorem-proof .fx-theorem-bar { display: none; }
 .fx-theorem-body > :first-child { margin-block-start: 0; }

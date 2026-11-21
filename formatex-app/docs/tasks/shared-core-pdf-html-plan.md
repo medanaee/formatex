@@ -369,7 +369,7 @@ A real mobile HTML source reveal targeted word «تمدید» at source offset 1
 
 ## 19. Component ownership clarification (2026-11-13)
 
-`alert`, `box`, `badge`, `kbd`, `code`, `theorem`, `exercise`, `fig`, `grid`, `steps`, `compare`, `progress`, `chat`, `docheader` and `letter` own their JSX and CSS and are no longer drawn by `renderBuiltin`. Standard Markdown is rendered in `formatex-html/src/markdown.tsx`. The other built-in `html.tsx` files still delegate to `renderBuiltin(node, context)` in `formatex-html/src/components.tsx`. Package folders are editable extension points with shared contracts; extracting the remaining built-in renderers is still open. Custom package TSX uses the same renderer API.
+`alert`, `box`, `badge`, `kbd`, `code`, `theorem`, `exercise`, `fig`, `grid`, `steps`, `compare`, `progress`, `chat`, `docheader`, `letter`, `picheader`, `cover`, `tree`, `todo` and `diff` own their JSX and CSS and are no longer drawn by `renderBuiltin`. Standard Markdown is rendered in `formatex-html/src/markdown.tsx`. The other built-in `html.tsx` files still delegate to `renderBuiltin(node, context)` in `formatex-html/src/components.tsx`. Package folders are editable extension points with shared contracts; extracting the remaining built-in renderers is still open. Custom package TSX uses the same renderer API.
 
 A strengthened provenance fixture with 120 repetitions now spans multiple PDF pages; the full native suite passes 69 tests/five ignored. This is a named pagination test, not universal exact mapping.
 

@@ -1,6 +1,6 @@
 .fx-box {
-  margin-block: 0.85em;
-  padding: 0.8em;
+  margin-block: var(--fx-gap-block, 0.76em);
+  padding: calc(0.8em * var(--fx-space, 1));
   border: 0.06em solid transparent;
   border-radius: var(--fx-radius-box);
   background: transparent;

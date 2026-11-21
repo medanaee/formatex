@@ -1,0 +1,178 @@
+.fx-diff-del {
+  --fx-paint: #ef4444;
+  background: var(--fx-fill);
+  border: 0.05em solid var(--fx-border);
+  border-radius: var(--fx-radius-badge);
+  color: color-mix(in srgb, var(--fx-icon) 70%, var(--fg) 30%);
+  padding: 0.03em 0.35em;
+  text-decoration: line-through;
+}
+html.dark .fx-diff-del {
+  color: var(--fx-icon);
+}
+.fx-diff-ins {
+  --fx-paint: #22c55e;
+  background: var(--fx-fill);
+  border: 0.05em solid var(--fx-border);
+  border-radius: var(--fx-radius-badge);
+  color: color-mix(in srgb, var(--fx-icon) 70%, var(--fg) 30%);
+  padding: 0.03em 0.35em;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+html.dark .fx-diff-ins {
+  color: var(--fx-icon);
+}
+.fx-diff {
+  margin-block: var(--fx-gap-block, 0.76em);
+}
+.fx-diff-figure {
+  margin-block: var(--fx-gap-block, 0.76em);
+  text-align: center;
+}
+.fx-diff-figure .fx-fig-caption {
+  text-align: center;
+  margin-block-start: calc(0.4em * var(--fx-space, 1));
+}
+.fx-diff-frame {
+  position: relative;
+  overflow: hidden;
+  overflow-x: auto;
+  background: var(--code-bg);
+  border: 0.05em solid var(--code-stroke);
+  border-radius: var(--fx-radius-code);
+  color: var(--fg);
+  font: 0.8em/1.32 var(--font-code);
+  direction: ltr;
+  text-align: left;
+  --fx-diff-del-bg: color-mix(in srgb, #ef4444 17%, var(--code-bg) 83%);
+  --fx-diff-del-head: color-mix(in srgb, #ef4444 10%, var(--code-bg) 90%);
+  --fx-diff-del-fg: color-mix(in srgb, #b91c1c 85%, var(--fg) 15%);
+  --fx-diff-add-bg: color-mix(in srgb, #22c55e 17%, var(--code-bg) 83%);
+  --fx-diff-add-head: color-mix(in srgb, #22c55e 10%, var(--code-bg) 90%);
+  --fx-diff-add-fg: color-mix(in srgb, #15803d 85%, var(--fg) 15%);
+  --fx-diff-hatch: color-mix(in srgb, var(--code-stroke) 50%, transparent);
+}
+html.dark .fx-diff-frame {
+  --fx-diff-del-bg: color-mix(in srgb, #ef4444 12%, var(--code-bg) 88%);
+  --fx-diff-del-head: color-mix(in srgb, #ef4444 14%, var(--code-bg) 86%);
+  --fx-diff-del-fg: #fca5a5;
+  --fx-diff-add-bg: color-mix(in srgb, #22c55e 12%, var(--code-bg) 88%);
+  --fx-diff-add-head: color-mix(in srgb, #22c55e 14%, var(--code-bg) 86%);
+  --fx-diff-add-fg: #86efac;
+  --fx-diff-hatch: color-mix(in srgb, var(--code-stroke) 60%, transparent);
+}
+.fx-diff-with-lang {
+  padding-top: 1.75em;
+}
+.fx-diff-lang {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.36em 0.62em;
+  border-bottom: 0.05em solid var(--code-stroke);
+  border-left: 0.05em solid var(--code-stroke);
+  border-radius: 0 0 0 var(--fx-radius-badge);
+  background: color-mix(in srgb, var(--code-bg) 90%, var(--fg) 10%);
+  color: var(--fg);
+  font: 700 0.9em/1 var(--font-body);
+}
+.fx-diff-lang .fx-icon-svg {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+}
+.fx-diff-grid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+}
+.fx-diff-split {
+  grid-template-columns: var(--fx-diff-num-w, 2.2em) minmax(0, 1fr) var(--fx-diff-num-w, 2.2em) minmax(0, 1fr);
+}
+.fx-diff-unified {
+  grid-template-columns: var(--fx-diff-num-w, 2.05em) var(--fx-diff-num-w, 2.05em) 1.25em minmax(0, 1fr);
+}
+.fx-diff-head {
+  grid-column: span 2;
+  min-width: 0;
+  padding: calc(0.42em * var(--fx-space, 1)) calc(0.75em * var(--fx-space, 1));
+  border-bottom: 0.05em solid var(--code-stroke);
+  font-family: var(--font-body);
+  font-size: 1.05em;
+  font-weight: 700;
+  text-align: start;
+}
+.fx-diff-head-sign {
+  font-family: var(--font-code);
+  margin-inline-end: 0.35em;
+}
+.fx-diff-head-del {
+  background: var(--fx-diff-del-head);
+  color: var(--fx-diff-del-fg);
+}
+.fx-diff-head-add {
+  background: var(--fx-diff-add-head);
+  color: var(--fx-diff-add-fg);
+}
+.fx-diff-num {
+  padding: 0.12em 0.45em 0.12em 0.35em;
+  text-align: right;
+  font-size: 0.88em;
+  color: var(--muted);
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.fx-diff-sign {
+  padding: 0.12em 0.15em;
+  text-align: center;
+  font-weight: 700;
+  user-select: none;
+}
+.fx-diff-code {
+  min-width: 0;
+  padding: 0.12em 0.6em 0.12em 0.4em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fx-diff-first {
+  padding-top: 0.32em;
+}
+.fx-diff-last {
+  padding-bottom: 0.32em;
+}
+.fx-diff-mid {
+  border-left: 0.05em solid var(--code-stroke);
+}
+.fx-diff-row-del {
+  background: var(--fx-diff-del-bg);
+}
+.fx-diff-row-del.fx-diff-num,
+.fx-diff-row-del.fx-diff-sign {
+  color: var(--fx-diff-del-fg);
+}
+.fx-diff-row-add {
+  background: var(--fx-diff-add-bg);
+}
+.fx-diff-row-add.fx-diff-num,
+.fx-diff-row-add.fx-diff-sign {
+  color: var(--fx-diff-add-fg);
+}
+.fx-diff-empty {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    var(--fx-diff-hatch) 4px,
+    var(--fx-diff-hatch) 5px
+  );
+}
+@media (max-width: 639px) {
+  .fx-diff-split {
+    min-width: 32rem;
+  }
+}

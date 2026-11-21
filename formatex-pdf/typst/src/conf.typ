@@ -66,6 +66,7 @@
 }
 
 #let conf(doc) = {
+  fa-use-pro()
   set page(
     width: page-size.width,
     height: page-size.height,

@@ -87,6 +87,24 @@ pub fn page_chars(html: &str) -> HashSet<char> {
     chars
 }
 
+/// Icon glyphs actually used on the page (`data-fa="..."` markers and Private Use Area codepoints).
+pub fn icon_chars(html: &str) -> HashSet<char> {
+    let mut out: HashSet<char> = page_chars(html)
+        .into_iter()
+        .filter(|&c| ('\u{E000}'..='\u{F8FF}').contains(&c))
+        .collect();
+    let marker = "data-fa=\"";
+    let mut rest = html;
+    while let Some(start) = rest.find(marker).map(|at| at + marker.len()) {
+        let Some(end) = rest[start..].find('"') else { break };
+        for c in rest[start..start + end].chars() {
+            out.insert(c);
+        }
+        rest = &rest[start + end + 1..];
+    }
+    out
+}
+
 fn be16(data: &[u8], at: usize) -> Option<usize> {
     Some(u16::from_be_bytes(data.get(at..at + 2)?.try_into().ok()?) as usize)
 }
@@ -176,12 +194,17 @@ fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
     let book = store.book();
     let italic = uses_italic(html);
     let chars = if subset { page_chars(html) } else { HashSet::new() };
+    let fa_chars = icon_chars(html);
     let mut css = String::new();
     let mut done = HashSet::new();
     for family in font_families(html) {
         // A page uses the regular and the bold face: a family with eighteen weights would add megabytes nobody reads. A family that has
         // neither gets the two faces nearest to regular. The italic faces come only when the page has italic text.
         let lookup_lower = family.to_lowercase();
+        let is_fa = lookup_lower.starts_with("font awesome");
+        if is_fa && fa_chars.is_empty() {
+            continue;
+        }
         let lookup_name = match lookup_lower.as_str() {
             "cmu serif" | "cmu" | "computer modern" | "new computer modern 10" => "new computer modern",
             "cmu sans serif" => "dejavu sans",
@@ -207,22 +230,35 @@ fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
         }
         for (index, css_weight) in chosen {
             let (Some(info), Some(font)) = (book.info(index), store.font(index)) else { continue };
+            let effective_weight = if is_fa { info.variant.weight.to_number() } else { css_weight };
+            let face_fa_chars: HashSet<char> = if is_fa {
+                fa_chars.iter().copied().filter(|&c| info.coverage.contains(c as u32)).collect()
+            } else {
+                HashSet::new()
+            };
+            if is_fa && face_fa_chars.is_empty() {
+                continue;
+            }
             // A font collection holds several faces in one file: the data is the same for each
             let data = font.data();
-            if !done.insert((family.to_lowercase(), css_weight, info.variant.style as u8)) {
+            if !done.insert((family.to_lowercase(), effective_weight, info.variant.style as u8)) {
                 continue;
             }
             // Stock NewCM CFF faces are rejected by some WebViews. The quadratic HTML-only
             // equivalents preserve glyph metrics and shaping; PDF continues to use the original.
             let browser_data: &[u8] = if info.family.eq_ignore_ascii_case("new computer modern") && data.starts_with(b"OTTO") {
-                match (css_weight >= 600, info.variant.style != FontStyle::Normal) {
+                match (effective_weight >= 600, info.variant.style != FontStyle::Normal) {
                     (false, false) => include_bytes!("../web-fonts/newcm-regular.ttf"),
                     (true, false) => include_bytes!("../web-fonts/newcm-bold.ttf"),
                     (false, true) => include_bytes!("../web-fonts/newcm-italic.ttf"),
                     (true, true) => include_bytes!("../web-fonts/newcm-bolditalic.ttf"),
                 }
             } else { data.as_slice() };
-            let cut = if subset { fontcull::subset_font_data(browser_data, &chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut }) } else { None };
+            let cut = if is_fa {
+                fontcull::subset_font_data(browser_data, &face_fa_chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut })
+            } else if subset {
+                fontcull::subset_font_data(browser_data, &chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut })
+            } else { None };
             let source: &[u8] = cut.as_deref().unwrap_or(browser_data);
             let (mime, format, bytes) = match to_woff(source) {
                 Some(woff) => ("font/woff", "woff", woff),
@@ -239,7 +275,7 @@ fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
                 css,
                 "@font-face {{ font-family: \"{}\"; font-weight: {}; font-style: {}; font-display: swap; src: url(data:{};base64,{}) format(\"{}\"); }}\n",
                 family,
-                css_weight,
+                effective_weight,
                 style,
                 mime,
                 encoded_bytes,
@@ -262,7 +298,9 @@ static PREVIEW_FONTS: LazyLock<Mutex<Vec<PreviewFontEntry>>> = LazyLock::new(|| 
 
 /// Complete faces are reusable across edits; a new FontStore after import/reload invalidates its entries.
 pub fn preview_fonts(html: &str, store: &Arc<FontStore>, known: Option<&str>) -> (String, Option<String>) {
-    let requirements = format!("{:?}|{}", font_families(html), uses_italic(html));
+    let mut fa_sorted: Vec<char> = icon_chars(html).into_iter().collect();
+    fa_sorted.sort_unstable();
+    let requirements = format!("{:?}|{}|{:?}", font_families(html), uses_italic(html), fa_sorted);
     let mut cache = PREVIEW_FONTS.lock().unwrap_or_else(|e| e.into_inner());
     cache.retain(|entry| entry.store.strong_count() > 0);
     let weak = Arc::downgrade(store);
@@ -397,5 +435,18 @@ mod tests {
         let store = crate::fonts::FontService::new(std::env::temp_dir().join("formatex-html-fonts-test")).get();
         let html = "<html><head></head><body>x</body></html>".to_string();
         assert_eq!(embed_fonts(html.clone(), &store), html);
+    }
+
+    #[test]
+    fn subsets_only_used_font_awesome_glyphs_in_export_and_preview() {
+        let store = crate::fonts::FontService::new(std::env::temp_dir().join("formatex-html-fa-test")).get();
+        let html = "<html><head><meta name=\"fx-fonts\" content=\"Font Awesome 7 Pro|Font Awesome 7 Brands|Font Awesome 7 Pro Solid\"></head><body><main><span class=\"fx-icon-svg\" data-fa=\"\u{f3e2}\">\u{f3e2}</span><span class=\"fx-icon-svg\" data-fa=\"\u{f0c5}\">\u{f0c5}</span></main></body></html>".to_string();
+        let out = embed_fonts(html.clone(), &store);
+        assert!(out.contains("font-family: \"Font Awesome 7 Pro\""));
+        assert!(out.contains("font-family: \"Font Awesome 7 Brands\""));
+        let (_, preview_css) = preview_fonts(&html, &store, None);
+        let preview_css = preview_css.expect("preview css generated");
+        // Subsetted WOFF faces for 2 glyphs must be tiny (< 30 KB), never the multi-megabyte full OTFs
+        assert!(preview_css.len() < 30_000, "preview Font Awesome CSS was not subsetted: {} bytes", preview_css.len());
     }
 }

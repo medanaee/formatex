@@ -67,8 +67,16 @@ export function DocumentShell({ data, content }: { data: ShellData; content: str
   useEffect(() => {
     const copy = (event: MouseEvent) => {
       const button = (event.target as Element)?.closest?.(".fx-copy")
-      const text = button?.closest(".fx-code")?.querySelector("code")?.textContent
-      if (text !== undefined && text !== null) void navigator.clipboard.writeText(text)
+      const block = button?.closest(".fx-code")
+      const lineNodes = block?.querySelectorAll(".fx-code-line")
+      const text = lineNodes?.length
+        ? Array.from(lineNodes, el => el.textContent ?? "").join("\n")
+        : block?.querySelector("code")?.textContent
+      if (text !== undefined && text !== null && button instanceof HTMLElement) {
+        void navigator.clipboard.writeText(text)
+        button.dataset.copied = "1"
+        window.setTimeout(() => { if (button.dataset.copied === "1") delete button.dataset.copied }, 1400)
+      }
     }
     document.addEventListener("click", copy); return () => document.removeEventListener("click", copy)
   }, [])

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react"
 import { textOf, type Settings } from "@formatex/core"
+import { FA_ICONS } from "./fa-map"
 
 export { textOf }
 
@@ -160,46 +161,19 @@ export const alertTypes: Record<string, { color: string; icon: string }> = {
   important: { color: "pink", icon: "circle-exclamation" },
 }
 
-const ICONS: Record<string, string> = {
-  "note-sticky": "M7 4.2h6.6L18 8.4V19a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5.2a1 1 0 0 1 1-1zM13.4 4.5V8.2H17.2M8.3 12h7M8.3 15.2h4.8",
-  "circle-info": "M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6zM12 10.7V16.4M12 7.7h.01",
-  lightbulb: "M9.2 18.2h5.6M10 20.4h4M12 3a5.5 5.5 0 0 0-3 10.1c.5.35.8.9.8 1.5V16h4.4v-1.4c0-.6.3-1.15.8-1.5A5.5 5.5 0 0 0 12 3z",
-  "circle-check": "M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6zM8.2 12.2l2.6 2.6 5-5.2",
-  "triangle-exclamation": "M12 3.5 3.1 19.6h17.8L12 3.5zM12 9.3V14M12 16.5h.01",
-  "circle-xmark": "M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6zM9.1 9.1l5.8 5.8M14.9 9.1l-5.8 5.8",
-  "circle-exclamation": "M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6zM12 8v5.2M12 16.4h.01",
-  check: "M5 12.4 9.2 16.6 19 7.2",
-  xmark: "M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5",
-  code: "M9.2 16.6 4.6 12 9.2 7.4M14.8 16.6 19.4 12 14.8 7.4",
-  "thumbs-up": "M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z",
-  "thumbs-down": "M7 14V2M15 18.12 14 14h5.83a2 2 0 0 0 1.92-2.56l-2.33-8A2 2 0 0 0 17.5 2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2.76a2 2 0 0 1 1.79 1.11L12 22a3.13 3.13 0 0 0 3-3.88Z",
-  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20a7 7 0 0 1 14 0",
-  robot: "M12 3v3M9.5 3h5M5 9a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9zM9.2 12h.01M14.8 12h.01M9.2 15.6h5.6M3 12h2M19 12h2",
-  comments: "M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v4A2.5 2.5 0 0 1 13.5 13H9l-3.5 2.5V13A2.5 2.5 0 0 1 4 10.5v-4zM16 9h1.5A2.5 2.5 0 0 1 20 11.5v4a2.5 2.5 0 0 1-2.5 2.5H17v2.2L13.8 18H11a2 2 0 0 1-1.9-1.4",
-  comment: "M5 5.5A2.5 2.5 0 0 1 7.5 3h9A2.5 2.5 0 0 1 19 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3A2.5 2.5 0 0 1 5 13.5v-8z",
-  star: "M12 2.4l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.3l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2.4z",
-  terminal: "M4 17l6-5-6-5M12 19h8",
-  sparkles: "M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z",
-  heart: "M12 20.2s-7.5-4.7-7.5-10.2A4.3 4.3 0 0 1 12 6.8a4.3 4.3 0 0 1 7.5 3.2c0 5.5-7.5 10.2-7.5 10.2z",
-  rocket: "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5",
-  bug: "M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4",
-  "code-branch": "M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9",
-  book: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20",
-}
-
 export function hasIcon(name: unknown): boolean {
-  return !!name && !!ICONS[String(name)]
+  const key = String(name ?? "").trim()
+  return !!key && !!FA_ICONS[key]
 }
 
 export function Icon({ name, solid = false }: { name?: unknown; solid?: boolean }): ReactNode {
-  const d = ICONS[String(name ?? "")]
-  if (!d) return null
+  const key = String(name ?? "").trim()
+  const glyph = FA_ICONS[key]
+  if (!glyph) return null
   return (
-    <svg className="fx-icon-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      {solid
-        ? <path fill="currentColor" stroke="none" d={d} />
-        : <path fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" d={d} />}
-    </svg>
+    <span className={solid ? "fx-icon-svg fx-icon-solid" : "fx-icon-svg"} data-fa={glyph} aria-hidden="true">
+      {glyph}
+    </span>
   )
 }
 
@@ -235,12 +209,37 @@ export function codeCaptionPosition(settings: Settings, props: Settings): "above
   return captionPosition(settings, "code", props, "above")
 }
 
-const LANGUAGE_NAMES: Record<string, string> = {
-  python: "Python", javascript: "JavaScript", typescript: "TypeScript", java: "Java", c: "C", cpp: "C++",
-  csharp: "C#", go: "Go", rust: "Rust", php: "PHP", ruby: "Ruby", swift: "Swift", kotlin: "Kotlin",
-  julia: "Julia", r: "R", matlab: "MATLAB", bash: "Bash", powershell: "PowerShell", sql: "SQL",
-  html: "HTML", css: "CSS", json: "JSON", yaml: "YAML", toml: "TOML", xml: "XML", markdown: "Markdown",
-  latex: "LaTeX", typst: "Typst", dockerfile: "Dockerfile", nginx: "Nginx",
+const LANGUAGE_META: Record<string, { name: string; icon: string }> = {
+  python: { name: "Python", icon: "python" },
+  javascript: { name: "JavaScript", icon: "js" },
+  typescript: { name: "TypeScript", icon: "typescript" },
+  java: { name: "Java", icon: "java" },
+  c: { name: "C", icon: "c" },
+  cpp: { name: "C++", icon: "code" },
+  csharp: { name: "C#", icon: "code" },
+  go: { name: "Go", icon: "golang" },
+  rust: { name: "Rust", icon: "rust" },
+  php: { name: "PHP", icon: "php" },
+  ruby: { name: "Ruby", icon: "gem" },
+  swift: { name: "Swift", icon: "swift" },
+  kotlin: { name: "Kotlin", icon: "code" },
+  julia: { name: "Julia", icon: "julia" },
+  r: { name: "R", icon: "r-project" },
+  matlab: { name: "MATLAB", icon: "square-root-variable" },
+  bash: { name: "Bash", icon: "terminal" },
+  powershell: { name: "PowerShell", icon: "terminal" },
+  sql: { name: "SQL", icon: "database" },
+  html: { name: "HTML", icon: "html5" },
+  css: { name: "CSS", icon: "css3" },
+  json: { name: "JSON", icon: "file-code" },
+  yaml: { name: "YAML", icon: "file-lines" },
+  toml: { name: "TOML", icon: "gear" },
+  xml: { name: "XML", icon: "file-code" },
+  markdown: { name: "Markdown", icon: "markdown" },
+  latex: { name: "LaTeX", icon: "square-root-variable" },
+  typst: { name: "Typst", icon: "file-code" },
+  dockerfile: { name: "Dockerfile", icon: "docker" },
+  nginx: { name: "Nginx", icon: "server" },
 }
 const LANGUAGE_ALIASES: Record<string, string> = {
   py: "python", js: "javascript", ts: "typescript", "c++": "cpp", cs: "csharp", "c#": "csharp",
@@ -249,9 +248,13 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   docker: "dockerfile",
 }
 
-export function codeLanguage(lang: unknown): string | undefined {
+export function codeLanguageInfo(lang: unknown): { name: string; icon: string } | undefined {
   const raw = String(lang ?? "").trim()
   if (!raw) return undefined
   const key = LANGUAGE_ALIASES[raw.toLowerCase()] ?? raw.toLowerCase()
-  return LANGUAGE_NAMES[key] ?? raw
+  return LANGUAGE_META[key] ?? { name: raw, icon: "code" }
+}
+
+export function codeLanguage(lang: unknown): string | undefined {
+  return codeLanguageInfo(lang)?.name
 }

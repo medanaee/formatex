@@ -1,0 +1,98 @@
+.fx-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1.5em * var(--fx-space, 1));
+  min-height: clamp(32rem, 76vh, 52rem);
+  padding: calc(1.5em * var(--fx-space, 1)) calc(1.2em * var(--fx-space, 1));
+  margin-block: calc(0.5em * var(--fx-space, 1)) calc(1.5em * var(--fx-space, 1));
+  text-align: center;
+}
+.fx-cover-frame {
+  border: 0.12em solid var(--rule);
+  border-radius: var(--fx-radius-frame);
+  padding: calc(2.2em * var(--fx-space, 1)) calc(1.8em * var(--fx-space, 1));
+}
+.fx-cover-top,
+.fx-cover-main,
+.fx-cover-lower,
+.fx-cover-foot {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fx-cover-logo {
+  height: 7.5em;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  margin-block-end: calc(0.65em * var(--fx-space, 1));
+}
+.fx-cover-institution {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.28;
+}
+.fx-cover-faculty {
+  font-size: 1.15em;
+  line-height: 1.32;
+}
+.fx-cover-department {
+  font-size: 1.05em;
+  color: var(--muted);
+  line-height: 1.32;
+}
+.fx-cover-type {
+  font-size: 1.15em;
+  color: var(--muted);
+  margin-block-end: calc(0.55em * var(--fx-space, 1));
+  line-height: 1.28;
+}
+.fx-cover-title {
+  font-size: 2.2em;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.18;
+}
+.fx-cover-subtitle {
+  font-size: 1.3em;
+  color: var(--muted);
+  margin-block-start: calc(0.35em * var(--fx-space, 1));
+  line-height: 1.28;
+}
+.fx-cover-people {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  column-gap: calc(0.9em * var(--fx-space, 1));
+  row-gap: calc(0.45em * var(--fx-space, 1));
+  margin: 0;
+  justify-content: center;
+  align-items: baseline;
+}
+.fx-cover-people dt {
+  color: var(--muted);
+  text-align: end;
+}
+.fx-cover-people dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: start;
+}
+.fx-cover-body {
+  width: 100%;
+  margin-block-start: calc(0.8em * var(--fx-space, 1));
+  text-align: start;
+}
+.fx-cover-body > :first-child {
+  margin-block-start: 0;
+}
+.fx-cover-body > :last-child,
+.fx-cover-body p:last-child {
+  margin-block-end: 0;
+}
+.fx-cover-date {
+  font-size: 1.1em;
+}

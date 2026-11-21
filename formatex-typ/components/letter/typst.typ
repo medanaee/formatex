@@ -20,25 +20,33 @@
 
     let meta = ("number", "date", "attachment").filter(k => get(k) != none)
     let meta-block = if meta.len() > 0 {
-      let rows = grid(columns: 2, column-gutter: 0.6em, row-gutter: 0.55em, align: start, ..meta.map(k => (label-of(k), own-dir(get(k)))).flatten())
+      let rows = {
+        set par(leading: 0.4em)
+        grid(columns: 2, column-gutter: 0.4em, row-gutter: 0.22em, align: start, ..meta.map(k => (label-of(k), own-dir(get(k)))).flatten())
+      }
       if feel-name == "formal" { rows }
-      else if feel-name == "friendly" { block(fill: tint.fill, radius: feel.box, inset: (x: 10pt * zoom, y: 8pt * zoom), rows) }
-      else { block(stroke: 0.6pt * zoom + tint.border, radius: feel.box, inset: (x: 10pt * zoom, y: 8pt * zoom), rows) }
+      else if feel-name == "friendly" { block(fill: tint.fill, radius: feel.box, inset: (x: 7pt * zoom, y: 5pt * zoom), rows) }
+      else { block(stroke: 0.6pt * zoom + tint.border, radius: feel.box, inset: (x: 7pt * zoom, y: 5pt * zoom), rows) }
     }
     let logo = get("logo")
     let org = get("org")
     let start-cell = if logo != none or org != none {
-      align(center, stack(spacing: 0.5em, ..if logo != none { (image(root-path(logo), height: 1.6cm),) }, ..if org != none { (text(weight: "bold", size: 0.95em, fill: theme.heading, own-dir(org)),) }))
+      box(align(center, stack(spacing: 0.35em, ..if logo != none { (image(root-path(logo), height: 1.5cm),) }, ..if org != none { (text(weight: "bold", size: 0.95em, fill: theme.heading, own-dir(org)),) })))
     }
     let heading-line = get("heading")
-    grid(
-      columns: (1fr, auto, 1fr),
-      align: (start + horizon, center + top, end + horizon),
-      start-cell,
-      if heading-line != none { text(weight: "bold", own-dir(heading-line)) },
-      meta-block,
-    )
-    v(0.6em)
+    if heading-line != none {
+      block(width: 100%, below: 0.3em, align(center, text(weight: "bold", own-dir(heading-line))))
+    }
+    if start-cell != none or meta-block != none {
+      grid(
+        columns: (1fr, auto),
+        column-gutter: 0.8em,
+        align: (start + horizon, end + horizon),
+        start-cell,
+        meta-block,
+      )
+    }
+    v(0.45em)
     if feel-name == "friendly" {
       line(length: 100%, stroke: (thickness: 1.6pt * zoom, paint: tint.border, cap: "round"))
     } else {
@@ -47,13 +55,13 @@
     v(0.4em)
     let address = ("to", "from", "subject").filter(k => get(k) != none)
     if address.len() > 0 {
-      block(below: 1.2em, grid(
-        columns: 2, column-gutter: 0.6em, row-gutter: 0.7em,
+      block(below: 0.85em, grid(
+        columns: 2, column-gutter: 0.45em, row-gutter: 0.35em,
         ..address.map(k => (label-of(k), if k == "subject" { text(weight: "bold", own-dir(get(k))) } else { own-dir(get(k)) })).flatten(),
       ))
     }
     let greeting = attrs.at("greeting", default: if r { "با سلام و احترام،" } else { none })
-    if greeting != none and greeting.trim() != "" { block(below: 0.9em, own-dir(greeting)) }
+    if greeting != none and greeting.trim() != "" { block(below: 0.65em, own-dir(greeting)) }
     block(width: 100%, body)
     let closing = get("closing")
     let signature = get("signature")
@@ -62,7 +70,7 @@
     if closing != none or signature != none or signer != none or signer-title != none {
       v(1em)
       align(end, block(breakable: false, align(center, stack(
-        spacing: 0.55em,
+        spacing: 0.35em,
         ..if closing != none { (own-dir(closing),) },
         ..if signature != none { (image(root-path(signature), height: 1.4cm),) } else if signer != none { (v(1.2em),) },
         ..if signer != none { (text(weight: "bold", own-dir(signer)),) },
