@@ -41,11 +41,16 @@ html.dark .fx-heading-ink { color: color-mix(in srgb, var(--fx-heading-ink) 70%,
 .fx-item { flex: 1; min-width: 0; }
 .fx-item > p { margin-block: 0 calc(.3em * var(--fx-space)); }
 .fx-item > :last-child { margin-block-end: 0; }
-.fx-guides-line .fx-list, .fx-guides-tree .fx-list { margin-inline-start: .35em; padding-inline-start: 1.15em; border-inline-start: .08em solid var(--rule); }
+.fx-guides-line .fx-list > li > .fx-marker, .fx-guides-tree .fx-list > li > .fx-marker { display: none; }
+.fx-guides-line .fx-list { margin-inline-start: .55em; padding-inline-start: .8em; border-inline-start: .08em solid var(--rule); }
+.fx-guides-tree .fx-list { margin-inline-start: .55em; padding-inline-start: 1.1em; border: 0; }
 .fx-guides-tree .fx-list > li { position: relative; }
-.fx-guides-tree .fx-list > li::before { content: ""; position: absolute; inset-inline-start: -1.15em; top: .78em; width: .75em; border-block-start: .08em solid var(--rule); }
+.fx-guides-tree .fx-list > li::before { content: ""; position: absolute; inset-inline-start: -1.1em; top: .72em; width: .68em; border-block-start: .08em solid var(--rule); }
+.fx-guides-tree .fx-list > li::after { content: ""; position: absolute; inset-inline-start: -1.1em; top: 0; bottom: calc(-.3em * var(--fx-space)); border-inline-start: .08em solid var(--rule); }
+.fx-guides-tree .fx-list > li:last-child::after { bottom: auto; height: .72em; }
 .fx-list.fx-guides-none { border: 0; margin-inline-start: 0; padding-inline-start: .2em; }
-.fx-list.fx-guides-none > li::before { content: none; }
+.fx-list.fx-guides-none > li::before, .fx-list.fx-guides-none > li::after { content: none; }
+.fx-list.fx-guides-none > li > .fx-marker { display: inline-block; }
 .fx-list-caption, .fx-table-caption, .fx-code-caption { text-align: center; color: var(--fg); }
 .fx-list-number, .fx-table-number, .fx-code-number { font-weight: 700; }
 .fx-doc hr { border: 0; border-block-start: .08em solid var(--rule); margin-block: calc(1.4em * var(--fx-space)); }
@@ -143,7 +148,6 @@ button { font: inherit; color: var(--fg); background: transparent; border: 1px s
 .fx-fn:hover .fx-fn-pop, .fx-fn:focus-within .fx-fn-pop { display: block; }
 html[data-fx-shell] .fx-fn-pop { display: none !important; }
 .fx-popover.fx-fn-popover { width: max-content; max-width: min(22rem, calc(100vw - 1rem)); font: 400 .95rem/1.5 var(--font-body); color: var(--fg); }
-.fx-toc ul { list-style: none; padding: 0; }
 .fx-chrome { font: 13px/1.4 Inter,Vazirmatn,system-ui,sans-serif; color: var(--fg); }
 .fx-chrome button { cursor: pointer; transition: background-color .12s,color .12s,border-color .12s; }
 .fx-chrome button:hover,.fx-chrome button[aria-expanded=true] { background: var(--code-bg); color: var(--accent); }

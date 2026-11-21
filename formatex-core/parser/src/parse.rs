@@ -339,9 +339,10 @@ impl<'a> DocumentParser<'a> {
         let name = node.name.as_deref().unwrap_or("");
         match self.input.schemas.get(name).and_then(|schema| schema.get("kind")).and_then(Value::as_str) {
             Some("inline") => false,
-            Some("void") => name != "icon",
+            Some("mixed") => node.props.get("mode").and_then(Value::as_str) == Some("block"),
+            Some("void") => !matches!(name, "icon" | "counter"),
             Some(_) => true,
-            None => !matches!(name, "span" | "badge" | "kbd" | "ref" | "cite" | "icon" | "digit" | "fn" | "footnote" | "def"),
+            None => !matches!(name, "span" | "badge" | "kbd" | "ref" | "cite" | "icon" | "counter" | "digit" | "fn" | "footnote" | "def"),
         }
     }
 

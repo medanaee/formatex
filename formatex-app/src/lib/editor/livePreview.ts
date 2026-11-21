@@ -382,6 +382,8 @@ class FrontMatterWidget extends WidgetType {
   toDOM(view: EditorView) {
     const element = document.createElement("div")
     element.className = "cm-lp-frontpanel"
+    element.contentEditable = "false"
+    element.addEventListener("mousedown", (event) => event.stopPropagation())
     view.state.facet(liveFrontMatter)?.mount(element, this.props(view))
     return element
   }

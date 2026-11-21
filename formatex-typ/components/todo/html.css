@@ -131,5 +131,5 @@ html.dark .fx-todo {
 }
 .fx-todos-text {
   min-width: 0;
-  flex: 1;
+  flex: 0 1 auto;
 }

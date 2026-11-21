@@ -1,0 +1,8 @@
+.fx-fn-wrap { display: inline; }
+.fx-fn { position: relative; display: inline-block; vertical-align: super; font-size: .75em; line-height: 1; }
+.fx-fn-mark { border: 0; padding: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
+.fx-fn-pop { display: none; position: absolute; z-index: 30; bottom: calc(100% + .4em); left: 50%; transform: translateX(-50%); width: max-content; max-width: min(22em, 70vw); padding: calc(.55em * var(--fx-space, 1)) calc(.75em * var(--fx-space, 1)); background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: .55em; box-shadow: 0 .4em 1.3em color-mix(in srgb, var(--fg) 14%, transparent); font: 400 .95rem/1.45 var(--font-body); text-align: start; white-space: normal; unicode-bidi: isolate; }
+.fx-fn-pop::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: .5em; }
+.fx-fn-line { display: block; }
+.fx-fn-line + .fx-fn-line { margin-top: .35em; }
+.fx-fn:hover .fx-fn-pop, .fx-fn:focus-within .fx-fn-pop { display: block; }

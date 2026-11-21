@@ -1,0 +1,38 @@
+.fx-cite {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.fx-cite:hover {
+  border-bottom-color: var(--accent);
+}
+.fx-bibliography {
+  margin-block-start: calc(1.4em * var(--fx-space, 1));
+}
+.fx-bib-title {
+  margin-block-end: calc(0.65em * var(--fx-space, 1));
+}
+.fx-bib-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.55em * var(--fx-space, 1));
+}
+.fx-bib-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  line-height: 1.65;
+}
+.fx-bib-num {
+  color: var(--accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.fx-bib-body {
+  min-width: 0;
+}

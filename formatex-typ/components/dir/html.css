@@ -1,0 +1,11 @@
+.fx-dir {
+  min-width: 0;
+}
+.fx-dir-rtl {
+  direction: rtl;
+  text-align: start;
+}
+.fx-dir-ltr {
+  direction: ltr;
+  text-align: start;
+}

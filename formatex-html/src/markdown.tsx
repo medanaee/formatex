@@ -183,8 +183,9 @@ export function renderList(node: Node, c: RenderContext, props: Settings): React
   const names = String(props.marker ?? "disc,circle,dash").split(",").map(item => item.trim()).filter(Boolean)
   const markerName = names[depth % Math.max(1, names.length)] ?? "disc"
   const marker = MARKERS[markerName] ?? markerName
-  const guides = String(props.guides ?? "none")
-  const guideClass = !ordered && (guides === "line" || guides === "tree") ? ` fx-guides-${guides}` : guides === "none" ? " fx-guides-none" : ""
+  const ownGuides = node.props?.guides === undefined || node.props?.guides === null ? "" : String(node.props.guides)
+  const guides = ownGuides || (depth === 0 ? String(props.guides ?? "") : "")
+  const guideClass = !ordered && (guides === "line" || guides === "tree" || guides === "none") ? ` fx-guides-${guides}` : ""
   const indent = lengthCss(props.indent)
   const id = props.id ? String(props.id) : undefined
   const caption = props.caption ? String(props.caption) : ""

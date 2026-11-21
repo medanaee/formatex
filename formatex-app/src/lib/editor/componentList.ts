@@ -27,8 +27,25 @@ const splitPaths = (text: string): string[] =>
     .map((path) => path.trim())
     .filter(Boolean)
 
-/** The list as a literal for the file: `["a.typ", "b.typ"]` (the quotes are those of the file's own format). */
+/** The list as a literal for the file: `["a", "b"]` (the quotes are those of the file's own format). */
 export const writeComponentList = (paths: readonly string[], quote: (value: string) => string): string => `[${paths.map(quote).join(", ")}]`
 
-/** The component files a project can offer: its `.typ` files, but not the engine's own paths. */
-export const isComponentFile = (path: string): boolean => path.endsWith(".typ") && path !== "main.typ" && !/^(src|components|tools)\//.test(path)
+/** Normalizes a component folder path the same way `local-components.typ` does (`./cards/` -> `cards`). */
+export const normalizeComponentFolder = (path: string): string =>
+  path.trim().replace(/\/+$/, "").replace(/^(\.\/)+/, "")
+
+/** If `path` is a project component's `manifest.toml`, returns its folder path; otherwise `null`. */
+export const componentFolderOf = (path: string): string | null => {
+  const clean = normalizeComponentFolder(path)
+  if (!clean.endsWith("/manifest.toml")) return null
+  const folder = clean.slice(0, -"/manifest.toml".length)
+  if (!folder || /^(src|components|tools)(\/|$)/.test(folder)) return null
+  return folder
+}
+
+/** Every valid component package folder (`<folder>/manifest.toml`) in the project's file list. */
+export const projectComponentFolders = (files: readonly string[]): string[] =>
+  [...new Set(files.map(componentFolderOf).filter((folder): folder is string => folder !== null))].sort((a, b) => a.localeCompare(b))
+
+/** Whether `path` is a project component's `manifest.toml` (not inside the engine's own `src/`, `components/` or `tools/` folders). */
+export const isComponentFile = (path: string): boolean => componentFolderOf(path) !== null

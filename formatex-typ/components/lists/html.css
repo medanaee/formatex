@@ -1,0 +1,9 @@
+.fx-lists {
+  min-width: 0;
+}
+.fx-lists > :first-child {
+  margin-block-start: 0;
+}
+.fx-lists > :last-child {
+  margin-block-end: 0;
+}

@@ -1,0 +1,10 @@
+.fx-ref {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  padding-bottom: 0.05em;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.fx-ref:hover {
+  border-bottom-color: var(--accent);
+}

@@ -3,7 +3,7 @@ use serde_json::{Map, Value};
 
 /// Syntax extensions describe boundaries here, before backend rendering exists.
 pub const RAW_COMPONENTS: &[&str] = &["cetz", "lilaq", "typ", "tree"];
-pub const VOID_COMPONENTS: &[&str] = &["img", "v", "pagebreak", "icon", "toc", "lof", "lot", "lol", "todos", "answers", "include", "br", "hr"];
+pub const VOID_COMPONENTS: &[&str] = &["img", "v", "pagebreak", "icon", "counter", "toc", "lof", "lot", "lol", "todos", "answers", "include", "br", "hr"];
 
 #[derive(Clone, Default)]
 pub struct Attributes {

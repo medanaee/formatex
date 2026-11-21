@@ -1,0 +1,17 @@
+.fx-paragraph {
+  min-width: 0;
+  margin-block: calc(0.55em * var(--fx-space, 1));
+}
+.fx-paragraph > p {
+  text-align: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  text-indent: inherit;
+}
+.fx-paragraph > p:first-child {
+  margin-block-start: 0;
+}
+.fx-paragraph > p:last-child {
+  margin-block-end: 0;
+}

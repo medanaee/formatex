@@ -1,0 +1,16 @@
+.fx-image {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.fx-image-span-all {
+  display: block;
+  column-span: all;
+  margin-block: var(--fx-gap-block, 0.76em);
+}
+.fx-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--fx-radius-image);
+}

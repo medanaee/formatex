@@ -1,0 +1,15 @@
+.fx-hr-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-block: calc(var(--fx-hr-gap, 0.8em) * var(--fx-space, 1));
+}
+.fx-hr {
+  border: 0;
+  margin: 0;
+  height: 0;
+}
+.fx-hr-svg {
+  display: block;
+  overflow: visible;
+}

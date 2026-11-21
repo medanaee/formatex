@@ -1,0 +1,9 @@
+.fx-div {
+  min-width: 0;
+}
+.fx-div > :first-child {
+  margin-block-start: 0;
+}
+.fx-div > :last-child {
+  margin-block-end: 0;
+}

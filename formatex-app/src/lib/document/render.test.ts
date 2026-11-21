@@ -44,7 +44,9 @@ it("applies global and local settings, skips unnumbered headings and resolves eq
     {type:"component",name:"ref",key:"rh",at,props:{to:"title"}},
     {type:"code",key:"c",at,value:"x",lang:"js"},
   ]
-  const html = await renderHtml(input,{html:{...DEFAULT_HTML_OPTIONS,toolbar:false},nativeFonts:true})
+  const refDir = path.resolve("../formatex-core/components/ref")
+  const refCatalog = componentCatalog({ ref: Object.fromEntries(fs.readdirSync(refDir).map(file => [file, fs.readFileSync(path.join(refDir, file), "utf8")])) })
+  const html = await renderHtml(input,{html:{...DEFAULT_HTML_OPTIONS,toolbar:false},...refCatalog,nativeFonts:true})
   expect(html).toContain('text-align:justify;letter-spacing:0.03em')
   expect(html).toContain('<p style="text-align:justify;letter-spacing:0.03em" dir="rtl"')
   expect(html).toContain('<span class="fx-heading-number">۱ </span>Title')
@@ -66,7 +68,9 @@ it("inserts an offline runtime verbatim even when it contains replacement patter
 it("keeps paired reference labels inside the generated link", async () => {
   const input=document(), at={file:"main.md",line:1,column:1}
   input.children=[{type:"heading",key:"heading",depth:2,at,props:{id:"target"},children:[{type:"text",key:"title",at,value:"Target title"}]},{type:"paragraph",key:"p",at,children:[{type:"component",name:"ref",key:"reference",at,props:{to:"target"},children:[{type:"strong",key:"label",at,children:[{type:"text",key:"label-text",at,value:"Custom label"}]}]}]}]
-  const html=await renderHtml(input,{html:DEFAULT_HTML_OPTIONS})
+  const refDir = path.resolve("../formatex-core/components/ref")
+  const refCatalog = componentCatalog({ ref: Object.fromEntries(fs.readdirSync(refDir).map(file => [file, fs.readFileSync(path.join(refDir, file), "utf8")])) })
+  const html=await renderHtml(input,{html:DEFAULT_HTML_OPTIONS,...refCatalog})
   expect(html).toContain('href="#target"><strong>Custom label</strong></a>')
 })
 
@@ -193,7 +197,9 @@ it("renders standard Markdown with PDF numbering, lists, tables, quotes and fenc
     { type: "code", key: "fence", at, lang: "python", value: "def greet(name):\n    return f\"سلام {name}\"\n", props: { highlight: "1" } },
     { type: "math", key: "eq", at, value: "E = mc^{2}", props: { id: "eq" } },
   ]
-  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, uiLanguage: "fa" })
+  const fnDir = path.resolve("../formatex-core/components/footnotes")
+  const fnCatalog = componentCatalog({ footnotes: Object.fromEntries(fs.readdirSync(fnDir).map(file => [file, fs.readFileSync(path.join(fnDir, file), "utf8")])) })
+  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, ...fnCatalog, uiLanguage: "fa" })
   expect(html).toContain('<span class="fx-heading-number">۱. </span>مقدمه')
   expect(html).toContain("fx-heading-rule")
   expect(html).toContain("fx-heading-fill")
@@ -284,7 +290,9 @@ it("opens a footnote above its number instead of listing notes at the end", asyn
     ] },
     { type: "footnoteDefinition", key: "d", at, identifier: "a", children: [{ type: "paragraph", key: "dp", at, children: [text("dt", "متن پاورقی")] }] },
   ]
-  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, uiLanguage: "fa" })
+  const fnDir = path.resolve("../formatex-core/components/footnotes")
+  const fnCatalog = componentCatalog({ footnotes: Object.fromEntries(fs.readdirSync(fnDir).map(file => [file, fs.readFileSync(path.join(fnDir, file), "utf8")])) })
+  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false }, ...fnCatalog, uiLanguage: "fa" })
   expect(html).toContain("واژه")
   expect(html).toContain('class="fx-fn-pop" role="note" dir="rtl"')
   expect(html).toContain("متن پاورقی")
@@ -681,6 +689,203 @@ it("renders chart, cetz, lilaq, typ and internal from their own packages with PD
   await expect(renderHtml(badInclude, { html: DEFAULT_HTML_OPTIONS, ...catalog })).rejects.toThrow('<include src="part.md"> must stand alone on its own line')
 
   for (const tag of ["chart", "cetz", "lilaq", "typ", "listpages", "include"]) {
+    await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
+  }
+})
+
+it("renders toc, figure-lists, align, dir, div, paragraph, space, links, footnotes and lists from their own packages", async () => {
+  const at = { file: "batch.md", line: 1, column: 1 }
+  const text = (key: string, value: string): Node => ({ type: "text", key, value, at })
+  const para = (key: string, value: string): Node => ({ type: "paragraph", key, at, children: [text(`${key}-t`, value)] })
+  const cell = (key: string, value: string): Node => ({ type: "tableCell", key, at, children: [text(`${key}-t`, value)] })
+  const row = (key: string, values: string[]): Node => ({ type: "tableRow", key, at, children: values.map((v, i) => cell(`${key}-${i}`, v)) })
+  const input = document()
+  input.settings = { feel: "standard", dir: "rtl", heading: { numbering: true }, table: { numbering: true }, code: { numbering: true } }
+  input.tokens = {
+    bg: "#fff", fg: "#1c1917", muted: "#78716c", accent: "#2563eb", secondary: "#0f766e",
+    heading: "#1c1917", rule: "#e7e5e4", "code-bg": "#f6f8fa", "code-stroke": "#d0d7de",
+    radius: 6, dark: false, "feel-name": "standard",
+  }
+  input.children = [
+    { type: "component", name: "toc", key: "t1", at, props: { depth: 2, numbers: "rtl" } },
+    { type: "component", name: "lof", key: "lf", at },
+    { type: "component", name: "lot", key: "lt", at },
+    { type: "component", name: "lol", key: "lc", at },
+    { type: "heading", depth: 2, key: "h1", at, props: { id: "sec-1" }, children: [text("h1t", "فصل اول")] },
+    { type: "heading", depth: 3, key: "h2", at, props: { id: "sec-1-1" }, children: [text("h2t", "زیرفصل")] },
+    { type: "heading", depth: 4, key: "h3", at, props: { id: "sec-1-1-1" }, children: [text("h3t", "عمیق‌تر")] },
+    {
+      type: "component", name: "fig", key: "fg1", at, props: { id: "fig-1" },
+      children: [
+        { type: "image", key: "im1", at, url: "pic.png", alt: "pic" },
+        { type: "component", name: "caption", key: "fg1-c", at, children: [text("fg1-ct", "تصویر نمونه")] },
+      ],
+    },
+    {
+      type: "table", key: "tb1", at, props: { id: "tbl-1", caption: "جدول نمونه" },
+      children: [row("r0", ["ستون", "مقدار"]), row("r1", ["الف", "۱"])],
+    },
+    { type: "code", key: "cd1", at, lang: "python", value: "x = 1", props: { id: "code-1", caption: "کد نمونه" } },
+    { type: "component", name: "align", key: "al1", at, props: { center: true }, children: [para("al1-p", "وسط‌چین")] },
+    { type: "component", name: "dir", key: "dr1", at, props: { ltr: true }, children: [para("dr1-p", "Left to right")] },
+    { type: "component", name: "div", key: "dv1", at, props: { tailwind: "flex gap-4 rounded-lg bg-blue-100 p-2" }, children: [para("dv1-p", "جعبه")] },
+    {
+      type: "component", name: "p", key: "pr1", at,
+      props: { font: "Vazirmatn", size: "14pt", weight: "bold", color: "accent", justify: "true", "line-spacing": "150", "letter-spacing": "2", "word-spacing": "120", indent: "1.5em", above: "1em", below: "2em" },
+      children: [para("pr1-p", "پاراگراف سفارشی")],
+    },
+    { type: "component", name: "v", key: "sp1", at, props: { size: "2cm", weak: "true" } },
+    { type: "component", name: "pagebreak", key: "pb1", at, props: { to: "even" } },
+    {
+      type: "paragraph", key: "p-links", at,
+      children: [
+        { type: "component", name: "a", key: "a-ext", at, props: { href: "https://example.com" }, children: [text("a-et", "پیوند بیرونی")] },
+        text("sp-a", " "),
+        { type: "component", name: "a", key: "a-int", at, props: { href: "#sec-1" }, children: [text("a-it", "پیوند داخلی")] },
+        text("sp-b", " "),
+        { type: "component", name: "span", key: "sp-hl", at, props: { id: "hl-id", highlight: "teal" }, children: [text("sp-ht", "برجسته")] },
+        text("sp-c", " "),
+        { type: "component", name: "anchor", key: "anc-hl", at, props: { id: "anc-id", highlight: "true" }, children: [text("anc-ht", "لنگر")] },
+        text("sp-d", " "),
+        { type: "component", name: "fn", key: "fn-1", at, props: { en: "Note" }, children: [text("fn-1t", "واژه")] },
+      ],
+    },
+    { type: "list", key: "ls1-l", at, ordered: false, props: { guides: "tree" }, children: [{ type: "listItem", key: "ls1-i", at, children: [text("ls1-it", "آیتم"), { type: "list", key: "ls1-sub", at, ordered: false, children: [{ type: "listItem", key: "ls1-si", at, children: [text("ls1-sit", "زیرآیتم")] }] }] }] },
+  ]
+
+  const packages: Record<string, Record<string, string>> = {}
+  for (const name of ["toc", "figure-lists", "align", "dir", "div", "paragraph", "space", "links", "footnotes", "lists", "fig"]) {
+    const directory = path.resolve("../formatex-core/components", name)
+    packages[name] = Object.fromEntries(fs.readdirSync(directory).map(file => [file, fs.readFileSync(path.join(directory, file), "utf8")]))
+  }
+  const catalog = componentCatalog(packages)
+  const html = await renderHtml(input, {
+    html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false },
+    ...catalog,
+    uiLanguage: "fa",
+    assets: { "pic.png": "data:image/png;base64,xx" },
+  })
+
+  // toc & figure-lists
+  expect(html).toContain("فهرست مطالب")
+  expect(html).toContain("fx-toc-leader")
+  expect(html).toContain(">۱</span>")
+  expect(html).toContain(">۱.۱</span>")
+  expect(html).not.toContain("عمیق‌تر</a>")
+  expect(html).toContain("فهرست شکل‌ها")
+  expect(html).toContain("شکل ۱")
+  expect(html).toContain("تصویر نمونه")
+  expect(html).toContain("فهرست جدول‌ها")
+  expect(html).toContain("جدول ۱")
+  expect(html).toContain("فهرست کدها")
+  expect(html).toContain("کد ۱")
+  // align, dir, div, paragraph, space, links, footnotes, lists
+  expect(html).toContain("fx-align fx-align-center")
+  expect(html).toContain('class="fx-dir fx-dir-ltr"')
+  expect(html).toContain("fx-div flex gap-4 rounded-lg bg-blue-100 p-2")
+  expect(html).toContain(".bg-blue-100")
+  expect(html).toContain("font-family:Vazirmatn;font-size:1.4em;font-weight:700;color:var(--accent);text-align:justify;text-indent:1.5em;margin-block-start:1em;margin-block-end:2em;line-height:1.63;letter-spacing:0.02em;word-spacing:20%")
+  expect(html).toContain("fx-space fx-space-weak")
+  expect(html).toContain("height:2cm")
+  expect(html).toContain("fx-pagebreak fx-pagebreak-even")
+  expect(html).toContain("fx-link fx-link-external")
+  expect(html).toContain('href="#sec-1"')
+  expect(html).toContain("fx-mark")
+  expect(html).toContain('class="fx-fn-pop" role="note" dir="ltr">Note</span>')
+  expect(html).toContain("fx-list fx-guides-tree")
+  expect(html).not.toContain('class="fx-list fx-guides-none"')
+  expect(html).toContain("آیتم")
+
+  for (const tag of ["toc", "lof", "lot", "lol", "align", "dir", "div", "p", "v", "pagebreak", "a", "span", "anchor", "fn", "footnote"]) {
+    await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
+  }
+})
+
+it("renders hr, icon, img, ref, def, counter, digit, and citations via custom package TSX/CSS", async () => {
+  const input = document()
+  const at = { file: "main.md", line: 1, column: 1 }
+  const text = (key: string, value: string) => ({ type: "text" as const, key, at, value })
+  const para = (key: string, value: string) => ({ type: "paragraph" as const, key, at, children: [text(`${key}-t`, value)] })
+  input.settings.dir = "rtl"
+  input.settings.language = "fa"
+  input.settings.counters = {
+    ex: { levels: 2, format: "fa,abc", label: "تمرین %1-%2" },
+  }
+  input.settings.bibliography = { file: "refs.bib", title: "مراجع", dir: "auto" }
+  input.children = [
+    { type: "component", name: "hr", key: "hr1", at, props: { style: "dashed", color: "accent", width: "60%", thickness: "2pt" } },
+    { type: "component", name: "hr", key: "hr2", at, props: { style: "wavy", color: "teal" } },
+    { type: "component", name: "hr", key: "hr3", at, props: { style: "dash-dot", color: "#2563eb" } },
+    {
+      type: "paragraph", key: "p-ic", at,
+      children: [
+        { type: "component", name: "icon", key: "ic1", at, props: { name: "check", color: "green", size: "1.2em", solid: "true" } },
+        text("ic-sp", " "),
+        { type: "component", name: "digit", key: "dg1", at, props: { type: "fa" }, children: [text("dg1-t", "سال 2026 و عدد 123")] },
+      ],
+    },
+    { type: "component", name: "fig", key: "fg-ref", at, props: { id: "fig-1", numbering: true }, children: [{ type: "component", name: "img", key: "im1", at, props: { src: "a.png", alt: "A", width: "50%", radius: "12px", span: "all" } }, { type: "component", name: "caption", key: "fg-cap", at, children: [text("fg-ct", "نمودار")] }] },
+    {
+      type: "paragraph", key: "p-ref", at,
+      children: [
+        { type: "component", name: "ref", key: "rf1", at, props: { to: "fig-1" } },
+        text("rf-sp", " و "),
+        { type: "component", name: "def", key: "df1", at, props: { id: "fig-1", color: "teal" }, children: [text("df1-t", "توضیح شکل")] },
+        text("df-sp", " و "),
+        { type: "component", name: "cite", key: "ct1", at, props: { key: "knuth84", page: "12" } },
+      ],
+    },
+    { type: "component", name: "def", key: "df2", at, props: { id: "fig-1", mode: "block", title: "تعریف بلوکی" }, children: [para("df2-p", "متن تعریف بلوکی")] },
+    {
+      type: "paragraph", key: "p-cnt", at,
+      children: [
+        { type: "component", name: "counter", key: "cnt1", at, props: { of: "ex", level: "1" } },
+        text("cnt-sp", " / "),
+        { type: "component", name: "counter", key: "cnt2", at, props: { of: "ex", level: "2" } },
+        text("cnt-sp2", " / "),
+        { type: "component", name: "counter", key: "cnt3", at, props: { of: "abj", format: "abjad", set: "3" } },
+      ],
+    },
+    { type: "component", name: "bibliography", key: "bib1", at, props: { file: "refs.bib" } },
+  ]
+
+  const packages: Record<string, Record<string, string>> = {}
+  for (const name of ["hr", "icon", "img", "ref", "def", "counter", "digit", "citations", "fig"]) {
+    const directory = path.resolve("../formatex-core/components", name)
+    packages[name] = Object.fromEntries(fs.readdirSync(directory).map(file => [file, fs.readFileSync(path.join(directory, file), "utf8")]))
+  }
+  const catalog = componentCatalog(packages)
+  const html = await renderHtml(input, {
+    html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false },
+    ...catalog,
+    uiLanguage: "fa",
+    assets: {
+      "a.png": "data:image/png;base64,xx",
+      "text:refs.bib": `@book{knuth84, author={Donald E. Knuth}, title={The TeXbook}, publisher={Addison-Wesley}, year={1984}}`,
+    },
+  })
+
+  expect(html).toContain("fx-hr-wrap")
+  expect(html).toContain("fx-hr-wavy")
+  expect(html).toContain("stroke-dasharray=\"8 4 2 4\"")
+  expect(html).toContain("fx-icon-svg fx-icon-solid")
+  expect(html).toContain("سال ۲۰۲۶ و عدد ۱۲۳")
+  expect(html).toContain("fx-image fx-image-span-all")
+  expect(html).toContain("border-radius:12px")
+  expect(html).toContain('class="fx-ref" href="#fig-1">شکل ۱</a>')
+  expect(html).toContain("fx-def-inline")
+  expect(html).toContain("توضیح شکل")
+  expect(html).toContain("fx-def-block")
+  expect(html).toContain("تعریف بلوکی")
+  expect(html).toContain("تمرین ۱-0")
+  expect(html).toContain("تمرین ۱-a")
+  expect(html).toContain(">ج</span>")
+  expect(html).toContain('class="fx-cite" href="#bib-knuth84">[۱, 12]</a>')
+  expect(html).toContain("fx-bibliography")
+  expect(html).toContain("Donald E. Knuth")
+  expect(html).toContain("The TeXbook")
+
+  for (const tag of ["hr", "icon", "img", "ref", "def", "counter", "digit", "cite", "bibliography"]) {
     await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
   }
 })

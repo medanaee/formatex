@@ -1,8 +1,9 @@
 .fx-fig { margin-block: var(--fx-gap-block, 0.76em); min-width: 0; }
 .fx-fig-span-all { column-span: all; }
 .fx-fig-body { display: inline-block; max-width: 100%; min-width: 0; }
+.fx-fig-body .fx-image { display: block; text-align: inherit; }
 .fx-fig-has-w .fx-fig-body { width: var(--fx-fig-w); max-width: 100%; }
-.fx-fig-body img { max-width: 100%; height: auto; border-radius: var(--fx-radius-image); }
+.fx-fig-body img { max-width: 100%; height: auto; border-radius: var(--fx-radius-image); margin-inline: auto; }
 .fx-fig-body svg { max-width: 100%; height: auto; border-radius: 0; }
 .fx-fig-has-w .fx-fig-body :is(img, svg) { width: 100%; height: auto; }
 .fx-fig-has-h .fx-fig-body :is(img, svg) { max-height: var(--fx-fig-h); width: auto; }

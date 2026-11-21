@@ -1,0 +1,20 @@
+.fx-link-external {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22em;
+}
+.fx-link-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85em;
+  color: var(--accent);
+  vertical-align: -0.05em;
+}
+.fx-mark {
+  background: color-mix(in srgb, var(--fx-mark, #eab308) 38%, transparent);
+  padding: 0.04em 0.2em;
+  border-radius: var(--fx-radius-inline);
+}
+html.dark .fx-mark {
+  background: color-mix(in srgb, var(--fx-mark, #eab308) 32%, transparent);
+}

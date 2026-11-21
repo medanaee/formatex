@@ -1,0 +1,22 @@
+.fx-align {
+  min-width: 0;
+}
+.fx-align > :first-child {
+  margin-block-start: 0;
+}
+.fx-align > :last-child {
+  margin-block-end: 0;
+}
+.fx-align-center :is(.fx-table, .fx-fig, .fx-cetz, .fx-lilaq, .fx-chart) {
+  margin-inline: auto;
+}
+.fx-align-left .fx-table,
+.fx-align-left .fx-fig {
+  margin-inline: 0 auto;
+  text-align: left;
+}
+.fx-align-right .fx-table,
+.fx-align-right .fx-fig {
+  margin-inline: auto 0;
+  text-align: right;
+}

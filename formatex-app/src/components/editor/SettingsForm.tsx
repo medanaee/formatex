@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ChevronDown, FileWarning, Plus, RotateCcw, Search, X } from "lucide-react"
+import { ChevronDown, FileWarning, Plus, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { FileIcon } from "@/components/common/FileIcon"
 import { ThemeDots } from "@/components/common/ThemeDots"
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { localized, type AttrSpec, type ConfigSchema } from "@/lib/editor/schema"
-import { isComponentFile, readComponentList, writeComponentList } from "@/lib/editor/componentList"
+import { normalizeComponentFolder, projectComponentFolders, readComponentList, writeComponentList } from "@/lib/editor/componentList"
 import type { SettingsFormat } from "@/lib/editor/settingsFormat"
 import { overrideFor, type FrontMatterEntry } from "@/lib/editor/overrides"
 import { BUILTIN_THEMES, type ThemeColor } from "@/lib/editor/themes"
@@ -188,12 +188,15 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
   const info = useSchemaStore((state) => state.schema.components)
   const value = format.get(text, "", "components")
   const listed = readComponentList(value)
-  const offered = files.filter((path) => isComponentFile(path) && !listed?.includes(path)).sort((a, b) => a.localeCompare(b))
+  const listedClean = new Set((listed ?? []).map(normalizeComponentFolder))
+  const offered = projectComponentFolders(files).filter((folder) => !listedClean.has(folder))
   const write = (paths: string[]) => onChange(paths.length ? format.set(text, "", "components", writeComponentList(paths, format.string)) : format.remove(text, "", "components"))
-  const tagsOf = (path: string): string[] =>
-    Object.values(info ?? {})
-      .filter((component) => component.file === path)
+  const tagsOf = (folder: string): string[] => {
+    const manifestPath = `${folder}/manifest.toml`
+    return Object.values(info ?? {})
+      .filter((component) => component.file === manifestPath || component.file === folder)
       .flatMap((component) => component.tags)
+  }
 
   return (
     <section className={flat ? "border-b border-border last:border-b-0" : "mb-3 rounded-xl border border-border bg-card text-card-foreground"}>
@@ -208,10 +211,10 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-72 min-w-48">
               {offered.length === 0 && <DropdownMenuItem disabled>{t("config.noComponentFiles")}</DropdownMenuItem>}
-              {offered.map((path) => (
-                <DropdownMenuItem key={path} onSelect={() => write([...(listed ?? []), path])}>
-                  <FileIcon path={path} kind="file" size={16} />
-                  <span dir="ltr" className="truncate">{path}</span>
+              {offered.map((folder) => (
+                <DropdownMenuItem key={folder} onSelect={() => write([...(listed ?? []), folder])}>
+                  <FileIcon path={folder} kind="folder" size={16} />
+                  <span dir="ltr" className="truncate">{folder}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -226,11 +229,12 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
           </code>
         )}
         {listed?.map((path) => {
-          const missing = !files.includes(path.replace(/^\.?\//, ""))
-          const tags = tagsOf(path.replace(/^\.?\//, ""))
+          const clean = normalizeComponentFolder(path)
+          const missing = !files.some((f) => normalizeComponentFolder(f) === `${clean}/manifest.toml`)
+          const tags = tagsOf(clean)
           return (
             <div key={path} className="flex min-h-9 items-center gap-2 px-3 py-1">
-              {missing ? <FileWarning className="size-4 shrink-0 text-destructive" aria-label={t("config.componentMissing")} /> : <FileIcon path={path} kind="file" size={16} />}
+              {missing ? <FileWarning className="size-4 shrink-0 text-destructive" aria-label={t("config.componentMissing")} /> : <FileIcon path={clean} kind="folder" size={16} />}
               <div className="min-w-0 flex-1">
                 <div dir="ltr" className={cn("truncate font-mono text-xs", missing && "text-destructive")} title={missing ? t("config.componentMissing") : path}>
                   {path}
@@ -258,12 +262,24 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, over
   const entries = useEditorStore((state) => state.files)
   const [query, setQuery] = useState("")
   const [closed, setClosed] = useState<ReadonlySet<string>>(() => new Set(defaultClosed))
+  const [openOverrides, setOpenOverrides] = useState<ReadonlySet<string>>(() => new Set())
   const files = useMemo(() => entries.filter((entry) => entry.kind === "file").map((entry) => entry.path), [entries])
 
   const needle = query.trim().toLowerCase()
   const matches = (name: string, spec: AttrSpec) => needle === "" || name.toLowerCase().includes(needle) || localized(spec.doc, i18n.language).toLowerCase().includes(needle)
 
-  const sections = [{ id: "", attrs: config.attrs, doc: undefined as string | undefined }, ...Object.entries(config.tables).map(([id, table]) => ({ id, attrs: table.attrs, doc: localized(table.doc, i18n.language) }))]
+  // Hide backend duplicate tables (`html.<base>`, `typ.<base>`) when `<base>` is a shared table
+  const sections = [
+    { id: "", attrs: config.attrs, doc: undefined as string | undefined },
+    ...Object.entries(config.tables)
+      .filter(([id]) => {
+        const m = /^(?:html|typ)\.(.+)$/.exec(id)
+        return !(m && m[1] in config.tables)
+      })
+      .map(([id, table]) => ({ id, attrs: table.attrs, doc: localized(table.doc, i18n.language) })),
+  ]
+
+  const overrideHint = i18n.language === "fa" ? "تنظیم جداگانه برای PDF / HTML" : "Separate override for PDF / HTML"
 
   return (
     <div className={className}>
@@ -289,8 +305,53 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, over
       })()}
 
       {sections.map(({ id, attrs, doc }) => {
-        const keys = Object.entries(attrs).filter(([name, spec]) => matches(name, spec) && !(id === "" && (name === "components" || name === "vars" || name === "var-types")))
-        if (keys.length === 0) return null
+        const isBackendRoot = id === "html" || id === "typ"
+        const typTable = !isBackendRoot && !id.startsWith("typ.") && !id.startsWith("html.") ? (id ? `typ.${id}` : "typ") : undefined
+        const htmlTable = !isBackendRoot && !id.startsWith("typ.") && !id.startsWith("html.") ? (id ? `html.${id}` : "html") : undefined
+        const typTableAttrs = typTable ? config.tables[typTable]?.attrs : undefined
+        const htmlTableAttrs = htmlTable ? config.tables[htmlTable]?.attrs : undefined
+
+        interface RowItem {
+          name: string
+          spec: AttrSpec
+          targetTable: string
+          badge?: "typ" | "html"
+          typSpec?: AttrSpec
+          htmlSpec?: AttrSpec
+        }
+
+        const rows: RowItem[] = []
+        for (const [name, spec] of Object.entries(attrs)) {
+          if (id === "" && (name === "components" || name === "vars" || name === "var-types")) continue
+          // Skip shared general attributes repeated inside [html] and [typ]
+          if (isBackendRoot && name in config.attrs) continue
+          if (!matches(name, spec)) continue
+          rows.push({
+            name,
+            spec,
+            targetTable: id,
+            typSpec: typTableAttrs?.[name],
+            htmlSpec: htmlTableAttrs?.[name],
+          })
+        }
+
+        // Include backend-exclusive keys from hidden `typ.<id>` / `html.<id>` tables (e.g. `copy-button` in `html.code`)
+        if (id !== "") {
+          if (typTable && typTableAttrs) {
+            for (const [name, spec] of Object.entries(typTableAttrs)) {
+              if (name in attrs || !matches(name, spec)) continue
+              rows.push({ name, spec, targetTable: typTable, badge: "typ" })
+            }
+          }
+          if (htmlTable && htmlTableAttrs) {
+            for (const [name, spec] of Object.entries(htmlTableAttrs)) {
+              if (name in attrs || !matches(name, spec)) continue
+              rows.push({ name, spec, targetTable: htmlTable, badge: "html" })
+            }
+          }
+        }
+
+        if (rows.length === 0) return null
         const open = needle !== "" || !closed.has(id)
         return (
           <section key={id || "general"} className={flat ? "border-b border-border last:border-b-0" : "mb-3 rounded-xl border border-border bg-card text-card-foreground"}>
@@ -312,42 +373,114 @@ export function SettingsForm({ text, onChange, config, format, extraThemes, over
             </button>
             {open && (
               <div className={cn("divide-y divide-border border-t border-border", flat && "bg-muted/20")}>
-                {keys.map(([name, spec]) => {
-                  const { value, plain } = shown(format, text, id, name)
-                  const overridden = overrides && overrideFor(overrides.entries, id ? `${id}.${name}` : name)
+                {rows.map(({ name, spec, targetTable, badge, typSpec, htmlSpec }) => {
+                  const rowKey = `${targetTable}.${name}`
+                  const { value, plain } = shown(format, text, targetTable, name)
+                  const overridden = overrides && overrideFor(overrides.entries, targetTable ? `${targetTable}.${name}` : name)
+                  const canOverride = Boolean(typSpec || htmlSpec)
+                  const typState = typSpec && typTable ? shown(format, text, typTable, name) : undefined
+                  const htmlState = htmlSpec && htmlTable ? shown(format, text, htmlTable, name) : undefined
+                  const hasBackendOverride = typState?.value !== undefined || htmlState?.value !== undefined
+                  const showOverrides = canOverride && (openOverrides.has(rowKey) || hasBackendOverride)
+
                   return (
-                    <div key={name} className={cn("grid gap-1.5 px-3 py-2", side ? "grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] items-center gap-3" : !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-3")}>
-                      <div className="min-w-0">
-                        <div dir="ltr" className="flex items-center gap-1 font-mono text-xs font-medium">
-                          {overridden && overrides && <OverrideBadge entry={overridden} file={overrides.file} className="-ms-1" />}
-                          <span className={cn(value === undefined && "text-muted-foreground")}>{name}</span>
+                    <div key={rowKey} className="px-3 py-2">
+                      <div className={cn("grid gap-1.5", side ? "grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] items-center gap-3" : !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-3")}>
+                        <div className="min-w-0">
+                          <div dir="ltr" className="flex items-center gap-1.5 font-mono text-xs font-medium">
+                            {overridden && overrides && <OverrideBadge entry={overridden} file={overrides.file} className="-ms-1" />}
+                            <span className={cn(value === undefined && !hasBackendOverride && "text-muted-foreground")}>{name}</span>
+                            {badge && <span className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">{badge}</span>}
+                          </div>
+                          <div dir="auto" className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                            {localized(spec.doc, i18n.language)}
+                          </div>
                         </div>
-                        <div dir="auto" className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                          {localized(spec.doc, i18n.language)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="min-w-0 flex-1">
-                          {plain ? (
-                            <Control
-                              name={name}
-                              spec={spec}
-                              current={value}
-                              files={files}
-                              format={format}
-                              extraValues={name === "theme" && id === "" ? extraThemes : undefined}
-                              write={(next) => onChange(next ? format.set(text, id, name, next.literal) : format.remove(text, id, name))}
-                            />
-                          ) : (
-                            <code dir="ltr" className="block truncate rounded bg-muted px-2 py-1.5 font-mono text-[11px]" title={value}>
-                              {value}
-                            </code>
+                        <div className="flex items-center gap-1">
+                          <div className="min-w-0 flex-1">
+                            {plain ? (
+                              <Control
+                                name={name}
+                                spec={spec}
+                                current={value}
+                                files={files}
+                                format={format}
+                                extraValues={name === "theme" && targetTable === "" ? extraThemes : undefined}
+                                write={(next) => onChange(next ? format.set(text, targetTable, name, next.literal) : format.remove(text, targetTable, name))}
+                              />
+                            ) : (
+                              <code dir="ltr" className="block truncate rounded bg-muted px-2 py-1.5 font-mono text-[11px]" title={value}>
+                                {value}
+                              </code>
+                            )}
+                          </div>
+                          {canOverride && (
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              className={cn("shrink-0", showOverrides || hasBackendOverride ? "text-primary" : "text-muted-foreground opacity-65 hover:opacity-100")}
+                              aria-pressed={showOverrides}
+                              onClick={() =>
+                                setOpenOverrides((current) => {
+                                  const next = new Set(current)
+                                  if (!next.delete(rowKey)) next.add(rowKey)
+                                  return next
+                                })
+                              }
+                              title={overrideHint}
+                              aria-label={overrideHint}
+                            >
+                              <SlidersHorizontal className="size-3.5" />
+                            </Button>
                           )}
+                          <Button variant="ghost" size="icon-xs" disabled={value === undefined} className={cn("shrink-0 text-muted-foreground", value === undefined && "invisible")} onClick={() => onChange(format.remove(text, targetTable, name))} title={t("config.reset")} aria-label={t("config.reset")}>
+                            <RotateCcw />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="icon-xs" disabled={value === undefined} className={cn("shrink-0 text-muted-foreground", value === undefined && "invisible")} onClick={() => onChange(format.remove(text, id, name))} title={t("config.reset")} aria-label={t("config.reset")}>
-                          <RotateCcw />
-                        </Button>
                       </div>
+
+                      {showOverrides && (
+                        <div className="mt-2 grid gap-1.5 rounded-lg border border-border/70 bg-muted/30 p-2">
+                          {([
+                            { label: "PDF (typ)", table: typTable, bSpec: typSpec, state: typState },
+                            { label: "HTML (html)", table: htmlTable, bSpec: htmlSpec, state: htmlState },
+                          ] as const).map(({ label, table, bSpec, state }) => {
+                            if (!bSpec || !table || !state) return null
+                            const inheritedSpec: AttrSpec = { ...bSpec, default: value ?? spec.default }
+                            const subOverridden = overrides && overrideFor(overrides.entries, `${table}.${name}`)
+                            return (
+                              <div key={table} className={cn("grid gap-1.5", side ? "grid-cols-[minmax(0,1fr)_minmax(0,9.5rem)] items-center gap-2" : !stacked && "sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] sm:items-center sm:gap-2")}>
+                                <div dir="ltr" className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                                  {subOverridden && overrides && <OverrideBadge entry={subOverridden} file={overrides.file} className="-ms-1" />}
+                                  <span>{label}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="min-w-0 flex-1">
+                                    {state.plain ? (
+                                      <Control
+                                        name={name}
+                                        spec={inheritedSpec}
+                                        current={state.value}
+                                        files={files}
+                                        format={format}
+                                        extraValues={name === "theme" ? extraThemes : undefined}
+                                        write={(next) => onChange(next ? format.set(text, table, name, next.literal) : format.remove(text, table, name))}
+                                      />
+                                    ) : (
+                                      <code dir="ltr" className="block truncate rounded bg-muted px-2 py-1.5 font-mono text-[11px]" title={state.value}>
+                                        {state.value}
+                                      </code>
+                                    )}
+                                  </div>
+                                  <Button variant="ghost" size="icon-xs" disabled={state.value === undefined} className={cn("shrink-0 text-muted-foreground", state.value === undefined && "invisible")} onClick={() => onChange(format.remove(text, table, name))} title={t("config.reset")} aria-label={t("config.reset")}>
+                                    <RotateCcw />
+                                  </Button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

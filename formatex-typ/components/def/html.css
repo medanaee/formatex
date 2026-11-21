@@ -1,0 +1,49 @@
+.fx-def-inline {
+  display: inline;
+  padding: 0.16em 0.5em;
+  border: 1px solid var(--fx-border, color-mix(in srgb, var(--accent) 35%, var(--bg)));
+  background: var(--fx-fill, color-mix(in srgb, var(--accent) 10%, var(--bg)));
+  border-radius: var(--fx-radius-badge, 0.3em);
+  font-size: 0.88em;
+  line-height: 1.6;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.fx-def-inline .fx-def-icon {
+  margin-inline-end: 0.28em;
+}
+.fx-def-inline .fx-def-icon,
+.fx-def-inline .fx-def-title,
+.fx-def-inline .fx-def-colon {
+  color: var(--fx-icon, var(--accent));
+}
+.fx-def-title {
+  font-weight: 700;
+  text-decoration: none;
+}
+.fx-def-title:hover {
+  text-decoration: underline;
+}
+.fx-def-text {
+  color: var(--fg);
+}
+.fx-def-block {
+  margin-block: var(--fx-gap-block, 0.85em);
+}
+.fx-def-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+  margin-block-end: calc(0.4em * var(--fx-space, 1));
+  color: var(--fx-icon, var(--accent));
+  font-size: 1.05em;
+}
+.fx-def-head .fx-def-title {
+  color: inherit;
+}
+.fx-def-body > :first-child {
+  margin-block-start: 0;
+}
+.fx-def-body > :last-child {
+  margin-block-end: 0;
+}
