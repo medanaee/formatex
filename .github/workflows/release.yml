@@ -176,7 +176,7 @@ jobs:
         with:
           workspaces: formatex-app/src-tauri
           key: ${{ matrix.args }}
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
         working-directory: .
       # Builds only; the files are published by the `publish` job, so two jobs never touch the same release asset
       - uses: tauri-apps/tauri-action@v0
@@ -232,7 +232,7 @@ jobs:
         with:
           workspaces: formatex-app/src-tauri
           key: android
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
         working-directory: .
 
       # The Android project is generated from tauri.conf.json (identifier com.formatex.org); it is not kept in git
