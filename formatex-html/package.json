@@ -15,7 +15,7 @@
     "./runtime": "./dist/runtime.js"
   },
   "dependencies": {
-    "@formatex/core": "1.0.0",
+    "@formatex/core": "workspace:*",
     "highlight.js": "^11.12.0",
     "katex": "^0.16.47",
     "lucide-react": "^1.55.0",

@@ -1,0 +1,5 @@
+packages:
+  - formatex-core
+  - formatex-html
+  - formatex-app
+  - formatex-typ

@@ -1,16 +1,11 @@
 {
   "name": "formatex-workspace",
   "private": true,
-  "workspaces": [
-    "formatex-core",
-    "formatex-html",
-    "formatex-app",
-    "formatex-typ"
-  ],
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
-    "core:build": "npm run build --workspace @formatex/core",
+    "core:build": "pnpm --filter @formatex/core run build",
     "typ:sync": "node formatex-typ/tools/sync.mjs",
-    "html:build": "npm run build --workspace @formatex/html",
-    "test": "npm test --workspace formatex-app"
+    "html:build": "pnpm --filter @formatex/html run build",
+    "test": "pnpm --filter formatex-app test"
   }
 }
