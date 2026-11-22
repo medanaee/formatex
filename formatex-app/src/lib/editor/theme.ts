@@ -60,7 +60,7 @@ export const editorTheme = EditorView.theme({
   ".cm-foldPlaceholder:hover": { color: "var(--foreground)", borderColor: "var(--ring)" },
   ".cm-matchingBracket": { backgroundColor: "color-mix(in oklab, var(--primary) 18%, transparent)" },
 
-  ".cm-tooltip, &light .cm-tooltip, &dark .cm-tooltip": {
+  "& .cm-tooltip": {
     border: "1px solid var(--border)",
     backgroundColor: "color-mix(in oklab, var(--popover) 78%, transparent)",
     backdropFilter: "blur(20px) saturate(1.5)",
@@ -71,7 +71,7 @@ export const editorTheme = EditorView.theme({
     boxShadow: "0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent), 0 8px 24px rgba(0, 0, 0, 0.22)",
     zIndex: "500",
   },
-  ".cm-tooltip.cm-tooltip-autocomplete, &light .cm-tooltip.cm-tooltip-autocomplete, &dark .cm-tooltip.cm-tooltip-autocomplete": {
+  "& .cm-tooltip.cm-tooltip-autocomplete": {
     border: "none",
     backgroundColor: "transparent",
     backdropFilter: "none",
@@ -91,13 +91,13 @@ export const editorTheme = EditorView.theme({
     boxShadow: "0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent), 0 8px 24px rgba(0, 0, 0, 0.22)",
   },
   ".cm-tooltip.cm-tooltip-autocomplete > ul > li": { padding: "4px 8px", borderRadius: "6px", lineHeight: "1.4", display: "flex", alignItems: "baseline", gap: "6px" },
-  ".cm-tooltip-autocomplete ul li[aria-selected], &light .cm-tooltip-autocomplete ul li[aria-selected], &dark .cm-tooltip-autocomplete ul li[aria-selected]": {
+  "& .cm-tooltip-autocomplete ul li[aria-selected]": {
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
   ".cm-completionLabel": { fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: "12.5px" },
   ".cm-completionDetail": { marginInlineStart: "auto", fontStyle: "normal", color: "var(--muted-foreground)", fontSize: "11px" },
-  ".cm-tooltip.cm-completionInfo, &light .cm-tooltip.cm-completionInfo, &dark .cm-tooltip.cm-completionInfo": {
+  "& .cm-tooltip.cm-completionInfo": {
     padding: "8px 10px",
     maxWidth: "260px",
     marginInline: "6px",
