@@ -52,8 +52,12 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          cache-dependency-path: formatex-app/package-lock.json
+          cache-dependency-path: package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - run: npm ci
+        working-directory: .
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
@@ -72,17 +76,20 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          cache-dependency-path: formatex-app/package-lock.json
+          cache-dependency-path: package-lock.json
       # The .deb files are cached, so after the first run nothing is downloaded and `apt update` is not run
       - name: Install Linux prerequisites (Tauri v2)
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
           version: 1.0
-      - run: npm ci
-      - run: npm run build
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: formatex-app/src-tauri
+      - run: npm ci
+        working-directory: .
+      - run: npm run build
       - run: cargo test --manifest-path src-tauri/Cargo.toml --lib

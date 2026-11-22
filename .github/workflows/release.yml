@@ -161,7 +161,7 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          cache-dependency-path: formatex-app/package-lock.json
+          cache-dependency-path: package-lock.json
       # The .deb files are cached, so after the first run nothing is downloaded and `apt update` is not run
       - name: Install Linux prerequisites (Tauri v2)
         if: runner.os == 'Linux'
@@ -171,12 +171,13 @@ jobs:
           version: 1.0
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust-targets }}
+          targets: wasm32-unknown-unknown${{ matrix.rust-targets != '' && format(',{0}', matrix.rust-targets) || '' }}
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: formatex-app/src-tauri
           key: ${{ matrix.args }}
       - run: npm ci
+        working-directory: .
       # Builds only; the files are published by the `publish` job, so two jobs never touch the same release asset
       - uses: tauri-apps/tauri-action@v0
         with:
@@ -210,7 +211,7 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          cache-dependency-path: formatex-app/package-lock.json
+          cache-dependency-path: package-lock.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -226,12 +227,13 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: wasm32-unknown-unknown,aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: formatex-app/src-tauri
           key: android
       - run: npm ci
+        working-directory: .
 
       # The Android project is generated from tauri.conf.json (identifier com.formatex.org); it is not kept in git
       - run: npx tauri android init --ci

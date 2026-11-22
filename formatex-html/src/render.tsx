@@ -103,7 +103,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
     const nextAlign = node.name === "align"
       ? (ALIGN_VALUES.has(String(policy.to ?? bareAlign ?? "center").trim().toLowerCase()) ? String(policy.to ?? bareAlign ?? "center").trim().toLowerCase() : "center")
       : inheritedAlign
-    if (nextAlign && (node.name === "typ" || node.type === "table")) node.props._align = nextAlign
+    if (nextAlign && (node.name === "typ" || node.type === "table" || (node.type === "code" && node.lang === "mermaid"))) node.props._align = nextAlign
     node.props._dir = node.name === "dir" ? String(policy.to ?? "auto") : String(node.props.dir ?? node.props["html.dir"] ?? inheritedDir)
     if (node.type === "list") node.props._listDepth = listDepth
     if (node.props._dir === "rtl" || node.props._dir === "ltr") {

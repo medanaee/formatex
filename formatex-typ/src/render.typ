@@ -166,7 +166,13 @@
       code-options.update(opts)
       let language = node.at("lang", default: none)
       if language == "mermaid" { language += " " + node.at("meta", default: "") + " md-at=\"" + node.at.file + ":" + str(node.at.line) + "\"" }
-      source(node, raw(node.at("value", default: ""), block: true, lang: language))
+      let block-align = node.at("props", default: (:)).at("_align", default: none)
+      let code-node = source(node, raw(node.at("value", default: ""), block: true, lang: language))
+      if block-align != none and block-align in align-names {
+        align-stack.update(s => s + (block-align,))
+        align(align-names.at(block-align), code-node)
+        align-stack.update(s => s.slice(0, -1))
+      } else { code-node }
       code-options.update((:))
       }
     }
@@ -209,6 +215,14 @@
       let rendered = if type(handler) == array { (handler.at(1))(attrs) } else { handler(attrs, body) }
       // A figure consumes drawing metadata; a standalone drawing displays its intrinsic canvas.
       if parent != "fig" and type(rendered) == content and rendered.func() == metadata and type(rendered.value) == dictionary and rendered.value.at("component-tag", default: none) == "drawing" { rendered = rendered.value.body }
+      let box-align = node.at("props", default: (:)).at("_align", default: none)
+      if box-align != none and box-align in align-names {
+        rendered = {
+          align-stack.update(s => s + (box-align,))
+          align(align-names.at(box-align), rendered)
+          align-stack.update(s => s.slice(0, -1))
+        }
+      }
       return source(node, rendered)
     }
     if kind == "deferred" {
