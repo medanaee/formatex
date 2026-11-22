@@ -30,9 +30,20 @@ impl<'a> DocumentParser<'a> {
     fn extensions(&mut self, text: &str, base: usize) -> Result<(String, BTreeMap<char, Node>, Vec<Anchor>), Diagnostic> {
         let mut scan_bytes = text.as_bytes().to_vec();
         let mut scan_at = 0;
+        let bytes_ref = text.as_bytes();
         while scan_at < text.len() {
+            if scan_at == 0 || bytes_ref[scan_at - 1] == b'\n' {
+                if let Some(fence_end) = skip_fenced_code(text, scan_at) {
+                    scan_at = fence_end;
+                    continue;
+                }
+            }
+            if bytes_ref[scan_at] == b'`' {
+                scan_at = skip_inline_code(text, scan_at);
+                continue;
+            }
             if text[scan_at..].starts_with("<!--") { scan_at = text[scan_at..].find("-->").map_or(text.len(), |end| scan_at + end + 3); continue; }
-            if text.as_bytes()[scan_at] == b'<' {
+            if bytes_ref[scan_at] == b'<' {
                 if let Ok(Some(tag)) = grammar::tag(text, scan_at, base) {
                     if !tag.close && !tag.void && self.raw_component(&tag.name) {
                         let needle = format!("</{}", tag.name);
@@ -58,26 +69,34 @@ impl<'a> DocumentParser<'a> {
         }
         let scan = String::from_utf8(scan_bytes).expect("byte-preserving raw masks");
         let mut protected = Vec::new();
+        let mut code_blocks = Vec::new();
         let mut in_code = 0;
         for (event, range) in Parser::new_ext(&scan, markdown_options()).into_offset_iter() {
             match event {
-                Event::Start(Tag::CodeBlock(_)) => { in_code += 1; protected.push(range); },
+                Event::Start(Tag::CodeBlock(_)) => { in_code += 1; code_blocks.push(range.clone()); protected.push(range); },
                 Event::End(pulldown_cmark::TagEnd::CodeBlock) => in_code -= 1,
                 Event::Code(_) | Event::InlineMath(_) | Event::DisplayMath(_) => protected.push(range),
-                _ if in_code > 0 => protected.push(range),
+                _ if in_code > 0 => { code_blocks.push(range.clone()); protected.push(range); },
                 _ => {},
             }
         }
-        protected.sort_by_key(|range| range.start);
-        let mut merged: Vec<std::ops::Range<usize>> = Vec::new();
-        for range in protected {
-            if let Some(last) = merged.last_mut() { if range.start <= last.end { last.end = last.end.max(range.end); continue; } }
-            merged.push(range);
-        }
-        let protected_end = |at| {
-            let next = merged.partition_point(|range| range.start <= at);
-            next.checked_sub(1).and_then(|index| (at < merged[index].end).then_some(merged[index].end))
+        let merge_ranges = |mut items: Vec<std::ops::Range<usize>>| {
+            items.sort_by_key(|range| range.start);
+            let mut merged: Vec<std::ops::Range<usize>> = Vec::new();
+            for range in items {
+                if let Some(last) = merged.last_mut() { if range.start <= last.end { last.end = last.end.max(range.end); continue; } }
+                merged.push(range);
+            }
+            merged
         };
+        let merged = merge_ranges(protected);
+        let merged_code = merge_ranges(code_blocks);
+        let range_end = |ranges: &[std::ops::Range<usize>], at: usize| {
+            let next = ranges.partition_point(|range| range.start <= at);
+            next.checked_sub(1).and_then(|index| (at < ranges[index].end).then_some(ranges[index].end))
+        };
+        let protected_end = |at| range_end(&merged, at);
+        let code_end = |at| range_end(&merged_code, at);
         let mut bytes = text.as_bytes().to_vec();
         let mut components = BTreeMap::new();
         let mut anchors = Vec::new();
@@ -213,7 +232,7 @@ impl<'a> DocumentParser<'a> {
         let mut offset = 0;
         for line in text.split_inclusive('\n') {
             let line_start = offset; offset += line.len();
-            if protected_end(line_start).is_some() && !line.trim_start().starts_with("$$") { continue; }
+            if code_end(line_start).is_some() || (protected_end(line_start).is_some() && !line.trim_start().starts_with("$$")) { continue; }
             if !bytes[line_start..offset].contains(&b'{') { continue; }
             let trimmed = line.trim();
             let prefix = line.len() - line.trim_start().len();
@@ -576,6 +595,67 @@ mod tests {
         assert_eq!(document.children[1].props["guides"], "tree");
         assert!(document.children[2].children.iter().any(|node| node.url.as_deref() == Some("https://example.org")));
     }
+    #[test]
+    fn raw_components_inside_align_and_doc_code_examples_parse_cleanly() {
+        let nested = parse("<align>\n\n<typ>\n```\n#import \"@preview/cetz:0.3.4\"\n\nlet a = 1\n```\n\n</typ>\n\n</align>\n");
+        assert_eq!(nested.children[0].name.as_deref(), Some("align"));
+        assert_eq!(nested.children[0].children[0].name.as_deref(), Some("typ"));
+
+        let docs = parse("Inline `<cetz>` example.\n\n````markdown\n$$e^{i\\pi} + 1 = 0$$ {#eq-euler}\n\n<fig>\n<cetz>\n\n```typ\nx\n```\n\n</cetz>\n</fig>\n````\n");
+        assert_eq!(docs.children[0].kind, "paragraph");
+        assert_eq!(docs.children[1].kind, "code");
+    }
+}
+
+fn skip_fenced_code(text: &str, line_start: usize) -> Option<usize> {
+    let line_end = text[line_start..].find('\n').map_or(text.len(), |n| line_start + n + 1);
+    let line = text[line_start..line_end].trim_end_matches(['\r', '\n']);
+    let indent = line.bytes().take(4).take_while(|b| *b == b' ').count();
+    if indent > 3 { return None; }
+    let rest = &line[indent..];
+    let fence_char = *rest.as_bytes().first()?;
+    if fence_char != b'`' && fence_char != b'~' { return None; }
+    let fence_len = rest.bytes().take_while(|b| *b == fence_char).count();
+    if fence_len < 3 { return None; }
+    if fence_char == b'`' && rest[fence_len..].contains('`') { return None; }
+    let mut pos = line_end;
+    while pos < text.len() {
+        let next_end = text[pos..].find('\n').map_or(text.len(), |n| pos + n + 1);
+        let cur = text[pos..next_end].trim_end_matches(['\r', '\n']);
+        let c_indent = cur.bytes().take(4).take_while(|b| *b == b' ').count();
+        if c_indent <= 3 {
+            let c_rest = &cur[c_indent..];
+            let close_len = c_rest.bytes().take_while(|b| *b == fence_char).count();
+            if close_len >= fence_len && c_rest[close_len..].trim().is_empty() {
+                return Some(next_end);
+            }
+        }
+        pos = next_end;
+    }
+    Some(text.len())
+}
+
+fn skip_inline_code(text: &str, start: usize) -> usize {
+    let bytes = text.as_bytes();
+    let mut count = 0;
+    while start + count < bytes.len() && bytes[start + count] == b'`' { count += 1; }
+    let mut pos = start + count;
+    while pos < bytes.len() {
+        if bytes[pos] == b'\n' {
+            let after = if pos + 1 < bytes.len() && bytes[pos + 1] == b'\r' { pos + 2 } else { pos + 1 };
+            let trimmed = text[after..].trim_start_matches([' ', '\t']);
+            if trimmed.starts_with(['\r', '\n']) { break; }
+        }
+        if bytes[pos] == b'`' {
+            let mut close = 0;
+            while pos + close < bytes.len() && bytes[pos + close] == b'`' { close += 1; }
+            if close == count { return pos + close; }
+            pos += close;
+            continue;
+        }
+        pos += 1;
+    }
+    start + count
 }
 
 /// Only list-marker digits are normalized; offsets remain in the original prepared source.
