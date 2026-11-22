@@ -244,14 +244,22 @@ fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
             if !done.insert((family.to_lowercase(), effective_weight, info.variant.style as u8)) {
                 continue;
             }
-            // Stock NewCM CFF faces are rejected by some WebViews. The quadratic HTML-only
-            // equivalents preserve glyph metrics and shaping; PDF continues to use the original.
+            // Stock NewCM & Font Awesome 7 CFF faces: convert/subset via quadratic HTML-only equivalents
+            // so fontcull subsets glyf outlines to a few KB (PDF continues to use the original OTFs).
             let browser_data: &[u8] = if info.family.eq_ignore_ascii_case("new computer modern") && data.starts_with(b"OTTO") {
                 match (effective_weight >= 600, info.variant.style != FontStyle::Normal) {
                     (false, false) => include_bytes!("../web-fonts/newcm-regular.ttf"),
                     (true, false) => include_bytes!("../web-fonts/newcm-bold.ttf"),
                     (false, true) => include_bytes!("../web-fonts/newcm-italic.ttf"),
                     (true, true) => include_bytes!("../web-fonts/newcm-bolditalic.ttf"),
+                }
+            } else if is_fa && data.starts_with(b"OTTO") {
+                if lookup_lower.contains("brands") {
+                    include_bytes!("../web-fonts/fa7-brands-regular.ttf")
+                } else if lookup_lower.contains("solid") || effective_weight >= 700 {
+                    include_bytes!("../web-fonts/fa7-pro-solid.ttf")
+                } else {
+                    include_bytes!("../web-fonts/fa7-pro-regular.ttf")
                 }
             } else { data.as_slice() };
             let cut = if is_fa {
