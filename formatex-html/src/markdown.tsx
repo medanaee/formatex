@@ -232,7 +232,17 @@ export function renderTable(node: Node, c: RenderContext, props: Settings): Reac
   const look = feel === "friendly" ? "card" : feel === "standard" ? "lined" : "rules"
   const rows = node.children ?? []
   const full = props.width === "full" || (props.span === "all" && columnCount(c.document) > 1)
-  const place = String(props.align ?? "center")
+  const localAlign = node.props?.align ?? node.props?.["html.align"]
+  const place = String(localAlign ?? (node.props?._align || props.align || "center"))
+  const marginStyle: CSSProperties = place === "right"
+    ? { marginLeft: "auto", marginRight: 0 }
+    : place === "left"
+      ? { marginLeft: 0, marginRight: "auto" }
+      : place === "end"
+        ? { marginInline: "auto 0" }
+        : place === "start"
+          ? { marginInline: "0 auto" }
+          : { marginInline: "auto" }
   const caption = props.caption ? String(props.caption) : ""
   const numbered = c.numbers.has(node.key)
   const dir = spokenDir(node, c.document.settings.dir)
@@ -251,7 +261,7 @@ export function renderTable(node: Node, c: RenderContext, props: Settings): Reac
     return <Tag key={item.key} dir={spokenDir(item)} style={{ textAlign: align }}>{c.children(item)}</Tag>
   }
   return (
-    <figure id={props.id ? String(props.id) : undefined} className={`fx-table fx-table-${look}${full ? "" : " fx-table-auto"}`} dir={dir} style={{ width: full ? "100%" : "fit-content", marginInline: place === "end" || place === "right" ? "auto 0" : place === "start" || place === "left" ? "0 auto" : "auto" }}>
+    <figure id={props.id ? String(props.id) : undefined} className={`fx-table fx-table-${look}${full ? "" : " fx-table-auto"}`} dir={dir} style={{ width: full ? "100%" : "fit-content", ...marginStyle }}>
       {position === "above" && captionNode}
       <div className="fx-table-frame">
         <table>

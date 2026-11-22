@@ -134,6 +134,10 @@ button { font: inherit; color: var(--fg); background: transparent; border: 1px s
 .fx-steps > li { padding-inline-start: calc(.4em * var(--fx-space)); padding-block-end: calc(.8em * var(--fx-space)); }
 .fx-badge { border: 1px solid var(--rule); border-radius: var(--radius); padding: .1em .4em; background: var(--code-bg); }
 .fx-math, .fx-math-body, .fx-math .katex, .fx-math math { direction: ltr; unicode-bidi: isolate; text-align: left; }
+.fx-math math { font-size: .86em; }
+.fx-display-math math { font-size: .95em; }
+.fx-math .katex { font-size: 1em; }
+.fx-display-math .katex { font-size: 1.08em; }
 .fx-display-math { display: flex; align-items: center; gap: calc(1em * var(--fx-space)); margin-block: calc(1em * var(--fx-space)); overflow-x: auto; direction: ltr; }
 .fx-math-body { flex: 1; min-width: 0; text-align: center; }
 .fx-eq-end { flex-direction: row-reverse; }

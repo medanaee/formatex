@@ -141,17 +141,17 @@
     if kind == "thematicBreak" { return source(node, divider()) }
     if kind == "heading" {
       return {
-      let opts = pdf-options(node, group: "heading")
+      let opts = pdf-options(node)
       let local = opts.pairs().map(((key, value)) => (key, if key in ("fill", "underline", "toc", "numbering") { pdf-bool(value) } else { value })).to-dict()
       heading-options.update(local)
-      source(node, heading(level: node.depth, outlined: local.at("toc", default: true), numbering: if local.at("numbering", default: true) { heading-numbering } else { none }, children()))
+      source(node, heading(level: node.depth, outlined: local.at("toc", default: true), numbering: if local.at("numbering", default: heading-numbered) { heading-numbering } else { none }, children()))
       if "id" in opts { [#metadata((heading-id: opts.id))#label(opts.id)] }
       for id in node.at("props", default: (:)).at("_aliases", default: ()) { [#metadata((heading-id: id))#label(id)] }
       heading-options.update((:))
       }
     }
     if kind == "list" {
-      let opts = pdf-options(node, group: "list")
+      let opts = pdf-options(node)
       let items = node.children.map(item => {
         let nodes = pdf-mark-first(item.at("children", default: ()), item.at).nodes
         if "checked" in item { [#if item.checked { "☑" } else { "☐" } #render-nodes(nodes)] } else { render-nodes(nodes) }
@@ -162,11 +162,12 @@
     if kind == "blockquote" { return source(node, quote(block: true, children())) }
     if kind == "code" {
       return {
-      let opts = pdf-options(node, group: "code")
+      let opts = pdf-options(node)
       code-options.update(opts)
       let language = node.at("lang", default: none)
       if language == "mermaid" { language += " " + node.at("meta", default: "") + " md-at=\"" + node.at.file + ":" + str(node.at.line) + "\"" }
       source(node, raw(node.at("value", default: ""), block: true, lang: language))
+      code-options.update((:))
       }
     }
     if kind == "math" or kind == "inlineMath" {
@@ -180,7 +181,7 @@
     }
     if kind == "table" {
       return {
-      let opts = pdf-options(node, group: "table")
+      let opts = pdf-options(node)
       table-options.update(opts)
       let rows = node.children
       let count = rows.first().children.len()

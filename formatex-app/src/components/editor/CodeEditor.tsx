@@ -34,6 +34,7 @@ import { completeValue } from "@/lib/editor/completion"
 import { completionSource } from "@/lib/editor/completionSource"
 import { typstCompletionSource } from "@/lib/editor/typstIde"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
+import { rawComponentMarkdown } from "@/lib/editor/rawComponentMarkdown"
 import { typstLanguage } from "@/lib/editor/typstLanguage"
 import { editorHighlighting, editorTheme } from "@/lib/editor/theme"
 import type { FileKind } from "@/lib/projects"
@@ -96,7 +97,7 @@ function publishHistory(state: EditorState): void {
 }
 
 function languageFor(kind: FileKind, path: string): Extension {
-  if (kind === "markdown") return markdown({ base: markdownLanguage })
+  if (kind === "markdown") return markdown({ base: markdownLanguage, extensions: rawComponentMarkdown })
   if (kind === "toml") return StreamLanguage.define(toml)
   if (kind === "typst") return typstLanguage
   if (kind === "code") return codeLanguageFor(path)

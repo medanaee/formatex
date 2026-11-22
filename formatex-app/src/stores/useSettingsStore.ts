@@ -71,6 +71,10 @@ interface SettingsState {
   setPreviewPercent: (percent: number) => void
   setTheme: (theme: ThemePreference) => void
   setLanguage: (language: AppLanguage) => void
+  /** Up to 15 recent Find queries, persisted across projects. */
+  searchHistory: string[]
+  addSearchHistory: (term: string) => void
+  removeSearchHistory: (term: string) => void
   toggleSidebar: () => void
 }
 
@@ -126,6 +130,16 @@ export const useSettingsStore = create<SettingsState>()(
         void i18n.changeLanguage(language)
       },
 
+      searchHistory: [],
+      addSearchHistory: (term) =>
+        set((state) => {
+          if (!term || !term.trim()) return state
+          const next = [term, ...state.searchHistory.filter((item) => item !== term)].slice(0, 15)
+          return { searchHistory: next }
+        }),
+      removeSearchHistory: (term) =>
+        set((state) => ({ searchHistory: state.searchHistory.filter((item) => item !== term) })),
+
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
     }),
     {
@@ -139,6 +153,8 @@ export const useSettingsStore = create<SettingsState>()(
         if (!LIBRARY_VIEWS.includes(state.libraryView)) state.libraryView = "grid"
         if (!isThemePreference(state.theme)) state.theme = "system"
         if (!isSupportedLanguage(state.language)) state.language = DEFAULT_LANGUAGE
+        if (!Array.isArray(state.searchHistory)) state.searchHistory = []
+        else state.searchHistory = state.searchHistory.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 15)
         applyTheme(state.theme)
         watchSystemTheme(state.theme)
         applyLanguageSettings(state.language)

@@ -28,9 +28,38 @@ impl<'a> DocumentParser<'a> {
 
     /// Formatex extensions protect their full boundaries before CommonMark parses blocks/inlines.
     fn extensions(&mut self, text: &str, base: usize) -> Result<(String, BTreeMap<char, Node>, Vec<Anchor>), Diagnostic> {
+        let mut scan_bytes = text.as_bytes().to_vec();
+        let mut scan_at = 0;
+        while scan_at < text.len() {
+            if text[scan_at..].starts_with("<!--") { scan_at = text[scan_at..].find("-->").map_or(text.len(), |end| scan_at + end + 3); continue; }
+            if text.as_bytes()[scan_at] == b'<' {
+                if let Ok(Some(tag)) = grammar::tag(text, scan_at, base) {
+                    if !tag.close && !tag.void && self.raw_component(&tag.name) {
+                        let needle = format!("</{}", tag.name);
+                        let mut search = tag.end;
+                        while let Some(rel) = text[search..].find(&needle) {
+                            let close_at = search + rel;
+                            if let Ok(Some(close_tag)) = grammar::tag(text, close_at, base) {
+                                if close_tag.close && close_tag.name == tag.name {
+                                    grammar::blank(&mut scan_bytes, tag.end, close_at);
+                                    scan_at = close_tag.end;
+                                    break;
+                                }
+                            }
+                            search = close_at + needle.len();
+                        }
+                        if scan_at > tag.end { continue; }
+                    }
+                    scan_at = tag.end;
+                    continue;
+                }
+            }
+            scan_at += text[scan_at..].chars().next().unwrap().len_utf8();
+        }
+        let scan = String::from_utf8(scan_bytes).expect("byte-preserving raw masks");
         let mut protected = Vec::new();
         let mut in_code = 0;
-        for (event, range) in Parser::new_ext(text, markdown_options()).into_offset_iter() {
+        for (event, range) in Parser::new_ext(&scan, markdown_options()).into_offset_iter() {
             match event {
                 Event::Start(Tag::CodeBlock(_)) => { in_code += 1; protected.push(range); },
                 Event::End(pulldown_cmark::TagEnd::CodeBlock) => in_code -= 1,
@@ -92,7 +121,29 @@ impl<'a> DocumentParser<'a> {
                                         if stack.last() != Some(&tag.name) { return Err(self.error(base + q, format!("Expected </{}>, found </{}>", stack.last().unwrap(), tag.name))); }
                                         stack.pop();
                                         if stack.is_empty() { body_end = q; end = tag.end; found = true; break; }
-                                    } else if !tag.close && !tag.void { stack.push(tag.name); }
+                                    } else if !tag.close && !tag.void {
+                                        if self.raw_component(&tag.name) {
+                                            let needle = format!("</{}", tag.name);
+                                            let mut search = tag.end;
+                                            let mut closed = None;
+                                            while let Some(rel) = text[search..].find(&needle) {
+                                                let close_at = search + rel;
+                                                if let Some(close_tag) = grammar::tag(text, close_at, base).map_err(|(at, error)| self.error(at, error))? {
+                                                    if close_tag.close && close_tag.name == tag.name {
+                                                        closed = Some(close_tag.end);
+                                                        break;
+                                                    }
+                                                }
+                                                search = close_at + needle.len();
+                                            }
+                                            if let Some(next_q) = closed {
+                                                q = next_q;
+                                                continue;
+                                            }
+                                            return Err(self.error(base + q, format!("Missing </{}>", tag.name)));
+                                        }
+                                        stack.push(tag.name);
+                                    }
                                     q = tag.end; continue;
                                 }
                             }

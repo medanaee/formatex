@@ -95,9 +95,15 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
   const equationSettings = document.settings.equation
   const equationMode = equationSettings && typeof equationSettings === "object" && !Array.isArray(equationSettings) ? String((equationSettings as Settings).numbering ?? "labelled") : "labelled"
   let lastSpoken: "rtl" | "ltr" = String(document.settings.dir) === "rtl" ? "rtl" : "ltr"
-  const walk = (nodes: Node[], inheritedDir = String(document.settings.dir ?? "auto"), owner?: Node, listDepth = 0) => { for (const node of nodes) {
+  const ALIGN_VALUES = new Set(["center", "left", "right", "start", "end"])
+  const walk = (nodes: Node[], inheritedDir = String(document.settings.dir ?? "auto"), owner?: Node, listDepth = 0, inheritedAlign = "") => { for (const node of nodes) {
     node.props ??= {}
     const policy = effective(node)
+    const bareAlign = ["center", "left", "right", "start", "end"].find(k => policy[k] === true || policy[k] === "true")
+    const nextAlign = node.name === "align"
+      ? (ALIGN_VALUES.has(String(policy.to ?? bareAlign ?? "center").trim().toLowerCase()) ? String(policy.to ?? bareAlign ?? "center").trim().toLowerCase() : "center")
+      : inheritedAlign
+    if (nextAlign && (node.name === "typ" || node.type === "table")) node.props._align = nextAlign
     node.props._dir = node.name === "dir" ? String(policy.to ?? "auto") : String(node.props.dir ?? node.props["html.dir"] ?? inheritedDir)
     if (node.type === "list") node.props._listDepth = listDepth
     if (node.props._dir === "rtl" || node.props._dir === "ltr") {
@@ -156,7 +162,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         if (eqNumber !== undefined) node.props._eqNumber = eqNumber
       }
     }
-    if (node.children) walk(node.children, String(node.props._dir), node.name === "fig" ? node : owner, node.type === "list" ? listDepth + 1 : listDepth)
+    if (node.children) walk(node.children, String(node.props._dir), node.name === "fig" ? node : owner, node.type === "list" ? listDepth + 1 : listDepth, nextAlign)
   } }
   walk(document.children)
   const outlined: Node[] = []
