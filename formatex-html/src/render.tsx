@@ -14,26 +14,34 @@ import type { TagSpec } from "@formatex/core"
 import { prepareMath } from "./math"
 import { MissingAssetsError, type AssetRequest } from "./assets"
 
-const compiled = new Map<string, (props: { node: Node; context: RenderContext }) => ReactNode>()
+type ComponentFn = (props: { node: Node; context: RenderContext }) => ReactNode
+const compiled = new Map<string, ComponentFn | Record<string, ComponentFn>>()
 
-export function compileComponent(source: string): (props: { node: Node; context: RenderContext }) => ReactNode {
-  const cached = compiled.get(source)
-  if (cached) return cached
-  const code = transform(source, { transforms: ["typescript", "jsx", "imports"], jsxRuntime: "automatic", production: true }).code
-  const exports: Record<string, unknown> = {}
-  const require = (name: string) => {
-    if (name === "react") return React
-    if (name === "react/jsx-runtime") return JsxRuntime
-    if (name === "formatex") return { renderBuiltin, ...DocumentUI, ...Kit }
-    if (name === "formatex/ui") return DocumentUI
-    throw new Error(`Unsupported component import: ${name}`)
+export function compileComponent(source: string, tagName?: string): ComponentFn {
+  let entry = compiled.get(source)
+  if (!entry) {
+    const code = transform(source, { transforms: ["typescript", "jsx", "imports"], jsxRuntime: "automatic", production: true }).code
+    const exports: Record<string, unknown> = {}
+    const require = (name: string) => {
+      if (name === "react") return React
+      if (name === "react/jsx-runtime") return JsxRuntime
+      if (name === "formatex") return { renderBuiltin, ...DocumentUI, ...Kit }
+      if (name === "formatex/ui") return DocumentUI
+      throw new Error(`Unsupported component import: ${name}`)
+    }
+    new Function("require", "exports", "module", code)(require, exports, { exports })
+    const def = exports.default
+    if (typeof def !== "function" && (!def || typeof def !== "object")) {
+      throw new Error("A component must export a default function or a tag-to-component map")
+    }
+    entry = def as ComponentFn | Record<string, ComponentFn>
+    if (compiled.size >= 64) compiled.delete(compiled.keys().next().value!)
+    compiled.set(source, entry)
   }
-  new Function("require", "exports", "module", code)(require, exports, { exports })
-  if (typeof exports.default !== "function") throw new Error("A component must export a default function")
-  const component = exports.default as (props: { node: Node; context: RenderContext }) => ReactNode
-  if (compiled.size >= 64) compiled.delete(compiled.keys().next().value!)
-  compiled.set(source, component)
-  return component
+  if (typeof entry === "function") return entry
+  const handler = tagName ? entry[tagName] : undefined
+  if (typeof handler !== "function") throw new Error(`Component does not export a handler for <${tagName ?? ""}>`)
+  return handler
 }
 
 function LocatedComponent({component: Component,node,context}:{component:ReturnType<typeof compileComponent>;node:Node;context:RenderContext}) {
@@ -219,7 +227,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         case "component": {
           const source = options.components?.[node.name!]
           if (source) {
-            try { return <LocatedComponent component={compileComponent(source)} node={node} context={c} /> }
+            try { return <LocatedComponent component={compileComponent(source, node.name!)} node={node} context={c} /> }
             catch (error) { throw new DocumentError(error instanceof Error ? error.message : String(error),node.at) }
           }
           if (options.typOnly?.includes(node.name!)) { const Tag = options.schemas?.[node.name!]?.kind === "inline" ? "span" : "div"; return <Tag id={String(effective(node).id ?? "") || undefined}>{c.graphic(node)}</Tag> }

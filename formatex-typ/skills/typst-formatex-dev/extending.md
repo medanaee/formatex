@@ -169,7 +169,7 @@ Copy a small current core package as the implementation shape reference. Keep sc
 
 ### Rendering and registration
 
-`typst.typ` exports the package's tag dictionary. Optional shared rules/scope must follow the current core loader contract, not a cmarker scope. `html.tsx` exports the HTML implementation; built-ins can delegate to the engine's `renderBuiltin` helper, while custom TSX uses the supplied node/context. Do not import app stores, Tauri, editor modules or app aliases. The engine supplies only serializable package/data/assets across the worker boundary.
+`typst.typ` exports the package's tag dictionary (`<name>-tags`). `html.tsx` exports either a default React component `({ node, context }) => JSX` (for single-tag packages) or a tag-to-component dictionary `export default { tagA: ComponentA, tagB: ComponentB }` (recommended for all new multi-tag packages, mirroring `<name>-tags` in `typst.typ`). Custom TSX uses the supplied `node` / `context`. Do not import app stores, Tauri, editor modules or app aliases. The engine supplies only serializable package/data/assets across the worker boundary.
 
 Tailwind utilities in `html.tsx` are supported: the worker compiles rendered class candidates to static required CSS using the bundled theme, without a CDN or reader-side Tailwind compiler. Use semantic colors, logical utilities, responsive classes and the `.dark` variant. Content is static SSR; event handlers/state are not hydrated. Only the viewer shell hydrates.
 

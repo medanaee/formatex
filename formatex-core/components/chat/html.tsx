@@ -5,33 +5,35 @@ function nonEmpty(value) {
   return String(value).trim()
 }
 
-export default function Component({ node, context }) {
+function Turn({ node, context }) {
   const p = context.props(node)
-  if (node.name === "user" || node.name === "ai") {
-    const role = node.name
-    const dir = resolveDir(p.dir, textOf(node), context.language)
-    const rtl = dir === "rtl"
-    const tint = hueOf(p.color, role === "user" ? "var(--accent)" : "var(--secondary)")
-    const speaker = nonEmpty(p.name) || (role === "user" ? (rtl ? "شما" : "You") : (rtl ? "هوش مصنوعی" : "AI"))
-    const rawIcon = nonEmpty(p.icon) || (role === "user" ? "user" : "robot")
-    const iconName = hasIcon(rawIcon) ? rawIcon : (role === "user" ? "user" : "robot")
-    return (
-      <article id={p.id ? String(p.id) : undefined} dir={dir} className={`fx-chat-turn fx-chat-${role} ${tint.className}`} style={tint.style}>
-        <div className="fx-chat-slot">
-          <div className="fx-chat-bubble">
-            <span className="fx-chat-bar" aria-hidden="true" />
-            <div className="fx-chat-content">
-              <header className="fx-chat-meta">
-                <span className="fx-chat-meta-icon" aria-hidden="true"><Icon name={iconName} /></span>
-                <span className="fx-chat-name">{speaker}</span>
-              </header>
-              <div className="fx-chat-body">{context.children(node)}</div>
-            </div>
+  const role = node.name
+  const dir = resolveDir(p.dir, textOf(node), context.language)
+  const rtl = dir === "rtl"
+  const tint = hueOf(p.color, role === "user" ? "var(--accent)" : "var(--secondary)")
+  const speaker = nonEmpty(p.name) || (role === "user" ? (rtl ? "شما" : "You") : (rtl ? "هوش مصنوعی" : "AI"))
+  const rawIcon = nonEmpty(p.icon) || (role === "user" ? "user" : "robot")
+  const iconName = hasIcon(rawIcon) ? rawIcon : (role === "user" ? "user" : "robot")
+  return (
+    <article id={p.id ? String(p.id) : undefined} dir={dir} className={`fx-chat-turn fx-chat-${role} ${tint.className}`} style={tint.style}>
+      <div className="fx-chat-slot">
+        <div className="fx-chat-bubble">
+          <span className="fx-chat-bar" aria-hidden="true" />
+          <div className="fx-chat-content">
+            <header className="fx-chat-meta">
+              <span className="fx-chat-meta-icon" aria-hidden="true"><Icon name={iconName} /></span>
+              <span className="fx-chat-name">{speaker}</span>
+            </header>
+            <div className="fx-chat-body">{context.children(node)}</div>
           </div>
         </div>
-      </article>
-    )
-  }
+      </div>
+    </article>
+  )
+}
+
+function Chat({ node, context }) {
+  const p = context.props(node)
 
   const rawStyle = nonEmpty(p.style) || "auto"
   const style = ["auto", "transcript", "assistant", "bubbles"].includes(rawStyle) ? rawStyle : "auto"
@@ -86,4 +88,10 @@ export default function Component({ node, context }) {
       </div>
     </section>
   )
+}
+
+export default {
+  chat: Chat,
+  user: Turn,
+  ai: Turn,
 }

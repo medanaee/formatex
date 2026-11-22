@@ -889,3 +889,22 @@ it("renders hr, icon, img, ref, def, counter, digit, and citations via custom pa
     await expect(renderHtml({ ...input, children: [{ type: "component", name: tag, key: `bare-${tag}`, at }] }, { html: DEFAULT_HTML_OPTIONS })).rejects.toThrow(`No HTML implementation for <${tag}>`)
   }
 })
+
+it("supports tag-to-component dictionary exports in html.tsx alongside single default functions", async () => {
+  const input = document()
+  const at = { file: "main.md", line: 1, column: 1 }
+  input.children = [
+    {
+      type: "component", name: "card", key: "c1", at,
+      children: [{ type: "component", name: "card-head", key: "ch1", at, children: [{ type: "text", key: "t1", at, value: "Title" }] }],
+    },
+  ]
+  const html = await renderHtml(input, {
+    html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false },
+    components: {
+      card: `function Card({ node, context }) { return <section className="fx-card">{context.children(node)}</section> }\nfunction Head({ node, context }) { return <header className="fx-card-head">{context.children(node)}</header> }\nexport default { card: Card, "card-head": Head }`,
+      "card-head": `function Card({ node, context }) { return <section className="fx-card">{context.children(node)}</section> }\nfunction Head({ node, context }) { return <header className="fx-card-head">{context.children(node)}</header> }\nexport default { card: Card, "card-head": Head }`,
+    },
+  })
+  expect(html).toContain('<section class="fx-card"><header class="fx-card-head">Title</header></section>')
+})

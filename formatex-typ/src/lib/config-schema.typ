@@ -27,8 +27,8 @@
     "حالت کلی: گردی گوشه‌ها و فونت‌های پیش‌فرض. formal: گوشهٔ تیز و رسمی. standard: کمی گرد. friendly: بسیار گرد و صمیمی.",
   )),
   "components": (type: "string", doc: d(
-    "Your own components: component package folders of the project that define tags (a list [\"cards\", \"extras/stamps\"], or folder paths separated by commas; each folder has manifest.toml, schema.json, docs.json, typst.typ, html.tsx and html.css). A package can define any number of tags. In the front matter the folders are added to those of config.toml.",
-    "کامپوننت‌های خودتان: پوشه‌های بستهٔ کامپوننت در پروژه که تگ تعریف می‌کنند (فهرست [\"cards\", \"extras/stamps\"] یا مسیرهای پوشه جداشده با ویرگول؛ هر پوشه شامل manifest.toml، schema.json، docs.json، typst.typ، html.tsx و html.css است). هر بسته می‌تواند هر تعداد تگ تعریف کند. در front matter این پوشه‌ها به پوشه‌های config.toml افزوده می‌شوند.",
+    "Your own components: Typst files of the project that define tags (a list [\"notes.typ\", \"extras/stamps.typ\"], or paths separated by commas). A file can define any number of tags and its name does not matter. In the front matter the files are added to those of config.toml.",
+    "کامپوننت‌های خودتان: فایل‌های Typst پروژه که تگ تعریف می‌کنند (فهرست [\"notes.typ\", \"extras/stamps.typ\"] یا مسیرهای جداشده با ویرگول). یک فایل می‌تواند هر تعداد تگ تعریف کند و نامش مهم نیست. در front matter فایل‌ها به فایل‌های config.toml افزوده می‌شوند.",
   )),
   "vars": (type: "string", doc: d(
     "Values for the text, `name: value` lines: print one with {{ name }}, or use it in code: {{ if draft { \"Draft\" } else { \"Final\" } }}. The rules of a variable are in `var-types`.",

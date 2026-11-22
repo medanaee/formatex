@@ -87,7 +87,7 @@ const EN: Block[] = [
     min: "minimal",
     text: `## Building your own components
 
-A component is a **folder package**, not a standalone Typst file. Use one only when ordinary Markdown and existing tags cannot express the document. Shared packages contain exactly these six named files: \`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`.
+A component is a **folder package**. Use one only when ordinary Markdown and existing tags cannot express the document. Shared packages contain these six named files: \`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`.
 
 Declare project-relative **folder paths in Markdown front matter**:
 \`\`\`yaml
@@ -97,18 +97,18 @@ components:
 ---
 \`\`\`
 
-Tag names use lowercase letters, digits and \`-\`, beginning with a letter. Check existing schemas to avoid duplicate tags. Do not use old single-file component APIs or list \`notes.typ\` as a package.`,
+Tag names use lowercase letters, digits and \`-\`, beginning with a letter. Check existing schemas to avoid duplicate tags.`,
   },
   {
     min: "minimal",
     text: `### Shared contract and two implementations
 
 - \`manifest.toml\` names the package and references \`typ\`, \`html\`, \`css\`, \`schema\`, \`docs\` files. Use \`typ = "typst.typ"\` and \`html = "html.tsx"\`; \`typ = false\` or \`html = false\` declares an absent implementation.
-- \`schema.json\` owns tag kinds, properties, defaults, allowed values, domains and scoped-child rules. \`docs.json\` owns English/Persian Markdown descriptions and usage examples. Keep these data separate from both implementations; do not define inline Typst schema/docs or a second JSX schema.
-- \`typst.typ\` exports the package's \`<name>-tags\` handlers \`(attrs, body) => content\` for PDF; import \`/src/kit.typ\` and use its helpers. \`html.tsx\` exports a default React component receiving \`{ node, context }\`; render \`context.children(node)\` rather than parsing Markdown.
-- \`html.css\` contains component styles; Tailwind classes in TSX are compiled into the required static CSS. Do not use Typst \`-html\` / \`-css\` handlers as the independent HTML API.
+- \`schema.json\` owns tag kinds, properties, defaults, allowed values, domains and scoped-child rules. \`docs.json\` owns English/Persian Markdown descriptions and usage examples. Keep these data separate from both implementations.
+- \`typst.typ\` exports the package's \`<name>-tags\` dictionary \`(tag: (attrs, body) => content)\` for PDF; import \`/src/kit.typ\` and use its helpers. \`html.tsx\` exports either a default React component \`({ node, context }) => JSX\` (single-tag packages) or a tag-to-component dictionary \`export default { tagA: ComponentA, tagB: ComponentB }\` (preferred for multi-tag packages); render \`context.children(node)\` rather than parsing Markdown.
+- \`html.css\` contains component styles; Tailwind classes in TSX are compiled into the required static CSS.
 
-The common pipeline executes in Typst and invokes Rust/WASM pulldown-cmark once to build shared IR. Never add a JavaScript Markdown parser to a component.`,
+The common pipeline executes in Typst and invokes Rust/WASM pulldown-cmark once to build shared IR.`,
   },
   {
     min: "minimal",
@@ -150,7 +150,7 @@ Core owns common preparation/parser/IR/schema; the PDF backend owns layout. Do n
     min: "standard",
     text: `### HTML implementation
 
-\`html.tsx\` renders the shared IR node with \`{ node, context }\`. Use \`context.props(node)\` for resolved typed props and \`context.children(node)\` for structured children. It may use the allowed React/document runtime imports and public document UI surface, with Tailwind and \`html.css\`; it must not import app/Tauri/editor state or parse source Markdown.
+\`html.tsx\` renders the shared IR node with \`{ node, context }\`. Export a single default function for one tag (\`export default function Component({ node, context })\`) or, for multi-tag packages, export a tag-to-component dictionary (\`export default { tagA: ComponentA, tagB: ComponentB }\`). Use \`context.props(node)\` for resolved typed props and \`context.children(node)\` for structured children. It may use the allowed React/document runtime imports and public document UI surface, with Tailwind and \`html.css\`; it must not import app/Tauri/editor state or parse source Markdown.
 
 HTML owns reflow and displayed asset dimensions; Typst owns a requested drawing's interior. Preserve intrinsic dimensions and aspect ratio and avoid duplicate captions/SVG IDs. Use the existing context/asset service rather than starting a compiler process or reading arbitrary host files.
 
@@ -188,8 +188,8 @@ Check the totals.
 
 ### Mistakes to avoid
 
-- Listing a \`.typ\` file instead of the package folder, or using \`component.toml\` / \`typ.typ\` instead of the agreed filenames.
-- Keeping schema/docs in renderer code or teaching old Typst HTML handlers as the TSX implementation.
+- Omitting \`manifest.toml\` or mismatching the six package filenames (\`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`).
+- Duplicating schema/docs inside renderer code instead of keeping them in \`schema.json\` and \`docs.json\`.
 - Bare HTML-only props, root paged settings, invalid typed JSON defaults, or precedence based on source attribute order.
 - Hardcoded theme colors, rounded corners in formal mode, fixed-width overflow, duplicated captions or unmapped errors.
 - A second Markdown parser or repeated \`{{ }}\` execution; shipping private source/map/preview payloads in export.
@@ -202,7 +202,7 @@ const FA: Block[] = [
     min: "minimal",
     text: `## ساختن کامپوننت دلخواه
 
-کامپوننت یک **بستهٔ پوشه‌ای** است، نه فایل Typst مستقل. فقط وقتی بسازید که Markdown و تگ‌های موجود کافی نیستند. بستهٔ مشترک دقیقاً این شش نام فایل را دارد: \`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\` و \`html.css\`.
+کامپوننت یک **بستهٔ پوشه‌ای** است. فقط وقتی بسازید که Markdown و تگ‌های موجود کافی نیستند. هر بسته این شش فایل را دارد: \`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\` و \`html.css\`.
 
 **مسیر پوشهٔ نسبت به پروژه را در front matter فایل Markdown** معرفی کنید:
 \`\`\`yaml
@@ -212,18 +212,18 @@ components:
 ---
 \`\`\`
 
-نام تگ با حرف کوچک شروع می‌شود و حرف کوچک، رقم و \`-\` دارد. schema موجود را برای تگ تکراری بررسی کنید. API قدیمی تک‌فایل را به کار نبرید و \`notes.typ\` را به‌عنوان بسته معرفی نکنید.`,
+نام تگ با حرف کوچک شروع می‌شود و حرف کوچک، رقم و \`-\` دارد. schema موجود را برای تگ تکراری بررسی کنید.`,
   },
   {
     min: "minimal",
     text: `### قرارداد مشترک و دو پیاده‌سازی
 
 - \`manifest.toml\` نام بسته و فایل‌های \`typ\`، \`html\`، \`css\`، \`schema\` و \`docs\` را معرفی می‌کند. از \`typ = "typst.typ"\` و \`html = "html.tsx"\` استفاده کنید؛ \`typ = false\` یا \`html = false\` یعنی آن پیاده‌سازی وجود ندارد.
-- \`schema.json\` نوع تگ، ویژگی، پیش‌فرض، مقدار مجاز، حوزه و قاعدهٔ فرزند محدود به والد را دارد. \`docs.json\` توضیح Markdown و نمونهٔ فارسی/انگلیسی را نگه می‌دارد. این داده‌ها را از هر دو پیاده‌سازی جدا نگه دارید؛ schema/docs درون‌خطی Typst یا schema دومی در JSX نسازید.
-- \`typst.typ\` تابع‌های \`<name>-tags\` به‌شکل \`(attrs, body) => content\` برای PDF دارد؛ \`/src/kit.typ\` و کمک‌کننده‌هایش را به کار ببرید. \`html.tsx\` کامپوننت پیش‌فرض React با \`{ node, context }\` می‌دهد؛ \`context.children(node)\` را رندر کنید، نه اینکه Markdown را دوباره بخوانید.
-- \`html.css\` سبک کامپوننت است؛ کلاس‌های Tailwind در TSX به CSS ثابت لازم تبدیل می‌شوند. تابع‌های \`-html\` / \`-css\` قدیمی Typst، API موتور مستقل HTML نیستند.
+- \`schema.json\` نوع تگ، ویژگی، پیش‌فرض، مقدار مجاز، حوزه و قاعدهٔ فرزند محدود به والد را دارد. \`docs.json\` توضیح Markdown و نمونهٔ فارسی/انگلیسی را نگه می‌دارد. این داده‌ها را از هر دو پیاده‌سازی جدا نگه دارید.
+- \`typst.typ\` دیکشنری \`<name>-tags\` به‌شکل \`(tag: (attrs, body) => content)\` برای PDF دارد؛ \`/src/kit.typ\` و کمک‌کننده‌هایش را به کار ببرید. \`html.tsx\` یا یک کامپوننت پیش‌فرض React با \`{ node, context }\` می‌دهد (برای پکیج تک‌تگی) یا یک دیکشنری از نام تگ به کامپوننت \`export default { tagA: ComponentA, tagB: ComponentB }\` (روش تمیزتر و پیشنهادی برای پکیج‌های چندتگی)؛ \`context.children(node)\` را رندر کنید.
+- \`html.css\` سبک کامپوننت است؛ کلاس‌های Tailwind در TSX به CSS ثابت لازم تبدیل می‌شوند.
 
-خط لولهٔ مشترک در Typst اجرا می‌شود و پارسر Rust/WASM مبتنی بر pulldown-cmark را یک بار برای IR مشترک فراخوانی می‌کند. پارسر Markdown جاوااسکریپتی به کامپوننت اضافه نکنید.`,
+خط لولهٔ مشترک در Typst اجرا می‌شود و پارسر Rust/WASM مبتنی بر pulldown-cmark را یک بار برای IR مشترک فراخوانی می‌کند.`,
   },
   {
     min: "minimal",
@@ -265,7 +265,7 @@ manifest مرجع نام فایل و وجود پیاده‌سازی است. بس
     min: "standard",
     text: `### پیاده‌سازی HTML
 
-\`html.tsx\` گرهٔ IR مشترک را با \`{ node, context }\` رندر می‌کند. ویژگی حل‌شدهٔ نوع‌دار را با \`context.props(node)\` و فرزند ساختاری را با \`context.children(node)\` بگیرید. importهای مجاز React/زمان اجرای سند و UI عمومی، Tailwind و \`html.css\` قابل استفاده‌اند؛ import وضعیت اپ/Tauri/ویرایشگر یا پارس Markdown منبع مجاز نیست.
+\`html.tsx\` گرهٔ IR مشترک را با \`{ node, context }\` رندر می‌کند. برای پکیج تک‌تگی یک تابع پیش‌فرض (\`export default function Component({ node, context })\`) و برای پکیج‌های چندتگی یک دیکشنری از نام تگ به کامپوننت (\`export default { tagA: ComponentA, tagB: ComponentB }\`) خروجی دهید. ویژگی حل‌شدهٔ نوع‌دار را با \`context.props(node)\` و فرزند ساختاری را با \`context.children(node)\` بگیرید. importهای مجاز React/زمان اجرای سند و UI عمومی، Tailwind و \`html.css\` قابل استفاده‌اند؛ import وضعیت اپ/Tauri/ویرایشگر یا پارس Markdown منبع مجاز نیست.
 
 HTML مالک جریان متن و اندازهٔ نمایشی دارایی است و Typst مالک داخل رسم درخواستی. اندازه و نسبت ذاتی را نگه دارید و عنوان یا شناسهٔ SVG را دوباره نسازید. از سرویس بافت/دارایی موجود استفاده کنید، نه فرایند کامپایلر یا خواندن دلخواه فایل میزبان.
 
@@ -303,8 +303,8 @@ components:
 
 ### اشتباه‌هایی که باید از آن‌ها پرهیز کرد
 
-- معرفی فایل \`.typ\` به‌جای پوشهٔ بسته یا نام‌های قدیمی \`component.toml\` / \`typ.typ\` به‌جای نام‌های توافق‌شده.
-- schema/docs در کد رندرکننده یا معرفی تابع HTML قدیمی Typst به‌جای پیاده‌سازی TSX.
+- نبودن \`manifest.toml\` یا ناهماهنگی نام شش فایل بسته (\`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\`، \`html.css\`).
+- تکرار schema/docs درون کد رندرکننده به‌جای نگهداری در \`schema.json\` و \`docs.json\`.
 - ویژگی فقط HTML بدون پیشوند، تنظیم صفحه در ریشه، پیش‌فرض JSON با نوع غلط یا تقدم وابسته به ترتیب ویژگی‌ها.
 - رنگ ثابت، گوشهٔ گرد در حالت رسمی، پهنای بیرون‌زننده، عنوان تکراری یا خطای بدون منبع.
 - پارسر Markdown دوم یا اجرای دوبارهٔ \`{{ }}\`؛ فایل خصوصی منبع/نگاشت/IPC پیش‌نمایش در خروجی.

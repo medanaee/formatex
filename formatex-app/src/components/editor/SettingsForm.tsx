@@ -213,7 +213,7 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
               {offered.length === 0 && <DropdownMenuItem disabled>{t("config.noComponentFiles")}</DropdownMenuItem>}
               {offered.map((folder) => (
                 <DropdownMenuItem key={folder} onSelect={() => write([...(listed ?? []), folder])}>
-                  <FileIcon path={folder} kind="folder" size={16} />
+                  <FileIcon path={folder} kind="dir" size={16} />
                   <span dir="ltr" className="truncate">{folder}</span>
                 </DropdownMenuItem>
               ))}
@@ -234,7 +234,7 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
           const tags = tagsOf(clean)
           return (
             <div key={path} className="flex min-h-9 items-center gap-2 px-3 py-1">
-              {missing ? <FileWarning className="size-4 shrink-0 text-destructive" aria-label={t("config.componentMissing")} /> : <FileIcon path={clean} kind="folder" size={16} />}
+              {missing ? <FileWarning className="size-4 shrink-0 text-destructive" aria-label={t("config.componentMissing")} /> : <FileIcon path={clean} kind="dir" size={16} />}
               <div className="min-w-0 flex-1">
                 <div dir="ltr" className={cn("truncate font-mono text-xs", missing && "text-destructive")} title={missing ? t("config.componentMissing") : path}>
                   {path}
