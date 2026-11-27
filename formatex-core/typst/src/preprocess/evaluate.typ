@@ -1,5 +1,5 @@
 #import "/src/preprocess/protect.typ": blank, markup-only
-#import "/src/lib/vars.typ": check-vars, fail, rooted-path
+#import "/src/lib/vars.typ": check-vars, fail, resolve-path, rooted-path
 #import "/src/lib/expr.typ": check-name, deferred-comment, lint-enums, run-code, scan-expression, show-value, uses-dynamic
 
 // Sequential Typst execution with byte-precise origins for literal and generated pieces.
@@ -9,16 +9,7 @@
 #let typ-block-re = regex("<typ[\\s>][\\s\\S]*?</typ>")
 #let open-tag-re = regex("<[A-Za-z][^>]*$")
 
-#let resolve-include(path, from) = {
-  if not (path.starts-with("./") or path.starts-with("../")) { return path }
-  let parts = from.split("/").slice(0, -1)
-  for seg in path.split("/") {
-    if seg == "." or seg == "" { continue }
-    if seg == ".." { if parts.len() > 0 { parts = parts.slice(0, -1) } }
-    else { parts.push(seg) }
-  }
-  parts.join("/")
-}
+#let resolve-include(path, from) = resolve-path(path, from: from)
 
 #let evaluate-file(text, path, env, front-regex, chain, keep-front, includes: true, at-line: none) = {
   let place(line) = if at-line == none { "@" + path + ":" + str(line) + " " } else { at-line(line) }
@@ -86,8 +77,8 @@
     } else {
       check-name(scanned.code, state.env, at)
       lint-enums(scanned.code, state.env, at)
-      let (value, after) = run-code(scanned.code, state.env)
-      state.env += (values: check-vars(after, state.env, at))
+      let (value, after) = run-code(scanned.code, state.env, from: path)
+      state.env += (values: check-vars(after, state.env, at, from: path))
       shown = show-value(value, at: at)
     }
     let indent = state.lines.last()
@@ -139,7 +130,12 @@
 
 #let evaluate-string(text, env, at) = {
   if not text.contains("{{") { return text }
-  evaluate-file(text, "", env, none, (), false, includes: false, at-line: line => at).lines.join("\n")
+  let origin = if type(at) == str and at.starts-with("@") {
+    let body = at.slice(1).trim()
+    let parts = body.split(":")
+    if parts.len() > 1 { parts.slice(0, -1).join(":") } else { "" }
+  } else { "" }
+  evaluate-file(text, origin, env, none, (), false, includes: false, at-line: line => at).lines.join("\n")
 }
 
 #let resolve-strings(value, env, locate, path: ()) = {

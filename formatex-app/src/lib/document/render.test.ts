@@ -219,7 +219,7 @@ it("renders standard Markdown with PDF numbering, lists, tables, quotes and fenc
   expect(html).toContain("جدول ۱")
   expect(html).toContain(": داده‌ها")
   expect(html).toContain("Python")
-  expect(html).toContain("E = mc")
+  expect(html).toContain('class="katex-display"')
   expect(html).toContain("fx-code-highlight")
   expect(html).toContain('class="fx-math fx-display-math fx-eq-end" dir="ltr"')
   expect(html).toContain('class="fx-eq-number">(۱)</span>')
@@ -907,4 +907,87 @@ it("supports tag-to-component dictionary exports in html.tsx alongside single de
     },
   })
   expect(html).toContain('<section class="fx-card"><header class="fx-card-head">Title</header></section>')
+})
+
+it("renders KaTeX math in outline headings, resolves html.width, and embeds fixed viewer fonts", async () => {
+  const input = document()
+  const at = { file: "main.md", line: 1, column: 1 }
+  input.settings = { dir: "rtl", html: { width: "narrow" } }
+  input.children = [
+    {
+      type: "heading", key: "h1", depth: 1, at, props: { id: "s1" },
+      children: [{ type: "text", key: "t1", at, value: "حالت " }, { type: "inlineMath", key: "m1", at, value: "q_0" }],
+    },
+  ]
+  const html = await renderHtml(input, { html: DEFAULT_HTML_OPTIONS, uiLanguage: "fa" })
+  expect(html).toContain('data-width="narrow"')
+  expect(html).toContain('name="fx-fonts" content="Inter|IRANSansX|')
+  const shellMatch = html.match(/<script id="fx-shell-data" type="application\/json">([^<]+)<\/script>/)
+  expect(shellMatch).toBeTruthy()
+  const shellData = JSON.parse(shellMatch![1])
+  expect(shellData.width).toBe("narrow")
+  expect(shellData.headings[0].html).toContain('class="katex"')
+
+  await expect(renderHtml({
+    ...input,
+    settings: { html: { width: "wide" } },
+    children: [{ type: "component", name: "typ", key: "typ1", at }],
+  }, { html: DEFAULT_HTML_OPTIONS, typOnly: ["typ"], schemas: { typ: { kind: "block", attrs: {} } } }))
+    .rejects.toMatchObject({ requests: [{ kind: "graphic", key: "typ1", inline: false, widthPt: 834 }] })
+})
+
+it("resolves internal asset paths relative to each node's markdown file while keeping leading slash root-relative", async () => {
+  const input = document()
+  input.file = "docs/main.md"
+  const mainAt = { file: "docs/main.md", line: 1, column: 1 }
+  const incAt = { file: "docs/chapters/ch1.md", line: 3, column: 1 }
+  input.children = [
+    { type: "image", key: "i1", at: mainAt, url: "local.png", alt: "local" },
+    { type: "image", key: "i2", at: incAt, url: "fig.png", alt: "inc" },
+    { type: "image", key: "i3", at: incAt, url: "../shared.png", alt: "parent" },
+    { type: "image", key: "i4", at: incAt, url: "/images/root.svg", alt: "root" },
+  ]
+  const html = await renderHtml(input, {
+    html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false },
+    assets: {
+      "docs/local.png": "data:image/png;base64,LOCAL",
+      "docs/chapters/fig.png": "data:image/png;base64,INC",
+      "docs/shared.png": "data:image/png;base64,PARENT",
+      "images/root.svg": "data:image/svg+xml;base64,ROOT",
+    },
+  })
+  expect(html).toContain('src="data:image/png;base64,LOCAL"')
+  expect(html).toContain('src="data:image/png;base64,INC"')
+  expect(html).toContain('src="data:image/png;base64,PARENT"')
+  expect(html).toContain('src="data:image/svg+xml;base64,ROOT"')
+})
+
+it("applies per-column widths from table cols option as colgroup columns", async () => {
+  const input = document()
+  const at = { file: "main.md", line: 1, column: 1 }
+  input.children = [
+    {
+      type: "table", key: "t1", at, props: { cols: "20%, 50%, 30%" },
+      children: [
+        { type: "tableRow", key: "r0", at, children: [
+          { type: "tableCell", key: "c00", at, children: [{ type: "text", key: "x0", at, value: "A" }] },
+          { type: "tableCell", key: "c01", at, children: [{ type: "text", key: "x1", at, value: "B" }] },
+          { type: "tableCell", key: "c02", at, children: [{ type: "text", key: "x2", at, value: "C" }] },
+        ] },
+      ],
+    },
+    {
+      type: "table", key: "t2", at, props: { cols: "3cm, 1fr, 2fr" },
+      children: [
+        { type: "tableRow", key: "r1", at, children: [
+          { type: "tableCell", key: "c10", at, children: [{ type: "text", key: "y0", at, value: "A" }] },
+          { type: "tableCell", key: "c11", at, children: [{ type: "text", key: "y1", at, value: "B" }] },
+          { type: "tableCell", key: "c12", at, children: [{ type: "text", key: "y2", at, value: "C" }] },
+        ] },
+      ],
+    },
+  ]
+  const html = await renderHtml(input, { html: { ...DEFAULT_HTML_OPTIONS, toolbar: false, outline: false, progress: false } })
+  expect(html).toContain('<colgroup><col style="width:20%"/><col style="width:50%"/><col style="width:30%"/></colgroup>')
+  expect(html).toContain('<colgroup><col style="width:3cm"/><col style="width:calc((100% - 3cm) * 1 / 3)"/><col style="width:calc((100% - 3cm) * 2 / 3)"/></colgroup>')
 })

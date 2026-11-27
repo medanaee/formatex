@@ -92,7 +92,7 @@
     "exporting": "Exporting",
     "exported": "Saved",
     "exportFailed": "Export failed",
-    "exportHtml": "Export HTML (experimental)",
+    "exportHtml": "Export HTML",
     "sync": "Sync files from the internet",
     "synced": "Updated {{count}} file(s) from the internet",
     "syncFailed": "Sync failed",
@@ -128,7 +128,11 @@
     "version": "Version",
     "platform": "Platform",
     "formFactor": "Screen class",
-    "storage": "Storage"
+    "storage": "Storage",
+    "windowGlass": "Window glass effect",
+    "glassOff": "Off",
+    "glassMica": "Mica",
+    "glassAcrylic": "Acrylic"
   },
   "boot": {
     "storageFailed": "Formatex could not open its storage"
@@ -140,6 +144,7 @@
   "files": {
     "newFile": "New file",
     "newFolder": "New folder",
+    "newComponent": "New component",
     "upload": "Upload files",
     "rename": "Rename",
     "delete": "Delete",
@@ -148,6 +153,7 @@
     "name": "Name",
     "namePlaceholder": "notes.md",
     "folderPlaceholder": "images",
+    "componentPlaceholder": "my-component",
     "deleteConfirm": "Delete \"{{name}}\"?",
     "deleteFolderConfirm": "Delete \"{{name}}\" and everything in it?",
     "empty": "No files",

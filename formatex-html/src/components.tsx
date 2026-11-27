@@ -9,7 +9,7 @@ export interface RenderContext {
   assets: Record<string, string>
   asset(path: string, text?: boolean): string
   background(path: string): string
-  graphic(node: Node, options?: { bodyOnly?: boolean }): ReactNode
+  graphic(node: Node, options?: { bodyOnly?: boolean; inline?: boolean }): ReactNode
   numbers: Map<string, number>
   targets: Map<string, Node>
   language: "fa" | "en"

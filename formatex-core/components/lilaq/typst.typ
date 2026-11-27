@@ -12,7 +12,7 @@
 
 #let lilaq-tags = (
     lilaq: (attrs, body) => {
-      let code = if "src" in attrs { read(root-path(attrs.src)) } else {
+      let code = if "src" in attrs { read(root-path(attrs.src, attrs: attrs)) } else {
         let r = find-raw(body)
         if r != none { r.text }
       }

@@ -1,11 +1,12 @@
 import type { Range } from "@codemirror/state"
 import { Decoration, Direction, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view"
 import { frontMatterRange } from "./livePreview"
+import { mathRegions } from "./mathRegions"
 
 /**
  * In a right-to-left editor (forced, or a Persian line) the Latin markup between Persian words is reordered by the bidirectional
  * algorithm: the neutral characters at the edges of `<alert type="tip">` take the line's direction and end up on the wrong side. Those
- * pieces are marked as isolated left-to-right runs, so each reads as it is written: tags, `{...}` option blocks and inline code.
+ * pieces are marked as isolated left-to-right runs, so each reads as it is written: tags, `{...}` option blocks, inline code and equations.
  * The lines of the front matter are settings (`key: value`), not prose: they are left-to-right as a whole.
  */
 const PATTERNS = [
@@ -26,16 +27,32 @@ function build(view: EditorView): DecorationSet {
   const frontEnd = front ? front.end : -1
   if (front) for (let n = 1; n <= doc.lineAt(Math.min(frontEnd, doc.length)).number; n++) out.push(ltrLine.range(doc.line(n).from))
 
+  const maths = mathRegions(doc.toString()).filter((region) => region.from > frontEnd)
+  const insideMath = (from: number, to: number) => maths.some((region) => from >= region.from && to <= region.to)
   for (const { from, to } of view.visibleRanges) {
     const start = doc.lineAt(from).from
     const end = doc.lineAt(to).to
     const text = doc.sliceString(start, end)
+    const taken: [number, number][] = []
+    const overlaps = (from: number, to: number) => taken.some(([a, b]) => from < b && to > a)
     for (const pattern of PATTERNS) {
       pattern.lastIndex = 0
       for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
         const at = start + match.index
-        // The front matter is already left-to-right
-        if (at > frontEnd) out.push(isolate.range(at, at + match[0].length))
+        const endAt = at + match[0].length
+        // A `{1}` inside an equation belongs to the equation, not to an option block
+        if (at > frontEnd && !insideMath(at, endAt)) {
+          out.push(isolate.range(at, endAt))
+          taken.push([at, endAt])
+        }
+      }
+    }
+    for (const region of maths) {
+      const at = Math.max(region.from, start)
+      const endAt = Math.min(region.to, end)
+      if (endAt > at && !overlaps(at, endAt)) {
+        out.push(isolate.range(at, endAt))
+        taken.push([at, endAt])
       }
     }
   }

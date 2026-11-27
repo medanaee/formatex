@@ -10,7 +10,7 @@
         width: if relative-width { w } else { auto },
         radius: if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.image },
         image(
-          root-path(attrs.src),
+          root-path(attrs.src, attrs: attrs),
           alt: attrs.at("alt", default: none),
           width: if relative-width { 100% } else if w != none { w } else { auto },
           height: if h != none { h } else { auto },

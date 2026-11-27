@@ -2,13 +2,13 @@
 
 Code: [`src-tauri/src/fonts.rs`](../../src-tauri/src/fonts.rs), [`src/lib/files/fonts.ts`](../../src/lib/files/fonts.ts), [`FontsSettings.tsx`](../../src/components/settings/FontsSettings.tsx). Not to be confused with the *interface* fonts (Inter, Vazirmatn), which are bundled through `@fontsource`.
 
-The compiler needs the fonts a document names (`[font]` in `config.toml`; the engine's `formal`, `standard` and `friendly` feels use New Computer Modern / XB Niloofar, Inter / IRANSans and Lexend / Pelak).
+The compiler needs the fonts a document names (`[font]` in `config.toml`; the engine's `formal`, `standard` and `friendly` feels use New Computer Modern / XB Niloofar with `Anonymous Pro` for code, Inter / IRANSans with `Vazir Code` for code, and Lexend / Pelak with `Vazir Code` for code). Persian text inside inline code and code blocks automatically falls back to `Vazir Code` in all feels, including `formal` and custom `[font] code` overrides.
 
 ## Where fonts come from (in this priority)
 
 1. **Imported fonts**: `.ttf`, `.otf`, `.ttc` files the user adds in **Settings → Fonts**, stored in `$APPDATA/fonts`.
 2. **System fonts**: scanned on **Windows, macOS and Linux** (fontdb, plus Adobe fonts on Windows and macOS). On Android the system folder `/system/fonts` is scanned as a fallback.
-3. **Bundled fonts**: `formatex-app/fonts/`, compiled into the app (`include_dir!`), so a document looks right with nothing installed, Android included: Vazirmatn, Lexend, Pelak, IRANSansX, XB Niloofar, Anonymous Pro and the Font Awesome 7 Pro (solid, regular) and Brands icon fonts, in the weights the engine uses (about 9 MB). Add a file there to bundle another; mind its licence (Font Awesome Pro and the Persian fonts are not all free to redistribute).
+3. **Bundled fonts**: `formatex-app/fonts/`, compiled into the app (`include_dir!`), so a document looks right with nothing installed, Android included: Vazirmatn, Lexend, Pelak, IRANSansX, XB Niloofar, Anonymous Pro, **Vazir Code** (`formatex-app/fonts/Vazir-Code.ttf`, used for both PDF/Typst and HTML export/preview), and the Font Awesome 7 Pro (solid, regular) and Brands icon fonts, in the weights the engine uses (about 9 MB). Add a file there to bundle another; mind its licence (Font Awesome Pro and the Persian fonts are not all free to redistribute).
 4. **Built-in fonts**: the few Typst embeds (Libertinus Serif, New Computer Modern, DejaVu Sans Mono).
 
 An imported font wins over a system font of the same name, so a user can override it.
@@ -25,7 +25,7 @@ The same section in the centered settings column; the family list scrolls inside
 
 ## The editor's own font
 
-The text editor uses a monospace Latin font and falls back to **Vazir Code** for Persian and any glyph that font lacks (see [editor](editor.md)). It is bundled with the app (`src/assets/fonts/Vazir-Code.woff2`, public domain licence next to it), unlike the document fonts above, which the user provides.
+The text editor uses a monospace Latin font and falls back to **Vazir Code** for Persian and any glyph that font lacks (see [editor](editor.md)). It is bundled with the app (`src/assets/fonts/Vazir-Code.woff2`, public domain licence next to it); `formatex-app/fonts/Vazir-Code.ttf` is also bundled as a document font so PDF and HTML code blocks/inline code get `Vazir Code` automatically without installing it on the system.
 
 ## Licensing
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
-import { compareEntries, fileKindOf, isTextKind, type FsEntry, nameProblem } from "./paths"
+import { compareEntries, fileKindOf, isTextKind, type FsEntry, nameProblem, relativePath } from "./paths"
 
 describe("code files", () => {
   it("are shown as text, whatever the language", () => {
@@ -50,6 +50,16 @@ describe("names a project may use", () => {
     // The other rules hold in both
     expect(nameProblem("bad:name", "", none, true)).toBe("invalid")
     expect(nameProblem("a.typ", "", new Set(["a.typ"]), true)).toBe("exists")
+  })
+})
+
+describe("relativePath", () => {
+  it("computes paths relative to the active markdown file", () => {
+    expect(relativePath("main.md", "images/fig.png")).toBe("images/fig.png")
+    expect(relativePath("docs/guide.md", "docs/fig.png")).toBe("fig.png")
+    expect(relativePath("docs/guide.md", "docs/assets/fig.png")).toBe("assets/fig.png")
+    expect(relativePath("docs/guide.md", "images/logo.svg")).toBe("../images/logo.svg")
+    expect(relativePath("docs/ch1/sec1.md", "docs/ch2/img.png")).toBe("../ch2/img.png")
   })
 })
 

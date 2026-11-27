@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Formatex",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "identifier": "com.formatex.org",
   "build": {
     "frontendDist": "../dist",
@@ -20,6 +20,7 @@
         "center": true,
         "resizable": true,
         "decorations": false,
+        "transparent": true,
         "dragDropEnabled": false,
         "fullscreen": false
       }

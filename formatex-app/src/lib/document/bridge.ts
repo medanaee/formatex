@@ -65,7 +65,7 @@ export async function independentHtml(invoke: NativeInvoke, projectId: string, m
           } else {
             const node = { ...request.node, props: { ...request.node.props } }
             if (request.bodyOnly) { delete node.props.caption; delete node.props.id; node.children = node.children?.filter(child => child.name !== "caption") }
-            try { assets[request.key] = await invoke<string>("render_document_graphic", { projectId, main, node, inline: request.inline, overrides }) }
+            try { assets[request.key] = await invoke<string>("render_document_graphic", { projectId, main, node, inline: request.inline, widthPt: request.widthPt, overrides }) }
             catch (error) { throw new DocumentCompileError([{severity:"error",message:String(error),path:node.at.file,line:node.at.line,column:node.at.column,hints:[]}]) }
           }
         }

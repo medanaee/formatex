@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Switch } from "@/components/ui/switch"
 import { localized, type AttrSpec, type ConfigSchema } from "@/lib/editor/schema"
 import { normalizeComponentFolder, projectComponentFolders, readComponentList, writeComponentList } from "@/lib/editor/componentList"
-import type { SettingsFormat } from "@/lib/editor/settingsFormat"
+import { YAML_FORMAT, type SettingsFormat } from "@/lib/editor/settingsFormat"
 import { overrideFor, type FrontMatterEntry } from "@/lib/editor/overrides"
 import { BUILTIN_THEMES, type ThemeColor } from "@/lib/editor/themes"
+import { relativePath } from "@/lib/projects/paths"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useSchemaStore } from "@/stores/useSchemaStore"
@@ -260,10 +261,15 @@ function ComponentsSection({ text, onChange, format, files, doc, flat }: Compone
 export function SettingsForm({ text, onChange, config, format, extraThemes, overrides, search = true, defaultClosed, stacked = false, side = false, flat = false, className }: SettingsFormProps) {
   const { t, i18n } = useTranslation()
   const entries = useEditorStore((state) => state.files)
+  const activePath = useEditorStore((state) => state.activePath)
   const [query, setQuery] = useState("")
   const [closed, setClosed] = useState<ReadonlySet<string>>(() => new Set(defaultClosed))
   const [openOverrides, setOpenOverrides] = useState<ReadonlySet<string>>(() => new Set())
-  const files = useMemo(() => entries.filter((entry) => entry.kind === "file").map((entry) => entry.path), [entries])
+  const projectFiles = useMemo(() => entries.filter((entry) => entry.kind === "file").map((entry) => entry.path), [entries])
+  const files = useMemo(
+    () => (format === YAML_FORMAT && activePath ? projectFiles.map((file) => relativePath(activePath, file)) : projectFiles),
+    [projectFiles, format, activePath],
+  )
 
   const needle = query.trim().toLowerCase()
   const matches = (name: string, spec: AttrSpec) => needle === "" || name.toLowerCase().includes(needle) || localized(spec.doc, i18n.language).toLowerCase().includes(needle)

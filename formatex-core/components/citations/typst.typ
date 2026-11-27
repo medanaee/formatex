@@ -27,8 +27,15 @@
         let cd = if d == "auto" { text-dir(c.body) } else { none }
         if cd == none { c } else { set text(dir: cd); c }
       }
+      let bib-file = if "file" in attrs {
+        root-path(attrs.file, attrs: attrs)
+      } else if cfg.at("file", default: none) != none {
+        root-path(cfg.at("file"), from: source-path)
+      } else {
+        "/examples/references.bib"
+      }
       bibliography(
-        root-path(setting("file", "examples/references.bib")),
+        bib-file,
         style: setting("style", "ieee"),
         title: setting("title", "منابع"),
       )

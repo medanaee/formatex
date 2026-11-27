@@ -53,6 +53,7 @@ pub fn run() {
       components::engine_schema,
       components::project_schema,
       components::themes_set,
+      window_set_glass,
     ]);
 
   // Desktop-only commands and state are added to `builder` the same way, behind `#[cfg(desktop)]`
@@ -83,6 +84,29 @@ pub fn run() {
         end_soon();
       }
     });
+}
+
+#[tauri::command]
+fn window_set_glass(window: tauri::WebviewWindow, mode: String, dark: bool) -> Result<(), String> {
+  #[cfg(target_os = "windows")]
+  {
+    use tauri::window::{Color, Effect, EffectsBuilder};
+    let _ = window.set_theme(Some(if dark { tauri::Theme::Dark } else { tauri::Theme::Light }));
+    let effects = match mode.as_str() {
+      "mica" => Some(EffectsBuilder::new().effects([Effect::Mica]).build()),
+      "acrylic" => {
+        let tint = if dark { Color(24, 24, 28, 125) } else { Color(250, 250, 252, 145) };
+        Some(EffectsBuilder::new().effects([Effect::Acrylic]).color(tint).build())
+      }
+      _ => None,
+    };
+    window.set_effects(effects).map_err(|e| e.to_string())?;
+  }
+  #[cfg(not(target_os = "windows"))]
+  {
+    let _ = (window, mode, dark);
+  }
+  Ok(())
 }
 
 /// Ends the process after a short grace. Folders that are watched are let go of first (a watcher is a handle on a folder with a read waiting on

@@ -1,9 +1,9 @@
 {
   "en": {
-    "about": "An image from a project file (`src`), with `alt`, `width`, `height` and `radius`. Use it on its own or inside `<fig>` to give it a caption and a number.\n\n- `src` is a path from the project root (an `images/` folder is the habit); SVG and raster images work. `alt` is the description, `width` / `height` are lengths or percentages, `radius` rounds the corners (default: the feel's).\n- Inside `<fig>` the image takes `align`, `ratio` and a caption."
+    "about": "An image from a project file (`src`), with `alt`, `width`, `height` and `radius`. Use it on its own or inside `<fig>` to give it a caption and a number.\n\n- `src` is a path relative to the current `.md` file (start with `/` for the project root; an `images/` folder is the habit); SVG and raster images work. `alt` is the description, `width` / `height` are lengths or percentages, `radius` rounds the corners (default: the feel's).\n- Inside `<fig>` the image takes `align`, `ratio` and a caption."
   },
   "fa": {
-    "about": "یک تصویر از فایل‌های پروژه (`src`) با `alt`، `width`، `height` و `radius`. تنها یا داخل `<fig>` به کار می‌رود تا عنوان و شماره بگیرد.\n\n- `src` مسیری از ریشهٔ پروژه است (معمولاً پوشهٔ `images/`)؛ SVG و تصویرهای نقطه‌ای کار می‌کنند. `alt` توضیح تصویر است، `width` / `height` طول یا درصدند و `radius` گوشه‌ها را گرد می‌کند (پیش‌فرض: مقدار حالت).\n- داخل `<fig>` تصویر `align`، `ratio` و عنوان می‌گیرد."
+    "about": "یک تصویر از فایل‌های پروژه (`src`) با `alt`، `width`، `height` و `radius`. تنها یا داخل `<fig>` به کار می‌رود تا عنوان و شماره بگیرد.\n\n- `src` مسیری نسبت به پوشهٔ فایل `.md` جاری است (برای ریشهٔ پروژه با `/` شروع کنید؛ معمولاً پوشهٔ `images/`)؛ SVG و تصویرهای نقطه‌ای کار می‌کنند. `alt` توضیح تصویر است، `width` / `height` طول یا درصدند و `radius` گوشه‌ها را گرد می‌کند (پیش‌فرض: مقدار حالت).\n- داخل `<fig>` تصویر `align`، `ratio` و عنوان می‌گیرد."
   },
   "example": {
     "en": "<img src=\"images/ocean.svg\" alt=\"Ocean\" width=\"60%\" radius=\"8\">",

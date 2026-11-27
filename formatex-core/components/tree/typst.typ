@@ -68,7 +68,7 @@
     radius: feel.code,
     inset: (x: 10pt * zoom, y: 7pt * zoom),
     {
-      set text(dir: ltr, size: 8.5pt * zoom, font: (code-font, persian-font), tracking: 0pt)
+      set text(dir: ltr, size: 8.5pt * zoom, font: (code-font, code-persian-font, persian-font), tracking: 0pt)
       set align(left)
       set par(justify: false)
       let unit = 1.7em
@@ -129,7 +129,7 @@
 
 #let tree-tags = (
     tree: (attrs, body) => {
-      let source = if "src" in attrs { read(root-path(attrs.src)) } else {
+      let source = if "src" in attrs { read(root-path(attrs.src, attrs: attrs)) } else {
         let r = find-raw(body)
         assert(r != none, message: at-of(attrs) + "<tree> needs a fenced code block with one file or folder per line, or src=\"file\"")
         r.text

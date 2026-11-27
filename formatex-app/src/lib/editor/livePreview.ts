@@ -3,7 +3,10 @@ import { ensureSyntaxTree } from "@codemirror/language"
 import { Facet, StateField, type EditorState, type Range } from "@codemirror/state"
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view"
 import katex from "katex"
+import { renderToString } from "typlet"
+import "typlet/fonts/typlet.css"
 import { maskCode } from "./completion"
+import { mathRegions } from "./mathRegions"
 import { parseTable } from "./markdownTable"
 import type { Schema } from "./schema"
 import { EditableTableWidget, tableEditorTheme, type TableWidgetHooks } from "./tableEditor"
@@ -15,6 +18,7 @@ import { expandBare, parseOpenTag, parseOptions, type Attrs } from "./tagSyntax"
  * decorates it. A line you are not on is drawn like the result (headings sized, `**bold**` without the stars, math typeset by
  * KaTeX, tables as tables, tags as chips and tinted blocks); the line the cursor is on shows its source. A gear on a tag, a
  * heading or a table opens the settings popover (`OptionsPopover`), built from the engine's schema.
+ * LaTeX (`$`, `$$`) is drawn with KaTeX; Typst math (`%`, `%%`) is drawn with Typlet.
  */
 
 export type ConfigureRequest =
@@ -254,6 +258,13 @@ function cellHtml(text: string): string {
         return `$${tex}$`
       }
     })
+    .replace(/(?<![\p{L}\p{N}\\])%(?![\s%])([^\n%]*?)(?<![\s\\])%/gu, (_, src: string) => {
+      try {
+        return renderToString(src.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"), { throwOnError: false, strict: "ignore" })
+      } catch {
+        return `%${src}%`
+      }
+    })
 }
 
 /** What the editable table needs from this file: the typeset cell, the options gear and the way to the source. */
@@ -294,24 +305,29 @@ class MathWidget extends WidgetType {
   readonly tex: string
   readonly display: boolean
   readonly raw: string
+  readonly kind: "latex" | "typst"
   /** A display equation that stands alone has a gear (or the chip of its `{...}`). */
   readonly options?: EquationOptions
-  constructor(tex: string, display: boolean, raw: string, options?: EquationOptions) {
+  constructor(tex: string, display: boolean, raw: string, options?: EquationOptions, kind: "latex" | "typst" = "latex") {
     super()
     this.tex = tex
     this.display = display
     this.raw = raw
     this.options = options
+    this.kind = kind
   }
   eq(other: MathWidget) {
-    return other.raw === this.raw && other.options?.raw === this.options?.raw
+    return other.raw === this.raw && other.kind === this.kind && other.options?.raw === this.options?.raw
   }
   toDOM(view: EditorView) {
     const el = document.createElement(this.display ? "div" : "span")
     el.className = this.display ? "cm-lp-math cm-lp-math-block" : "cm-lp-math"
+    el.dir = "ltr"
     const math = document.createElement("span")
     try {
-      math.innerHTML = katex.renderToString(this.tex, { displayMode: this.display, throwOnError: false })
+      math.innerHTML = this.kind === "typst"
+        ? renderToString(this.tex, { displayMode: this.display, throwOnError: false, strict: "ignore" })
+        : katex.renderToString(this.tex, { displayMode: this.display, throwOnError: false })
     } catch {
       math.textContent = this.raw
     }
@@ -515,16 +531,22 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
     out.push(Decoration.line({ class: cls, attributes: { style: `--lp-depth:${depth}` } }).range(line.from))
   }
 
-  // Math, typeset with KaTeX (the engine reads the same LaTeX)
-  const mathRanges: [number, number][] = []
-  for (const match of masked.matchAll(/\$\$([\s\S]+?)\$\$/g)) {
-    const from = match.index
-    const to = from + match[0].length
-    mathRanges.push([from, to])
+  // Math: KaTeX for `$` / `$$`, Typlet for `%` / `%%`. An equation still being typed stays source.
+  for (const region of mathRegions(text)) {
+    if (!region.closed) continue
+    const from = region.from
+    const to = region.to
     if (overlaps(from, to) || touches(from, to)) continue
+    const raw = text.slice(from, to)
+    const source = text.slice(region.innerFrom, region.innerTo)
+    if (!region.display) {
+      out.push(Decoration.replace({ widget: new MathWidget(source, false, raw, undefined, region.kind) }).range(from, to))
+      take(from, to)
+      continue
+    }
     const lineStart = doc.lineAt(from).from
     const lineEnd = doc.lineAt(to).to
-    // `$$ ... $$ {#id}`: the options after the closing `$$` on its line, or alone on the next line
+    // `$$ ... $$ {#id}` or `%% ... %% {#id}`: the options after the closing delimiter on its line, or alone on the next line
     const sameLine = /^(\s*)(\{[^{}]*\})\s*$/.exec(text.slice(to, lineEnd))
     const nextLine = !sameLine && text.slice(to, lineEnd).trim() === "" && doc.lineAt(lineEnd).number < doc.lines ? doc.line(doc.lineAt(lineEnd).number + 1) : null
     const nextOptions = nextLine ? /^\s*(\{[^{}]*\})\s*$/.exec(nextLine.text) : null
@@ -532,15 +554,8 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
     const optionsText = sameLine ? sameLine[2] : nextOptions ? nextOptions[1] : ""
     const rangeEnd = alone ? (nextOptions && nextLine ? nextLine.to : lineEnd) : to
     const options = alone ? { from: to, to: rangeEnd, raw: optionsText, attrs: optionsText ? parseOptions(optionsText.slice(1, -1)) : [] } : undefined
-    out.push(Decoration.replace({ widget: new MathWidget(match[1].trim(), true, match[0], options), block: alone }).range(alone ? lineStart : from, alone ? rangeEnd : to))
+    out.push(Decoration.replace({ widget: new MathWidget(source.trim(), true, raw, options, region.kind), block: alone }).range(alone ? lineStart : from, alone ? rangeEnd : to))
     take(alone ? lineStart : from, alone ? rangeEnd : to)
-  }
-  for (const match of masked.matchAll(/(?<![\\$])\$(?![\s$])([^$\n]+?)(?<![\s\\])\$(?!\$)/g)) {
-    const from = match.index
-    const to = from + match[0].length
-    if (mathRanges.some(([a, b]) => from >= a && to <= b) || overlaps(from, to) || touches(from, to)) continue
-    out.push(Decoration.replace({ widget: new MathWidget(match[1], false, match[0]) }).range(from, to))
-    take(from, to)
   }
 
   // Markdown: headings, emphasis, links, lists, quotes, code
@@ -589,12 +604,24 @@ function buildUnsafe(state: EditorState, schema: Schema): DecorationSet {
         out.push(Decoration.replace({ widget: new BulletWidget() }).range(from, to))
       } else if (name === "Paragraph" && node.node.parent?.name === "Document" && !lineTouched(from)) {
         // Body text: a gear (on hover) wraps it in a <p>. Not what is no paragraph of the text: a tag or an option line, a list written
-        // with Persian digits, a `{{ }}`, an equation
+        // with Persian digits, a `{{ }}`, an equation. Stop before any standalone tag line (e.g. `</box>` with no blank line above it)
+        // so wrapping never crosses an enclosing component's closing tag.
         const first = doc.lineAt(from)
         const before = text.slice(0, from)
         const insideP = before.lastIndexOf("<p") > before.lastIndexOf("</p>") && /^<p[\s>]/.test(before.slice(before.lastIndexOf("<p")))
-        const special = /^\s*(?:[{<]|\$\$|[۰-۹٠-٩]+[.)]\s)/.test(first.text)
-        if (!insideP && !special && !overlaps(first.to, first.to)) out.push(Decoration.widget({ widget: new ParagraphOptionsWidget(from - first.from, to - from), side: 1 }).range(first.to))
+        const special = /^\s*(?:[{<]|\$\$|%%|[۰-۹٠-٩]+[.)]\s)/.test(first.text)
+        let wrapTo = to
+        const endLine = doc.lineAt(to).number
+        for (let n = first.number; n <= endLine; n++) {
+          const line = doc.line(n)
+          if (/^\s*<\/?[A-Za-z][\w-]*(?:\s[^>]*)?\/?>\s*$/.test(line.text)) {
+            wrapTo = n > first.number ? doc.line(n - 1).to : from
+            break
+          }
+        }
+        if (!insideP && !special && wrapTo > from && !overlaps(first.to, first.to)) {
+          out.push(Decoration.widget({ widget: new ParagraphOptionsWidget(from - first.from, wrapTo - from), side: 1 }).range(first.to))
+        }
       } else if (name === "Blockquote") {
         for (let n = doc.lineAt(from).number; n <= doc.lineAt(to).number; n++) out.push(Decoration.line({ class: "cm-lp-quote" }).range(doc.line(n).from))
       } else if (name === "QuoteMark" && !lineTouched(from)) {
@@ -718,6 +745,8 @@ const liveTheme = EditorView.theme({
   ".cm-line:hover .cm-lp-opts-empty, .cm-line:hover .cm-lp-opts-hover": { opacity: "1" },
 
 
-  ".cm-lp-math": { cursor: "text" },
+  ".cm-lp-math": { cursor: "text", direction: "ltr", unicodeBidi: "isolate" },
+  ".cm-lp-math .typlet": { fontSize: "1.21em" },
+  ".cm-lp-math .typlet-display": { margin: "0" },
   ".cm-lp-math-block": { textAlign: "center", padding: "6px 0" },
 })

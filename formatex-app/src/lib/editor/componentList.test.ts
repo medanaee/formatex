@@ -11,8 +11,12 @@ describe("the components setting", () => {
     expect(readComponentList(undefined)).toEqual([])
   })
 
-  it("does not touch a list it cannot rewrite", () => {
-    expect(readComponentList(TOML_FORMAT.get('components = [\n  "cards",\n]\n', "", "components"))).toBeNull()
+  it("reads and rewrites multi-line TOML arrays cleanly, and ignores non-list values", () => {
+    const multi = 'components = [\n  "cards",\n  "pkg/callout",\n]\ntheme = "paper"\n'
+    expect(readComponentList(TOML_FORMAT.get(multi, "", "components"))).toEqual(["cards", "pkg/callout"])
+    const updated = TOML_FORMAT.set(multi, "", "components", writeComponentList(["cards"], TOML_FORMAT.string))
+    expect(updated).toBe('components = ["cards"]\ntheme = "paper"\n')
+    expect(readComponentList(TOML_FORMAT.get('components = ["cards"\n', "", "components"))).toBeNull()
   })
 
   it("writes the list the way the file's format quotes a string, and the file reads it back", () => {

@@ -15,7 +15,7 @@
     // or the same attributes around a fenced code block.
     code: (attrs, body) => {
       let (source, lang) = if "src" in attrs {
-        (read(root-path(attrs.src)), attrs.at("lang", default: attrs.src.split(".").last()))
+        (read(root-path(attrs.src, attrs: attrs)), attrs.at("lang", default: attrs.src.split(".").last()))
       } else {
         let r = find-raw(body)
         assert(r != none, message: at-of(attrs) + "<code> needs src=\"file\" or a fenced code block inside it")

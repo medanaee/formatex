@@ -22,20 +22,21 @@ Files in this skill:
 
 ## What the template gives you
 
-- Standard Markdown: headings, bold, italic, lists, quotes, links, inline code, fenced code blocks, tables, `---` rules, LaTeX math (`$...$`, `$$...$$`).
+- Standard Markdown: headings, bold, italic, lists, quotes, links, inline code, fenced code blocks, tables, `---` rules, LaTeX math (`$...$`, `$$...$$`) and Typst math (`%...%`, `%%...%%`).
 - PDF preview clicks on a horizontal rule reveal its own `---` source line, and list word clicks preserve their source offsets after the first word. Preview-only mapping needs no extra author markup.
-- Lists with Persian digits (`۱.`), Persian words, abjad / alphabet letters or Roman numerals, set for every list in `[list]` or for one list with a `{...}` line; a list can get a numbered caption («فهرست ۱») and be referenced.
+- Lists with Persian digits (`۱.`), Persian words, abjad / alphabet letters or Roman numerals, set for every list in `[list]` or for one list with a `{...}` line; a list can get a numbered caption («فهرست ۱») and be referenced. Task lists (`[ ]` / `[x]` / `[X]` or `- [ ]` / `- [x]`) support arbitrary nesting, optional progress bars, feel-matched vector checkboxes in PDF, and interactive animated checkboxes in HTML.
 - Mermaid diagrams: a ` ```mermaid ` fenced block is drawn as a diagram in the theme's colors.
 - Automatic text direction: Persian is right-to-left, English left-to-right, per paragraph. A `dir` setting or a `<dir>` tag can force one direction instead.
 - Automatic numbering of headings, figures, tables, captioned lists, equations, code listings and theorems, in Persian or Latin digits to match the text.
 - HTML-like components for figures, drawings, file trees, charts, callouts, boxes, layout, steps, conversations with an AI assistant, code listings, citations, references and theorem blocks.
 - A page header, footer and bibliography configured in front matter, and a standalone `<cover>` block placed in the body.
 - Experimental HTML output uses the same document. Its controls can use `--input html-ui-lang=fa|en` independently of the document's language and direction; the app supplies its interface language. See [config.md](config.md#html-output-language).
-- HTML math supports `[html] math = "native"` (default) or `"katex"`. KaTeX's compressed renderer, CSS and fonts are embedded offline only when formulas need them; no CDN is required. Charts and drawings may retain Typst SVG output.
+- HTML math supports `[html] math = "katex"` (default) or `"native"`, and reading width supports `[html] width = "standard"` (default; `"narrow"`, `"standard"`, `"wide"`). KaTeX's rendered HTML, CSS and fonts are embedded offline only when formulas need them; no CDN is required. Charts and drawings may retain Typst SVG output.
 - Live HTML preview in the app reuses compilation/font data and updates its existing page when possible. Author the same Markdown, tags and settings for preview and export; standalone export still embeds font subsets when enabled.
 - Native HTML honors merged document direction, paragraph spacing/justification, table row alignment, heading look relative to the top outlined heading, and global/local list numbering and markers. List guide drawings remain PDF-only. See [config.md](config.md#html-output-language).
 - Text and structural tags use native HTML with their existing attributes, including cover, docheader, paragraph, letter, tree, exercise/answers, todos, layout, chat, comparison, diff, definitions and progress. Code retains line numbers and highlighted rows. Charts, CeTZ, Lilaq and arbitrary Typst drawings may remain SVG graphics.
 - With the HTML toolbar on, its magnifier and Ctrl / Cmd + F open the viewer's literal, case-insensitive Find panel (previous/next and localized count, including on phones). It searches rendered document text, separately from source-editor find/replace.
+- `[html] magnifier = true` (default) adds a magnifying glass (loupe) toggle button to the HTML viewer toolbar (`Shift`/`Alt` + mouse wheel adjusts lens zoom, `Esc` closes); set `false` to hide it.
 
 ## Workflow
 
@@ -110,6 +111,7 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
 - Lengths: a bare number means points (`"12"`); `pt`, `mm`, `cm`, `in`, `em` work, `%` where noted.
 - Colors: a preset name (`purple`, `blue`, `teal`, `green`, `yellow`, `red`, `pink`) or a hex string (`"#e0efff"`). Prefer presets: they adapt to every theme.
 - Tags nest: a `<fig>` inside an `<item>`, a `<box>` inside a `<grid>`, an `<alert>` inside a `<step>`.
+- Unknown HTML/XML tags (such as `<details>`, `<summary>`, `<b>`, etc., not registered in the component schema) are ignored gracefully rather than causing an error, and their inner Markdown/text renders normally.
 
 ### Ids and references
 
@@ -130,6 +132,7 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
   ```
 
   Options: `numbers`, `prefix`, `suffix`, `marker`, `indent`, `start=N` (numbered lists only), `caption="..."`, `#id`. With `caption` or `#id` the list is numbered «فهرست ۱» / "List 1" and `<ref>` can point at it. Details in [components.md](components.md#lists).
+- **Task lists:** write bare `[ ] task`, `[x] task`, `[X] task` (no leading `- ` required) or standard `- [ ]` / `- [x]`, indented with `Tab` or spaces for nested subtasks. A `{...}` line above supports standard list options (`guides`, `caption`, `numbering`, `caption-position`, `indent`, `#id`) plus `color` (preset, `accent`, or hex), `strike=true|false` (default `true`, strikes/mutes completed labels without striking nested subtasks), `editable=true|false` (default `true`, interactive HTML toggling), and `progress=false|true` (default `false`, progress bar + counter). Details in [components.md](components.md#lists).
 
 ### Tables
 
@@ -143,14 +146,15 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
   | الف | ۹۵٪ |
   ```
 
-  Options: `width=auto|full`, `align=center|left|right|start|end`, `caption="..."`, `#id`, `span=column|all`, `head-align` / `body-align` = `center|left|right|start|end` (header row / other rows; override the `:---` colons). Details in [components.md](components.md#tables).
+  Options: `width=auto|full`, `cols="..."` (comma-separated per-column widths: `auto`, `%`, `fr` or plain positive numbers, `pt`/`mm`/`cm`/`in`/`em`/`px`; `%`/`fr`/numbers auto-expand to full width), `align=center|left|right|start|end`, `caption="..."`, `#id`, `span=column|all`, `head-align` / `body-align` = `center|left|right|start|end` (header row / other rows; override the `:---` colons). Details in [components.md](components.md#tables).
 - In a two-column document, add `span=all` to tables too wide for one column. The same `span="all"` attribute works on `<fig>`, `<img>`, `<grid>`, `<code>`, `<tree>` and `<chart>` (wide figures, side-by-side figures, long code lines).
 - Inside table cells: no literal `|` (use `\mid` in math), and for fractions write `$\displaystyle\frac{a}{b}$`.
 
 ### Math
 
 - LaTeX syntax: inline `$a^2+b^2$`, display `$$ ... $$` on its own lines.
-- Number a display equation by ending its closing line with `{#id}`: `$$E = mc^2$$ {#eq-energy}` or a multi-line block ending with `$$ {#eq-x}`. `{#id}` may also stand alone on the line right after the closing `$$`.
+- Typst syntax: inline `%x^2+y^2%` (the formula touches both percent signs; `50%` and `% x %` stay text, and percent-encoded `%` inside URLs or Markdown link destinations like `%28...%29` is never treated as math) and display `%% ... %%` (spaces and line breaks inside are fine).
+- Number a display equation by ending its closing line with `{#id}`: `$$E = mc^2$$ {#eq-energy}` or `%% E = m c^2 %% {#eq-energy}`. `{#id}` may also stand alone on the line right after the closing `$$` or `%%`.
 - Common LaTeX works: `\frac`, `\sum`, `\int`, `\overset`, `\xrightarrow`, `\begin{cases}`, `\begin{array}{c}`, `\mathbb`, `\text{}`. Avoid `\textsc` and package-specific macros.
 
 ### Citations
@@ -160,7 +164,7 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
 
 ### Images
 
-- Paths are relative to the project folder (the folder that holds `config.toml`), for example `images/fig1.png`. URLs and absolute paths don't work.
+- Relative paths in a `.md` file resolve relative to that `.md` file's own folder (including inside `<include>`d files), for example `images/fig1.png`. Start a path with `/` (e.g. `/images/logo.svg`) to anchor it to the project root. Paths in `config.toml` remain relative to the project root. External files use `file://...` and remote assets use `https://...` where supported.
 - A numbered figure is `<fig id="fig-x"> <img src="..."> <caption>...</caption> </fig>`; see [components.md](components.md#fig--caption-numbered-figure). Instead of `<img>`, a `<fig>` can hold a `<cetz>` drawing, a `<lilaq>` plot or a ` ```mermaid ` block.
 
 ### Diagrams
@@ -204,6 +208,7 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
 | Numbered procedure | `<steps>` + `<step title="...">` |
 | Conversation with an AI assistant (prompts and answers) | `<chat title="...">` + `<user>` / `<ai>` messages; look from the feel or `style`, defaults in `[chat]` / front matter `chat:` |
 | List with other numbers (abjad, words, Roman), a caption or an id | `{numbers=... caption="..." #id}` line above the list |
+| Checklist / task list (with optional nesting, progress bar, interactive HTML) | `[ ]` / `[x]` (or `- [ ]` / `- [x]`), optionally with `{progress=true color=... strike=true editable=true}` above |
 | Definition, theorem, lemma, corollary, example, remark, proof | `<definition>`, `<theorem>`, `<lemma>`, `<corollary>`, `<example>`, `<remark>`, `<proof>` |
 | Split a long document into files | `<include src="chapters/x.md"></include>` |
 | One source for several readers, or a value used in many places | `vars:` (values) and `var-types:` (rules: `audience: [student, teacher]`) in the front matter, then Typst in `{{ ... }}`: `{{ audience }}`, `{{ if draft { "Draft" } else { "Final" } }}`, and Markdown in `[ ... ]`: `{{ if audience == "teacher" [ ## Key ] else [ Hi ] }}` |
@@ -217,7 +222,7 @@ Write a block `<cover title="Title" author="Name"></cover>` in the body where th
 - [ ] Blank lines inside every tag that contains Markdown (including each `<chat>`, `<user>` and `<ai>`, and around the code block of `<tree>` / the table of `<chart>`).
 - [ ] Every `<ref to>` and `<a href="#...">` points at an id that exists; ids are unique.
 - [ ] Every `<cite key>` exists in the `.bib` file, and `<bibliography>` appears once at the end.
-- [ ] Image paths are relative to the project folder.
+- [ ] Image, data, code, and `<include>` paths resolve correctly relative to each `.md` file's folder (or start with `/` for the project root).
 - [ ] In `<cetz>` drawings, boxed labels use `content(..., frame: "rect")` so the frame fits the text (see components.md), and a drawing's `<fig>` has no `height`.
 - [ ] Mermaid labels with Persian text or spaces are quoted; a ` ```mermaid ` block inside `<fig>` has blank lines around it.
 - [ ] Components are used only where plain Markdown is not enough.

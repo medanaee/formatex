@@ -51,7 +51,7 @@
 }
 
 #let chart-data(attrs, body) = {
-  let rows = if "src" in attrs { csv(root-path(attrs.src)) } else {
+  let rows = if "src" in attrs { csv(root-path(attrs.src, attrs: attrs)) } else {
     let t = find-table(body)
     assert(t != none, message: at-of(attrs) + "<chart> needs a Markdown table inside it, or src=\"data.csv\"")
     let cols = if type(t.columns) == int { t.columns } else { t.columns.len() }

@@ -1,6 +1,6 @@
 import type { Node } from "@formatex/core"
 
-export type AssetRequest = { kind: "graphic"; node: Node; key: string; bodyOnly: boolean; inline: boolean } | { kind: "asset"; path: string; text: boolean }
+export type AssetRequest = { kind: "graphic"; node: Node; key: string; bodyOnly: boolean; inline: boolean; widthPt?: number } | { kind: "asset"; path: string; text: boolean }
 
 /** Serializable service requests let hosts supply native/remote services without app imports. */
 export class MissingAssetsError extends Error {

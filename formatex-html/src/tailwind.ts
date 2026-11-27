@@ -20,7 +20,7 @@ const tokens = `
   --color-primary: var(--accent);
   --color-primary-foreground: var(--bg);
   --color-secondary: var(--secondary);
-  --color-muted: var(--muted);
+  --color-muted: var(--code-bg);
   --color-muted-foreground: var(--muted);
   --color-rule: var(--rule);
   --color-border: var(--rule);

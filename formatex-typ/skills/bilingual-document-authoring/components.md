@@ -12,6 +12,7 @@ Every component is an HTML-like tag inside the Markdown. General rules (repeated
 4. Lengths: bare number = points (`"12"`); `pt`, `mm`, `cm`, `in`, `em` allowed; `%` only where noted.
 5. Colors: a preset name or a hex string (see [Color presets](#color-presets)).
 6. Tags nest freely.
+7. Unknown HTML/XML tags (such as `<details>`, `<summary>`, `<b>`, etc., not registered in the component schema) are ignored gracefully instead of raising an `Unknown component` error, and their inner Markdown/text renders normally.
 
 Contents: [cover](#cover-standalone-cover-page) · [Standard Markdown](#standard-markdown) · [Footnotes](#footnotes-fn-and-markdown-footnotes) · [Tables](#tables) · [Lists](#lists) · [Numbered equations](#numbered-equations) · [Heading ids](#heading-ids-and-options) · [docheader](#docheader-title-block) · [picHeader](#picheader-picture-header) · [toc / lof / lot / lol](#toc-lof-lot-lol-contents-and-lists) · [alert](#alert-callout) · [box](#box-container) · [div](#div-container-with-tailwind-style-classes) · [Color presets](#color-presets) · [img](#img-image) · [fig + caption](#fig--caption-numbered-figure) · [cetz](#cetz-drawing) · [typ](#typ-typst-code-or-a-typst-file) · [lilaq](#lilaq-data-plots) · [Mermaid diagrams](#mermaid-diagrams) · [tree](#tree-file-and-folder-tree) · [chart](#chart-data-chart) · [grid + item](#grid--item-columns) · [align](#align-alignment) · [dir](#dir-text-direction-of-a-part) · [cite + bibliography](#cite--bibliography-citations) · [ref](#ref-cross-reference) · [span / def](#marking-text-and-defining-terms-span-anchor-def) · [code](#code-code-listing) · [diff](#diff-code-and-text-comparison) · [a and links](#links-and-a) · [kbd + badge](#kbd--badge) · [steps + step](#steps--step-numbered-procedure) · [chat + user + ai](#chat--user--ai-ai-conversation) · [Theorem blocks](#theorem-blocks) · [include](#include-split-into-files)
 
@@ -21,7 +22,7 @@ Contents: [cover](#cover-standalone-cover-page) · [Standard Markdown](#standard
 
 Text and structural components render as native HTML, including cover, docheader, paragraph, letter, tree, exercise/choices/answers, todos, chat, comparison, diff, grid, steps, definitions and progress. Counters, digits, lists, citations and bibliography remain native content too. The existing documented attributes are shared with PDF; there is no alternate HTML authoring syntax. Charts and drawings (`<chart>`, `<cetz>`, `<lilaq>`) retain their Typst SVG rendering; arbitrary graphics in `<typ>` may use a frame too.
 
-The same component and Markdown syntax is used for PDF and HTML. Native HTML wrappers for main content, lists, tables, quotes and alerts honor the merged document `dir`; automatic direction stays per block, while forced RTL/LTR remains forced. Paragraph justification and spacing, table `head-align` / `body-align`, and heading look settings also apply to HTML. Heading `max-level` counts from the top outlined heading.
+The same component and Markdown syntax is used for PDF and HTML. Native HTML wrappers for main content, lists, tables, quotes and alerts honor the merged document `dir`; automatic direction stays per block, while forced RTL/LTR remains forced. Paragraph justification and spacing, table `cols` / `head-align` / `body-align`, and heading look settings also apply to HTML. Heading `max-level` counts from the top outlined heading.
 
 Global and local list options keep their numbering, prefixes/suffixes and markers in native HTML. Unordered markers are emitted as text instead of relying on browser-default bullets; `guides` (`line` / `tree`) are drawings for PDF and are not emitted around HTML lists. See [config.md](config.md#html-output-language).
 
@@ -29,7 +30,7 @@ The HTML toolbar's Find magnifier searches rendered document text literally and 
 
 ## Standard Markdown
 
-- Headings `##` to `######` (sections start at `##`), **bold**, *italic*, lists (`-`, `1.`), block quotes (`>`), horizontal rules (`---`), links, inline code, fenced code blocks, tables, inline math `$...$`, display math `$$...$$`.
+- Headings `##` to `######` (sections start at `##`), **bold**, *italic*, lists (`-`, `1.`, and task lists `[ ]` / `[x]` / `- [ ]`), block quotes (`>`), horizontal rules (`---`), links, inline code, fenced code blocks, tables, LaTeX math `$...$` / `$$...$$`, Typst math `%...%` / `%%...%%` (percent-encoded `%` inside URLs and Markdown link destinations is never interpreted as Typst math).
 - Block quotes get a colored bar on the start side (right for Persian).
 - Fenced code blocks get line numbers. With a language (` ```python `) they also get a badge with the language name and icon. Aliases like `py`, `js`, `ts`, `sh`, `yml`, `md` work; an unknown language still shows its name.
 - A ` ```mermaid ` block is not shown as code: it is drawn as a diagram (see [Mermaid diagrams](#mermaid-diagrams)).
@@ -84,6 +85,7 @@ A plain Markdown table. Optionally, one `{...}` line directly above it (a blank 
 | Option | Values | Default |
 |--------|--------|---------|
 | `width` | `auto` = as wide as the content; `full` = the full text width | from `config.toml` `[table] width` |
+| `cols` | Comma-separated column widths, one per column: `auto`, `%` (`20%`, `50%`), `fr` (`1fr`, `2fr`) or plain positive numbers (`1,2,1`, treated as `fr`), and fixed lengths (`pt`, `mm`, `cm`, `in`, `em`, `px`) | automatic sizing |
 | `align` | `center`, `left`, `right`, `start`, `end`: where an `auto`-width table sits | enclosing `<align>`, else `[table] align` |
 | `caption` | Text above the table, quoted if it has spaces. Markdown and math inside it are not processed. | none |
 | `#id` | Id for `<ref>` | none |
@@ -95,6 +97,7 @@ A plain Markdown table. Optionally, one `{...}` line directly above it (a blank 
 - A table with `caption` or `#id` is numbered: «جدول ۱» or "Table 1", following the caption's language. Captioned tables appear in `<lot>`.
 - Column alignment comes from the separator row: `:---` left, `---:` right, `:---:` center.
 - Full-width tables size columns like a browser: narrow columns keep their width, wide ones share the rest and wrap.
+- Explicit column widths (`cols="20%,50%,30%"`, `cols="1fr,2fr,auto"`, `cols="3cm,auto,1fr"`, `cols="1,2,1"`) work in both PDF and HTML. Using `%`, `fr`, or plain positive numbers automatically expands the table to full width; the count of widths must match the table's column count (a mismatch is a PDF compile error).
 - In cells: don't write a literal `|` (in math use `\mid`). For tall math like fractions use `$\displaystyle\frac{a}{b}$`.
 - The table look (rules, frame, stripes) comes from the feel; you don't style tables.
 
@@ -137,6 +140,30 @@ Optionally, one `{...}` line directly above a list (a blank line in between is a
 - A list with `caption` or `#id` is a numbered block: «فهرست ۱: مراحل داوری» or "List 1: ...", following the caption's language. The list stays on the start side and can break across pages. `<ref to="list-review"></ref>` prints «فهرست ۱» / "List 1".
 - The options cover the list up to the first line, after a blank line, that is neither indented nor a list item. A numbered list following after only a blank line merges into it and takes the same options.
 
+### Task lists
+
+Bare task-list lines (`[ ] task`, `[x] task`, `[X] task`) work natively without needing a leading `- `, alongside standard Markdown `- [ ]` / `- [x]`. Indent with `Tab` (or spaces) to nest subtasks to any depth:
+
+```markdown
+{progress=true color=teal strike=true}
+[x] Prepare outline
+[ ] Draft chapters
+  [x] Introduction
+  [ ] Methods
+```
+
+A `{...}` line directly above a task list supports standard list options (`guides`, `caption`, `numbering`, `caption-position`, `indent`, `#id`) plus:
+
+| Option | Values | Default |
+|--------|--------|---------|
+| `color` | Accent color for checked boxes and progress bar (preset name, `accent`, or hex) | `accent` |
+| `strike` | `true`: strike through and mute completed labels (without striking nested subtasks); `false`: plain text | `true` |
+| `editable` | `true`: interactive checkbox toggling in HTML; `false`: read-only | `true` |
+| `progress` | `true`: compact completion progress bar and counter above the list (live-updating in HTML); `false`: hidden | `false` |
+
+- **PDF:** renders feel-matched vector checkboxes (sharp corners in `formal`, rounded in `standard`/`friendly`) without duplicate bullets.
+- **HTML:** renders animated SVG checkboxes that are interactive when `editable=true`, persisting per-file state in `localStorage` (`fx-tasks:v1:<pathname>`) in standalone HTML and in viewer state in live preview.
+
 ## Numbered equations
 
 ```markdown
@@ -149,7 +176,7 @@ $$ {#eq-sum}
 طبق <ref to="eq-euler"></ref> ...
 ```
 
-- `{#id}` goes on the line with the closing `$$`. The number «(۱)» / "(1)" sits at the line end; `<ref>` prints «رابطهٔ (۱)» / "Equation (1)".
+- `{#id}` goes on the line with the closing `$$` or `%%`, or alone on the next line. The number «(۱)» / "(1)" sits at the line end; `<ref>` prints «رابطهٔ (۱)» / "Equation (1)". Typst display math uses the same numbering: `%% e^(i pi) + 1 = 0 %% {#eq-euler}`.
 - Whether unlabelled equations are numbered too is a config setting (`[equation] numbering`).
 
 ## Heading ids and options
@@ -179,7 +206,7 @@ Place this block in the Markdown body exactly where the cover should appear, usu
 
 | Attribute | Meaning | Default |
 |---|---|---|
-| `logo` | Image path from the project root | empty |
+| `logo` | Image path relative to the `.md` file (or starting with `/` for the project root) | empty |
 | `institution` | University or organization | empty |
 | `faculty` | Faculty or school | empty |
 | `department` | Department | empty |
@@ -405,7 +432,7 @@ The whole Tailwind palette: `slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, 
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | Required. Path relative to the project folder. No URLs. PNG, JPG or SVG. |
+| `src` | Required. Path relative to the current `.md` file (start with `/` for the project root), an `https://` URL, or an external `file://` URL. PNG, JPG or SVG. |
 | `alt` | Alternative text. |
 | `width`, `height` | Size (length or `%`). |
 | `radius` | Corner rounding. Default from the feel. `50%` on a square image makes a circle. |
@@ -535,9 +562,9 @@ The accent is #text(fill: theme.accent)[this color].
 </typ>
 ````
 
-- `src` is a Typst file from the project root (like `src` of `<img>`), or the code block; `dir="auto|rtl|ltr"` sets the text direction of the result (default `auto`).
+- `src` is a Typst file relative to the current `.md` file (start with `/` for the project root, like `src` of `<img>`), or the code block; `dir="auto|rtl|ltr"` sets the text direction of the result (default `auto`).
 - **Nested includes work.** A `src` file is included by Typst itself: the `#include "..."` / `#import "..."` lines inside it resolve relative to the file that holds them, at any depth, and each file is set where it is included.
-- **A code block has no file of its own**, so its relative `#include` / `#import` paths are read from the project root. Absolute paths, `@preview/...` packages and URLs stay as written.
+- **Relative `#include` / `#import` paths in a code block** resolve relative to the `.md` file that holds the `<typ>` tag (start a path with `/` for the project root). `@preview/...` packages and URLs stay as written.
 - **Scope:** a code block sees `theme`, `zoom` and `feel`; anything else it imports (`#import "/src/kit.typ": *` brings the engine's whole kit). A `src` file sees nothing by default: start it with that import when it needs the theme.
 - It is markup, so headings, lists, `#figure`, `#table` and the rest work, and the document's rules apply: headings join the numbering and the table of contents, text takes the theme. `#set` / `#show` inside a file or block stay inside it.
 
@@ -596,7 +623,7 @@ formatex/
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | Read the listing from a file (path relative to the project folder) instead of the code block. |
+| `src` | Read the listing from a file (relative to the current `.md` file, or starting with `/` for the project root) instead of the code block. |
 | `icons` | `true` (default) or `false`. Without icons, folders show a trailing `/`. |
 | `caption` | Numbered caption below: «شکل ۱» / "Figure 1" by the caption's language. Listed in `<lof>`. No Markdown inside. |
 | `id` | Id for `<ref>` (numbered even without a caption). |
@@ -636,7 +663,7 @@ Draws a bar, line, pie or donut chart from a Markdown table inside the tag: the 
 | Attribute | Notes |
 |-----------|-------|
 | `type` | `bar` (default), `line`, `pie`, `donut`. Pie / donut take exactly one value column; values ≥ 0, total > 0. |
-| `src` | CSV file with the same layout (first row = header) instead of the table. |
+| `src` | CSV file (relative to the current `.md` file, or starting with `/` for the project root) with the same layout (first row = header) instead of the table. |
 | `values` | `false` (default) / `true`: print values on bars and points; on pie / donut also in the legend, and a donut shows the total in its centre. Slices of 22° or more always show their percentage. |
 | `legend` | `auto` (default: shown for pie / donut or more than one series), `true`, `false`. |
 | `unit` | Suffix for values and axis ticks (`%`, `h`, ...). In RTL charts `%` becomes `٪` and digits are Persian. |
@@ -807,7 +834,7 @@ class Actor:
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | File to load (relative to the project folder). Without it, the fenced block inside the tag is used. |
+| `src` | File to load (relative to the current `.md` file, or starting with `/` for the project root). Without it, the fenced block inside the tag is used. |
 | `lang` | Highlighting language. Default: the file extension or the fence language. |
 | `lines` | `10-20`: show only these lines; line numbers keep the file's numbering. |
 | `highlight` | `3` or `3,7-9`: lines drawn with a tinted band (shown line numbers). |
@@ -1037,5 +1064,5 @@ Each kind is numbered separately. The label language follows the block's directi
 ```
 
 - The tag is replaced by that file's content. Numbering, ids and references continue across files.
-- The tag must be alone on its line with blank lines around it. Paths are relative to the project folder; a path starting with `./` or `../` is relative to the file containing the tag.
+- The tag must be alone on its line with blank lines around it. Relative paths resolve relative to the `.md` file containing the tag; start a path with `/` for the project root. Inside an included file, its own relative paths resolve relative to that included file.
 - Included files' front matter is ignored; only the main file's settings count. Write headings in included files at their final level.

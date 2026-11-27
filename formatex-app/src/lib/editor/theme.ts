@@ -42,6 +42,14 @@ export const editorTheme = EditorView.theme({
   // {{ name }} prints, {{ a ? b : c }} and <if> decide; inside an attribute value both get a soft background so they show in a long tag, and a decision an outline too
   ".cm-var": { color: "var(--syntax-var) !important" },
   ".cm-cond": { color: "var(--syntax-cond) !important" },
+  // Equations, LaTeX and Typst: commands, calls, symbols, letters, numbers, strings, operators
+  ".cm-math-cmd, .cm-math-sym": { color: "var(--syntax-tag) !important" },
+  ".cm-math-fn": { color: "var(--syntax-heading) !important" },
+  ".cm-math-var": { color: "var(--syntax-var) !important" },
+  ".cm-math-num": { color: "var(--syntax-number) !important" },
+  ".cm-math-str": { color: "var(--syntax-string) !important" },
+  ".cm-math-op, .cm-math-delim": { color: "var(--syntax-mark) !important" },
+  ".cm-math-comment": { color: "var(--syntax-comment) !important", fontStyle: "italic" },
   ".cm-page": { color: "var(--syntax-page) !important", fontWeight: "600" },
   ".cm-var-attr": { backgroundColor: "color-mix(in oklab, var(--syntax-var) 12%, transparent)", borderRadius: "4px" },
   ".cm-cond-attr": { backgroundColor: "color-mix(in oklab, var(--syntax-cond) 14%, transparent)", borderRadius: "4px", boxShadow: "0 0 0 1px color-mix(in oklab, var(--syntax-cond) 35%, transparent)" },
@@ -97,6 +105,20 @@ export const editorTheme = EditorView.theme({
   },
   ".cm-completionLabel": { fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: "12.5px" },
   ".cm-completionDetail": { marginInlineStart: "auto", fontStyle: "normal", color: "var(--muted-foreground)", fontSize: "11px" },
+  // A Typst symbol: the rendered glyph in front of the name
+  ".cm-completion-symbol": { alignItems: "center", direction: "ltr" },
+  ".cm-symbol-preview": {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "none",
+    minWidth: "1.5em",
+    marginInlineEnd: "6px",
+    color: "#fff",
+    direction: "ltr",
+    unicodeBidi: "isolate",
+  },
+  ".cm-symbol-preview .typlet": { fontSize: "16px", color: "#fff" },
   "& .cm-tooltip.cm-completionInfo": {
     padding: "8px 10px",
     maxWidth: "260px",

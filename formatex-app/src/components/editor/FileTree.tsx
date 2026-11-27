@@ -9,6 +9,7 @@ import {
   FolderPlus,
   Lock,
   MoreHorizontal,
+  PackagePlus,
   Pencil,
   Scissors,
   Star,
@@ -28,6 +29,7 @@ import { isTauri } from "@/lib/platform"
 import { pickFiles } from "@/lib/files/saveFile"
 import { revealFolder } from "@/lib/projects/storageMode"
 import { FileIcon } from "@/components/common/FileIcon"
+import { projectComponentFolders } from "@/lib/editor/componentList"
 import { baseName, CODE_EXTENSIONS, CONFIG_FILE, FORMATEX_CONFIG, FORMATEX_DIR, fileKindOf, nameProblem, parentOf, type FsEntry } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 import { useEditorStore } from "@/stores/useEditorStore"
@@ -40,7 +42,7 @@ const DRAG_TYPE = "application/x-formatex-paths"
 type Dialog = { type: "delete"; paths: string[] } | null
 
 /** What is being typed in the tree itself, as in VS Code: a new file or folder in a folder, or the new name of an entry. */
-type Editing = { type: "newFile" | "newFolder"; parent: string } | { type: "rename"; path: string } | null
+type Editing = { type: "newFile" | "newFolder" | "newComponent"; parent: string } | { type: "rename"; path: string } | null
 
 /**
  * The files of the project, like Overleaf's. Click opens; Ctrl / Cmd + click toggles and Shift + click selects a range.
@@ -101,10 +103,14 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
     () => files.filter((entry) => !entry.alias && !entry.path.split("/").slice(0, -1).some((_, index, parts) => collapsed.has(parts.slice(0, index + 1).join("/")))),
     [files, collapsed]
   )
+  const componentFolders = useMemo(
+    () => (plainTypst ? new Set<string>() : new Set(projectComponentFolders(files.filter((entry) => entry.kind === "file").map((entry) => entry.path)))),
+    [files, plainTypst]
+  )
 
   /** The rows to draw: the entries, and a row for the name being typed when something new is made (right under its folder). */
   const rows = useMemo(() => {
-    const list: ({ entry: FsEntry } | { draft: "newFile" | "newFolder"; parent: string })[] = visible.map((entry) => ({ entry }))
+    const list: ({ entry: FsEntry } | { draft: "newFile" | "newFolder" | "newComponent"; parent: string })[] = visible.map((entry) => ({ entry }))
     if (editing && editing.type !== "rename") {
       const at = editing.parent === "" ? -1 : list.findIndex((row) => "entry" in row && row.entry.path === editing.parent)
       list.splice(at + 1, 0, { draft: editing.type, parent: editing.parent })
@@ -112,8 +118,8 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
     return list
   }, [visible, editing])
 
-  /** Starts typing a new file or folder in `parent`: the folder opens so the row shows. */
-  const startNew = (type: "newFile" | "newFolder", parent: string) => {
+  /** Starts typing a new file, folder or component package in `parent`: the folder opens so the row shows. */
+  const startNew = (type: "newFile" | "newFolder" | "newComponent", parent: string) => {
     setCollapsed((previous) => {
       const next = new Set(previous)
       next.delete(parent)
@@ -312,6 +318,11 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
         <Button variant="ghost" size="icon-xs" onClick={() => startNew("newFolder", targetFolder())} title={t("files.newFolder")} aria-label={t("files.newFolder")}>
           <FolderPlus />
         </Button>
+        {!plainTypst && (
+          <Button variant="ghost" size="icon-xs" onClick={() => startNew("newComponent", targetFolder())} title={t("files.newComponent")} aria-label={t("files.newComponent")}>
+            <PackagePlus />
+          </Button>
+        )}
         <Button variant="ghost" size="icon-xs" onClick={() => void upload(targetFolder())} title={t("files.upload")} aria-label={t("files.upload")}>
           <Upload />
         </Button>
@@ -335,19 +346,31 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
               <li key="__draft__" role="treeitem" aria-selected>
                 <div className="flex h-6 items-center gap-1 pe-1 text-xs pointer-coarse:h-9" style={{ paddingInlineStart: `${depth * 10 + 6}px` }}>
                   <span className="w-3 shrink-0" />
-                  <FileIcon path={row.draft === "newFolder" ? "folder" : "file.md"} kind={row.draft === "newFolder" ? "dir" : "file"} size={16} />
+                  {row.draft === "newComponent" ? (
+                    <PackagePlus className="size-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <FileIcon path={row.draft === "newFolder" ? "folder" : "file.md"} kind={row.draft === "newFolder" ? "dir" : "file"} size={16} />
+                  )}
                   <InlineName
                     initial=""
                     parent={row.parent}
                     existing={new Set(files.map((file) => file.path))}
                     markdownByDefault={row.draft === "newFile"}
-                    label={row.draft === "newFile" ? t("files.newFile") : t("files.newFolder")}
-                    placeholder={row.draft === "newFile" ? t("files.namePlaceholder") : t("files.folderPlaceholder")}
+                    label={row.draft === "newFile" ? t("files.newFile") : row.draft === "newComponent" ? t("files.newComponent") : t("files.newFolder")}
+                    placeholder={row.draft === "newFile" ? t("files.namePlaceholder") : row.draft === "newComponent" ? t("files.componentPlaceholder") : t("files.folderPlaceholder")}
                     onCancel={() => setEditing(null)}
                     onSubmit={async (name) => {
                       setEditing(null)
                       if (row.draft === "newFile") {
                         await store().createFile(row.parent, name)
+                        onOpen?.()
+                      } else if (row.draft === "newComponent") {
+                        const created = await store().createComponent(row.parent, name)
+                        setCollapsed((previous) => {
+                          const next = new Set(previous)
+                          next.delete(created)
+                          return next
+                        })
                         onOpen?.()
                       } else await store().createFolder(row.parent, name)
                     }}
@@ -361,6 +384,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
           const depth = entry.path.split("/").length - 1
           const isDir = entry.kind === "dir"
           const isOpen = isDir && !collapsed.has(entry.path)
+          const isComp = isDir && componentFolders.has(entry.path)
           const isMain = entry.path === mainFile
           const isSelected = selected.has(entry.path)
           const cut = clipboard?.mode === "cut" && clipboard.paths.includes(entry.path)
@@ -372,6 +396,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
               ? ([
                   { key: "newFile", label: t("files.newFile"), icon: <FilePlus />, onSelect: () => startNew("newFile", entry.path) },
                   { key: "newFolder", label: t("files.newFolder"), icon: <FolderPlus />, onSelect: () => startNew("newFolder", entry.path) },
+                  ...(!plainTypst ? ([{ key: "newComponent", label: t("files.newComponent"), icon: <PackagePlus />, onSelect: () => startNew("newComponent", entry.path) }] as MenuAction[]) : []),
                   { key: "upload", label: t("files.upload"), icon: <Upload />, onSelect: () => void upload(entry.path) },
                   "separator",
                 ] as MenuAction[])
@@ -413,7 +438,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                 {renaming ? (
                   <div className="flex h-full min-w-0 flex-1 items-center gap-1">
                     {isDir ? <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground", isOpen ? "rotate-90" : "rtl:rotate-180")} /> : <span className="w-3 shrink-0" />}
-                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
+                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} isComponent={isComp} size={16} />
                     <InlineName
                       initial={baseName(entry.path)}
                       parent={parentOf(entry.path)}
@@ -427,13 +452,22 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
                     />
                   </div>
                 ) : (
-                  <button type="button" onClick={(event) => void clickRow(event, entry)} className="flex h-full min-w-0 flex-1 items-center gap-1 text-start outline-none focus-visible:underline">
+                  <button
+                    type="button"
+                    onClick={(event) => void clickRow(event, entry)}
+                    onDoubleClick={() => {
+                      if (!isDir && fileKindOf(entry.path) === (plainTypst ? "typst" : "markdown") && !isMain) {
+                        void store().setMainFile(entry.path)
+                      }
+                    }}
+                    className="flex h-full min-w-0 flex-1 items-center gap-1 text-start outline-none focus-visible:underline"
+                  >
                     {isDir ? (
                       <ChevronRight className={cn("size-3 shrink-0 text-muted-foreground transition-transform", isOpen ? "rotate-90" : "rtl:rotate-180")} />
                     ) : (
                       <span className="w-3 shrink-0" />
                     )}
-                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} size={16} />
+                    <FileIcon path={entry.path} kind={entry.kind} open={isOpen} isComponent={isComp} size={16} />
                     <span dir="auto" className="truncate">{baseName(entry.path)}</span>
                     {isMain && <Star className="size-3 shrink-0 fill-current text-muted-foreground" aria-label={t("files.main")} />}
                   </button>
@@ -469,6 +503,7 @@ export function FileTree({ onOpen }: { /** Called after a file is chosen (a phon
               actions={[
                 { key: "newFile", label: t("files.newFile"), icon: <FilePlus />, onSelect: () => startNew("newFile", "") },
                 { key: "newFolder", label: t("files.newFolder"), icon: <FolderPlus />, onSelect: () => startNew("newFolder", "") },
+                ...(!plainTypst ? ([{ key: "newComponent", label: t("files.newComponent"), icon: <PackagePlus />, onSelect: () => startNew("newComponent", "") }] as MenuAction[]) : []),
                 { key: "upload", label: t("files.upload"), icon: <Upload />, onSelect: () => void upload("") },
                 "separator",
                 { key: "paste", label: t("files.paste"), icon: <ClipboardPaste />, onSelect: () => void paste("") },

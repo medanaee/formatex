@@ -53,7 +53,7 @@ export interface RenderOptions {
   assets?: Record<string, string>
   components?: Record<string, string>
   uiLanguage?: "fa" | "en"
-  html: { copyCode: boolean; toolbar: boolean; outline: boolean; progress: boolean; katexMath: boolean; embedFonts?: boolean }
+  html: { copyCode: boolean; toolbar: boolean; outline: boolean; progress: boolean; magnifier?: boolean; katexMath: boolean; embedFonts?: boolean; graphicWidth?: "narrow" | "standard" | "wide" }
   /** Host supplies the required fonts after rendering, instead of inline full fonts. */
   nativeFonts?: boolean
   runtime?: string
@@ -63,6 +63,8 @@ export interface RenderOptions {
   typOnly?: string[]
   preview?: boolean
 }
+
+const GRAPHIC_WIDTHS_PT = { narrow: 474, standard: 618, wide: 834 } as const
 
 export async function renderHtml(document: DocumentIR, options: RenderOptions): Promise<string> {
   document = { ...document, settings: outputSettings(document.settings, "html") }
@@ -171,30 +173,64 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
   const numberedHeadings = outlined.filter(node => { const policy = effective(node); return policy.numbering !== false && policy.numbering !== "false" })
   const headingPool = numberedHeadings.length ? numberedHeadings : outlined
   const headingTop = headingPool.length ? Math.min(...headingPool.map(node => node.depth ?? 1)) : 1
+  const rawWidth = String(document.settings.width ?? "standard")
+  const defaultWidth = rawWidth === "narrow" || rawWidth === "wide" ? rawWidth : "standard"
+  const activeGraphicWidth = options.html.graphicWidth ?? defaultWidth
   const language = options.uiLanguage ?? "en"
+  const resolveProjectPath = (raw: string, from?: string): string => {
+    if (!raw || /^(data:|blob:|https?:|file:)/i.test(raw) || raw.includes("://")) return raw
+    const clean = raw.replace(/\\/g, "/")
+    const anchored = clean.startsWith("/")
+    const parts = anchored || !from
+      ? []
+      : from.replace(/\\/g, "/").replace(/^\/+/, "").split("/").slice(0, -1).filter(s => s && s !== ".")
+    for (const seg of clean.replace(/^\/+/, "").split("/")) {
+      if (!seg || seg === ".") continue
+      if (seg === "..") {
+        if (parts.length > 0) parts.pop()
+        else parts.push("..")
+      } else {
+        parts.push(seg)
+      }
+    }
+    return parts.join("/")
+  }
+  const assetFor = (path: string, text = false, from?: string): string => {
+    if (!path || /^(data:|blob:)/i.test(path)) return path
+    const resolved = resolveProjectPath(path, from)
+    const key = text ? `text:${resolved}` : resolved
+    if (c.assets[key] !== undefined) return c.assets[key]
+    requests.set(key, { kind: "asset", path: resolved, text })
+    return ""
+  }
+  const backgroundFor = (path: string, from?: string): string => {
+    const asset = assetFor(path, false, from)
+    if (!asset) return "none"
+    let name = backgrounds.get(asset)
+    if (!name) { name = `--fx-image-${backgrounds.size}`; backgrounds.set(asset, name) }
+    return `var(${name})`
+  }
+  const contextFor = (file?: string): RenderContext => {
+    const base = file || document.file
+    if (base === document.file) return c
+    return {
+      ...c,
+      asset: (path, text = false) => assetFor(path, text, base),
+      background: (path) => backgroundFor(path, base),
+    }
+  }
   const c: RenderContext = {
     document, assets: options.assets ?? {}, numbers, targets, language,
-    asset(path, text = false) {
-      if (!path || /^(data:|blob:)/i.test(path)) return path
-      const key = text ? `text:${path}` : path
-      if (c.assets[key] !== undefined) return c.assets[key]
-      requests.set(key, { kind: "asset", path, text })
-      return ""
-    },
-    background(path) {
-      const asset=c.asset(path)
-      if (!asset) return "none"
-      let name=backgrounds.get(asset)
-      if (!name) { name=`--fx-image-${backgrounds.size}`; backgrounds.set(asset,name) }
-      return `var(${name})`
-    },
+    asset(path, text = false) { return assetFor(path, text, document.file) },
+    background(path) { return backgroundFor(path, document.file) },
     graphic(node, graphicOptions) {
       const bodyOnly = graphicOptions?.bodyOnly ?? false
       const key = bodyOnly ? `${node.key}:body` : node.key
-      const inline = options.schemas?.[node.name ?? ""]?.kind === "inline"
+      const inline = graphicOptions?.inline ?? options.schemas?.[node.name ?? ""]?.kind === "inline"
+      const requestInline = inline || (bodyOnly && ["cetz", "lilaq"].includes(node.name ?? ""))
       const Tag = inline ? "span" : "div"
       if (c.assets[key] !== undefined) return <Tag className={inline ? "fx-graphic-inline" : "fx-graphic"} dangerouslySetInnerHTML={{ __html: c.assets[key] }} />
-      requests.set(key, { kind: "graphic", node, key, bodyOnly, inline: inline || bodyOnly && ["cetz", "lilaq"].includes(node.name ?? "") })
+      requests.set(key, { kind: "graphic", node, key, bodyOnly, inline: requestInline, widthPt: requestInline ? undefined : GRAPHIC_WIDTHS_PT[activeGraphicWidth] })
       return null
     },
     props: effective,
@@ -209,7 +245,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         case "delete": return <del>{children()}</del>
         case "heading": return renderHeading(node, c, effective(node), headingTop)
         case "link": return <a href={safeUrl(node.url)} title={node.title ?? undefined}>{children()}</a>
-        case "image": return <img src={c.asset(node.url ?? "")} alt={node.alt ?? ""} title={node.title ?? undefined} />
+        case "image": return <img src={assetFor(node.url ?? "", false, node.at?.file || document.file)} alt={node.alt ?? ""} title={node.title ?? undefined} />
         case "inlineCode": return <code className="fx-inline-code" dir="ltr">{node.value}</code>
         case "code": return node.lang === "mermaid" ? c.graphic(node) : renderFence(node, c, effective(node))
         case "list": return renderList(node, c, effective(node))
@@ -218,7 +254,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         case "break": return <br />
         case "thematicBreak": return <hr className="fx-rule" />
         case "table": return renderTable(node, c, effective(node))
-        case "inlineMath": case "math": return renderMath(node, math.html[node.key] ?? "")
+        case "inlineMath": case "math": return node.lang === "typst" ? renderMath(node, "", c.graphic(node, { inline: true })) : renderMath(node, math.html[node.key] ?? "")
         case "footnoteReference": {
           const note = find(document.children, item => item.type === "footnoteDefinition" && item.identifier === node.identifier)
           const persian = node.props?._flow === "rtl"
@@ -231,14 +267,16 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
         case "definition": return null
         case "linkReference": { const target = find(document.children, n => n.type === "definition" && n.identifier === node.identifier); return <a href={safeUrl(target?.url)}>{children()}</a> }
         case "component": {
+          if (node.name === "br") return <br />
           const source = options.components?.[node.name!]
+          const nodeContext = contextFor(node.at?.file)
           if (source) {
-            try { return <LocatedComponent component={compileComponent(source, node.name!)} node={node} context={c} /> }
+            try { return <LocatedComponent component={compileComponent(source, node.name!)} node={node} context={nodeContext} /> }
             catch (error) { throw new DocumentError(error instanceof Error ? error.message : String(error),node.at) }
           }
           if (options.typOnly?.includes(node.name!)) { const Tag = options.schemas?.[node.name!]?.kind === "inline" ? "span" : "div"; return <Tag id={String(effective(node).id ?? "") || undefined}>{c.graphic(node)}</Tag> }
           if (c.assets[node.key]) return <div className="fx-graphic" dangerouslySetInnerHTML={{ __html: c.assets[node.key] }} />
-          return renderBuiltin(node, c)
+          return renderBuiltin(node, nodeContext)
         }
         case "html": return null
         default: return children()
@@ -260,7 +298,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
     const sp = effective(side)
     if (sp.src) {
       const srcPath = String(sp.src)
-      return { value: c.asset(srcPath, true), lang: srcPath.split(".").pop() ?? "" }
+      return { value: assetFor(srcPath, true, side.at?.file || document.file), lang: srcPath.split(".").pop() ?? "" }
     }
     const codeNode = side.children?.find(ch => ch.type === "code")
     if (codeNode) return { value: codeNode.value ?? "", lang: codeNode.lang ?? "" }
@@ -270,7 +308,7 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
     for (const node of nodes) {
       if (node.type === "code" || node.name === "code") {
         const p = effective(node)
-        const value = p.src ? c.asset(String(p.src), true) : node.value ?? node.children?.find(n => n.type === "code")?.value ?? ""
+        const value = p.src ? assetFor(String(p.src), true, node.at?.file || document.file) : node.value ?? node.children?.find(n => n.type === "code")?.value ?? ""
         const language = String(p.lang ?? node.lang ?? node.children?.find(n => n.type === "code")?.lang ?? "")
         c.assets[`code:${node.key}`] = JSON.stringify(await (await import("./highlight")).highlight(value.replace(/\n$/, ""), language))
       } else if (node.name === "diff") {
@@ -293,21 +331,57 @@ export async function renderHtml(document: DocumentIR, options: RenderOptions): 
   const dir = String(document.settings.dir ?? "auto")
   const fontNames = (values: unknown[]): string[] => values.flat(Infinity).filter((value): value is string => typeof value === "string" && !!value)
   const font = fontNames([document.tokens.latin ?? "Inter", document.tokens.persian ?? "Vazirmatn"]).map(v => JSON.stringify(v)).join(",")
+  const codeFonts = Array.from(new Set(fontNames([document.tokens.code ?? "Vazir Code", "Vazir Code"])))
   const variables = Object.entries(document.tokens).filter(([k]) => ["bg", "fg", "muted", "accent", "secondary", "heading", "rule", "code-bg", "code-stroke"].includes(k)).map(([k, v]) => `--${k}:${v}`).join(";")
-  const style = `:root{${variables};--font-body:${font},serif;--font-code:${fontNames([document.tokens.code ?? "monospace"]).map(v => JSON.stringify(v)).join(",")},monospace;--radius:${Number(document.tokens.radius ?? 0)}px}@layer formatex{${css}\n.fx-doc p{unicode-bidi:${dir === "auto" ? "plaintext" : "normal"}}\n${math.css}}` + (options.css ?? "")
-  const data: ShellData = { language, toolbar: options.html.toolbar, outline: options.html.outline, progress: options.html.progress, zoom: Number(document.tokens.zoom ?? 1) * 100, theme: String(document.tokens["theme-name"] ?? document.settings.theme ?? "paper"), feel: String(document.tokens["feel-name"] ?? document.settings.feel ?? "formal"), themes: document.tokens.themes as ShellData["themes"], feels: document.tokens.feels as ShellData["feels"], headings: Array.from(new Set(targets.values())).filter(n => n.type === "heading" && effective(n).toc !== false && effective(n).toc !== "false").map(n => ({ id: String(n.props?.id), text: textOf(n), depth: n.depth ?? 1 })) }
+  const style = `:root{${variables};--font-body:${font},serif;--font-code:${codeFonts.map(v => JSON.stringify(v)).join(",")},monospace;--radius:${Number(document.tokens.radius ?? 0)}px}@layer formatex{${css}\n.fx-doc p{unicode-bidi:${dir === "auto" ? "plaintext" : "normal"}}\n${math.css}}` + (options.css ?? "")
+  const hasMathOrCode = (node: Node): boolean => node.type === "inlineMath" || node.type === "math" || node.type === "inlineCode" || !!node.children?.some(hasMathOrCode)
+  const outlineChildren = (nodes: Node[] | undefined): ReactNode =>
+    nodes?.map(child => {
+      if (child.type === "text") return child.value
+      if (child.type === "inlineMath" || child.type === "math") return <React.Fragment key={child.key}>{child.lang === "typst" ? c.graphic(child, { inline: true }) : renderMath(child, math.html[child.key] ?? "")}</React.Fragment>
+      if (child.type === "inlineCode") return <code key={child.key} className="fx-inline-code" dir="ltr">{child.value}</code>
+      if (child.type === "strong") return <strong key={child.key}>{outlineChildren(child.children)}</strong>
+      if (child.type === "emphasis") return <em key={child.key}>{outlineChildren(child.children)}</em>
+      if (child.type === "delete") return <del key={child.key}>{outlineChildren(child.children)}</del>
+      return <React.Fragment key={child.key}>{outlineChildren(child.children)}</React.Fragment>
+    })
+  const data: ShellData = {
+    language,
+    toolbar: options.html.toolbar,
+    outline: options.html.outline,
+    progress: options.html.progress,
+    magnifier: options.html.magnifier ?? true,
+    zoom: Number(document.tokens.zoom ?? 1) * 100,
+    theme: String(document.tokens["theme-name"] ?? document.settings.theme ?? "paper"),
+    feel: String(document.tokens["feel-name"] ?? document.settings.feel ?? "formal"),
+    width: defaultWidth,
+    themes: document.tokens.themes as ShellData["themes"],
+    feels: document.tokens.feels as ShellData["feels"],
+    headings: Array.from(new Set(targets.values()))
+      .filter(n => n.type === "heading" && effective(n).toc !== false && effective(n).toc !== "false")
+      .map(n => ({
+        id: String(n.props?.id),
+        text: textOf(n),
+        ...(hasMathOrCode(n) ? { html: renderToStaticMarkup(<>{outlineChildren(n.children)}</>) } : {}),
+        depth: n.depth ?? 1,
+      })),
+  }
   const content = renderToStaticMarkup(<>{document.children.map(n => <React.Fragment key={n.key}>{c.render(n)}</React.Fragment>)}</>)
   if (requests.size) throw new MissingAssetsError([...requests.values()])
   // Background images may recur in several headers. Embed each once, not once per element.
   const backgroundCss=backgrounds.size?`:root{${[...backgrounds].map(([asset,name])=>`${name}:url(${JSON.stringify(asset)})`).join(";")}}`:""
-  const viewerFonts = options.html.toolbar ? Object.values(data.feels ?? {}).flatMap(feel => [feel.latin, feel.persian]) : []
+  const hasChrome = options.html.toolbar || options.html.outline
+  const viewerFonts = [
+    ...(hasChrome ? ["Inter", "IRANSansX"] : []),
+    ...(options.html.toolbar ? Object.values(data.feels ?? {}).flatMap(feel => [feel.latin, feel.persian, feel.code]) : []),
+  ]
   const iconFonts = content.includes("fx-icon-svg")
     ? ["Font Awesome 7 Pro", "Font Awesome 7 Brands", ...(content.includes("fx-icon-solid") ? ["Font Awesome 7 Pro Solid"] : [])]
     : []
   // The shell is hydrated: preserve React's text boundaries and useId markers.
   // Document components above remain static and independently patchable.
   const shell = renderToString(<DocumentShell data={data} content={content} />)
-  const html = renderToStaticMarkup(<html lang={language} dir={dir} className={document.tokens.dark ? "dark" : undefined} data-feel={data.feel}><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="fx-fonts" content={fontNames([document.tokens.latin, document.tokens.persian, document.tokens.code, ...viewerFonts, ...math.families, ...iconFonts]).join("|")} /><style dangerouslySetInnerHTML={{ __html: style + backgroundCss }} /></head><body><div id="fx-shell" dangerouslySetInnerHTML={{ __html: shell }} /></body></html>)
+  const html = renderToStaticMarkup(<html lang={language} dir={dir} className={document.tokens.dark ? "dark" : undefined} data-feel={data.feel} data-width={defaultWidth !== "standard" ? defaultWidth : undefined}><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="fx-fonts" content={Array.from(new Set(fontNames([document.tokens.latin, document.tokens.persian, document.tokens.code, ...viewerFonts, "Vazir Code", ...math.families, ...iconFonts]))).join("|")} /><style dangerouslySetInnerHTML={{ __html: style + backgroundCss }} /></head><body><div id="fx-shell" dangerouslySetInnerHTML={{ __html: shell }} /></body></html>)
   const payload = `<script id="fx-shell-data" type="application/json">${JSON.stringify(data).replace(/</g, "\\u003c")}</script>`
   const runtime = options.runtime ? `<script>${options.runtime.replace(/<\/script/gi, "<\\/script")}</script>` : ""
   const sourceMap: Record<string, unknown> = {}

@@ -120,7 +120,17 @@ export default function Component({ node, context }) {
   }
 
   const cfg = (context.document.settings?.bibliography ?? {}) as Record<string, unknown>
-  const file = String(p.file ?? cfg.file ?? "examples/references.bib")
+  const resolveFromDoc = (raw: string): string => {
+    if (/^(data:|blob:|https?:|file:)/i.test(raw) || raw.includes("://") || raw.startsWith("/")) return raw
+    const parts = (context.document.file ?? "").replace(/\\/g, "/").replace(/^\/+/, "").split("/").slice(0, -1).filter(s => s && s !== ".")
+    for (const seg of raw.replace(/\\/g, "/").split("/")) {
+      if (!seg || seg === ".") continue
+      if (seg === "..") { if (parts.length > 0) parts.pop(); else parts.push("..") }
+      else parts.push(seg)
+    }
+    return "/" + parts.join("/")
+  }
+  const file = p.file ? String(p.file) : cfg.file ? resolveFromDoc(String(cfg.file)) : "/examples/references.bib"
   const title = String(p.title ?? cfg.title ?? (persian ? "منابع" : "References"))
   const dirSetting = String(p.dir ?? cfg.dir ?? context.document.settings?.dir ?? "ltr")
   const bibText = context.asset(file, true)

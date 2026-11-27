@@ -26,7 +26,7 @@
       let inner = {
         let img-h = h + pad-top
         block(width: 100%, height: img-h, clip: true, radius: radius, breakable: false, {
-          place(image(root-path(attrs.src), width: 100%, height: img-h, fit: "cover"))
+          place(image(root-path(attrs.src, attrs: attrs), width: 100%, height: img-h, fit: "cover"))
           place(rect(width: 100%, height: img-h, stroke: none, fill: gradient.linear(dir: ttb, (black.transparentize(100%), 0%), (black.transparentize(100%), 25%), (black.transparentize(10%), 100%))))
           place(bottom, block(width: 100%, inset: (x: 1.2em + pad-x, top: 1em, bottom: 2.2em), context {
             let given-dir = attrs.at("dir", default: "auto")

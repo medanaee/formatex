@@ -7,7 +7,7 @@ const formulaCache = new Map<string, string>()
 /** TeX is rendered in the worker. Standalone HTML never ships the KaTeX JS runtime. */
 export async function prepareMath(nodes: Node[], htmlMode: boolean, nativeFonts: boolean): Promise<MathResult> {
   const formulas: Node[] = []
-  const walk = (nodes: Node[]) => { for (const node of nodes) { if (node.type === "math" || node.type === "inlineMath") formulas.push(node); if (node.children) walk(node.children); if (node.rich) for (const rich of Object.values(node.rich)) walk(rich) } }
+  const walk = (nodes: Node[]) => { for (const node of nodes) { if ((node.type === "math" || node.type === "inlineMath") && node.lang !== "typst") formulas.push(node); if (node.children) walk(node.children); if (node.rich) for (const rich of Object.values(node.rich)) walk(rich) } }
   walk(nodes)
   if (!formulas.length) return { html: {}, css: "", families: [] }
   const { default: katex } = await import("katex")
@@ -16,7 +16,7 @@ export async function prepareMath(nodes: Node[], htmlMode: boolean, nativeFonts:
     const key = JSON.stringify([node.value, node.type, htmlMode])
     let rendered = formulaCache.get(key)
     if (rendered === undefined) {
-      rendered = katex.renderToString(node.value ?? "", { displayMode: node.type === "math", throwOnError: false, trust: false, output: htmlMode ? "htmlAndMathml" : "mathml" })
+      rendered = katex.renderToString(node.value ?? "", { displayMode: node.type === "math", throwOnError: false, trust: false, output: htmlMode ? "html" : "mathml" })
       if (formulaCache.size >= 512) formulaCache.delete(formulaCache.keys().next().value!)
       formulaCache.set(key, rendered)
     }

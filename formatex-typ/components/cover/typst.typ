@@ -28,7 +28,7 @@
     set text(dir: dir)
     set align(center)
     if logo != none and logo != "" {
-      image(root-path(logo), height: 3cm)
+      image(root-path(logo, attrs: attrs), height: 3cm)
       v(0.8em)
     }
     if field("institution") != none { text(size: 1.4em, weight: "bold", fill: theme.heading, field("institution")) }

@@ -1,6 +1,7 @@
 import type { Extension } from "@codemirror/state"
 import { EditorView } from "@codemirror/view"
 import { figTag, imageOfPaste } from "@/lib/files/pastedImage"
+import { relativePath } from "@/lib/projects/paths"
 import { useEditorStore } from "@/stores/useEditorStore"
 
 /** Writes the tag of a picture at the cursor, on lines of its own (the selection is replaced). */
@@ -18,7 +19,8 @@ export async function pasteImageInto(view: EditorView, image: Blob): Promise<voi
   const path = await useEditorStore.getState().addImage(image)
   // The editor may have been closed or switched to another file while the image was saved
   if (path && view.dom.isConnected) {
-    insertFigure(view, path)
+    const active = useEditorStore.getState().activePath
+    insertFigure(view, active ? relativePath(active, path) : path)
     view.focus()
   }
 }

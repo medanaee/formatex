@@ -36,7 +36,7 @@
         set text(weight: spec.weight) if spec.weight != none
         set text(style: if spec.italic { "italic" } else { "normal" }) if spec.italic != none
         set text(tracking: spec.tracking) if spec.tracking != none
-        set text(font: (code-font, persian-font)) if spec.mono
+        set text(font: (code-font, code-persian-font, persian-font)) if spec.mono
         if spec.underline { underline(inner) } else if spec.strike { strike(inner) } else { inner }
       }
       let boxed = spec.fill != none or div-stroke(spec) != none or spec.pad-l != 0pt or spec.pad-r != 0pt or spec.pad-t != 0pt or spec.pad-b != 0pt

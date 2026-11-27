@@ -158,7 +158,7 @@
   for key in ("page", "page-width", "page-height", "margin", "columns", "column-dir", "header", "footer") {
     assert(key not in layer, message: setting-prefix(key) + key + " is paged-only; move it under typ." + key)
   }
-  for key in ("toolbar", "outline", "progress", "embed-fonts") {
+  for key in ("toolbar", "outline", "progress", "embed-fonts", "width", "magnifier") {
     assert(key not in layer, message: setting-prefix(key) + key + " is HTML-only; move it under html." + key)
   }
   assert("copy-button" not in layer.at("code", default: (:)), message: setting-prefix("code", "copy-button") + "Use [html.code] copy-button; this setting is HTML-only")
@@ -167,7 +167,7 @@
 #check-output-domains(base-config)
 #check-output-domains(front-matter)
 // The variables (`vars` of config.toml and of the front matter, `--input var.name=...`), and the settings with their `{{ ... }}` resolved
-#let make-var-env(config) = make-env(base-config.at("vars", default: (:)), front-matter.at("vars", default: (:)), base-config.at("var-types", default: (:)), front-matter.at("var-types", default: (:)), config, sys.inputs, setting-prefix)
+#let make-var-env(config) = make-env(base-config.at("vars", default: (:)), front-matter.at("vars", default: (:)), base-config.at("var-types", default: (:)), front-matter.at("var-types", default: (:)), config, sys.inputs, setting-prefix, from: source-path)
 #let config = resolve-strings(raw-config, make-var-env(raw-config), setting-prefix)
 // What `{{ }}` in the text sees: the variables, and the settings as they are shown (with their own `{{ }}` put in)
 #let var-env = make-var-env(resolve-strings(document-config, make-var-env(document-config), setting-prefix))
@@ -216,21 +216,21 @@
     header: "line",
     // <steps> markers: "square" outlined squares, "soft" tinted rounded squares, "solid" the same tinted look as circles.
     steps: "square",
-    latin: "New Computer Modern", persian: "XB Niloofar",
+    latin: "New Computer Modern", persian: "XB Niloofar", code-font: "Anonymous Pro",
   ),
   standard: (
     code: 6pt * zoom, inline: 2pt * zoom, badge: 4pt * zoom, alert: 8pt * zoom, theorem: 6pt * zoom, box: 6pt * zoom, image: 6pt * zoom, frame: 10pt * zoom, band: 6pt * zoom, heading: 5pt * zoom,
     table: "lined",
     header: none,
     steps: "soft",
-    latin: "Inter", persian: "IRANSansX",
+    latin: "Inter", persian: "IRANSansX", code-font: "Vazir Code",
   ),
   friendly: (
     code: 14pt * zoom, inline: 4pt * zoom, badge: 9pt * zoom, alert: 16pt * zoom, theorem: 14pt * zoom, box: 14pt * zoom, image: 16pt * zoom, frame: 24pt * zoom, band: 14pt * zoom, heading: 10pt * zoom,
     table: "card",
     header: none,
     steps: "solid",
-    latin: "Lexend", persian: "Pelak",
+    latin: "Lexend", persian: "Pelak", code-font: "Vazir Code",
   ),
 )
 // Color presets for <alert type>, <box color>, [heading] color and the like: the Tailwind palette.
@@ -331,7 +331,8 @@
 #let font-config = config.at("font", default: (:))
 #let latin-font = font-config.at("latin", default: feel.latin)
 #let persian-font = font-config.at("persian", default: feel.persian)
-#let code-font = font-config.at("code", default: "Anonymous Pro")
+#let code-font = font-config.at("code", default: feel.code-font)
+#let code-persian-font = "Vazir Code"
 
 // [paragraph]: spacing and alignment of the text. An empty front matter value means the default.
 #let paragraph-config = config.at("paragraph", default: (:))

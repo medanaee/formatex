@@ -53,7 +53,7 @@ A project is a folder of real files:
 - Images (\`images/...\`), \`.bib\` files, CSV data and code files the document uses.
 - Shared component folder packages declared in Markdown front matter (their schema/docs supply the reference below).
 
-**Every path in a document is relative to the project folder** (\`images/fig1.png\`, \`chapters/intro.md\`). URLs and absolute paths do not work for files. The app compiles as the user types and shows each error with its file and line; there is nothing for you to build.
+**Every relative path in a \`.md\` file is resolved relative to that \`.md\` file's own folder** (\`images/fig1.png\`, \`chapters/intro.md\`, including inside \`<include>\`d files); start a path with \`/\` (e.g. \`/images/logo.svg\`) to anchor it to the project root. Paths in \`config.toml\` remain relative to the project root. External OS paths use \`file://...\` and remote assets use \`https://...\` where supported. The app compiles as the user types and shows each error with its file and line; there is nothing for you to build.
 
 Use one \`config.toml\` for project defaults and YAML front matter for document overrides. Shared values stay at the root/common tables; output-specific values use \`html\` / \`typ\`. Paged-only keys such as page, margin, columns, header and footer must be under \`typ\`; root paged keys are rejected. HTML-only properties require the \`html\` prefix: \`[html.code] copy-button = true\`, or local \`html.copy-button="true"\`, not bare copy-button.
 
@@ -150,7 +150,7 @@ const INTRO_FA = `شما **محتوای** یک سند فرمتکس را می‌�
 - تصویرها (\`images/...\`)، فایل‌های \`.bib\`، دادهٔ CSV و فایل‌های کدی که سند به کار می‌برد.
 - بسته‌های پوشه‌ای کامپوننت که در front matterِ Markdown معرفی می‌شوند (schema/docs آن‌ها مرجع زیر را می‌سازد).
 
-**هر مسیر در سند نسبت به پوشهٔ پروژه است** (\`images/fig1.png\`، \`chapters/intro.md\`). نشانی اینترنتی و مسیر مطلق برای فایل‌ها کار نمی‌کند. برنامه همزمان با تایپ می‌سازد و هر خطا را با فایل و شمارهٔ خط نشان می‌دهد؛ چیزی برای ساختن به عهدهٔ شما نیست.
+**هر مسیر نسبی در یک فایل \`.md\` نسبت به پوشهٔ خود همان فایل \`.md\` حل می‌شود** (\`images/fig1.png\`، \`chapters/intro.md\`، از جمله درون فایل‌های درج‌شده با \`<include>\`)؛ برای لنگر انداختن به ریشهٔ پروژه مسیر را با \`/\` شروع کنید (مثلاً \`/images/logo.svg\`). مسیرهای درون \`config.toml\` همچنان نسبت به ریشهٔ پروژه‌اند. فایل‌های بیرون از پروژه با \`file://...\` و دارایی‌های اینترنتی با \`https://...\` در جاهای پشتیبانی‌شده کار می‌کنند. برنامه همزمان با تایپ می‌سازد و هر خطا را با فایل و شمارهٔ خط نشان می‌دهد؛ چیزی برای ساختن به عهدهٔ شما نیست.
 
 یک \`config.toml\` برای پیش‌فرض پروژه و YAML front matter برای بازنویسی سند داشته باشید. مقدار مشترک در ریشه/جدول مشترک می‌ماند و مقدار ویژهٔ خروجی زیر \`html\` / \`typ\` است. کلید فقط صفحه‌بندی مثل page، margin، columns، header و footer باید زیر \`typ\` باشد؛ کلید صفحه‌بندی در ریشه رد می‌شود. ویژگی فقط HTML پیشوند \`html\` می‌خواهد: \`[html.code] copy-button = true\` یا \`html.copy-button="true"\` محلی، نه copy-button تنها.
 
@@ -238,13 +238,13 @@ front matter باید اولین چیز فایل باشد، میان دو خط \
 - شکل شماره‌دار \`<fig id="fig-x"> <img src="images/x.png"> <caption>...</caption> </fig>\` است. به‌جای \`<img>\` یک \`<fig>\` می‌تواند رسم \`<cetz>\`، نمودار \`<lilaq>\` یا یک بلوک \`\`\`mermaid بگیرد.
 - برای نمودار گردش، توالی، کلاس، حالت، ER و دایره‌ای بلوک \`\`\`mermaid را ترجیح بدهید؛ برچسب‌هایی که متن فارسی یا فاصله دارند را در گیومه بگذارید (\`A["ورود مقاله"]\`) و نمودار را باریک نگه دارید. برای رسم‌های هندسیِ دلخواه \`<cetz>\` را به کار ببرید.`
 
-const INTRO_SHORT_EN = `You write the **content** of a Formatex document: one Markdown file (YAML front matter on top) and, when asked, \`config.toml\`. **Use only the tags, attributes and settings listed here; do not invent any.** Paths are relative to the project folder. Read \`config.toml\` (its \`source\` is the compiled file) and the existing document first, and keep its style.
+const INTRO_SHORT_EN = `You write the **content** of a Formatex document: one Markdown file (YAML front matter on top) and, when asked, \`config.toml\`. **Use only the tags, attributes and settings listed here; do not invent any.** Relative paths in a \`.md\` file resolve relative to that file's folder (start with \`/\` for the project root); paths in \`config.toml\` are relative to the project root. Read \`config.toml\` (its \`source\` is the compiled file) and the existing document first, and keep its style.
 
 Settings: shared root/tables, output overrides under \`html\` / \`typ\`; paged keys/header/footer under \`typ\`, HTML-only props with \`html\` prefix. Keep \`setting.html.code.copy-button\`. Declare six-file component folder packages in Markdown front matter.
 
 Rules: open and close every tag (\`<toc></toc>\`); leave a blank line after an opening tag and before a closing tag whenever it contains Markdown; quote every attribute value (\`radius="6"\`); give an \`id\` to what you refer to and use \`<ref to="id"></ref>\`; never type numbers into headings; a Persian paragraph must start with a Persian word; front matter is the first thing in the file, between two \`---\` lines.`
 
-const INTRO_SHORT_FA = `شما **محتوای** یک سند فرمتکس را می‌نویسید: یک فایل Markdown (با YAML front matter در بالا) و، اگر خواسته شد، \`config.toml\`. **فقط از تگ‌ها، ویژگی‌ها و تنظیم‌هایی استفاده کنید که اینجا آمده؛ هیچ‌کدام را نسازید.** مسیرها نسبت به پوشهٔ پروژه‌اند. اول \`config.toml\` (کلید \`source\` فایلِ ساخته‌شده است) و سند موجود را بخوانید و سبکش را نگه دارید.
+const INTRO_SHORT_FA = `شما **محتوای** یک سند فرمتکس را می‌نویسید: یک فایل Markdown (با YAML front matter در بالا) و، اگر خواسته شد، \`config.toml\`. **فقط از تگ‌ها، ویژگی‌ها و تنظیم‌هایی استفاده کنید که اینجا آمده؛ هیچ‌کدام را نسازید.** مسیرهای نسبی در هر فایل \`.md\` نسبت به پوشهٔ همان فایل‌اند (با \`/\` در ابتدا از ریشهٔ پروژه)؛ مسیرهای \`config.toml\` نسبت به ریشهٔ پروژه‌اند. اول \`config.toml\` (کلید \`source\` فایلِ ساخته‌شده است) و سند موجود را بخوانید و سبکش را نگه دارید.
 
 تنظیم: ریشه/جدول مشترک و بازنویسی خروجی زیر \`html\` / \`typ\`؛ کلید صفحه/سربرگ/پابرگ زیر \`typ\` و ویژگی فقط HTML با پیشوند \`html\`. \`setting.html.code.copy-button\` را نگه دارید. پوشهٔ بستهٔ شش‌فایلی را در front matterِ Markdown معرفی کنید.
 
@@ -258,7 +258,7 @@ const OUTRO_EN = `## Common mistakes
 - Numbers typed into headings, or letters and words typed as list numbers.
 - A Persian paragraph that starts with an English word, a Latin number, code or a tag.
 - An attribute or value that is not in this reference, or a tag copied from another tool.
-- A path that is absolute or a URL where a project file is expected.
+- A broken relative path (remember: paths in a \`.md\` file resolve relative to that file's folder, or from the project root when starting with \`/\`), or an OS absolute path without \`file://\`.
 
 ## Checklist
 
@@ -272,7 +272,7 @@ Before you finish, check every line. Fix what fails.
 - [ ] Two numbered lists meant to be separate are not separated by only a blank line.
 - [ ] Every \`<ref to>\` and \`<a href="#...">\` points at an id that exists; ids are unique.
 - [ ] Every \`<cite key>\` exists in the \`.bib\` file, and \`<bibliography>\` appears once, at the end.
-- [ ] Image, data, code and \`<include>\` paths are relative to the project folder and the files exist.
+- [ ] Image, data, code and \`<include>\` paths resolve correctly relative to each \`.md\` file (or with leading \`/\` from the project root) and the files exist.
 - [ ] Shared/output/local precedence and \`html\` / \`typ\` domains are correct; no root paged keys or bare HTML-only props.
 - [ ] Components are used only where plain Markdown is not enough.
 - [ ] The text of the user's request is done, and nothing else was changed.`
@@ -285,7 +285,7 @@ const OUTRO_FA = `## اشتباهات رایج
 - شماره تایپ‌شده در تیتر، یا حرف و واژه‌ای که به‌جای شمارهٔ فهرست تایپ شده.
 - پاراگراف فارسی که با واژهٔ انگلیسی، عدد لاتین، کد یا تگ شروع می‌شود.
 - ویژگی یا مقداری که در این مرجع نیست، یا تگی که از ابزار دیگری آورده شده.
-- مسیر مطلق یا نشانی اینترنتی جایی که فایل پروژه لازم است.
+- مسیر نسبی نادرست (مسیرها در هر فایل \`.md\` نسبت به پوشهٔ همان فایل‌اند یا با \`/\` از ریشهٔ پروژه)، یا مسیر مطلق سیستم‌عامل بدون \`file://\`.
 
 ## فهرست بررسی
 
@@ -299,7 +299,7 @@ const OUTRO_FA = `## اشتباهات رایج
 - [ ] دو فهرست شماره‌داری که باید جدا باشند فقط با یک خط خالی از هم جدا نشده‌اند.
 - [ ] هر \`<ref to>\` و \`<a href="#...">\` به شناسه‌ای اشاره می‌کند که هست؛ شناسه‌ها یکتا هستند.
 - [ ] هر \`<cite key>\` در فایل \`.bib\` هست و \`<bibliography>\` یک بار و در پایان آمده.
-- [ ] مسیر تصویر، داده، کد و \`<include>\` نسبت به پوشهٔ پروژه است و فایل‌ها هستند.
+- [ ] مسیر تصویر، داده، کد و \`<include>\` نسبت به هر فایل \`.md\` (یا با \`/\` از ریشهٔ پروژه) درست است و فایل‌ها هستند.
 - [ ] تقدم مشترک/خروجی/محلی و حوزهٔ \`html\` / \`typ\` درست است؛ کلید صفحه‌بندی در ریشه یا ویژگی فقط HTML بدون پیشوند نیست.
 - [ ] کامپوننت فقط جایی آمده که Markdown ساده کافی نبود.
 - [ ] خواستهٔ کاربر انجام شده و چیز دیگری عوض نشده است.`
@@ -308,13 +308,13 @@ const OUTRO_SHORT_EN = `## Checklist
 
 - [ ] Every tag and attribute is in this reference; every tag is closed; blank lines inside tags that hold Markdown.
 - [ ] Front matter first; Persian paragraphs start with a Persian letter; no typed numbers in headings.
-- [ ] Every \`<ref>\`, \`<a href="#...">\` and \`<cite>\` points at an id or key that exists; paths are relative to the project folder.`
+- [ ] Every \`<ref>\`, \`<a href="#...">\` and \`<cite>\` points at an id or key that exists; relative paths resolve from each \`.md\` file's folder (leading \`/\` = project root).`
 
 const OUTRO_SHORT_FA = `## فهرست بررسی
 
 - [ ] هر تگ و ویژگی در این مرجع هست؛ هر تگ بسته شده؛ داخل تگ‌هایی که Markdown دارند خط خالی هست.
 - [ ] front matter اول است؛ پاراگراف فارسی با حرف فارسی شروع می‌شود؛ در تیتر شمارهٔ تایپ‌شده نیست.
-- [ ] هر \`<ref>\`، \`<a href="#...">\` و \`<cite>\` به شناسه یا کلیدی اشاره می‌کند که هست؛ مسیرها نسبت به پوشهٔ پروژه‌اند.`
+- [ ] هر \`<ref>\`، \`<a href="#...">\` و \`<cite>\` به شناسه یا کلیدی اشاره می‌کند که هست؛ مسیرهای نسبی نسبت به پوشهٔ هر فایل \`.md\` حل می‌شوند (\`/\` در ابتدا = ریشهٔ پروژه).`
 
 /** The text that opens a skill, after its head: who writes, the project, the way of working and the rules. Short at the smallest size. */
 export function skillIntro(language: FixedLanguage, level: SkillLevel): string {

@@ -55,20 +55,20 @@ Latest regression verification: parser 11 passed; native 68 passed/five ignored;
 - **Typst** 0.15 or newer (tested with 0.15.1).
 - **Packages**, downloaded automatically on first compile:
   - The normal Markdown parser is the bundled Rust/WASM pulldown-cmark plugin invoked inside Typst. Legacy dependencies/files may remain during cleanup.
-  - `mitex` 0.2.7 handles LaTeX math.
+  - `mitex` 0.2.7 handles LaTeX math. Typst math (`%...%`, `%%...%%`) is evaluated directly.
   - `fontawesome` 0.6.2 and `lucide` 0.1.0 provide icons.
   - `cetz` 0.5.2 renders drawings.
   - `lilaq` 0.6.0 renders data plots.
   - `mmdr` 0.2.2 renders Mermaid diagrams.
-- **Fonts** must be installed on the system. The fonts each feel uses by default:
+- **Fonts** must be installed on the system (the Formatex app also bundles the default fonts, including **Vazir Code**, for both PDF and HTML). The fonts each feel uses by default:
 
-  | Feel | Latin | Persian |
-  |------|-------|---------|
-  | `formal` | New Computer Modern (bundled with Typst) | XB Niloofar |
-  | `standard` | Inter | IRANSans |
-  | `friendly` | Lexend | Pelak |
+  | Feel | Latin | Persian | Code |
+  |------|-------|---------|------|
+  | `formal` | New Computer Modern (bundled with Typst) | XB Niloofar | Anonymous Pro |
+  | `standard` | Inter | IRANSans | Vazir Code |
+  | `friendly` | Lexend | Pelak | Vazir Code |
 
-  Code always uses **Anonymous Pro**, unless `[font] code` sets another font. Run `typst fonts` to see which fonts Typst can find. Any of them can be swapped in through `[font]`.
+  Persian text inside inline code and code blocks automatically falls back to **Vazir Code** in all feels (including `formal` and custom `[font] code` overrides). Run `typst fonts` to see which fonts Typst can find. Any of them can be swapped in through `[font]`.
 
 ---
 
@@ -90,7 +90,7 @@ Latest regression verification: parser 11 passed; native 68 passed/five ignored;
 | `examples/references.bib` | BibTeX entries used by `<cite>` and `<bibliography>`. |
 | `examples/demo.md` | Full feature test: every component, table option, code case, theorem kind, reference and citation form. Build it with `node tools/build-all.mjs --source examples/demo.md` to check all themes and feels. |
 | `code-dark.tmTheme` | Syntax-highlighting theme used automatically on dark themes. |
-| `images/` | Images. Paths in Markdown are relative to this folder's parent (the project root). |
+| `images/` | Images. Relative paths in a `.md` file resolve relative to that `.md` file's own folder; start a path with `/` (e.g. `/images/logo.svg`) for the project root. Paths in `config.toml` remain relative to the project root. |
 | `examples/` | `demo.md` (the feature test) and the files it uses: code for `<code src>`, Markdown for `<include>`, `references.bib`. |
 
 ---
@@ -125,7 +125,8 @@ The app's HTML preview/export uses the independent `formatex-html` engine, consu
 - Text and structural content render as semantic/selectable HTML; intended drawings and Typst-only components use SVG. Complete component-property parity remains a separate gate.
 - Content is static SSR. The React viewer shell hydrates toolbar, search, outline and reader controls. Arbitrary component events/state and reactive live DSL variables are not implemented.
 - Viewer language follows app/host UI language independently of document language/direction. Shared document settings and `html` output overrides control rendering; `[html.code] copy-button` controls the code copy action.
-- `[html] math = "katex"` or `"native"` selects export-time math rendering. KaTeX HTML+MathML/CSS/fonts are packaged offline, without a reader-side KaTeX compiler, CDN or network dependency.
+- `[html] math = "katex"` (default) or `"native"` selects export-time math rendering, and `[html] width = "standard"` (default; `"narrow"`, `"standard"`, or `"wide"`) sets the reading column width. KaTeX HTML/CSS/fonts are packaged offline, without a reader-side KaTeX compiler, CDN or network dependency.
+- `[html] magnifier = true` (default) adds a magnifying glass (loupe) button to the HTML viewer toolbar when `[html] toolbar = true`. Clicking it opens a movable magnifying lens over the document (`Shift`/`Alt` + scroll wheel adjusts magnification; `Escape` exits). Set `magnifier = false` in `config.toml` or `html: { magnifier: false }` in front matter to hide/disable it.
 - The host finishes assets/fonts for a standalone offline file. Preview maps/private source data and IPC are a preview-only concern; clean-export assertions remain part of the acceptance matrix.
 - Component HTML lives in `html.tsx`, with `html.css`, shared `schema.json`/`docs.json` and `manifest.toml`. Tailwind utilities compile to required static CSS; old Typst `<name>-html`/`<name>-css` handlers are not the current extension API.
 
@@ -469,7 +470,8 @@ The feel sets the default corner rounding of every rounded element, and the defa
 | `<letter>` | Plain labels, plain rule, number block without a frame | Number block in a thin frame, accent labels | Tinted number block, thicker rounded rule |
 | `<exercise>` | No frame; bold head in the heading color, ending with a period | Light card tinted with the secondary color | The same card, rounder |
 | `<choices>` markers | Plain text: "a)" | Letter in a small rounded square | Letter in a circle |
-| Fonts | New Computer Modern + XB Niloofar | Inter + IRANSans | Lexend + Pelak |
+| Task list checkboxes | Sharp square | Rounded square | Rounded square |
+| Fonts | New Computer Modern + XB Niloofar (code: Anonymous Pro) | Inter + IRANSans (code: Vazir Code) | Lexend + Pelak (code: Vazir Code) |
 
 `formal` has no rounded corners anywhere. In `standard` and `friendly`, boxed theorem blocks draw their colored side bar as a rounded pill inset from the edges, so the bar follows the rounded corners instead of being cut off. An explicit `radius` attribute on a tag always overrides the feel.
 
@@ -479,10 +481,11 @@ The feel sets the default corner rounding of every rounded element, and the defa
 [font]
 latin = "Lexend"           # English text (default: the feel's font)
 persian = "Ray"            # Persian text (default: the feel's font)
-code = "Anonymous Pro"     # code blocks and inline code
+code = "Anonymous Pro"     # code blocks and inline code (default: Anonymous Pro in formal, Vazir Code in standard/friendly)
 ```
 
 - Missing keys fall back to their defaults.
+- Default code font follows the `feel`: **Anonymous Pro** in `formal`, and **Vazir Code** in `standard` and `friendly`. Persian text inside inline code and code blocks automatically falls back to **Vazir Code** in every feel (including `formal` and custom `[font] code` overrides).
 - The app embeds the exact requested font family when available, including `CMU Serif`; only a missing family uses an alias fallback. A fallback is registered under the requested CSS family name, so a formal document does not silently fall through to an unrelated browser font. The default formal Latin family remains New Computer Modern.
 - HTML font embedding chooses the nearest regular/bold weights per style, including CMU Serif faces whose regular weight is 500. Stock New Computer Modern uses browser-compatible quadratic-outline copies for HTML only; its metrics and shaping are preserved and the original PDF fonts stay unchanged.
 - Each character comes from the first font that has it, with the Latin font tried before the Persian one. A Persian font that also contains Latin letters therefore doesn't change English text.
@@ -740,11 +743,12 @@ All of these work as usual:
 - headings, bold, italic, lists, block quotes (`>`) and horizontal rules (`---`);
 - links, inline code and fenced code blocks;
 - inline math `$...$` and display math `$$...$$`, written in LaTeX syntax;
+- Typst math: inline `%x^2+y^2%` and display `%% ... %%`. The formula touches both single percent signs (`% x %` is not math, and `50%` stays text). Percent-encoded `%` characters inside URLs (e.g. `https://en.wikipedia.org/wiki/Mojo_%28programming_language%29`) and Markdown link destinations are never interpreted as inline Typst math. Spaces and line breaks are fine inside `%%`. HTML draws these with Typst, not KaTeX;
 - tables.
 
 PDF preview navigation: clicking a horizontal rule reveals its own `---` source line, and list word clicks preserve their source offsets after the first word. This uses preview-only mapping; exported PDF styling and author syntax are unchanged.
 
-- **Lists** can be numbered with Persian digits too (`۱.`), and their numbers, bullets and indent are configurable (see <a href="#lists-section">Lists</a>).
+- **Lists** can be numbered with Persian digits too (`۱.`), support interactive task lists (`[ ]` / `[x]` / `- [ ]`), and their numbers, bullets and indent are configurable (see <a href="#lists-section">Lists</a>).
 - **Tables** are centered. Align a column with its separator: `:---` left, `---:` right, `:---:` center. Their look follows the feel, and options can be set per table (see below).
 - **Code blocks** get line numbers; empty lines at the end of a block are dropped. A block with a language (` ```python `) also gets a badge in its top corner with the language name and icon.
   - Aliases such as `py`, `js`, `ts`, `sh`, `yml` and `md` work.
@@ -819,7 +823,7 @@ Split a long document into files and pull them in where they belong:
 
 - **Same as one file:** the line is replaced by the file's text before rendering. Heading numbering, the table of contents, figure, table and equation numbers, `{#id}`s and `<ref>` all continue across files and work in both directions.
 - **Front matter is ignored.** Only the main file's settings count (theme, header, ...). An included file may keep its own front matter, for example for compiling it alone.
-- **Paths** are relative to the project root, like image paths. A path starting with `./` or `../` is relative to the file that contains the `<include>` instead (`<include src="./part.md">` next to it). Nested includes work.
+- **Paths** resolve relative to the `.md` file that contains the tag (like every other internal path in Markdown); start a path with `/` to anchor it to the project root. Inside an included file, its own relative paths resolve relative to that included file. Nested includes work.
 - **Placement:** the tag must be on its own line with blank lines around it. An `<include>` inside a paragraph or list is a compile error, and so is a loop (`a.md` → `b.md` → `a.md`). Inside fenced code blocks it is left as text.
 - Headings in an included file are not shifted: write them at the level they should have in the main document.
 
@@ -834,12 +838,18 @@ $$
 \sum_{k=1}^{n} k^2 = \frac{n(n+1)(2n+1)}{6}
 $$ {#eq-squares}
 
+%% e^(i pi) + 1 = 0 %% {#eq-euler-typst}
+
+%%
+sum_(k=1)^n k^2
+%% {#eq-squares-typst}
+
 طبق <ref to="eq-euler"></ref> ...
 ```
 
 - The number sits at the end of the line: on the left in Persian text, on the right in English. Its digits follow the language of the text before it: «(۱)» or "(1)".
 - `<ref>` prints «رابطهٔ (۱)» or "Equation (1)".
-- `{#id}` goes on the line with the closing `$$`, or alone on the line right after it. Inside fenced code blocks it is left alone.
+- `{#id}` goes on the line with the closing `$$` or `%%`, or alone on the line right after it. Inside fenced code blocks it is left alone. The same numbering applies to LaTeX and Typst display equations.
 - Which equations get a number is set in `config.toml`:
 
   ```toml
@@ -863,6 +873,7 @@ Put a `{...}` line directly above a table (a blank line in between is fine):
 | Option | Values | Default |
 |--------|--------|---------|
 | `width` | `auto`: as wide as the content. `full`: the full text width. | `[table] width` |
+| `cols` | Comma-separated column widths, one per column: `auto`, percentages (`20%`, `50%`), fractions (`1fr`, `2fr`) or plain positive numbers (`1,2,1`, treated as `fr` ratios), and fixed lengths (`pt`, `mm`, `cm`, `in`, `em`, `px`). Example: `cols="20%,50%,30%"` or `cols="1fr,2fr,auto"`. | automatic sizing |
 | `align` | `center`, `left`, `right`, `start`, `end`: where an `auto`-width table sits | enclosing `<align>`, else `[table] align` |
 | `caption` | Text shown above the table. Quote it if it has spaces. | none |
 | `#id` | Target for `<ref>`, same id rules as headings | none |
@@ -891,6 +902,9 @@ Put a `{...}` line directly above a table (a blank line in between is fine):
 - **Full-width columns** are sized like a browser does:
   - If the content fits, every column grows in proportion to its natural width.
   - Otherwise narrow columns keep their width, and wide ones share the rest and wrap.
+- **Explicit column widths (`cols`):** pass one width per column, such as `{cols="20%,50%,30%"}`, `{cols="1fr,2fr,auto"}`, `{cols="3cm,auto,1fr"}`, or `{cols="1,2,1"}`. Works in both PDF and HTML.
+  - When `%`, `fr`, or plain positive numbers are used, the table expands to full width automatically.
+  - The number of widths must match the table's column count; otherwise PDF compilation reports an error.
 - **Numbering and caption:** `caption` gives the table a caption; whether it also gets a number («جدول ۱») follows `[table] numbering` (off by default) and `numbering` on the table. See *Captions and numbering*. `<ref to="tbl-fonts">` prints «جدول ۱» or "Table 1" for a numbered table, following the surrounding paragraph's language.
 - **Syntax:**
   - Options are space-separated `key=value` pairs, in any order.
@@ -993,6 +1007,31 @@ Rendered with `{caption="Steps of a review" #list-review}` and a nested bulleted
 
 <ref to="list-review"></ref> is referenced like a figure or a table.
 
+#### Task lists (`[ ]` / `[x]`)
+
+Write task lists either with bare `[ ]` / `[x]` / `[X]` lines (no leading `- ` needed) or with standard Markdown `- [ ]` / `- [x]` syntax. Indent with `Tab` (or spaces) to create nested subtasks to any depth:
+
+```markdown
+{progress=true color=teal strike=true}
+[x] Prepare outline
+[ ] Draft chapters
+  [x] Introduction
+  [ ] Methods
+[ ] Final proofread
+```
+
+A `{...}` options line directly above a task list accepts the standard list options (`guides`, `caption`, `numbering`, `caption-position`, `indent`, `#id`) plus these task-list options:
+
+| Option | Values | Default |
+|--------|--------|---------|
+| `color` | Accent color for checked boxes and progress bar: preset name, `accent`, or hex | `accent` |
+| `strike` | `true`: strike through and mute completed task labels (without striking nested subtasks); `false`: keep normal text | `true` |
+| `editable` | `true`: interactive checkbox toggling in HTML output; `false`: read-only checkboxes | `true` |
+| `progress` | `true`: show a compact completion progress bar and counter above the task list (live-updating in HTML); `false`: hidden | `false` |
+
+- **PDF:** renders crisp feel-matched vector checkboxes (sharp corners in `formal`, rounded in `standard` and `friendly`) without duplicate bullets.
+- **HTML:** renders animated SVG checkboxes. When `editable=true`, clicking toggles items and updates the progress bar live; state persists per file in `localStorage` (`fx-tasks:v1:<pathname>`) in standalone HTML, and in viewer state during live preview.
+
 ---
 
 ## Component rules
@@ -1006,6 +1045,7 @@ These apply to every tag below:
    - Units `pt`, `mm`, `cm`, `in` and `em` also work, and `%` is accepted where noted.
 4. **Colors** are hex strings: `"#e0efff"`.
 5. **Components nest:** a `<fig>` inside an `<item>`, a `<box>` inside a `<grid>`, and so on.
+6. **Unknown HTML/XML tags:** tags not registered in the component schema (such as `<details>`, `<summary>`, `<b>`, etc.) are ignored gracefully instead of raising an `Unknown component` error, and their inner Markdown/text renders normally.
 
 ---
 
@@ -1025,7 +1065,7 @@ Place this block in the Markdown body exactly where the cover should appear, usu
 
 | Attribute | Meaning | Default |
 |---|---|---|
-| `logo` | Image path from the project root | empty |
+| `logo` | Image path relative to the `.md` file (or starting with `/` for the project root) | empty |
 | `institution` | University or organization | empty |
 | `faculty` | Faculty or school | empty |
 | `department` | Department | empty |
@@ -1317,7 +1357,7 @@ A padded blue card.
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | Required. Path relative to the project root, or an `https://` address. An address is downloaded the first time (in the desktop app) and kept in the project's `.cache` folder, so later compiles do not use the network; the sync button next to Export downloads them again. A file outside the project is written `file:///home/me/a.png` (`file:///C:/Users/me/a.png` on Windows; a path starting with `/` alone is still the project root): it is copied into the same cache, copied again when the original changes, and the kept copy is used when the original is gone. Only pictures and data files (json, yaml, toml, csv) can be read this way. The same works in `![](https://...)` and in `json()`, `yaml()`, `toml()`, `csv()` and `read()` inside a `{{ }}` block. |
+| `src` | Required. Path relative to the current `.md` file (start with `/` for the project root), or an `https://` address. An address is downloaded the first time (in the desktop app) and kept in the project's `.cache` folder, so later compiles do not use the network; the sync button next to Export downloads them again. A file outside the project is written `file:///home/me/a.png` (`file:///C:/Users/me/a.png` on Windows; a path starting with `/` alone is anchored to the project root): it is copied into the same cache, copied again when the original changes, and the kept copy is used when the original is gone. Only pictures and data files (json, yaml, toml, csv) can be read this way. The same works in `![](https://...)` and in `json()`, `yaml()`, `toml()`, `csv()` and `read()` inside a `{{ }}` block. |
 | `alt` | Alternative text. |
 | `width` | Size. |
 | `height` | Size. |
@@ -1450,11 +1490,11 @@ The accent is #text(fill: theme.accent)[this color].
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | A Typst file, instead of the code block. A path starting with `/` or without one is taken from the project root, like `src` of `<img>` and `<cetz>`. |
+| `src` | A Typst file, instead of the code block. Relative paths resolve relative to the current `.md` file; a path starting with `/` is taken from the project root, like `src` of `<img>` and `<cetz>`. |
 | `dir` | `auto` (default), `rtl` or `ltr`: the text direction of the result. `auto` leaves it to the document's rules. |
 
 - **Nested files work.** A file given as `src` is included by Typst itself, so the `#include "..."` and `#import "..."` lines inside it resolve as in any Typst project: relative to the file that holds them, at any depth (`parts/intro.typ` includes `deep/leaf.typ`, which includes `../more.typ`). Each file is set where it is included.
-- **A code block has no file of its own,** so its relative paths are read from the project root: `#include "parts/table.typ"` in a `<typ>` block finds `<project>/parts/table.typ`. Absolute paths (`/parts/x.typ`), packages (`@preview/...`) and URLs are left as written.
+- **Relative paths inside a code block** resolve relative to the `.md` file that holds the `<typ>` tag (for example, `#include "parts/table.typ"` in `chapters/intro.md` finds `chapters/parts/table.typ`). A path starting with `/` (`/parts/x.typ`) is anchored to the project root; packages (`@preview/...`) and URLs are left as written.
 - **Scope:** a code block sees `theme`, `zoom` and `feel` without importing them. Anything else it imports itself; `#import "/src/kit.typ": *` brings the whole kit of the engine (`theme`, `zoom`, `feel`, `tinted`, `panel`, `parse-length`, ...). A file given as `src` sees nothing by default, so start it with that import when it needs the theme.
 - **It is markup,** so `= headings`, lists, `#figure(...)`, `#table(...)` and the rest of Typst work, and the document's own rules apply to the result: headings join the numbering and the table of contents, text takes the theme, and paragraphs find their own direction.
 - **`#set` and `#show`** written inside a file or a block affect only that file or block.
@@ -1609,7 +1649,7 @@ formatex/
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | Read the listing from a file (`src="layout.txt"`, relative to the project root) instead of the code block. |
+| `src` | Read the listing from a file (`src="layout.txt"`, relative to the current `.md` file, or starting with `/` for the project root) instead of the code block. |
 | `icons` | `true` (default) or `false`. Without icons, folders show a trailing `/`. |
 | `caption` | Numbered caption below the tree: «شکل ۱: ...» / "Figure 1: ...", by the caption's language. Listed in `<lof>`. Not parsed as Markdown. |
 | `id` | Target for `<ref>`. Gives a number even without a caption. |
@@ -1697,7 +1737,7 @@ Rendered (donut):
 | Attribute | Notes |
 |-----------|-------|
 | `type` | `bar` (default), `line`, `pie`, `donut`. |
-| `src` | CSV file with the same layout as the table, relative to the project root. |
+| `src` | CSV file with the same layout as the table, relative to the current `.md` file (or starting with `/` for the project root). |
 | `values` | `false` (default) or `true`: print the values on the bars / points. On pie / donut the legend shows the values too, and a donut shows the total in its centre. |
 | `legend` | `auto` (default: shown for pie / donut or when there is more than one series), `true`, `false`. |
 | `unit` | Suffix after values and axis ticks, e.g. `%` or `h`. |
@@ -1964,7 +2004,7 @@ const b = a + 1;
 
 | Attribute | Notes |
 |-----------|-------|
-| `src` | File to load, relative to the project root. Without it, the fenced code block inside the tag is used. |
+| `src` | File to load, relative to the current `.md` file (or starting with `/` for the project root). Without it, the fenced code block inside the tag is used. |
 | `lang` | Highlighting language. Default: the file extension, or the fence language. |
 | `lines` | `10-20`: show only these lines. Line numbers keep the file's numbering. |
 | `highlight` | `3`, `3,7-9`: lines drawn with a tinted band. Uses the shown line numbers. |
@@ -2379,7 +2419,7 @@ Because the laboratory equipment was delivered late, we kindly ask that the dead
 | Attribute | Notes |
 |-----------|-------|
 | `heading` | A line centered at the top, e.g. «بسمه تعالی». |
-| `logo` | Image path (relative to the project root), 1.6 cm high, on the start side. |
+| `logo` | Image path (relative to the current `.md` file, or starting with `/` for the project root), 1.6 cm high, on the start side. |
 | `org` | Organisation name, on the start side (under the logo). |
 | `number`, `date`, `attachment` | On the end side, labelled «شماره / تاریخ / پیوست» or "No. / Date / Attachments". |
 | `to`, `from`, `subject` | Below the rule, labelled «به / از / موضوع» or "To / From / Subject". The subject is bold. |
@@ -2601,7 +2641,7 @@ Three first steps:
 | Doubled heading numbers (`1. 1. Intro`) | Numbers typed into headings while `[heading] numbering = true`. |
 | Persian paragraph laid out left-to-right | It starts with an English word; add an RLM at the start. |
 | A list breaks after adding an RLM | The mark was put before `-` / `1.` instead of after it. |
-| Image not found | The path must be relative to the project root; URLs and absolute paths don't work. |
+| Image not found | Relative paths resolve relative to the current `.md` file's folder (start with `/` for the project root); external files need `file://...` and remote images `https://...`. |
 | `<alert radius="2mm">` fails | `<alert>` takes a plain number only. |
 | Compile error on `<cite>` | The key is missing from `references.bib`, or there is no `<bibliography>`. |
 | Compile error on `<ref>` | Unknown id, or the same id used twice. |
@@ -2619,7 +2659,7 @@ Three first steps:
 
 ## Your own components
 
-Declare project-relative package **folders** in Markdown front matter:
+Declare package **folders** in Markdown front matter (relative to the `.md` file, or starting with `/` for the project root):
 
 ```yaml
 ---

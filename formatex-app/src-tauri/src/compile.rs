@@ -356,14 +356,14 @@ pub(crate) fn prepare_document_in(engine: &Engine, project_id: &str, main: &str,
 
 /// Drawings are isolated from the editor's last successful paged document and IDE state.
 #[tauri::command]
-pub async fn render_document_graphic(engine: State<'_, Arc<Engine>>, project_id: String, main: String, node: serde_json::Value, inline: bool, overrides: Option<HashMap<String, String>>) -> Result<String, String> {
+pub async fn render_document_graphic(engine: State<'_, Arc<Engine>>, project_id: String, main: String, node: serde_json::Value, inline: bool, width_pt: Option<f64>, overrides: Option<HashMap<String, String>>) -> Result<String, String> {
     let engine = engine.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let dir = project_dir(&engine, &project_id)?;
         let mut files = overrides.unwrap_or_default();
         let json = serde_json::to_string(&node.to_string()).map_err(|error| error.to_string())?;
         let entry = "__formatex_graphic__.typ";
-        let width = if inline { "auto" } else { "600pt" };
+        let width = if inline { "auto".to_string() } else { format!("{}pt", width_pt.filter(|w| w.is_finite() && *w > 0.0).unwrap_or(618.0)) };
         let source = format!("#import \"/src/render.typ\": render-document, conf, all-rules\n#show: conf\n#show: all-rules\n#set page(width:{width},height:auto,margin:0pt,header:none,footer:none,numbering:none)\n#let fragment=json(bytes({json}))\n#render-document((children:(fragment,)))\n");
         files.insert(entry.into(), source);
         let mut inputs = Inputs::from([("source".into(), main.clone()), ("graphic".into(), "1".into()), ("target".into(), "html".into())]);

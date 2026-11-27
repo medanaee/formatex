@@ -1,5 +1,6 @@
 #import "/src/prelude.typ": *
 #import "/src/lib/remote.typ": *
+#import "/src/lib/vars.typ": rooted-path
 
 
 // Child tags (<caption>, <item>) mark their content so the parent tag can collect them.
@@ -95,6 +96,19 @@
 
 #let digits(n, rtl-digits) = numbering(if rtl-digits { "۱" } else { "1" }, n)
 
-// User paths are written relative to the project root, but Typst resolves a path
-// relative to the file that calls image()/read(), so component code roots them first.
-#let root-path(p) = if is-remote(p) { remote-path(p) } else if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
+// User paths in a Markdown file are resolved relative to that Markdown file (from `attrs._at`
+// when given, otherwise `source-path`), while paths starting with `/` stay anchored to the project root.
+#let file-of-attrs(attrs) = {
+  if type(attrs) != dictionary { return none }
+  let at = attrs.at("_at", default: attrs.at("md-at", default: none))
+  if type(at) != str or at == "" { return none }
+  let parts = at.split(":")
+  if parts.len() > 1 { parts.slice(0, -1).join(":") } else { at }
+}
+#let root-path(p, attrs: none, from: none) = {
+  let base = if from != none { from } else {
+    let f = file-of-attrs(attrs)
+    if f != none { f } else { source-path }
+  }
+  rooted-path(p, from: base)
+}

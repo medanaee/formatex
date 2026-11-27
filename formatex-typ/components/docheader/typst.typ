@@ -22,7 +22,7 @@
   box(
     clip: true,
     radius: if "radius" in attrs { parse-length(attrs.radius, attrs: attrs) } else { feel.image },
-    image(root-path(attrs.src), width: if w != none { w } else { auto }, height: if h != none { h } else if w == none { 4em } else { auto }),
+    image(root-path(attrs.src, attrs: attrs), width: if w != none { w } else { auto }, height: if h != none { h } else if w == none { 4em } else { auto }),
   )
 }
 

@@ -200,16 +200,20 @@ width = "80%"
 # "labelled" = only equations followed by {#id} get a number, "all" = every one, "none" = never
 numbering = "labelled"
 
-# The HTML output: the live HTML preview and the Export HTML dialog start from these (the dialog can change them for one export).
+# The HTML output: the live HTML preview and Export HTML use these settings.
 [html]
-# Math renderer in HTML: "native" (browser MathML) or "katex" (pre-rendered offline HTML)
-math = "native"
+# Math renderer in HTML: "katex" (pre-rendered offline HTML) or "native" (browser MathML)
+math = "katex"
+# Reading column width in HTML: "narrow", "standard" or "wide"
+width = "standard"
 # A slim toolbar: zoom, theme and feel
 toolbar = true
 # A reading-progress line at the top
 progress = true
 # An outline of the headings in a sidebar on the right (a drawer on a phone)
 outline = true
+# A fun magnifying glass button in the toolbar
+magnifier = true
 # A copy button on every code block
 # The font files inside the HTML (a few MB bigger; the same look on any machine)
 embed-fonts = true

@@ -6,6 +6,7 @@ import { SETTINGS_STORAGE_KEY } from "@/lib/persistedSettings"
 import { createSafeJsonStorage } from "@/lib/safeStorage"
 import type { CustomTheme } from "@/lib/editor/themes"
 import { applyTheme, isThemePreference, watchSystemTheme, type ThemePreference } from "@/lib/theme"
+import { applyWindowGlass, isWindowGlass, type WindowGlass } from "@/lib/windowGlass"
 
 /** A percent (100 is the pane's width up to a readable limit), or the width / the whole page of the pane. */
 export type PreviewZoom = number | "width" | "page"
@@ -24,6 +25,9 @@ export interface EditorPanels {
 
 interface SettingsState {
   theme: ThemePreference
+  /** Windows desktop backdrop effect behind the window (`none`, `mica`, `acrylic`). */
+  windowGlass: WindowGlass
+  setWindowGlass: (glass: WindowGlass) => void
   language: AppLanguage
   /** Sidebar of the tablet / desktop layouts (the phone layout uses the bottom bar instead). */
   sidebarOpen: boolean
@@ -80,8 +84,13 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       theme: "system",
+      windowGlass: "none",
+      setWindowGlass: (windowGlass) => {
+        set({ windowGlass })
+        applyWindowGlass(windowGlass, get().theme)
+      },
       language: isSupportedLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE,
       sidebarOpen: true,
       visualEditor: false,
@@ -122,6 +131,7 @@ export const useSettingsStore = create<SettingsState>()(
         set({ theme })
         applyTheme(theme)
         watchSystemTheme(theme)
+        applyWindowGlass(get().windowGlass, theme)
       },
 
       setLanguage: (language) => {
@@ -152,11 +162,13 @@ export const useSettingsStore = create<SettingsState>()(
         if (typeof state.editorZoom !== "number" || !(state.editorZoom >= 50 && state.editorZoom <= 300)) state.editorZoom = 100
         if (!LIBRARY_VIEWS.includes(state.libraryView)) state.libraryView = "grid"
         if (!isThemePreference(state.theme)) state.theme = "system"
+        if (!isWindowGlass(state.windowGlass)) state.windowGlass = "none"
         if (!isSupportedLanguage(state.language)) state.language = DEFAULT_LANGUAGE
         if (!Array.isArray(state.searchHistory)) state.searchHistory = []
         else state.searchHistory = state.searchHistory.filter((item): item is string => typeof item === "string" && item.trim() !== "").slice(0, 15)
         applyTheme(state.theme)
         watchSystemTheme(state.theme)
+        applyWindowGlass(state.windowGlass, state.theme)
         applyLanguageSettings(state.language)
         void i18n.changeLanguage(state.language)
       },

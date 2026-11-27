@@ -65,12 +65,69 @@ function parseValue(raw: string): TomlValue {
 /** A string as a TOML literal. */
 export const tomlString = (value: string): string => `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t")}"`
 
+/** Strips an inline `# ...` comment outside quotes from a TOML fragment. */
+function stripComment(fragment: string): string {
+  let quote: string | null = null
+  for (let i = 0; i < fragment.length; i++) {
+    const ch = fragment[i]
+    if (quote) {
+      if (quote === '"' && ch === "\\") { i++; continue }
+      if (ch === quote) quote = null
+    } else if (ch === '"' || ch === "'") {
+      quote = ch
+    } else if (ch === "#") {
+      return fragment.slice(0, i).trimEnd()
+    }
+  }
+  return fragment.trimEnd()
+}
+
+/** Counts unclosed `[` brackets outside quotes. */
+function bracketDelta(fragment: string): number {
+  let depth = 0
+  let quote: string | null = null
+  for (let i = 0; i < fragment.length; i++) {
+    const ch = fragment[i]
+    if (quote) {
+      if (quote === '"' && ch === "\\") { i++; continue }
+      if (ch === quote) quote = null
+    } else if (ch === '"' || ch === "'") {
+      quote = ch
+    } else if (ch === "#") {
+      break
+    } else if (ch === "[") {
+      depth++
+    } else if (ch === "]") {
+      depth--
+    }
+  }
+  return depth
+}
+
+/** Reads a value starting at `at`, extending across lines for multi-line arrays (`[ ... ]`). */
+function valueExtent(lines: string[], at: number, spanEnd: number): { endLine: number; raw: string } {
+  const first = rawValue(lines[at])
+  if (!first.startsWith("[")) return { endLine: at, raw: first }
+  let depth = bracketDelta(first)
+  if (depth <= 0) return { endLine: at, raw: first }
+  const parts = [stripComment(first).trim()]
+  let endLine = at
+  for (let i = at + 1; i < spanEnd && depth > 0; i++) {
+    endLine = i
+    const clean = stripComment(lines[i]).trim()
+    if (clean) parts.push(clean)
+    depth += bracketDelta(lines[i])
+  }
+  const joined = parts.join(" ").replace(/\[\s+/g, "[").replace(/\s+\]/g, "]").replace(/,\s*\]/g, "]")
+  return { endLine, raw: joined }
+}
+
 export function getValue(text: string, table: string, key: string): TomlValue | undefined {
   const lines = text.split("\n")
   const span = findSection(lines, table)
   if (!span) return undefined
   const at = findKey(lines, span, key)
-  return at < 0 ? undefined : parseValue(rawValue(lines[at]))
+  return at < 0 ? undefined : parseValue(valueExtent(lines, at, span.end).raw)
 }
 
 /** Sets `key` in `table` to a TOML literal (`"text"`, `true`, `12`): changes the line when there is one, else adds it. */
@@ -83,8 +140,13 @@ export function setValue(text: string, table: string, key: string, literal: stri
   }
   const at = findKey(lines, span, key)
   if (at >= 0) {
+    const { endLine } = valueExtent(lines, at, span.end)
     const line = lines[at]
     const eq = line.indexOf("=")
+    if (endLine > at) {
+      lines.splice(at, endLine - at + 1, `${line.slice(0, eq)}= ${literal}`)
+      return lines.join("\n")
+    }
     const afterEq = line.slice(eq + 1)
     // What follows the old value (spaces and a comment) stays
     const tail = afterEq.slice(afterEq.length - afterEq.trimStart().length + rawValue(line).length)
@@ -98,14 +160,15 @@ export function setValue(text: string, table: string, key: string, literal: stri
   return lines.join("\n")
 }
 
-/** Removes the line that sets `key`; the table stays. */
+/** Removes the line (or multi-line array) that sets `key`; the table stays. */
 export function removeKey(text: string, table: string, key: string): string {
   const lines = text.split("\n")
   const span = findSection(lines, table)
   if (!span) return text
   const at = findKey(lines, span, key)
   if (at < 0) return text
-  lines.splice(at, 1)
+  const { endLine } = valueExtent(lines, at, span.end)
+  lines.splice(at, endLine - at + 1)
   return lines.join("\n")
 }
 

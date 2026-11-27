@@ -47,17 +47,35 @@ fn uses_italic(html: &str) -> bool {
 /// The characters the page shows: its text with the tags taken out and the entities decoded, the script's words (the copy button), the
 /// printable ASCII (the language label of a code block comes from an attribute) and the marks that steer the shaping of Persian text.
 pub fn page_chars(html: &str) -> HashSet<char> {
-    let body = html.find("<main").map(|at| &html[at..]).unwrap_or(html);
+    let body = html.find("<body").or_else(|| html.find("<main")).map(|at| &html[at..]).unwrap_or(html);
     let mut chars: HashSet<char> = (0x20u8..0x7F).map(char::from).collect();
     chars.extend(['\u{A0}', '\u{200C}', '\u{200D}', '\u{200E}', '\u{200F}', '\u{202A}', '\u{202B}', '\u{202C}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}']);
     let mut in_tag = false;
+    let mut in_script = false;
+    let mut tag_name = String::new();
+    let mut reading_tag_name = false;
     let mut entity = String::new();
     let mut in_entity = false;
     for c in body.chars() {
         match c {
-            '<' if !in_tag => in_tag = true,
-            '>' if in_tag => in_tag = false,
-            _ if in_tag => {}
+            '<' if !in_tag => {
+                in_tag = true;
+                tag_name.clear();
+                reading_tag_name = true;
+            }
+            '>' if in_tag => {
+                in_tag = false;
+                reading_tag_name = false;
+                if tag_name.eq_ignore_ascii_case("script") { in_script = true; }
+                else if tag_name.eq_ignore_ascii_case("/script") { in_script = false; }
+            }
+            _ if in_tag => {
+                if reading_tag_name {
+                    if c.is_ascii_whitespace() { reading_tag_name = false; }
+                    else { tag_name.push(c); }
+                }
+            }
+            _ if in_script => {}
             '&' => {
                 in_entity = true;
                 entity.clear();
@@ -134,6 +152,120 @@ fn normalize_outline_flavor(data: &mut [u8]) {
         sum.wrapping_add(u32::from_be_bytes(word))
     });
     data[adjustment..adjustment + 4].copy_from_slice(&0xB1B0AFBAu32.wrapping_sub(sum).to_be_bytes());
+}
+
+fn find_sfnt_table<'a>(font: &'a [u8], tag: &[u8; 4]) -> Option<&'a [u8]> {
+    let count = be16(font, 4)?;
+    for i in 0..count {
+        let entry = 12 + i * 16;
+        if font.get(entry..entry + 4)? == tag {
+            let offset = be32(font, entry + 8)? as usize;
+            let length = be32(font, entry + 12)? as usize;
+            return font.get(offset..offset.checked_add(length)?);
+        }
+    }
+    None
+}
+
+fn rule_is_empty(lookup_type: usize, st: &[u8]) -> bool {
+    match (lookup_type, be16(st, 0)) {
+        (5, Some(3)) => be16(st, 4) == Some(0),
+        (5, Some(1 | 2)) => {
+            let Some(set_count) = be16(st, 4) else { return false };
+            for s in 0..set_count {
+                let Some(rs_off) = be16(st, 6 + s * 2) else { return false };
+                if rs_off == 0 { continue; }
+                let Some(rs) = st.get(rs_off..) else { return false };
+                let Some(rc) = be16(rs, 0) else { return false };
+                for r in 0..rc {
+                    if be16(rs, 2 + r * 2).and_then(|o| rs.get(o..)).and_then(|rule| be16(rule, 2)) == Some(0) {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+        (6, Some(3)) => {
+            let Some(b) = be16(st, 2) else { return false };
+            let i_pos = 4 + 2 * b;
+            let Some(i) = be16(st, i_pos) else { return false };
+            let l_pos = i_pos + 2 + 2 * i;
+            let Some(l) = be16(st, l_pos) else { return false };
+            be16(st, l_pos + 2 + 2 * l) == Some(0)
+        }
+        (6, Some(fmt @ (1 | 2))) => {
+            let count_pos = if fmt == 1 { 4 } else { 10 };
+            let Some(set_count) = be16(st, count_pos) else { return false };
+            for s in 0..set_count {
+                let Some(rs_off) = be16(st, count_pos + 2 + s * 2) else { return false };
+                if rs_off == 0 { continue; }
+                let Some(rs) = st.get(rs_off..) else { return false };
+                let Some(rc) = be16(rs, 0) else { return false };
+                for r in 0..rc {
+                    let Some(rule) = be16(rs, 2 + r * 2).and_then(|o| rs.get(o..)) else { return false };
+                    let Some(b) = be16(rule, 0) else { return false };
+                    let i_pos = 2 + 2 * b;
+                    let Some(i) = be16(rule, i_pos) else { return false };
+                    let l_pos = i_pos + 2 + 2 * i.saturating_sub(1);
+                    let Some(l) = be16(rule, l_pos) else { return false };
+                    if be16(rule, l_pos + 2 + 2 * l) == Some(0) {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
+// fontcull-klippa drops contextual GSUB rules that have zero SequenceLookupRecords.
+// Arabic/Persian fonts like Pelak and XB Niloofar place an empty "ignore" subtable ahead of
+// a fallback substitution in shaping features (e.g. keeping round final ه after ر/د/ا/و);
+// check only those essential shaping features so Latin fonts with calt/dlig guards still subset.
+fn has_gsub_ignore_rule(font: &[u8]) -> bool {
+    let Some(gsub) = find_sfnt_table(font, b"GSUB") else { return false };
+    let Some(features) = be16(gsub, 6).and_then(|o| gsub.get(o..)) else { return false };
+    let Some(list) = be16(gsub, 8).and_then(|o| gsub.get(o..)) else { return false };
+    let Some(feature_count) = be16(features, 0) else { return false };
+    let Some(lookup_count) = be16(list, 0) else { return false };
+    let mut checked = vec![false; lookup_count];
+    for f in 0..feature_count {
+        let rec = 2 + f * 6;
+        let Some(tag) = features.get(rec..rec + 4) else { break };
+        if !matches!(tag, b"isol" | b"init" | b"medi" | b"fina" | b"ccmp" | b"rlig") {
+            continue;
+        }
+        let Some(feat) = be16(features, rec + 4).and_then(|o| features.get(o..)) else { continue };
+        let Some(count) = be16(feat, 2) else { continue };
+        for k in 0..count {
+            if let Some(idx) = be16(feat, 4 + k * 2)
+                && let Some(slot) = checked.get_mut(idx)
+            {
+                *slot = true;
+            }
+        }
+    }
+    for (i, inspect) in checked.into_iter().enumerate() {
+        if !inspect { continue; }
+        let Some(lk) = be16(list, 2 + i * 2).and_then(|o| list.get(o..)) else { continue };
+        let Some(lk_type) = be16(lk, 0) else { continue };
+        let Some(sub_count) = be16(lk, 4) else { continue };
+        for j in 0..sub_count {
+            let Some(st) = be16(lk, 6 + j * 2).and_then(|o| lk.get(o..)) else { continue };
+            let (eff_type, eff_st) = if lk_type == 7 && be16(st, 0) == Some(1) {
+                let Some(et) = be16(st, 2) else { continue };
+                let Some(es) = be32(st, 4).and_then(|o| st.get(o as usize..)) else { continue };
+                (et, es)
+            } else {
+                (lk_type, st)
+            };
+            if rule_is_empty(eff_type, eff_st) {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 /// A TrueType / OpenType font as WOFF 1.0: the same tables, each deflated when that makes it smaller. `None` for anything that is not a
@@ -264,7 +396,7 @@ fn font_faces_for(html: &str, store: &FontStore, subset: bool) -> String {
             } else { data.as_slice() };
             let cut = if is_fa {
                 fontcull::subset_font_data(browser_data, &face_fa_chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut })
-            } else if subset {
+            } else if subset && !has_gsub_ignore_rule(browser_data) {
                 fontcull::subset_font_data(browser_data, &chars, &[]).ok().filter(|cut| cut.len() < browser_data.len()).map(|mut cut| { normalize_outline_flavor(&mut cut); cut })
             } else { None };
             let source: &[u8] = cut.as_deref().unwrap_or(browser_data);
@@ -425,6 +557,20 @@ mod tests {
             }
         }
         assert!(to_woff(&cut).is_some());
+    }
+
+    #[test]
+    fn preserves_pelak_contextual_ignore_rules_when_subsetting_for_html() {
+        let pelak = include_bytes!("../../fonts/Pelak-Regular.ttf");
+        let vazir = include_bytes!("../../fonts/Vazirmatn-Bold.ttf");
+        let inter = include_bytes!("../../../formatex-typ/fonts/Inter-Regular.ttf");
+        assert!(has_gsub_ignore_rule(pelak), "Pelak relies on a contextual ignore rule for final Heh");
+        assert!(!has_gsub_ignore_rule(vazir), "Vazirmatn should remain subsettable");
+        assert!(!has_gsub_ignore_rule(inter), "Inter calt/dlig ignore guards should not block Latin subsetting");
+        // Verify why: fontcull strips Pelak's ignore rule, leaving every isolated Heh unconditional.
+        let chars = page_chars("<main><p>پاره-اجرا</p></main>");
+        let broken_cut = fontcull::subset_font_data(pelak, &chars, &[]).unwrap();
+        assert!(!has_gsub_ignore_rule(&broken_cut));
     }
 
     #[test]

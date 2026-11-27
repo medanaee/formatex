@@ -27,8 +27,8 @@
     "حالت کلی: گردی گوشه‌ها و فونت‌های پیش‌فرض. formal: گوشهٔ تیز و رسمی. standard: کمی گرد. friendly: بسیار گرد و صمیمی.",
   )),
   "components": (type: "string", doc: d(
-    "Your own components: Typst files of the project that define tags (a list [\"notes.typ\", \"extras/stamps.typ\"], or paths separated by commas). A file can define any number of tags and its name does not matter. In the front matter the files are added to those of config.toml.",
-    "کامپوننت‌های خودتان: فایل‌های Typst پروژه که تگ تعریف می‌کنند (فهرست [\"notes.typ\", \"extras/stamps.typ\"] یا مسیرهای جداشده با ویرگول). یک فایل می‌تواند هر تعداد تگ تعریف کند و نامش مهم نیست. در front matter فایل‌ها به فایل‌های config.toml افزوده می‌شوند.",
+    "Your own local component folders in the project (a list [\"my-components/pill\", \"my-components/stat\"]). Each folder contains manifest.toml, schema.json, docs.json, and typst.typ / html.tsx. In front matter the folders are added to those of config.toml.",
+    "پوشه‌های کامپوننت اختصاصی شما در پروژه (فهرست [\"my-components/pill\", \"my-components/stat\"]). هر پوشه شامل manifest.toml، schema.json، docs.json و typst.typ / html.tsx است. در front matter پوشه‌ها به فهرست config.toml افزوده می‌شوند.",
   )),
   "vars": (type: "string", doc: d(
     "Values for the text, `name: value` lines: print one with {{ name }}, or use it in code: {{ if draft { \"Draft\" } else { \"Final\" } }}. The rules of a variable are in `var-types`.",
@@ -90,7 +90,7 @@
     attrs: (
       "latin": (type: "string", doc: d("Font for English text. Default: the feel's font.", "فونت متن انگلیسی. پیش‌فرض: فونت حالت کلی.")),
       "persian": (type: "string", doc: d("Font for Persian text. Default: the feel's font.", "فونت متن فارسی. پیش‌فرض: فونت حالت کلی.")),
-      "code": (type: "string", default: "Anonymous Pro", doc: d("Font for code blocks and inline code.", "فونت بلوک‌های کد و کد درون‌خطی.")),
+      "code": (type: "string", doc: d("Font for code blocks and inline code. Default follows feel (`Anonymous Pro` in `formal`, `Vazir Code` in `standard` and `friendly`); Persian text in code falls back to `Vazir Code`.", "فونت بلوک‌های کد و کد درون‌خطی. پیش‌فرض از feel می‌آید (`Anonymous Pro` در `formal` و `Vazir Code` در `standard` و `friendly`)؛ متن فارسی درون کد از `Vazir Code` استفاده می‌کند.")),
     ),
   ),
   "paragraph": (
@@ -167,7 +167,7 @@
     ),
   ),
   "equation": (
-    doc: d("Display equations ($$ ... $$).", "معادله‌های نمایشی ($$ ... $$)."),
+    doc: d("Display equations (`$$` LaTeX or `%%` Typst).", "معادله‌های نمایشی (`$$` لاتک یا `%%` تایپست)."),
     attrs: (
       "numbering": (type: "enum", values: ("labelled", "all", "none"), default: "labelled", doc: d("labelled: only equations followed by {#id} get a number; all: every one; none: never.", "labelled: فقط معادله‌هایی که {#id} دارند شماره می‌گیرند؛ all: همه؛ none: هیچ‌کدام.")),
     ),
@@ -180,12 +180,14 @@
   ),
   tables: (
     "html": (
-      doc: d("The HTML output (the live HTML preview and the Export HTML dialog start from these; the dialog can change them for one export).", "خروجی HTML (پیش‌نمایش زندهٔ HTML و پنجرهٔ «خروجی HTML» از این‌ها شروع می‌کنند؛ پنجره می‌تواند برای یک خروجی تغییرشان دهد)."),
+      doc: d("The HTML output (the live HTML preview and Export HTML use these settings).", "خروجی HTML (پیش‌نمایش زندهٔ HTML و خروجی HTML از این تنظیمات استفاده می‌کنند)."),
       attrs: (
-        "math": (type: "enum", values: ("native", "katex"), default: "native", doc: d("Math renderer for HTML.", "رندرکنندهٔ فرمول در HTML.")),
+        "math": (type: "enum", values: ("native", "katex"), default: "katex", doc: d("Math renderer for HTML.", "رندرکنندهٔ فرمول در HTML.")),
+        "width": (type: "enum", values: ("narrow", "standard", "wide"), default: "standard", doc: d("Reading column width: narrow, standard or wide.", "عرض ستون خواندن: narrow (باریک)، standard (استاندارد) یا wide (عریض).")),
         "toolbar": (type: "bool", default: "true", doc: d("A slim toolbar: zoom, theme and feel, changed by the reader.", "نوار ابزار باریک: بزرگ‌نمایی، تم و حال‌وهوا، به انتخاب خواننده.")),
         "progress": (type: "bool", default: "true", doc: d("A reading-progress line at the top and a percent in the toolbar.", "خط نشانگر خواندن بالای صفحه و درصد آن در نوار ابزار.")),
         "outline": (type: "bool", default: "true", doc: d("An outline of the headings in a sidebar on the right (a drawer on a phone).", "فهرست سرفصل‌ها در یک نوار کناری سمت راست (در موبایل به شکل کشو).")),
+        "magnifier": (type: "bool", default: "true", doc: d("A magnifying glass button in the toolbar.", "دکمهٔ ذره‌بین در نوار ابزار.")),
         "copy-code": (type: "bool", default: "true", doc: d("A copy button on every code block.", "دکمهٔ کپی روی هر بلوک کد.")),
         "embed-fonts": (type: "bool", default: "true", doc: d("Put the font files in the HTML (a few MB bigger) so it looks the same on any machine; false: the reader's own fonts. With the toolbar on, the fonts of every feel are included, so changing the feel changes the fonts too.", "فایل فونت‌ها در HTML گذاشته شود (چند مگابایت بزرگ‌تر) تا همه‌جا یک‌شکل دیده شود؛ false: فونت‌های خود خواننده.")),
       ),

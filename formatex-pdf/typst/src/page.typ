@@ -1,5 +1,6 @@
 // Paged header/footer rendering. Source of truth: formatex-pdf.
 #import "/src/core.typ": *
+#import "/src/lib/vars.typ": rooted-path
 #import "/src/page-options.typ": *
 
 #let header-config = config.at("header", default: (:))
@@ -84,8 +85,10 @@
   }
 
   let logo = cfg.at("logo", default: none)
+  let logo-in-front = "logo" in front-matter.at("typ", default: (:)).at("header", default: (:))
+  let logo-from = if logo-in-front { source-path } else { none }
   let start-cell = {
-    if logo != none { box(height: 1.6em, baseline: 30%, image(rooted(logo))) + h(0.6em) }
+    if logo != none { box(height: 1.6em, baseline: 30%, image(rooted-path(logo, from: logo-from))) + h(0.6em) }
     start-filled
   }
 

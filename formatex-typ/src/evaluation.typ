@@ -15,12 +15,12 @@
   "_document": resolve-strings(front-matter, var-env, setting-prefix),
 )
 #let tokens = theme.pairs().map(((key, value)) => (key, if type(value) == color { value.to-hex() } else { value })).to-dict() + (
-  latin: latin-font, persian: persian-font, code: code-font, zoom: zoom,
+  latin: latin-font, persian: persian-font, code: if code-font == code-persian-font { code-font } else { (code-font, code-persian-font) }, zoom: zoom,
   radius: feel.box / 1pt, dark: theme.at("dark", default: false),
   "page-height": page-size.height / 1mm,
   "theme-name": theme-name, "feel-name": feel-name,
   themes: all-themes.pairs().map(((name, palette)) => (name, palette.pairs().map(((key, value)) => (key, if type(value) == color { value.to-hex() } else { value })).to-dict())).to-dict(),
-  feels: feels.pairs().map(((name, value)) => (name, (radius: value.box / 1pt, latin: font-config.at("latin", default: value.latin), persian: font-config.at("persian", default: value.persian)))).to-dict(),
+  feels: feels.pairs().map(((name, value)) => (name, (radius: value.box / 1pt, latin: font-config.at("latin", default: value.latin), persian: font-config.at("persian", default: value.persian), code: font-config.at("code", default: value.code-font)))).to-dict(),
 )
 #let parser-output = parser-plugin.parse(bytes(json.encode((
   text: prepared.text, file: source-path, sources: prepared.sources,

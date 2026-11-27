@@ -167,7 +167,7 @@
 // What the code can read: the variables (as `let`s, so the code can change them), `setting`, the document metadata fields, and the readers of
 // files with their paths taken from the project root
 // `extra` is what only the page knows (PAGE, PAGES...), for the code that runs when the pages are made
-#let run-code(code, env, extra: (:)) = {
+#let run-code(code, env, extra: (:), from: none) = {
   let names = env.values.keys()
   let prelude = names.map(name => "let " + name + " = __v." + name + "\n").join()
   let after = if names.len() == 0 { "(:)" } else { "(" + names.map(name => name + ": " + name).join(", ") + ",)" }
@@ -175,11 +175,11 @@
   let scope = env.scope + extra + (
     __v: env.values,
     __s: v => show-value(v),
-    json: p => json(rooted-path(p)),
-    yaml: p => yaml(rooted-path(p)),
-    toml: p => toml(rooted-path(p)),
-    csv: p => csv(rooted-path(p)),
-    read: p => read(rooted-path(p)),
+    json: p => json(rooted-path(p, from: from)),
+    yaml: p => yaml(rooted-path(p, from: from)),
+    toml: p => toml(rooted-path(p, from: from)),
+    csv: p => csv(rooted-path(p, from: from)),
+    read: p => read(rooted-path(p, from: from)),
   )
   eval(full, mode: "code", scope: scope)
 }

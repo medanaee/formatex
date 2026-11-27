@@ -29,12 +29,45 @@
   if s.contains(".") { float(s) } else { int(s) }
 } else { s }
 
-// Typst resolves a path from the file that runs it; the paths of the project are written from its root
-#let rooted-path(p) = if is-remote(p) { remote-path(p) } else if type(p) == str and not p.starts-with("/") and not p.contains("://") { "/" + p } else { p }
+// Resolve a project path relative to `from` (a project-relative file path, e.g. "docs/ch1.md").
+// Remote URLs / `file://` stay untouched; paths starting with `/` are anchored to the project root.
+#let normalize-project-path(p, from: none) = {
+  let clean-p = p.replace("\\", "/")
+  let anchored = clean-p.starts-with("/")
+  let parts = if anchored or from == none or from == "" { () } else {
+    from.replace("\\", "/").trim("/", at: start).split("/").slice(0, -1).filter(s => s != "" and s != ".")
+  }
+  for seg in clean-p.trim("/", at: start).split("/") {
+    if seg == "" or seg == "." { continue }
+    if seg == ".." {
+      if parts.len() > 0 { parts = parts.slice(0, -1) }
+      else { parts.push("..") }
+    } else {
+      parts.push(seg)
+    }
+  }
+  parts.join("/")
+}
 
-#let load-data(path, at) = {
+#let resolve-path(p, from: none) = if type(p) != str or is-remote(p) or p.contains("://") or p.starts-with("data:") or p.starts-with("blob:") {
+  p
+} else {
+  normalize-project-path(p, from: from)
+}
+
+// Typst resolves a path from the file that runs it; user paths in a Markdown file are resolved
+// relative to that Markdown file (or project root when `from` is none or the path starts with `/`).
+#let rooted-path(p, from: none) = if is-remote(p) {
+  remote-path(p)
+} else if type(p) == str and not p.contains("://") and not p.starts-with("data:") and not p.starts-with("blob:") {
+  "/" + normalize-project-path(p, from: from)
+} else {
+  p
+}
+
+#let load-data(path, at, from: none) = {
   let ext = lower(path.split(".").last())
-  let p = rooted-path(path)
+  let p = rooted-path(path, from: from)
   if ext == "json" { json(p) } else if ext in ("yaml", "yml") { yaml(p) } else if ext == "toml" { toml(p) } else if ext == "csv" { csv(p) } else {
     fail(at, "a data file is .json, .yaml, .toml or .csv, got " + repr(path))
   }
@@ -43,7 +76,7 @@
 // A value as the rule says: `raw` is what was written (or typed in `--input`); the result is a Typst value, or an error naming `name`.
 // `rule` is a list (the values it may have), a type name (bool, int, number, length, color, string, markdown, json, data) or a table
 // `{ type, min, max, options }`.
-#let convert(name, raw, rule, at) = {
+#let convert(name, raw, rule, at, from: none) = {
   if raw == none { return none }
   if rule == none { return if type(raw) == str { infer(raw) } else { raw } }
   let options = if type(rule) == array { rule } else if type(rule) == dictionary { rule.at("options", default: none) } else { none }
@@ -70,7 +103,7 @@
   } else if kind == "color" {
     if type(raw) == str and raw.starts-with("#") { value = rgb(raw) }
   } else if kind in ("json", "data") {
-    if type(raw) == str { value = load-data(raw, at) }
+    if type(raw) == str { value = load-data(raw, at, from: from) }
   } else if kind in ("string", "markdown") {
     if type(raw) != str { value = norm(raw) }
   }
@@ -142,7 +175,7 @@
 // ---- the environment
 // `base` / `front` are `vars` of config.toml and of the front matter, `base-types` / `front-types` their `var-types`, `config` the merged
 // settings, `inputs` is sys.inputs (`--input var.audience=teacher` wins over both), `locate(..path)` says where a setting is written.
-#let make-env(base, front, base-types, front-types, config, inputs, locate) = {
+#let make-env(base, front, base-types, front-types, config, inputs, locate, from: none) = {
   let tables(a, b, what) = {
     let out = (:)
     for layer in (a, b) {
@@ -154,6 +187,7 @@
   }
   let given = tables(base, front, "vars")
   let rules = tables(base-types, front-types, "var-types")
+  let front-keys = if type(front) == dictionary { front.keys() } else { () }
   let names = ()
   for key in given.keys() + rules.keys() + inputs.keys().filter(k => k.starts-with("var.")).map(k => k.slice(4)) {
     if key not in names { names.push(key) }
@@ -164,8 +198,10 @@
     assert(name.match(name-re) != none and name not in var-keywords, message: at + "a variable name is letters, digits, - and _ (and not " + var-keywords.join(", ") + "), got " + repr(name))
     assert(upper(name) != name or lower(name) == name, message: at + "a name in capitals (" + name + ") is for a value of the page (PAGE, PAGES, SECTION); give the variable a lower case letter")
     let rule = rules.at(name, default: none)
-    let raw = inputs.at("var." + name, default: given.at(name, default: none))
-    values.insert(name, convert(name, raw, rule, at))
+    let from-input = "var." + name in inputs
+    let raw = if from-input { inputs.at("var." + name) } else { given.at(name, default: none) }
+    let var-from = if not from-input and name in front-keys { from } else { none }
+    values.insert(name, convert(name, raw, rule, at, from: var-from))
   }
   let settings = build-settings(config, inputs)
   // Read-only document metadata is independent of the cover component.
@@ -177,11 +213,11 @@
 }
 
 // The values a `{{ }}` left, checked against the rules of their variables
-#let check-vars(after, env, at) = {
+#let check-vars(after, env, at, from: none) = {
   let out = (:)
   for (name, value) in after {
     let rule = env.rules.at(name, default: none)
-    out.insert(name, if rule == none { value } else { convert(name, value, rule, at) })
+    out.insert(name, if rule == none { value } else { convert(name, value, rule, at, from: from) })
   }
   out
 }

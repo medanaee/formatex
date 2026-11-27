@@ -1,4 +1,6 @@
 import { completeFrontMatter, inFrontMatter } from "./configCompletion"
+import { mathAt, typstNameAt } from "./mathRegions"
+import { TYPST_FUNCTIONS, TYPST_SYMBOLS } from "./typstSymbols"
 import { PAGE_VALUES, READ_ONLY_VARIABLES, readVariables } from "./variables"
 import { expressionAt } from "./variableSyntax"
 import { localized, type AttrSpec, type OptionKind, type Schema, type TagSpec } from "./schema"
@@ -15,10 +17,11 @@ import { tailwindCompletion } from "./tailwindComplete"
  * - `</`: the tags that are still open
  * - `{` on a heading, table, list, equation or span line: the engine's `{...}` options
  * - `{{ ` and the `cond="` of `<if>`: the document's variables, and the values a variable lists after `==` or `in`
- * It stays silent in the front matter, in fenced code and in inline code.
+ * It stays silent in the front matter, in fenced code and in inline code. Inside a Typst equation
+ * (`%%` or a tight `%...%`) it suggests symbol names such as `bar.v.triple`.
  */
 
-export type SuggestionKind = "tag" | "attribute" | "value" | "close" | "option" | "variable" | "keyword"
+export type SuggestionKind = "tag" | "attribute" | "value" | "close" | "option" | "variable" | "keyword" | "symbol"
 
 export interface Suggestion {
   label: string
@@ -255,7 +258,7 @@ function optionKindAt(text: string, lineStart: number, braceAt: number): OptionK
   const line = text.slice(lineStart, text.indexOf("\n", lineStart) < 0 ? text.length : text.indexOf("\n", lineStart))
   const before = text.slice(lineStart, braceAt).trimEnd()
   if (/^\s*#{1,6}\s/.test(line)) return "heading"
-  if (before.endsWith("$$")) return "equation"
+  if (before.endsWith("$$") || before.endsWith("%%")) return "equation"
   if (before.endsWith("]")) return "span"
   if (before !== "") return null
   // A `{...}` line of its own describes what is below it (or the equation above it)
@@ -265,7 +268,7 @@ function optionKindAt(text: string, lineStart: number, braceAt: number): OptionK
   if (next.startsWith("|")) return "table"
   if (/^([-*+]|\d+[.)])\s/.test(next)) return "list"
   const previous = lines.slice(0, index).reverse().find((candidate) => candidate.trim() !== "")?.trimEnd() ?? ""
-  if (previous.endsWith("$$")) return "equation"
+  if (previous.endsWith("$$") || previous.endsWith("%%")) return "equation"
   return null
 }
 
@@ -308,11 +311,38 @@ function expressionSuggestions(code: string, text: string, pos: number, env: Com
   return { from: pos - word.length, options }
 }
 
+const SYMBOL_LIMIT = 50
+
+/** Symbol and function names starting with `prefix`, shortest first. */
+function typstSuggestions(prefix: string): Suggestion[] {
+  const options: Suggestion[] = []
+  for (const [name, glyph] of TYPST_SYMBOLS) {
+    if (!name.startsWith(prefix)) continue
+    const visible = [...glyph].some((char) => char.codePointAt(0)! > 32)
+    options.push({ label: name, kind: "symbol", detail: visible ? glyph : undefined, template: name })
+  }
+  const seen = new Set(options.map((option) => option.label))
+  for (const name of TYPST_FUNCTIONS) {
+    if (!name.startsWith(prefix) || seen.has(name)) continue
+    options.push({ label: name, kind: "keyword", detail: "()", template: `${name}(\${})` })
+  }
+  options.sort((a, b) => a.label.length - b.label.length || a.label.localeCompare(b.label))
+  return options.slice(0, SYMBOL_LIMIT)
+}
+
 /** Suggestions for the text before `pos`, or `null` when nothing applies there. */
 export function complete(text: string, pos: number, env: CompletionEnv): Completions | null {
   // The YAML block at the top of the file has its own settings, from the config schema
   if (inFrontMatter(text, pos)) return completeFrontMatter(text, pos, env)
   if (inCode(text, pos)) return null
+  const equation = mathAt(text, pos)
+  if (equation) {
+    if (equation.kind !== "typst") return null
+    const name = typstNameAt(text, pos)
+    if (!name || name.name.length === 0) return null
+    const options = typstSuggestions(name.name)
+    return options.length ? { from: name.from, to: name.to, options } : null
+  }
   const nextChar = text[pos] ?? ""
 
   // 0. Inside `{{ ... }}`, in the text or in the value of an attribute

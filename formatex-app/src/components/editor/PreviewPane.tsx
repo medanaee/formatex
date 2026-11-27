@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { AlertCircle, AlertTriangle, ChevronDown, ChevronUp, FileText, Globe, Loader2, LocateFixed, Minus, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { stepZoom, ZOOM_PRESETS } from "@/lib/previewZoom"
+import { captureZoomAnchor, restoreZoomAnchor, stepZoom, ZOOM_PRESETS, type ZoomAnchor } from "@/lib/previewZoom"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { HtmlPreview } from "@/components/editor/HtmlPreview"
 import { DiagnosticList } from "@/components/editor/DiagnosticList"
@@ -168,6 +168,10 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
     if (base > 0) useWorkspaceStore.getState().set({ previewShown: percent })
   }, [percent, base])
 
+  const prevPageWidth = useRef(0)
+  const pendingAnchor = useRef<ZoomAnchor | null>(null)
+  const centerAnchor = useRef<ZoomAnchor | null>(null)
+
   // The page at the top of the pane is the current one
   const markPage = () => {
     const box = scroller.current
@@ -178,7 +182,28 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
       if (el && el.getBoundingClientRect().top <= edge) found = index + 1
     })
     setCurrent(found)
+    pendingAnchor.current = null
+    centerAnchor.current = captureZoomAnchor(box, pageEls.current)
   }
+
+  // Keep the focal point (cursor on Ctrl+wheel, viewport center otherwise) stationary when zoom changes
+  useLayoutEffect(() => {
+    const box = scroller.current
+    if (!box || pageWidth <= 0) {
+      prevPageWidth.current = 0
+      return
+    }
+    if (prevPageWidth.current > 0 && prevPageWidth.current !== pageWidth) {
+      const anchor = pendingAnchor.current ?? centerAnchor.current
+      pendingAnchor.current = null
+      if (anchor) {
+        restoreZoomAnchor(box, pageEls.current, anchor)
+        markPage()
+      }
+    }
+    prevPageWidth.current = pageWidth
+    centerAnchor.current = captureZoomAnchor(box, pageEls.current)
+  }, [pageWidth, images.length])
   const goToPage = (page: number) => {
     const target = pageEls.current[Math.min(Math.max(page, 1), pages.length) - 1]
     const box = scroller.current
@@ -214,6 +239,8 @@ export function PreviewPane({ onJumpToSource }: { onJumpToSource?: () => void })
         return
       }
       event.preventDefault()
+      const rect = box.getBoundingClientRect()
+      pendingAnchor.current = captureZoomAnchor(box, pageEls.current, { x: event.clientX - rect.left, y: event.clientY - rect.top })
       stepZoom(event.deltaY < 0 ? 1 : -1)
     }
     // Scrolling by hand: the wheel, a finger, or dragging the scrollbar (a press on the pane itself, not on a page)

@@ -11,6 +11,7 @@ import { LANGUAGES, SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n"
 import { getStorage } from "@/lib/db"
 import { platformKind } from "@/lib/platform"
 import type { ThemePreference } from "@/lib/theme"
+import { supportsWindowGlass, type WindowGlass } from "@/lib/windowGlass"
 import { useSettingsStore } from "@/stores/useSettingsStore"
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -29,13 +30,19 @@ function Value({ children }: { children: ReactNode }) {
 /** One section of the settings at a time: the side bar (tablet, desktop) or a strip on top (phone) chooses which. */
 export function SettingsPage() {
   const { t } = useTranslation()
-  const { theme, setTheme, language, setLanguage, settingsSection: section, setSettingsSection } = useSettingsStore()
+  const { theme, setTheme, windowGlass, setWindowGlass, language, setLanguage, settingsSection: section, setSettingsSection } = useSettingsStore()
   const formFactor = useFormFactor()
+  const canGlass = supportsWindowGlass()
 
   const themeOptions: SegmentedOption<ThemePreference>[] = [
     { value: "light", label: t("settings.light"), icon: <Sun /> },
     { value: "dark", label: t("settings.dark"), icon: <Moon /> },
     { value: "system", label: t("settings.system"), icon: <Monitor /> },
+  ]
+  const glassOptions: SegmentedOption<WindowGlass>[] = [
+    { value: "none", label: t("settings.glassOff") },
+    { value: "mica", label: t("settings.glassMica") },
+    { value: "acrylic", label: t("settings.glassAcrylic") },
   ]
   const languageOptions: SegmentedOption<AppLanguage>[] = SUPPORTED_LANGUAGES.map((code) => ({
     value: code,
@@ -67,6 +74,11 @@ export function SettingsPage() {
               <Row label={t("common.language")}>
                 <SegmentedControl value={language} onValueChange={setLanguage} options={languageOptions} label={t("common.language")} compact />
               </Row>
+              {canGlass && (
+                <Row label={t("settings.windowGlass")}>
+                  <SegmentedControl value={windowGlass} onValueChange={setWindowGlass} options={glassOptions} label={t("settings.windowGlass")} compact />
+                </Row>
+              )}
             </div>
           )}
 

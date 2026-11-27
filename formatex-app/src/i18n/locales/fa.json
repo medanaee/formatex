@@ -92,7 +92,7 @@
     "exporting": "در حال خروجی",
     "exported": "ذخیره شد",
     "exportFailed": "خروجی ناموفق بود",
-    "exportHtml": "خروجی HTML (آزمایشی)",
+    "exportHtml": "خروجی HTML",
     "sync": "همگام‌سازی فایل‌های اینترنتی",
     "synced": "{{count}} فایل اینترنتی به‌روز شد",
     "syncFailed": "همگام‌سازی ناموفق بود",
@@ -128,7 +128,11 @@
     "version": "نسخه",
     "platform": "پلتفرم",
     "formFactor": "اندازهٔ صفحه",
-    "storage": "ذخیره‌سازی"
+    "storage": "ذخیره‌سازی",
+    "windowGlass": "افکت شیشه‌ای پنجره",
+    "glassOff": "خاموش",
+    "glassMica": "میکا",
+    "glassAcrylic": "شیشه‌ای"
   },
   "boot": {
     "storageFailed": "فورمتکس نتوانست ذخیره‌سازی را باز کند"
@@ -140,6 +144,7 @@
   "files": {
     "newFile": "فایل جدید",
     "newFolder": "پوشهٔ جدید",
+    "newComponent": "کامپوننت جدید",
     "upload": "بارگذاری فایل",
     "rename": "تغییر نام",
     "delete": "حذف",
@@ -148,6 +153,7 @@
     "name": "نام",
     "namePlaceholder": "notes.md",
     "folderPlaceholder": "images",
+    "componentPlaceholder": "my-component",
     "deleteConfirm": "«{{name}}» حذف شود؟",
     "deleteFolderConfirm": "«{{name}}» و همهٔ محتوایش حذف شود؟",
     "empty": "فایلی نیست",

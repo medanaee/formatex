@@ -31,7 +31,7 @@
     let logo = get("logo")
     let org = get("org")
     let start-cell = if logo != none or org != none {
-      box(align(center, stack(spacing: 0.35em, ..if logo != none { (image(root-path(logo), height: 1.5cm),) }, ..if org != none { (text(weight: "bold", size: 0.95em, fill: theme.heading, own-dir(org)),) })))
+      box(align(center, stack(spacing: 0.35em, ..if logo != none { (image(root-path(logo, attrs: attrs), height: 1.5cm),) }, ..if org != none { (text(weight: "bold", size: 0.95em, fill: theme.heading, own-dir(org)),) })))
     }
     let heading-line = get("heading")
     if heading-line != none {
@@ -72,7 +72,7 @@
       align(end, block(breakable: false, align(center, stack(
         spacing: 0.35em,
         ..if closing != none { (own-dir(closing),) },
-        ..if signature != none { (image(root-path(signature), height: 1.4cm),) } else if signer != none { (v(1.2em),) },
+        ..if signature != none { (image(root-path(signature, attrs: attrs), height: 1.4cm),) } else if signer != none { (v(1.2em),) },
         ..if signer != none { (text(weight: "bold", own-dir(signer)),) },
         ..if signer-title != none { (text(fill: theme.muted, own-dir(signer-title)),) },
       ))))

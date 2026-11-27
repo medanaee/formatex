@@ -95,7 +95,7 @@
   clip: true,
   inset: (top: pad-top, bottom: if pad-top > 0pt { 6pt * zoom } else { 0pt }),
   {
-    set text(dir: ltr, size: 8pt * zoom, font: (code-font, persian-font), tracking: 0pt)
+    set text(dir: ltr, size: 8pt * zoom, font: (code-font, code-persian-font, persian-font), tracking: 0pt)
     set align(left)
     set par(justify: false)
     let badge = code-language(lang)
@@ -221,7 +221,7 @@
       )
       // (text, fence language) of a <before> / <after>: its src file or its fenced code block.
       let version(item) = {
-        if "src" in item.attrs { return (read(root-path(item.attrs.src)), item.attrs.src.split(".").last()) }
+        if "src" in item.attrs { return (read(root-path(item.attrs.src, attrs: item.attrs)), item.attrs.src.split(".").last()) }
         let r = find-raw(item.body)
         if r == none { ("", none) } else { (r.text, r.at("lang", default: none)) }
       }

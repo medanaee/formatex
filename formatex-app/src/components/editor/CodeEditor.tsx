@@ -26,18 +26,21 @@ import { hasFinePointer } from "@/lib/platform"
 import { touchSelection, touchSelecting } from "@/lib/editor/touchSelection"
 import { surroundOnType } from "@/lib/editor/surround"
 import { tagFolding, tagFoldingKeymap } from "@/lib/editor/tagFolding"
+import { taskListKeymap } from "@/lib/editor/taskList"
 import { tagWrapOnType } from "@/lib/editor/tagWrap"
+import { mathSyntax } from "@/lib/editor/mathSyntax"
 import { variableMarks } from "@/lib/editor/variableMarks"
 import { problemExtension, setProblems, type Problem } from "@/lib/editor/problems"
 import { stickyHeadings, stickyTheme } from "@/lib/editor/stickyHeadings"
 import { completeValue } from "@/lib/editor/completion"
-import { completionSource } from "@/lib/editor/completionSource"
+import { completionSource, symbolPreview } from "@/lib/editor/completionSource"
 import { typstCompletionSource } from "@/lib/editor/typstIde"
 import { codeLanguageFor } from "@/lib/editor/codeLanguages"
 import { rawComponentMarkdown } from "@/lib/editor/rawComponentMarkdown"
 import { typstLanguage } from "@/lib/editor/typstLanguage"
 import { editorHighlighting, editorTheme } from "@/lib/editor/theme"
 import type { FileKind } from "@/lib/projects"
+import { relativePath } from "@/lib/projects/paths"
 import { cn } from "@/lib/utils"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
 import { useHtmlSourceStore } from "@/stores/useHtmlSourceStore"
@@ -151,7 +154,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         // A line behind every level of indentation, like VS Code
         indentGuides(),
         editorZoomShortcuts(),
-        fileKind === "markdown" ? [tagFolding(), variableMarks(), tagWrapOnType(), pasteImage()] : [],
+        fileKind === "markdown" ? [tagFolding(), variableMarks(), mathSyntax(), tagWrapOnType(), pasteImage()] : [],
         EditorView.lineWrapping,
         dir.of(dirExtension(direction, fileKind)),
         EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
@@ -183,8 +186,19 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
         }),
         fileKind === "markdown" || fileKind === "toml"
           ? autocompletion({
-              override: [completionSource(() => ({ schema: latest.current.schema, language: latest.current.language, files: latest.current.files }), fileKind)],
+              override: [
+                completionSource(
+                  () => ({
+                    schema: latest.current.schema,
+                    language: latest.current.language,
+                    files: fileKind === "markdown" ? latest.current.files?.map((file) => relativePath(filePath, file)) : latest.current.files,
+                  }),
+                  fileKind,
+                ),
+              ],
               icons: false,
+              optionClass: (completion) => (completion.type === "symbol" ? "cm-completion-symbol" : ""),
+              addToOptions: [{ position: 30, render: (completion) => (completion.type === "symbol" ? symbolPreview(completion.label) : null) }],
             })
           : // Typst's own completions, in a plain Typst project (the source answers nothing in any other)
             fileKind === "typst"
@@ -198,7 +212,7 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
               ]
             : []),
           ...completionKeymap,
-          ...(fileKind === "markdown" ? tagFoldingKeymap : []),
+          ...(fileKind === "markdown" ? [...tagFoldingKeymap, ...taskListKeymap] : []),
           ...searchKeymap,
           ...historyKeymap,
           ...defaultKeymap,
@@ -216,7 +230,14 @@ export function CodeEditor({ path, value, kind, onChange, files, reveal, placeho
           else if (update.selectionSet && fileKind === "markdown" && update.view.hasFocus) {
             const head = update.state.selection.main.head
             const nearby = update.state.doc.sliceString(Math.max(0, head - 300), head)
-            const value = update.state.selection.main.empty && nearby.includes("<") ? completeValue(update.state.doc.toString(), head, { schema: latest.current.schema, language: latest.current.language, files: latest.current.files }) : null
+            const value =
+              update.state.selection.main.empty && nearby.includes("<")
+                ? completeValue(update.state.doc.toString(), head, {
+                    schema: latest.current.schema,
+                    language: latest.current.language,
+                    files: latest.current.files?.map((file) => relativePath(filePath, file)),
+                  })
+                : null
             if (!value) valueKey = ""
             else if (String(value.from) !== valueKey) {
               valueKey = String(value.from)

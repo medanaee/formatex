@@ -114,7 +114,23 @@
     if sys.inputs.at("markers", default: "0") == "1" { fx-mark(node.at.file + ":" + str(node.at.line)) }
     body
   }
-  let render-node(node, parent: none, scope-dir: doc-dir, map-text: true) = {
+  let count-tasks(node) = {
+    let done = 0
+    let total = 0
+    for child in node.at("children", default: ()) {
+      if child.type == "listItem" and "checked" in child {
+        total += 1
+        if child.checked { done += 1 }
+      }
+      if "children" in child {
+        let sub = count-tasks(child)
+        done += sub.done
+        total += sub.total
+      }
+    }
+    (done: done, total: total)
+  }
+  let render-node(node, parent: none, scope-dir: doc-dir, map-text: true, task-accent: none, task-strike: true) = {
     let child-dir = if node.type == "component" and node.name == "dir" {
       let opts = pdf-options(node, group: "dir")
       let bare = opts.keys().filter(key => key in ("rtl", "ltr", "auto"))
@@ -127,7 +143,7 @@
     // Nested PDF links override the outer destination. Preserve real links and let
     // their labels use the bounded fallback instead of stealing their hit areas.
     let child-mapping = map-text and node.type != "link" and not (node.type == "component" and (node.name in ("a", "ref", "def") or node.name in pdf-local-tags))
-    let render-nodes(nodes) = nodes.map(child => render-node(child, parent: node.at("name", default: node.type), scope-dir: child-dir, map-text: child-mapping)).join()
+    let render-nodes(nodes, accent: task-accent, strike-done: task-strike) = nodes.map(child => render-node(child, parent: node.at("name", default: node.type), scope-dir: child-dir, map-text: child-mapping, task-accent: accent, task-strike: strike-done)).join()
     let kind = node.type
     if kind == "sourceMarker" { return if sys.inputs.at("markers", default: "0") == "1" { fx-mark(node.at.file + ":" + str(node.at.line)) } }
     let children() = render-nodes(node.at("children", default: ()))
@@ -152,11 +168,35 @@
     }
     if kind == "list" {
       let opts = pdf-options(node)
+      let is-task = node.children.any(item => "checked" in item)
+      let accent = if "color" in opts { pick-hue(opts.color, "list", theme.accent, attrs: opts) } else { task-accent }
+      let strike-done = if "strike" in opts { pdf-bool(opts.strike) } else { task-strike }
+      let show-progress = is-task and pdf-bool(opts.at("progress", default: false))
       let items = node.children.map(item => {
         let nodes = pdf-mark-first(item.at("children", default: ()), item.at).nodes
-        if "checked" in item { [#if item.checked { "☑" } else { "☐" } #render-nodes(nodes)] } else { render-nodes(nodes) }
+        if "checked" in item {
+          let label-nodes = nodes.filter(n => n.type != "list")
+          let sub-nodes = nodes.filter(n => n.type == "list")
+          let label = render-nodes(label-nodes, accent: accent, strike-done: strike-done)
+          let styled-label = if item.checked and strike-done { text(fill: theme.muted, strike(label)) } else { label }
+          let subs = render-nodes(sub-nodes, accent: accent, strike-done: strike-done)
+          [#task-checkbox(item.checked, accent: accent)#h(0.45em)#styled-label#subs]
+        } else {
+          render-nodes(nodes, accent: accent, strike-done: strike-done)
+        }
       })
-      return if opts.len() > 0 { list-block(opts, if node.at("ordered", default: false) { enum(start: node.at("start", default: 1), ..items) } else { list(..items) }) } else if node.at("ordered", default: false) { enum(start: node.at("start", default: 1), ..items) } else { list(..items) }
+      let body = if node.at("ordered", default: false) {
+        enum(start: node.at("start", default: 1), ..items)
+      } else if is-task {
+        list(marker: [], ..items)
+      } else {
+        list(..items)
+      }
+      let full = if show-progress {
+        let counts = count-tasks(node)
+        [#task-progress-bar(counts.done, counts.total, accent: accent)#body]
+      } else { body }
+      return if opts.len() > 0 { list-block(opts, full) } else { full }
     }
     if kind == "listItem" or kind == "tableCell" or kind == "tableRow" or kind == "group" { return children() }
     if kind == "blockquote" { return source(node, quote(block: true, children())) }
@@ -180,9 +220,12 @@
       return {
       let opts = pdf-options(node)
       let id = opts.at("id", default: none)
-      if id != none { equation-next.update(id) }
-      source(node, mitex(node.value, block: kind == "math"))
-      if id != none { [#metadata((equation-id: id))#label(id)] }
+      let typst-syntax = node.at("lang", default: none) == "typst"
+      // HTML draws the equation number beside the SVG, so the fragment stays unnumbered.
+      let bare = typst-syntax and sys.inputs.at("graphic", default: "0") == "1"
+      if id != none and not bare { equation-next.update(id) }
+      source(node, if typst-syntax { typst-math(node.value, block: kind == "math", bare: bare) } else { mitex(node.value, block: kind == "math") })
+      if id != none and not bare { [#metadata((equation-id: id))#label(id)] }
       }
     }
     if kind == "table" {
@@ -191,17 +234,19 @@
       table-options.update(opts)
       let rows = node.children
       let count = rows.first().children.len()
+      let cols = if "cols" in opts { parse-table-cols(opts.cols, count, pdf-at(node)) } else { count }
       let alignments = node.at("align", default: ())
       let cell-align(x, y) = if x < alignments.len() and alignments.at(x) in ("left", "right", "center") { align-names.at(alignments.at(x)) + horizon } else { auto }
       let cells = rows.slice(1).map(row => row.children.map(cell => render-nodes(cell.at("children", default: ())))).flatten()
-      source(node, table(columns: count, align: cell-align, table.header(..rows.first().children.map(cell => render-nodes(cell.at("children", default: ())))), ..cells))
+      source(node, table(columns: cols, align: cell-align, table.header(..rows.first().children.map(cell => render-nodes(cell.at("children", default: ())))), ..cells))
       }
     }
     if kind == "link" { return link(node.url, children()) }
-    if kind == "image" { return image(rooted-path(node.url), alt: node.at("alt", default: "")) }
+    if kind == "image" { return image(rooted-path(node.url, from: node.at.file), alt: node.at("alt", default: "")) }
     if kind == "footnoteDefinition" { return }
     if kind == "footnoteReference" { return footnote(render-nodes(footnotes.at(node.identifier, default: ()))) }
     if kind == "component" {
+      if node.name == "br" { return linebreak() }
       if node.name in pdf-html-only { return }
       let attrs = pdf-options(node, group: node.name)
       attrs.insert("_at", node.at.file + ":" + str(node.at.line))
@@ -230,7 +275,7 @@
         let record = json(bytes(node.value))
         let section = current-section()
         let page-values = (PAGE: counter(page).get().first(), PAGES: counter(page).final().first(), SECTION: if section == none { "" } else { plain-text(section.body) }, SECTION_NUMBER: if section == none or section.numbering == none { "" } else { counter(heading).at(section.location()).map(str).join(".") })
-        let result = run-code(record.code, var-env + (values: eval(record.values, mode: "code")), extra: page-values)
+        let result = run-code(record.code, var-env + (values: eval(record.values, mode: "code")), extra: page-values, from: node.at.file)
         // Contextual values are text; a contextual Markdown fragment is parsed by the same core plugin.
         let value = show-value(result.first())
         let fragment = json(plugin("/src/parser.wasm").parse(bytes(json.encode((text: value, file: node.at.file, schemas: all-schemas + local-schemas)))))

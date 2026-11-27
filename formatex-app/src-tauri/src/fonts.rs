@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn the_bundled_fonts_cover_the_engine() {
         let families: std::collections::BTreeSet<String> = bundled().map(|(_, info)| info.family).collect();
-        for wanted in ["Vazirmatn", "Lexend", "Pelak", "IRANSansX", "Anonymous Pro", "XB Niloofar", "Font Awesome 7 Brands"] {
+        for wanted in ["Vazirmatn", "Lexend", "Pelak", "IRANSansX", "Anonymous Pro", "Vazir Code", "XB Niloofar", "Font Awesome 7 Brands"] {
             assert!(families.iter().any(|family| family.starts_with(wanted)), "{wanted} is not bundled: {families:?}");
         }
         assert!(families.iter().any(|family| family.starts_with("Font Awesome 7 Pro")), "{families:?}");

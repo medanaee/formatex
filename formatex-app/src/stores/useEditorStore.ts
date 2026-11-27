@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 import { imageFolder, nextImageName, readableImage } from "@/lib/files/pastedImage"
 import { pasteSystemFiles } from "@/lib/files/systemClipboard"
-import type { HtmlExportOptions } from "@/lib/projects/htmlConfig"
+import { htmlOptionsFromConfig } from "@/lib/projects/htmlConfig"
 import { CompilerUnavailableError, compileProject, exportHtml, exportPdf, syncRemote, type Diagnostic, type PageMap, type SourceMarker } from "@/lib/compiler"
 import type { RevealRequest } from "@/components/editor/CodeEditor"
 import { planSave, zipItems } from "@/lib/files/saveEntries"
@@ -70,6 +70,8 @@ interface EditorState {
   elapsedMs: number | null
   exportStatus: ExportStatus
   exportMessage: string | null
+  exportHtmlStatus: ExportStatus
+  exportHtmlMessage: string | null
   /** The sync of the files from the internet (the button beside Export). */
   syncStatus: ExportStatus
   syncMessage: string | null
@@ -90,6 +92,7 @@ interface EditorState {
   compile: () => void
   createFile: (parent: string, name: string, text?: string) => Promise<string>
   createFolder: (parent: string, name: string) => Promise<void>
+  createComponent: (parent: string, name: string) => Promise<string>
   rename: (path: string, newName: string) => Promise<void>
   remove: (path: string) => Promise<void>
   /** Deletes several files and folders at once (the main file and config.toml stay). */
@@ -119,9 +122,8 @@ interface EditorState {
   /** Puts back the text the editor had before a text from disk replaced it (`dismiss`: keep what is there). */
   restoreReplaced: (path: string, restore: boolean) => void
   exportPdf: () => Promise<void>
-  /** The project as one HTML file, with the choices of the export dialog (an experiment). */
-  /** Writes the project as one HTML file with these options (the dialog starts them from `[html]` of config.toml). */
-  exportHtml: (options: HtmlExportOptions) => Promise<void>
+  /** Writes the project as one HTML file using `[html]` of config.toml and front matter. */
+  exportHtml: () => Promise<void>
   /** Downloads the files from the internet that the project keeps in its cache again (all, or only `url`), then typesets. */
   syncRemote: (url?: string) => Promise<void>
 }
@@ -441,6 +443,8 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     elapsedMs: null,
     exportStatus: "idle",
     exportMessage: null,
+    exportHtmlStatus: "idle",
+    exportHtmlMessage: null,
     syncStatus: "idle",
     syncMessage: null,
     reveal: null,
@@ -476,7 +480,7 @@ export const useEditorStore = create<EditorState>()((set, get) => {
           ? CONFIG_FILE
           : firstText
       written.clear()
-      set({ projectId, kind, mainFile, files, activePath: null, texts: {}, conflicts: {}, replaced: {}, saveState: "saved", pages: [], diagnostics: [], markers: [], ok: true, elapsedMs: null, exportStatus: "idle", exportMessage: null, reveal: null, lastEdit: null, clipboard: null })
+      set({ projectId, kind, mainFile, files, activePath: null, texts: {}, conflicts: {}, replaced: {}, saveState: "saved", pages: [], diagnostics: [], markers: [], ok: true, elapsedMs: null, exportStatus: "idle", exportMessage: null, exportHtmlStatus: "idle", exportHtmlMessage: null, reveal: null, lastEdit: null, clipboard: null })
       if (active) await get().select(active)
       get().compile()
       // A project in a folder of the user's can be changed from outside the app: it is watched while it is open
@@ -554,6 +558,61 @@ export const useEditorStore = create<EditorState>()((set, get) => {
     createFolder: async (parent, name) => {
       await fs?.createDir(joinPath(parent, name))
       await refreshFiles()
+    },
+
+    createComponent: async (parent, name) => {
+      const folder = joinPath(parent, name)
+      const tag = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "custom-block"
+      const ident = tag.replace(/[^a-z0-9-]/g, "-")
+      await fs?.createDir(folder)
+      const templateFiles: Record<string, string> = {
+        "manifest.toml": `name = "${tag}"\nversion = "1.0.0"\ntyp = "typst.typ"\nhtml = "html.tsx"\ncss = "html.css"\nschema = "schema.json"\ndocs = "docs.json"\n`,
+        "schema.json": JSON.stringify(
+          {
+            [tag]: {
+              kind: "block",
+              description: { en: `Custom <${tag}> component`, fa: `کامپوننت اختصاصی <${tag}>` },
+              attrs: {
+                color: {
+                  type: "color",
+                  default: "accent",
+                  doc: { en: "Color preset, `accent`, or hex color.", fa: "رنگ آماده، `accent` یا کد hex." },
+                },
+                dir: {
+                  type: "enum",
+                  values: ["auto", "rtl", "ltr"],
+                  default: "auto",
+                  doc: { en: "Text direction.", fa: "جهت متن." },
+                },
+              },
+            },
+          },
+          null,
+          2,
+        ) + "\n",
+        "docs.json": JSON.stringify(
+          {
+            en: { about: `Custom <${tag}> component.` },
+            fa: { about: `کامپوننت اختصاصی <${tag}>.` },
+            example: {
+              en: `<${tag} color="blue">\n\nContent here.\n\n</${tag}>`,
+              fa: `<${tag} color="blue">\n\nمحتوا اینجا قرار می‌گیرد.\n\n</${tag}>`,
+            },
+          },
+          null,
+          2,
+        ) + "\n",
+        "typst.typ": `#import "/src/kit.typ": *\n\n#let ${ident}-tags = (\n  "${tag}": (attrs, body) => context {\n    let colors = resolve-color(attrs.at("color", default: "accent"), attrs: attrs)\n    let dd = resolve-dir(attrs.at("dir", default: "auto"), body)\n    block(\n      width: 100%,\n      fill: colors.fill,\n      stroke: 0.7pt * zoom + colors.border,\n      radius: feel.box,\n      inset: (x: 11pt * zoom, y: 9pt * zoom),\n      { set text(dir: dd); body },\n    )\n  },\n)\n`,
+        "html.tsx": `import { paintOf, resolveDir, textOf } from "formatex"\n\nexport default function Component({ node, context }) {\n  const p = context.props(node)\n  const paint = paintOf(p.color ?? "accent")\n  const dir = resolveDir(p.dir, textOf(node), context.language)\n  return (\n    <div dir={dir} className={\`fx-local-${tag} \${paint.className}\`} style={paint.style}>\n      {context.children(node)}\n    </div>\n  )\n}\n`,
+        "html.css": `.fx-local-${tag} {\n  margin-block: var(--fx-gap-block, 0.8em);\n  padding: 0.75em 0.95em;\n  border: 0.07em solid var(--fx-border);\n  border-radius: var(--fx-radius-box);\n  background: var(--fx-fill);\n}\n.fx-local-${tag} > :last-child,\n.fx-local-${tag} p:last-child {\n  margin-block-end: 0;\n}\n`,
+      }
+      for (const [file, content] of Object.entries(templateFiles)) {
+        await fs?.writeText(joinPath(folder, file), content)
+      }
+      await refreshFiles()
+      touch()
+      await get().select(joinPath(folder, "typst.typ"))
+      return folder
     },
 
     rename: async (path, newName) => {
@@ -807,13 +866,15 @@ export const useEditorStore = create<EditorState>()((set, get) => {
       }
     },
 
-    exportHtml: async (options) => {
+    exportHtml: async () => {
       const { projectId, mainFile } = get()
       if (!projectId) return
-      set({ exportStatus: "working", exportMessage: null })
+      set({ exportHtmlStatus: "working", exportHtmlMessage: null })
       try {
         await flush()
         if (!mainFile) throw new Error("No main file is chosen")
+        const config = get().texts[CONFIG_FILE] ?? (await get().load(CONFIG_FILE).catch(() => ""))
+        const options = htmlOptionsFromConfig(config)
         const title = useLibraryStore.getState().documents.find((doc) => doc.id === projectId)?.title ?? "document"
         const fileName = `${title.replace(/[\\/:*?"<>|]+/g, "_").trim() || "document"}.html`
         if (isDesktopApp()) {
@@ -821,18 +882,18 @@ export const useEditorStore = create<EditorState>()((set, get) => {
           const { save } = await import("@tauri-apps/plugin-dialog")
           const path = await save({ defaultPath: fileName, filters: [{ name: "HTML", extensions: ["html"] }] })
           if (!path) {
-            set({ exportStatus: "idle", exportMessage: null })
+            set({ exportHtmlStatus: "idle", exportHtmlMessage: null })
             return
           }
           await exportHtml(projectId, mainFile, options, get().texts, get().kind, path)
-          set({ exportStatus: "done", exportMessage: path })
+          set({ exportHtmlStatus: "done", exportHtmlMessage: path })
           return
         }
         const bytes = await exportHtml(projectId, mainFile, options, get().texts, get().kind)
         const result = await saveBytes(bytes, fileName, "text/html")
-        set({ exportStatus: result.saved ? "done" : "idle", exportMessage: result.path ?? null })
+        set({ exportHtmlStatus: result.saved ? "done" : "idle", exportHtmlMessage: result.path ?? null })
       } catch (error) {
-        set({ exportStatus: "error", exportMessage: String((error as Error)?.message ?? error) })
+        set({ exportHtmlStatus: "error", exportHtmlMessage: String((error as Error)?.message ?? error) })
       }
     },
 

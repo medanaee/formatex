@@ -6,7 +6,6 @@ import { EditorSidebar } from "@/components/editor/EditorSidebar"
 import { FormatBar } from "@/components/editor/FormatBar"
 import { FileView } from "@/components/editor/FileView"
 import { PreviewPane } from "@/components/editor/PreviewPane"
-import { HtmlExportDialog } from "@/components/editor/HtmlExportDialog"
 import { StorageDialogs } from "@/components/editor/StorageDialogs"
 import { Button } from "@/components/ui/button"
 import { ResizeHandle } from "@/components/ui/resize-handle"
@@ -176,7 +175,6 @@ export function EditorWorkspace({ doc }: { doc: DocumentItem }) {
       )}
 
       <StorageDialogs />
-      <HtmlExportDialog />
     </div>
   )
 }

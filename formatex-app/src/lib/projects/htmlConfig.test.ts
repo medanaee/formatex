@@ -7,12 +7,12 @@ describe("htmlOptionsFromConfig", () => {
   })
 
   it("reads the keys it finds and keeps the rest", () => {
-    const config = 'source = "main.md"\n\n[html]\ntoolbar = false\nembed-fonts = false  # small file\ncopy-code = "yes"\n\n[table]\noutline = false\n'
-    expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, toolbar: false, embedFonts: false })
+    const config = 'source = "main.md"\n\n[html]\ntoolbar = false\nembed-fonts = false  # small file\nmagnifier = false\ncopy-code = "yes"\n\n[table]\noutline = false\n'
+    expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, toolbar: false, embedFonts: false, magnifier: false })
   })
 
   it("reads math renderer from config", () => {
-    const config = '[html]\nmath = "katex"\n'
-    expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, katexMath: true })
+    const config = '[html]\nmath = "native"\n'
+    expect(htmlOptionsFromConfig(config)).toEqual({ ...DEFAULT_HTML_OPTIONS, katexMath: false })
   })
 })

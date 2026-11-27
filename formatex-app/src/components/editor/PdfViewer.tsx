@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ChevronDown, ChevronUp, Minus, Plus } from "lucide-react"
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ZOOM_PRESETS } from "@/lib/previewZoom"
+import { captureZoomAnchor, restoreZoomAnchor, ZOOM_PRESETS, type ZoomAnchor } from "@/lib/previewZoom"
 import { openProjectFs } from "@/lib/projects"
 import { useEditorStore } from "@/stores/useEditorStore"
 
@@ -128,18 +128,68 @@ export function PdfViewer({ path }: { path: string }) {
     [pages]
   )
 
+  const prevScale = useRef(0)
+  const pendingAnchor = useRef<ZoomAnchor | null>(null)
+  const centerAnchor = useRef<ZoomAnchor | null>(null)
+
+  const pageElements = () => {
+    const element = scroller.current
+    return element ? Array.from(element.querySelectorAll<HTMLElement>("[data-page]")) : []
+  }
+
   const onScroll = () => {
     const element = scroller.current
     if (!element) return
+    const list = pageElements()
     let current = 1
-    for (const child of element.querySelectorAll<HTMLElement>("[data-page]")) {
+    for (const child of list) {
       if (child.offsetTop - element.offsetTop <= element.scrollTop + element.clientHeight / 3) current = Number(child.dataset.page)
       else break
     }
     setPage(current)
+    pendingAnchor.current = null
+    centerAnchor.current = captureZoomAnchor(element, list)
   }
 
   const step = (direction: 1 | -1) => setZoom(Math.min(Math.max(Math.round(percent * (direction > 0 ? 1.2 : 1 / 1.2)), MIN_ZOOM * 100), MAX_ZOOM * 100))
+  const stepRef = useRef(step)
+  stepRef.current = step
+
+  useLayoutEffect(() => {
+    const element = scroller.current
+    if (!doc || !base || !element || scale <= 0) {
+      prevScale.current = 0
+      pendingAnchor.current = null
+      centerAnchor.current = null
+      return
+    }
+    const list = pageElements()
+    if (prevScale.current > 0 && prevScale.current !== scale) {
+      const anchor = pendingAnchor.current ?? centerAnchor.current
+      pendingAnchor.current = null
+      if (anchor) {
+        restoreZoomAnchor(element, list, anchor)
+        onScroll()
+      }
+    }
+    prevScale.current = scale
+    centerAnchor.current = captureZoomAnchor(element, list)
+  }, [scale, doc, base])
+
+  // Ctrl + wheel (and touchpad pinch) zooms around the cursor position
+  useEffect(() => {
+    const element = scroller.current
+    if (!element || !doc) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return
+      event.preventDefault()
+      const rect = element.getBoundingClientRect()
+      pendingAnchor.current = captureZoomAnchor(element, pageElements(), { x: event.clientX - rect.left, y: event.clientY - rect.top })
+      stepRef.current(event.deltaY < 0 ? 1 : -1)
+    }
+    element.addEventListener("wheel", onWheel, { passive: false })
+    return () => element.removeEventListener("wheel", onWheel)
+  }, [doc])
 
   if (failed) return <div className="flex h-full items-center justify-center p-6 text-center text-xs text-muted-foreground">{t("pdf.failed")}</div>
 

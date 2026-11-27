@@ -56,6 +56,20 @@ export const parentOf = (path: string): string => (path.includes("/") ? path.sli
 
 export const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
+/** Path of `toFile` written relative to `fromFile` (both project-relative with `/` separators). */
+export function relativePath(fromFile: string, toFile: string): string {
+  const fromDir = parentOf(fromFile.replace(/^\/+/, ""))
+  const toClean = toFile.replace(/^\/+/, "")
+  if (!fromDir) return toClean
+  const fromParts = fromDir.split("/").filter(Boolean)
+  const toParts = toClean.split("/").filter(Boolean)
+  let common = 0
+  while (common < fromParts.length && common < toParts.length && fromParts[common] === toParts[common]) common++
+  const up = Array<string>(fromParts.length - common).fill("..")
+  const rest = toParts.slice(common)
+  return [...up, ...rest].join("/") || "."
+}
+
 export function extensionOf(path: string): string {
   const name = baseName(path)
   const dot = name.lastIndexOf(".")

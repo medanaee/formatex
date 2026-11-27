@@ -26,8 +26,8 @@ addEventListener("load",function(){scrollTo({top:y,behavior:"instant"});send({fx
 })()</script>`
 }
 
-export function initialFrame(html: string, css: string, token: string, scroll: number, viewer: Record<string, string>, loadId = 0): string {
-  const state = `<script>window.__fxPreviewToken=${JSON.stringify(token)};window.__fxViewerState=${JSON.stringify(viewer).replace(/</g, "\\u003c")}</script><style id="fx-preview-fonts">${css.replace(/<\/style/gi, "<\\/style")}</style>`
+export function initialFrame(html: string, css: string, token: string, scroll: number, viewer: Record<string, string>, loadId = 0, tasks: Record<string, boolean> = {}): string {
+  const state = `<script>window.__fxPreviewToken=${JSON.stringify(token)};window.__fxViewerState=${JSON.stringify(viewer).replace(/</g, "\\u003c")};window.__fxTaskState=${JSON.stringify(tasks).replace(/</g, "\\u003c")}</script><style id="fx-preview-fonts">${css.replace(/<\/style/gi, "<\\/style")}</style>`
   const head = html.indexOf("<head>")
   const body = html.lastIndexOf("</body>")
   const withBridge = body < 0 ? html + frameBridge(token, scroll, loadId) : html.slice(0, body) + frameBridge(token, scroll, loadId) + html.slice(body)

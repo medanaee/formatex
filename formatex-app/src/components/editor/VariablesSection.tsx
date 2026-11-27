@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { isBoolean, isNumeric, isVariableName, readTomlVariables, readYamlVariables, ruleLiteral, valueLiteral, VARIABLE_TYPES, type VariableRule, type VariableSpec } from "@/lib/editor/variables"
 import { TOML_FORMAT, type SettingsFormat } from "@/lib/editor/settingsFormat"
@@ -35,11 +35,13 @@ function ValueControl({ spec, files, write }: { spec: VariableSpec; files: strin
           <SelectValue placeholder={value || "-"} />
         </SelectTrigger>
         <SelectContent>
-          {rule.options.map((item) => (
-            <SelectItem key={item} value={item} className="text-xs">
-              {item}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {rule.options.map((item) => (
+              <SelectItem key={item} value={item} className="text-xs">
+                {item}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     )
@@ -52,11 +54,13 @@ function ValueControl({ spec, files, write }: { spec: VariableSpec; files: strin
           <SelectValue placeholder={value || "-"} />
         </SelectTrigger>
         <SelectContent>
-          {data.map((path) => (
-            <SelectItem key={path} value={path} className="text-xs">
-              {path}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {data.map((path) => (
+              <SelectItem key={path} value={path} className="text-xs">
+                {path}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     )
@@ -92,14 +96,16 @@ function RulePopover({ spec, setRule }: { spec: VariableSpec; setRule: (rule: Va
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={AUTO} className="text-xs text-muted-foreground">
-                {t("config.variableAuto")}
-              </SelectItem>
-              {VARIABLE_TYPES.map((name) => (
-                <SelectItem key={name} value={name} className="text-xs">
-                  {name}
+              <SelectGroup>
+                <SelectItem value={AUTO} className="text-xs text-muted-foreground">
+                  {t("config.variableAuto")}
                 </SelectItem>
-              ))}
+                {VARIABLE_TYPES.map((name) => (
+                  <SelectItem key={name} value={name} className="text-xs">
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </label>

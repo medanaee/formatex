@@ -19,4 +19,4 @@ typ:
 | `examples/included.md` | درج‌شده |
 | `examples/nested.md` | درج تودرتو |
 
-<include src="examples/nested.md"></include>
+<include src="nested.md"></include>

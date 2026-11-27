@@ -277,7 +277,7 @@
   set text(weight: spec.weight) if spec.weight != none
   set text(style: if spec.italic { "italic" } else { "normal" }) if spec.italic != none
   set text(tracking: spec.tracking) if spec.tracking != none
-  set text(font: (code-font, persian-font)) if spec.mono
+  set text(font: (code-font, code-persian-font, persian-font)) if spec.mono
   set par(leading: spec.leading) if spec.leading != none
   set par(justify: true) if spec.justify-text
   set align(spec.text-align) if spec.text-align != none

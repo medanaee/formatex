@@ -1,9 +1,11 @@
 /**
  * Where the code of the engine stands in a text of Markdown (src/preprocess/evaluate.typ): `{{ code }}` in the text and in attribute
  * values, which may take several lines, and has `[ ... ]` in it (a text of Markdown, which may have `{{ }}` of its own). Pure text work,
- * so the editor's colors, autocomplete, folding and the tests share it. Code (fenced and inline), `$math$` and comments are not looked
+ * so the editor's colors, autocomplete, folding and the tests share it. Code (fenced and inline), math (`$`, `$$`, `%`, `%%`) and comments are not looked
  * into, and `\{{` prints `{{` itself.
  */
+import { mathRegions } from "./mathRegions"
+
 export interface ExpressionRange {
   /** Where the `{{` is. */
   from: number
@@ -103,7 +105,12 @@ export function maskText(text: string): string {
     else lines[i] = lines[i].replace(/`[^`\n]*`/g, blank).replace(/\$[^$\n]+\$/g, blank)
   }
   out = lines.join("\n")
-  return out.replace(/\$\$[\s\S]*?\$\$/g, blank)
+  out = out.replace(/\$\$[\s\S]*?\$\$/g, blank)
+  for (const region of mathRegions(text)) {
+    if (region.kind !== "typst" || !region.closed) continue
+    out = out.slice(0, region.from) + blank(out.slice(region.from, region.to)) + out.slice(region.to)
+  }
+  return out
 }
 
 const PLAIN_NAME = /^\s*[\p{L}_][\p{L}\p{N}_-]*(?:\.[\p{L}\p{N}_-]+)*\s*$/u

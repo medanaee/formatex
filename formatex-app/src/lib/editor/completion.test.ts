@@ -341,3 +341,42 @@ describe("the counter tag", () => {
     expect(at('<counter of="ex" format="|')!.labels).toEqual(expect.arrayContaining(["rome", "abjad", "alefba"]))
   })
 })
+
+describe("typst math symbols", () => {
+  it("suggests dotted symbol names inside %%", () => {
+    const result = at("%% bar.v.t|")!
+    const triple = result.options.find((option) => option.label === "bar.v.triple")!
+    expect(triple.detail).toBe("⦀")
+    expect(triple.kind).toBe("symbol")
+    expect(result.source.slice(result.from)).toBe("bar.v.t")
+  })
+
+  it("suggests the same names in a tight inline equation and on the next line of a display equation", () => {
+    expect(at("see %bar.v.tri|")!.labels).toContain("bar.v.triple")
+    expect(at("%%\nbar.v.tri|\n%%")!.labels).toContain("bar.v.triple")
+  })
+
+  it("suggests inside an inline equation that has spaces", () => {
+    const result = at("من %x - bar.v.|%")!
+    expect(result.labels).toContain("bar.v.triple")
+    expect(result.options.find((option) => option.label === "bar.v.triple")!.detail).toBe("⦀")
+  })
+
+  it("suggests math calls", () => {
+    const frac = at("%% fra|")!.options.find((option) => option.label === "frac")!
+    expect(frac.template).toBe("frac(${})")
+  })
+
+  it("stays quiet for percents that are not an equation, and inside LaTeX or code", () => {
+    expect(at("50%|")).toBeNull()
+    expect(at("width % x|")).toBeNull()
+    expect(at("$$ bar.v.t|")).toBeNull()
+    expect(at("```\n%% bar.v.t|\n```")).toBeNull()
+    expect(at("`%bar.v.t|`")).toBeNull()
+  })
+
+  it("completes equation options after %%", () => {
+    expect(at("%% x %% {|")!.labels.length).toBeGreaterThan(0)
+    expect(at("%% x %%\n{|")!.labels.length).toBeGreaterThan(0)
+  })
+})

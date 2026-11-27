@@ -1,16 +1,24 @@
 // Package discovery reads data only. Implementations are loaded by their renderer.
-#import "/src/core.typ": base-config, front-matter, setting-prefix
-#import "/src/lib/vars.typ": rooted-path
+#import "/src/core.typ": base-config, front-matter, setting-prefix, source-path
+#import "/src/lib/vars.typ": resolve-path, rooted-path
 
 #let listed(value) = if value == none { () } else if type(value) == str { (value,) } else { value }
 #let component-folders = {
   let out = ()
-  for path in listed(base-config.at("components", default: none)) + listed(front-matter.at("components", default: none)) {
-    assert(type(path) == str and path.trim() != "", message: setting-prefix("components") + "components must contain folder paths")
-    let clean = path.trim().trim("/", at: end).trim(regex("^(\\./)+"), at: start)
-    assert(not clean.split("/").contains("..") and not clean.starts-with("/") and not clean.contains(":"), message: setting-prefix("components") + "component folders must stay inside the project")
-    assert(not ("src/", "components/", "tools/").any(prefix => clean.starts-with(prefix)), message: setting-prefix("components") + "component folder shadows engine files")
-    if clean not in out { out.push(clean) }
+  let sources = (
+    (listed(base-config.at("components", default: none)), none),
+    (listed(front-matter.at("components", default: none)), source-path),
+  )
+  for (entries, from) in sources {
+    for path in entries {
+      assert(type(path) == str and path.trim() != "", message: setting-prefix("components") + "components must contain folder paths")
+      let raw = path.trim()
+      assert(not raw.contains(":"), message: setting-prefix("components") + "component folders must stay inside the project")
+      let clean = resolve-path(raw, from: from).trim("/", at: end)
+      assert(clean != "" and not clean.split("/").contains("..") and not clean.starts-with("/"), message: setting-prefix("components") + "component folders must stay inside the project")
+      assert(not ("src/", "components/", "tools/").any(prefix => clean.starts-with(prefix)), message: setting-prefix("components") + "component folder shadows engine files")
+      if clean not in out { out.push(clean) }
+    }
   }
   out
 }

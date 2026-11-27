@@ -1,4 +1,5 @@
 import { snippet, type Completion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete"
+import { renderToString } from "typlet"
 import { complete, completeValue, type CompletionEnv, type Completions, type Suggestion, type SuggestionKind } from "./completion"
 import { completeToml } from "./configCompletion"
 
@@ -10,6 +11,28 @@ const TYPE: Record<SuggestionKind, string> = {
   option: "property",
   variable: "variable",
   keyword: "keyword",
+  symbol: "symbol",
+}
+
+const renderedSymbol = new Map<string, string>()
+
+/** The typeset glyph of a Typst symbol, drawn in front of its name in the completion list. */
+export function symbolPreview(name: string): HTMLElement | null {
+  let html = renderedSymbol.get(name)
+  if (html === undefined) {
+    try {
+      html = renderToString(name, { throwOnError: false, strict: "ignore" })
+    } catch {
+      html = ""
+    }
+    renderedSymbol.set(name, html)
+  }
+  if (!html) return null
+  const el = document.createElement("span")
+  el.className = "cm-symbol-preview"
+  el.dir = "ltr"
+  el.innerHTML = html
+  return el
 }
 
 /**
@@ -22,7 +45,7 @@ export function completionSource(getEnv: () => CompletionEnv, kind: "markdown" |
     suggestions.map((suggestion) => ({
       label: suggestion.label,
       type: TYPE[suggestion.kind],
-      detail: suggestion.detail,
+      detail: suggestion.kind === "symbol" ? undefined : suggestion.detail,
       info: suggestion.info || undefined,
       boost: suggestion.boost,
       apply: suggestion.template.includes("${") ? snippet(suggestion.template) : suggestion.template,

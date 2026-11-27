@@ -19,6 +19,7 @@
     syntax: "{width=full caption=\"...\" #tbl-id}",
     attrs: (
       "width": (type: "enum", values: ("auto", "full"), default: "auto", doc: (en: "`auto`: as wide as the content. `full`: the full text width.", fa: "`auto`: به پهنای محتوا. `full`: تمام پهنای متن.")),
+      "cols": (type: "string", doc: (en: "Comma-separated column widths (one per column), e.g. `20%,50%,30%`, `1fr,2fr,auto`, `3cm,auto,1fr` or `1,2,1`.", fa: "عرض ستون‌ها با ویرگول جدا شده (به تعداد ستون‌ها)، مانند `20%,50%,30%`، `1fr,2fr,auto`، `3cm,auto,1fr` یا `1,2,1`.")),
       "align": (type: "enum", values: align-values, doc: (en: "Where an `auto`-width table sits", fa: "جای جدولی که پهنایش `auto` است")),
       "caption": (type: "string", doc: (en: "Text shown above the table; quote it if it has spaces. A caption or an id makes the table numbered.", fa: "متن بالای جدول؛ اگر فاصله دارد در گیومه بگذارید. کپشن یا شناسه جدول را شماره‌دار می‌کند.")),
       "numbering": (type: "bool", doc: (en: "Number the table («جدول ۱»). Default: `[table] numbering` (off): with it on, a table gets a number as soon as it has a caption; with it off, only the caption shows until this is `true`. A number and a caption read «جدول ۱: توضیح».", fa: "جدول شماره بخورد («جدول ۱»). پیش‌فرض: `[table] numbering` (خاموش): با روشن بودن آن، جدول به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا این `true` شود. شماره و عنوان با هم «جدول ۱: توضیح» می‌شوند.")),
@@ -58,11 +59,15 @@
       "caption": (type: "string", doc: (en: "Caption of the list. With `numbering` on it follows the number: «فهرست ۱: توضیح» / \"List 1: ...\"", fa: "عنوان لیست. با `numbering` روشن بعد از شماره می‌آید: «فهرست ۱: توضیح» / \"List 1: ...\"")),
       "numbering": (type: "bool", doc: (en: "Number the list («فهرست ۱»). Default: `[list] numbering` (off): with it on, a list gets a number as soon as it has a caption; with it off, only the caption shows until this is `true`.", fa: "لیست شماره بخورد («فهرست ۱»). پیش‌فرض: `[list] numbering` (خاموش): با روشن بودن آن، لیست به‌محض داشتن عنوان شماره می‌گیرد؛ با خاموش بودن فقط عنوان دیده می‌شود تا این `true` شود.")),
       "caption-position": (type: "enum", values: ("above", "below"), doc: (en: "Where the number and caption go. Default: `[list] caption-position` (`below`).", fa: "جای شماره و عنوان. پیش‌فرض: `[list] caption-position` (`below`).")),
+      "color": (type: "color", doc: (en: "Accent color of checked task-list boxes: a preset, `accent`, or a hex color.", fa: "رنگ تیک و کادر موارد تیک‌خورده در لیست کارها: رنگ آماده، `accent` یا hex.")),
+      "strike": (type: "bool", default: "true", doc: (en: "Strike through and mute completed task items (default `true`).", fa: "خط زدن و کم‌رنگ کردن متن کارهای انجام‌شده (پیش‌فرض `true`).")),
+      "editable": (type: "bool", default: "true", doc: (en: "Allow toggling and saving task checkboxes in HTML output (default `true`).", fa: "امکان تیک زدن و ذخیرهٔ وضعیت کارها در خروجی HTML (پیش‌فرض `true`).")),
+      "progress": (type: "bool", default: "false", doc: (en: "Show a compact completion progress bar above a task list (default `false`).", fa: "نمایش نوار پیشرفت جمع‌وجور بالای لیست کارها (پیش‌فرض `false`).")),
       "id": id-attr(" and the list's number"),
     ),
   ),
   equation: (
-    where: (en: "After the closing `$$` of a display equation, on the same line or alone on the next", fa: "بعد از `$$` پایانی معادلهٔ نمایشی، در همان خط یا تنها در خط بعد"),
+    where: (en: "After the closing `$$` or `%%` of a display equation, on the same line or alone on the next", fa: "بعد از `$$` یا `%%` پایانی معادلهٔ نمایشی، در همان خط یا تنها در خط بعد"),
     syntax: "$$ e^{i\\pi} + 1 = 0 $$ {#eq-euler}",
     attrs: (
       "id": (..id-attr(" and the equation's number"), required: true),

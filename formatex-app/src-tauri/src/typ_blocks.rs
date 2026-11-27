@@ -99,10 +99,40 @@ pub(crate) fn find_blocks(file: &str, markdown: &str) -> Vec<Block> {
     out
 }
 
-/// The paths of `#include "..."` / `#import "..."` written from the project root, as the engine rewrites them before `eval`.
-fn root_paths(code: &str) -> String {
+/// Resolves a project-internal path relative to `from` (a project-relative Markdown file path).
+/// Paths starting with `/` stay anchored to the project root.
+fn resolve_relative(path: &str, from: &str) -> String {
+    let clean = path.replace('\\', "/");
+    let anchored = clean.starts_with('/');
+    let mut parts: Vec<String> = if anchored || from.is_empty() {
+        Vec::new()
+    } else {
+        let from_clean = from.replace('\\', "/");
+        let trimmed = from_clean.trim_start_matches('/');
+        match trimmed.rsplit_once('/') {
+            Some((dir, _)) => dir.split('/').filter(|s| !s.is_empty() && *s != ".").map(String::from).collect(),
+            None => Vec::new(),
+        }
+    };
+    for seg in clean.trim_start_matches('/').split('/') {
+        if seg.is_empty() || seg == "." { continue; }
+        if seg == ".." {
+            if !parts.is_empty() { parts.pop(); }
+            else { parts.push("..".to_string()); }
+        } else {
+            parts.push(seg.to_string());
+        }
+    }
+    parts.join("/")
+}
+
+/// The paths of `#include "..."` / `#import "..."` written relative to the Markdown file, as the engine rewrites them before `eval`.
+fn root_paths(code: &str, from: &str) -> String {
     let pattern = Regex::new(r#"\b(include|import)(\s+)"([^"@/:][^"]*)""#).expect("a valid pattern");
-    pattern.replace_all(code, "$1$2\"/$3\"").into_owned()
+    pattern.replace_all(code, |caps: &regex::Captures| {
+        let resolved = resolve_relative(&caps[3], from);
+        format!("{}{}\"/{resolved}\"", &caps[1], &caps[2])
+    }).into_owned()
 }
 
 /// The Markdown files of a project folder (the editor's unsaved texts are used instead of what is on disk).
@@ -134,9 +164,9 @@ fn markdown_files(dir: &Path) -> Vec<String> {
 
 /// Builds one block alone: the kit, then the code, as a small file of the project. Returns the first mistake it finds, with the place it
 /// has in that file.
-fn check(engine: &Engine, dir: &Path, inputs: &HashMap<String, String>, extra: &HashMap<String, Vec<u8>>, code: &str) -> Option<Diagnostic> {
+fn check(engine: &Engine, dir: &Path, inputs: &HashMap<String, String>, extra: &HashMap<String, Vec<u8>>, code: &str, from: &str) -> Option<Diagnostic> {
     let mut files = extra.clone();
-    files.insert(CHECK_FILE.to_string(), format!("#import \"/src/kit.typ\": *\n{}\n", root_paths(code)).into_bytes());
+    files.insert(CHECK_FILE.to_string(), format!("#import \"/src/kit.typ\": *\n{}\n", root_paths(code, from)).into_bytes());
     let world = ProjectWorld::new(Some(dir.to_path_buf()), CHECK_FILE, engine.packages.clone(), engine.fonts.get(), engine.components.clone(), inputs, files);
     let errors = typst::compile::<PagedDocument>(&world).output.err()?;
     typst::comemo::evict(10);
@@ -166,13 +196,14 @@ pub(crate) fn relocate(engine: &Engine, dir: &Path, inputs: &HashMap<String, Str
         match &block.src {
             // A Typst file the tag names that is not there (a mistake inside it is named by Typst already)
             Some(path) => {
-                let exists = extra.contains_key(path.trim_start_matches('/')) || dir.join(path.trim_start_matches('/')).is_file();
+                let resolved = resolve_relative(path, &block.file);
+                let exists = extra.contains_key(&resolved) || dir.join(&resolved).is_file();
                 if !exists {
                     found.push(Diagnostic::error(format!("file not found: {path}"), &block.file, block.tag_line, 1));
                 }
             }
             None => {
-                let Some(mut problem) = check(engine, dir, inputs, extra, &block.code) else { continue };
+                let Some(mut problem) = check(engine, dir, inputs, extra, &block.code, &block.file) else { continue };
                 if problem.path.as_deref() == Some(CHECK_FILE) {
                     // Line 1 of the small file is the kit; the code starts on line 2
                     let inside = problem.line.unwrap_or(2).saturating_sub(1).max(1);
@@ -212,8 +243,9 @@ mod tests {
 
     #[test]
     fn paths_are_rooted_the_way_the_engine_does_it() {
-        assert_eq!(root_paths("#import \"parts/a.typ\": x\n#include \"b.typ\""), "#import \"/parts/a.typ\": x\n#include \"/b.typ\"");
-        assert_eq!(root_paths("#import \"@preview/cetz:0.5.2\"\n#import \"/src/kit.typ\": *"), "#import \"@preview/cetz:0.5.2\"\n#import \"/src/kit.typ\": *");
+        assert_eq!(root_paths("#import \"parts/a.typ\": x\n#include \"b.typ\"", "main.md"), "#import \"/parts/a.typ\": x\n#include \"/b.typ\"");
+        assert_eq!(root_paths("#import \"parts/a.typ\": x\n#include \"../shared.typ\"", "docs/guide.md"), "#import \"/docs/parts/a.typ\": x\n#include \"/shared.typ\"");
+        assert_eq!(root_paths("#import \"@preview/cetz:0.5.2\"\n#import \"/src/kit.typ\": *", "docs/guide.md"), "#import \"@preview/cetz:0.5.2\"\n#import \"/src/kit.typ\": *");
     }
 
     #[test]

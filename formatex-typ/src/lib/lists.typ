@@ -158,6 +158,52 @@
   } else { body }
 }
 
+// Crisp vector checkbox for Markdown task lists (`[ ]` / `[x]`); corners follow `feel`.
+#let task-checkbox(checked, accent: none) = {
+  let ink = if accent != none { accent } else { theme.accent }
+  let r = feel.badge * 0.6
+  let size = 0.92em
+  if checked {
+    box(
+      width: size, height: size, baseline: 0.14em, radius: r,
+      fill: ink, stroke: 0.8pt * zoom + ink,
+      align(center + horizon, curve(
+        stroke: (paint: theme.bg, thickness: 1.25pt * zoom, cap: "round", join: "round"),
+        curve.move((0em, 0.2em)),
+        curve.line((0.2em, 0.4em)),
+        curve.line((0.55em, 0em)),
+      )),
+    )
+  } else {
+    box(
+      width: size, height: size, baseline: 0.14em, radius: r,
+      fill: theme.bg, stroke: 0.9pt * zoom + color.mix((theme.fg, 35%), (theme.bg, 65%)),
+    )
+  }
+}
+
+#let task-progress-bar(done, total, accent: none) = context {
+  let ink = if accent != none { accent } else { theme.accent }
+  let rtl = text.dir == rtl
+  let pct = if total > 0 { int(calc.round(done * 100 / total)) } else { 0 }
+  let label = if rtl {
+    digits(done, true) + " از " + digits(total, true) + " (" + digits(pct, true) + "٪)"
+  } else {
+    str(done) + " of " + str(total) + " (" + str(pct) + "%)"
+  }
+  block(below: 0.5em, grid(
+    columns: (1fr, auto),
+    column-gutter: 0.7em,
+    align: horizon,
+    box(
+      width: 100%, height: 4.5pt * zoom, radius: feel.badge,
+      fill: theme.code-bg, clip: true,
+      align(start, box(width: pct * 1%, height: 100%, fill: ink)),
+    ),
+    text(size: 0.8em, fill: theme.muted, label),
+  ))
+}
+
 // One list with a `{...}` line above it: its own style; `caption` / `#id` number it «فهرست ۱» / "List 1".
 #let list-block(opts, body) = {
   for key in opts.keys() {

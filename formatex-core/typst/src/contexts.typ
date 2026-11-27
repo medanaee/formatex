@@ -32,7 +32,7 @@
       }
       if node.type == "deferred" {
         let record = json(bytes(node.value))
-        let ran = run-code(record.code, var-env + (values: eval(record.values, mode: "code")), extra: (SECTION: state.section, SECTION_NUMBER: state.number))
+        let ran = run-code(record.code, var-env + (values: eval(record.values, mode: "code")), extra: (SECTION: state.section, SECTION_NUMBER: state.number), from: node.at.file)
         let text = show-value(ran.first())
         let origin = node.source.first()
         let prepared = (text: text, file: origin.file, sources: document.sources, segments: ((start: 0, end: text.len(), file: origin.file, original: (origin.start, origin.end), generated: true),), schemas: schemas, options: options)

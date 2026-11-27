@@ -31,10 +31,12 @@ export function HtmlPreview() {
   const [page, setPage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [previewWidth, setPreviewWidth] = useState<"narrow" | "standard" | "wide" | undefined>(undefined)
   const sourceTarget = useHtmlSourceStore(state => state.target)
   const frame = useRef<HTMLIFrameElement>(null)
   const scroll = useRef(0)
   const viewer = useRef<Record<string, string>>({})
+  const tasks = useRef<Record<string, boolean>>({})
   const [token] = useState(() => crypto.randomUUID())
   const frameToken = useRef(token)
   const signature = useRef("")
@@ -54,6 +56,8 @@ export function HtmlPreview() {
       ready.current = false
       scroll.current = 0
       viewer.current = {}
+      tasks.current = {}
+      setPreviewWidth(undefined)
       useWorkspaceStore.getState().set({ htmlElapsedMs: null })
       useHtmlSourceStore.setState({ available: false, target: null })
     }
@@ -65,7 +69,7 @@ export function HtmlPreview() {
       useWorkspaceStore.getState().set({ htmlBusy: true })
       const started = performance.now()
       try {
-        const output = await previewHtml(projectId, mainFile, htmlOptionsFromConfig(texts[CONFIG_FILE] ?? ""), texts, kind, fonts.current.key)
+        const output = await previewHtml(projectId, mainFile, { ...htmlOptionsFromConfig(texts[CONFIG_FILE] ?? ""), graphicWidth: previewWidth }, texts, kind, fonts.current.key)
         duration.current = performance.now() - started
         if (!valid) return
         useWorkspaceStore.getState().set({ htmlElapsedMs: output.timings.total_ms })
@@ -81,7 +85,7 @@ export function HtmlPreview() {
           ready.current = false
           frameToken.current = `${token}-${id}`
           signature.current = split?.signature ?? ""
-          setPage(initialFrame(output.html, fonts.current.css, frameToken.current, scroll.current, viewer.current, id))
+          setPage(initialFrame(output.html, fonts.current.css, frameToken.current, scroll.current, viewer.current, id, tasks.current))
         }
         setError(null)
       } catch (failure) {
@@ -95,7 +99,7 @@ export function HtmlPreview() {
       }
     }, signature.current ? previewDelay(duration.current) : 0)
     return () => { valid = false; cancel(); useWorkspaceStore.getState().set({ htmlBusy: false }) }
-  }, [texts, projectId, mainFile, kind, i18n.language, t, token])
+  }, [texts, projectId, mainFile, kind, i18n.language, t, token, previewWidth])
 
   useEffect(() => {
     if (!sourceTarget || busy || !ready.current) return
@@ -106,11 +110,19 @@ export function HtmlPreview() {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || !event.data) return
       if (event.data.fxToken !== frameToken.current) return
+      if (event.data.fxTaskState && typeof event.data.fxTaskState === "object" && !Array.isArray(event.data.fxTaskState)) {
+        tasks.current = event.data.fxTaskState as Record<string, boolean>
+        return
+      }
       if (event.data.fxViewerState && typeof event.data.fxViewerState.key === "string") {
         const { key, value } = event.data.fxViewerState as { key: string; value: unknown }
-        if (!["theme", "feel", "zoom", "outline"].includes(key)) return
+        if (!["theme", "feel", "zoom", "outline", "width"].includes(key)) return
         if (value === "" || value === undefined) delete viewer.current[key]
         else viewer.current[key] = String(value)
+        if (key === "width") {
+          const next = value === "narrow" || value === "standard" || value === "wide" ? value : undefined
+          setPreviewWidth(current => current === next ? current : next)
+        }
         return
       }
       if (event.data.fxReady === true) {

@@ -12,7 +12,6 @@ import { isDesktopApp, isTauri } from "@/lib/platform"
 import { RemoteFilesMenu } from "./RemoteFilesMenu"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useLibraryStore } from "@/stores/useLibraryStore"
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore"
 
 export type EditorTab = "edit" | "preview"
 
@@ -87,16 +86,20 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorTo
   const saveState = useEditorStore((state) => state.saveState)
   const exportStatus = useEditorStore((state) => state.exportStatus)
   const exportMessage = useEditorStore((state) => state.exportMessage)
+  const exportHtmlStatus = useEditorStore((state) => state.exportHtmlStatus)
+  const exportHtmlMessage = useEditorStore((state) => state.exportHtmlMessage)
   const syncStatus = useEditorStore((state) => state.syncStatus)
   const syncMessage = useEditorStore((state) => state.syncMessage)
   const renameDocument = useLibraryStore((state) => state.renameDocument)
 
   // In the desktop app the title bar carries the menus and the panel switches
   const ownChrome = !isDesktopApp()
-  const exporting = exportStatus === "working"
+  const exportingPdf = exportStatus === "working"
+  const exportingHtml = exportHtmlStatus === "working"
   const syncing = syncStatus === "working"
   const syncTitle = syncStatus === "error" ? `${t("editor.syncFailed")}: ${syncMessage}` : syncStatus === "done" ? t("editor.synced", { count: Number(syncMessage) }) : t("editor.sync")
-  const exportTitle = exportStatus === "error" ? `${t("editor.exportFailed")}: ${exportMessage}` : exportStatus === "done" ? t("editor.exported") : t("editor.export")
+  const exportTitle = exportStatus === "error" ? `${t("editor.exportFailed")}: ${exportMessage}` : exportStatus === "done" ? t("editor.exported") : exportingPdf ? t("editor.exporting") : t("editor.export")
+  const exportHtmlTitle = exportHtmlStatus === "error" ? `${t("editor.exportFailed")}: ${exportHtmlMessage}` : exportHtmlStatus === "done" ? t("editor.exported") : exportingHtml ? t("editor.exporting") : t("editor.exportHtml")
 
   return (
     <header className="flex h-10 shrink-0 items-center gap-1 border-b border-border bg-background px-1.5 select-none">
@@ -156,12 +159,15 @@ export function EditorToolbar({ doc, tab, onTabChange, onToggleFiles }: EditorTo
           <RemoteFilesMenu disabled={syncing} />
         </>
       )}
-      <Button variant="ghost" size="icon-sm" disabled={exporting} onClick={() => useWorkspaceStore.getState().set({ htmlDialog: true })} title={t("editor.exportHtml")} aria-label={t("editor.exportHtml")}>
-        <FileCode />
+      <Button variant="secondary" size="sm" disabled={exportingHtml} onClick={() => void useEditorStore.getState().exportHtml()} title={exportHtmlTitle} aria-label={t("editor.exportHtml")} className="relative overflow-hidden ms-0.5 sm:ms-1">
+        {exportingHtml ? <Loader2 className="animate-spin" data-icon="inline-start" /> : exportHtmlStatus === "error" ? <CircleAlert className="text-destructive" data-icon="inline-start" /> : <FileCode data-icon="inline-start" />}
+        <span className="hidden sm:inline">{t("editor.exportHtml")}</span>
+        {exportingHtml && <span className="fx-export-bar" aria-hidden="true" />}
       </Button>
-      <Button size="sm" disabled={exporting} onClick={() => void useEditorStore.getState().exportPdf()} title={exportTitle} aria-label={t("editor.export")} className="ms-0.5 sm:ms-1">
-        {exporting ? <Loader2 className="animate-spin" data-icon="inline-start" /> : exportStatus === "error" ? <CircleAlert data-icon="inline-start" /> : <FileDown data-icon="inline-start" />}
+      <Button size="sm" disabled={exportingPdf} onClick={() => void useEditorStore.getState().exportPdf()} title={exportTitle} aria-label={t("editor.export")} className="relative overflow-hidden ms-0.5 sm:ms-1">
+        {exportingPdf ? <Loader2 className="animate-spin" data-icon="inline-start" /> : exportStatus === "error" ? <CircleAlert data-icon="inline-start" /> : <FileDown data-icon="inline-start" />}
         <span className="hidden sm:inline">{t("editor.export")}</span>
+        {exportingPdf && <span className="fx-export-bar" aria-hidden="true" />}
       </Button>
     </header>
   )

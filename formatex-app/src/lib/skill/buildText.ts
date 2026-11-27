@@ -89,7 +89,7 @@ const EN: Block[] = [
 
 A component is a **folder package**. Use one only when ordinary Markdown and existing tags cannot express the document. Shared packages contain these six named files: \`manifest.toml\`, \`schema.json\`, \`docs.json\`, \`typst.typ\`, \`html.tsx\`, \`html.css\`.
 
-Declare project-relative **folder paths in Markdown front matter**:
+Declare component **folder paths in Markdown front matter** (relative to the \`.md\` file, or starting with \`/\` for the project root):
 \`\`\`yaml
 ---
 components:
@@ -204,7 +204,7 @@ const FA: Block[] = [
 
 کامپوننت یک **بستهٔ پوشه‌ای** است. فقط وقتی بسازید که Markdown و تگ‌های موجود کافی نیستند. هر بسته این شش فایل را دارد: \`manifest.toml\`، \`schema.json\`، \`docs.json\`، \`typst.typ\`، \`html.tsx\` و \`html.css\`.
 
-**مسیر پوشهٔ نسبت به پروژه را در front matter فایل Markdown** معرفی کنید:
+**مسیر پوشهٔ کامپوننت را در front matter فایل Markdown** معرفی کنید (نسبت به پوشهٔ همان فایل \`.md\`، یا با \`/\` از ریشهٔ پروژه):
 \`\`\`yaml
 ---
 components:

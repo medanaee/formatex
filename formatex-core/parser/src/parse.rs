@@ -16,6 +16,7 @@ impl<'a> DocumentParser<'a> {
         Node { kind: kind.into(), key: format!("{}:{}:{kind}:{}", at.file, source.first().map_or(start, |range| range.start), self.serial), at, span: [start, end], source, ..Node::default() }
     }
     fn raw_component(&self, name: &str) -> bool { grammar::RAW_COMPONENTS.contains(&name) || self.input.schemas.get(name).and_then(|s| s.get("body")).and_then(Value::as_str) == Some("raw") }
+    fn known_tag(&self, name: &str) -> bool { self.input.schemas.is_empty() || name == "br" || self.input.schemas.contains_key(name) }
     fn error(&self, at: usize, message: impl Into<String>) -> Diagnostic { self.source.diagnostic(at, (at + 1).min(self.input.text.len()), message) }
     fn apply(&self, node: &mut Node, attrs: &Attributes) -> Result<(), Diagnostic> {
         for (name, value) in &attrs.values {
@@ -27,7 +28,7 @@ impl<'a> DocumentParser<'a> {
     }
 
     /// Formatex extensions protect their full boundaries before CommonMark parses blocks/inlines.
-    fn extensions(&mut self, text: &str, base: usize) -> Result<(String, BTreeMap<char, Node>, Vec<Anchor>), Diagnostic> {
+    fn extensions(&mut self, text: &str, base: usize) -> Result<(String, BTreeMap<char, Node>, Vec<Anchor>, Vec<std::ops::Range<usize>>), Diagnostic> {
         let mut scan_bytes = text.as_bytes().to_vec();
         let mut scan_at = 0;
         let bytes_ref = text.as_bytes();
@@ -91,6 +92,7 @@ impl<'a> DocumentParser<'a> {
         };
         let merged = merge_ranges(protected);
         let merged_code = merge_ranges(code_blocks);
+        let math_protected = merge_ranges(merged.iter().cloned().chain(collect_url_ranges(text)).collect());
         let range_end = |ranges: &[std::ops::Range<usize>], at: usize| {
             let next = ranges.partition_point(|range| range.start <= at);
             next.checked_sub(1).and_then(|index| (at < ranges[index].end).then_some(ranges[index].end))
@@ -100,6 +102,7 @@ impl<'a> DocumentParser<'a> {
         let mut bytes = text.as_bytes().to_vec();
         let mut components = BTreeMap::new();
         let mut anchors = Vec::new();
+        let mut strip_ranges: Vec<std::ops::Range<usize>> = Vec::new();
         let mut p = 0;
         while p < text.len() {
             if let Some(end) = protected_end(p) { p = end; continue; }
@@ -117,6 +120,11 @@ impl<'a> DocumentParser<'a> {
             if text.as_bytes()[p] == b'<' {
                 let open = grammar::tag(text, p, base).map_err(|(at, error)| self.error(at, error))?;
                 if let Some(mut open) = open {
+                    if !self.known_tag(&open.name) {
+                        strip_ranges.push(p..open.end);
+                        p = open.end;
+                        continue;
+                    }
                     open.void |= self.input.schemas.get(&open.name).and_then(|s| s.get("kind")).and_then(Value::as_str) == Some("void");
                     if open.close {
                         if open.void { grammar::blank(&mut bytes, p, open.end); p = open.end; continue; }
@@ -134,6 +142,10 @@ impl<'a> DocumentParser<'a> {
                             if text[q..].starts_with("<!--") { q = text[q..].find("-->").map_or(text.len(), |end| q + end + 3); continue; }
                             if text.as_bytes()[q] == b'<' {
                                 if let Some(mut tag) = grammar::tag(text, q, base).map_err(|(at, error)| self.error(at, error))? {
+                                    if !self.known_tag(&tag.name) {
+                                        q = tag.end;
+                                        continue;
+                                    }
                                     tag.void |= self.input.schemas.get(&tag.name).and_then(|s| s.get("kind")).and_then(Value::as_str) == Some("void");
                                     if raw && !(tag.close && tag.name == open.name) { q = tag.end; continue; }
                                     if tag.close && !tag.void {
@@ -227,46 +239,63 @@ impl<'a> DocumentParser<'a> {
                     p = end; continue;
                 }
             }
+            // Typst math. `$` / `$$` stay LaTeX and are already in `protected`.
+            if text.as_bytes()[p] == b'%' {
+                if let Some((end, value, display)) = typst_math_at(text, p, &math_protected) {
+                    let mut node = self.node(if display { "math" } else { "inlineMath" }, base + p, base + end);
+                    node.value = Some(value);
+                    node.lang = Some("typst".into());
+                    self.placeholder(&mut bytes, p, end, node, &mut components)?;
+                    p = end;
+                    continue;
+                }
+            }
             p += text[p..].chars().next().unwrap().len_utf8();
         }
         let mut offset = 0;
         for line in text.split_inclusive('\n') {
             let line_start = offset; offset += line.len();
-            if code_end(line_start).is_some() || (protected_end(line_start).is_some() && !line.trim_start().starts_with("$$")) { continue; }
+            let display_line = line.trim_start().starts_with("$$") || line.trim_start().starts_with("%%");
+            if code_end(line_start).is_some() || (protected_end(line_start).is_some() && !display_line) { continue; }
             if !bytes[line_start..offset].contains(&b'{') { continue; }
             let trimmed = line.trim();
             let prefix = line.len() - line.trim_start().len();
             let standalone = trimmed.starts_with('{') && trimmed.ends_with('}');
             let heading = line.trim_start().starts_with('#') && line.trim_start().trim_start_matches('#').starts_with([' ', '\t']);
-            let close_math = line.trim_start().starts_with("$$") && line.trim_end().ends_with('}');
+            let close_math = display_line && line.trim_end().ends_with('}');
             let start = if standalone { Some(line_start + prefix) } else if heading || close_math { line.rfind('{').map(|at| line_start + at) } else { None };
             if let Some(start) = start {
                 if let Some(end) = attribute_end(text, start) {
                     if !text[end..offset].trim().is_empty() { continue; }
                     let attrs = grammar::attributes(&text[start+1..end-1], base + start + 1).map_err(|(at, error)| self.error(at, error))?;
                     grammar::blank(&mut bytes, start, end);
-                    let math = close_math || standalone && text[..line_start].trim_end().ends_with("$$");
+                    let prev = text[..line_start].trim_end();
+                    let math = close_math || standalone && (prev.ends_with("$$") || prev.ends_with("%%"));
                     anchors.push(Anchor { start: base + if heading { line_start } else { start }, end: base + end, previous: !standalone || math, math, applied: false, attrs });
                 }
             }
         }
-        Ok((String::from_utf8(bytes).expect("byte-preserving masks"), components, anchors))
+        Ok((String::from_utf8(bytes).expect("byte-preserving masks"), components, anchors, strip_ranges))
     }
 
     fn placeholder(&self, bytes: &mut [u8], start: usize, end: usize, node: Node, components: &mut BTreeMap<char, Node>) -> Result<(), Diagnostic> {
         let marker = char::from_u32(0xE000 + components.len() as u32).filter(|&ch| ch <= '\u{F8FF}').ok_or_else(|| self.error(start, "Too many sibling extensions in a single parse scope"))?;
         if end - start < marker.len_utf8() { return Err(self.error(start, "Extension boundary is too short")); }
+        let mut delim = start;
+        while delim > 0 && matches!(bytes[delim - 1], b'*' | b'_' | b'~') { delim -= 1; }
+        let pad_left = delim < start && delim > 0 && !bytes[delim - 1].is_ascii_whitespace() && end - start > marker.len_utf8();
         grammar::blank(bytes, start, end);
         let mut encoded = [0; 4]; let encoded = marker.encode_utf8(&mut encoded);
-        bytes[start..start + encoded.len()].copy_from_slice(encoded.as_bytes());
+        let at = start + usize::from(pad_left);
+        bytes[at..at + encoded.len()].copy_from_slice(encoded.as_bytes());
         components.insert(marker, node);
         Ok(())
     }
 
     pub fn parse(&mut self, text: &str, base: usize) -> Result<Vec<Node>, Diagnostic> {
-        let (masked, components, mut anchors) = self.extensions(text, base)?;
+        let (masked, components, mut anchors, strip_ranges) = self.extensions(text, base)?;
         let mut stack = vec![self.node("root", base, base + text.len())];
-        let (normalized, offsets) = normalize_list_markers(&masked);
+        let (normalized, offsets) = normalize_list_markers(&masked, &strip_ranges);
         for (event, range) in Parser::new_ext(&normalized, markdown_options()).into_offset_iter() {
             let range = offsets[range.start]..offsets[range.end];
             let start = base + range.start; let end = base + range.end;
@@ -362,9 +391,10 @@ impl<'a> DocumentParser<'a> {
                     let mut source_cursor = range.start;
                     let mut skip_until = range.start;
                     for ch in value.chars() {
-                        if let Some(component) = components.get(&ch).filter(|node| node.span[0] >= start && node.span[0] < end) {
+                        if let Some(component) = components.get(&ch).filter(|node| node.span[1] > start && node.span[0] < end) {
+                            if component.span[0] < base + source_cursor && chunk.ends_with(' ') { chunk.pop(); }
                             if !chunk.is_empty() { let mut node = self.node("text", begin, component.span[0]); node.value = Some(std::mem::take(&mut chunk)); stack.last_mut().unwrap().children.push(node); }
-                            stack.last_mut().unwrap().children.push(component.clone()); begin = component.span[1]; source_cursor = component.span[0] - base + ch.len_utf8(); skip_until = component.span[1] - base;
+                            stack.last_mut().unwrap().children.push(component.clone()); begin = component.span[1]; source_cursor = component.span[0] - base + usize::from(component.span[0] < base + source_cursor) + ch.len_utf8(); skip_until = component.span[1] - base;
                         } else {
                             // Spaces masking an extension are not part of its text siblings.
                             if source_cursor >= skip_until { chunk.push(ch); }
@@ -412,7 +442,7 @@ impl<'a> DocumentParser<'a> {
             Some("mixed") => node.props.get("mode").and_then(Value::as_str) == Some("block"),
             Some("void") => !matches!(name, "icon" | "counter"),
             Some(_) => true,
-            None => !matches!(name, "span" | "badge" | "kbd" | "ref" | "cite" | "icon" | "counter" | "digit" | "fn" | "footnote" | "def"),
+            None => !matches!(name, "span" | "badge" | "kbd" | "ref" | "cite" | "icon" | "counter" | "digit" | "fn" | "footnote" | "def" | "br"),
         }
     }
 
@@ -469,6 +499,128 @@ impl<'a> DocumentParser<'a> {
 }
 
 fn markdown_options() -> Options { Options::ENABLE_TABLES | Options::ENABLE_FOOTNOTES | Options::ENABLE_STRIKETHROUGH | Options::ENABLE_TASKLISTS | Options::ENABLE_MATH | Options::ENABLE_GFM }
+
+fn delim_escaped(text: &str, at: usize) -> bool {
+    let bytes = text.as_bytes();
+    let mut i = at;
+    let mut slashes = 0;
+    while i > 0 && bytes[i - 1] == b'\\' { slashes += 1; i -= 1; }
+    slashes % 2 == 1
+}
+
+fn preceded_by_alphanumeric(text: &str, at: usize) -> bool {
+    at > 0 && text[..at].chars().next_back().is_some_and(|ch| ch.is_alphanumeric())
+}
+
+fn followed_by_alphanumeric(text: &str, at: usize) -> bool {
+    text.get(at..).and_then(|s| s.chars().next()).is_some_and(|ch| ch.is_alphanumeric())
+}
+
+fn collect_url_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
+    let mut ranges = Vec::new();
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let rest = &bytes[i..];
+        let scheme = rest.starts_with(b"https://")
+            || rest.starts_with(b"http://")
+            || rest.starts_with(b"ftp://")
+            || rest.starts_with(b"mailto:");
+        if scheme {
+            let mut end = i;
+            let mut parens = 0usize;
+            while end < bytes.len() {
+                let b = bytes[end];
+                if b.is_ascii_whitespace() || matches!(b, b'<' | b'>' | b'"' | b'\'') { break; }
+                if b == b'(' { parens += 1; }
+                else if b == b')' {
+                    if parens == 0 { break; }
+                    parens -= 1;
+                }
+                end += 1;
+            }
+            if end > i {
+                ranges.push(i..end);
+                i = end;
+                continue;
+            }
+        }
+        if bytes[i] == b']' && bytes.get(i + 1) == Some(&b'(') {
+            let start = i + 2;
+            let mut end = start;
+            let mut depth = 1usize;
+            while end < bytes.len() && depth > 0 {
+                match bytes[end] {
+                    b'\\' => { end = (end + 2).min(bytes.len()); continue; }
+                    b'\n' => break,
+                    b'(' => depth += 1,
+                    b')' => depth -= 1,
+                    _ => {}
+                }
+                end += 1;
+            }
+            if depth == 0 && end > start {
+                ranges.push(start..end - 1);
+                i = end;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    ranges
+}
+
+fn in_ranges(ranges: &[std::ops::Range<usize>], at: usize) -> bool {
+    let next = ranges.partition_point(|range| range.start <= at);
+    next.checked_sub(1).is_some_and(|index| at < ranges[index].end)
+}
+
+/// `%% ... %%` is display Typst math (spaces and line breaks inside are kept).
+/// `%...%` is inline Typst math only when the formula touches both signs (`%x^2%`).
+/// A sign after a letter or digit (`50%`, `width`) is ordinary text.
+fn typst_math_at(text: &str, p: usize, protected: &[std::ops::Range<usize>]) -> Option<(usize, String, bool)> {
+    if in_ranges(protected, p) || text.as_bytes().get(p) != Some(&b'%') || delim_escaped(text, p) || preceded_by_alphanumeric(text, p) { return None; }
+    if text[p..].starts_with("%%") {
+        let mut q = p + 2;
+        while q + 1 < text.len() {
+            if in_ranges(protected, q) { return None; }
+            if text.as_bytes()[q] == b'\\' {
+                q += 1;
+                if q < text.len() { q += text[q..].chars().next()?.len_utf8(); }
+                continue;
+            }
+            if text[q..].starts_with("%%") && !delim_escaped(text, q) {
+                let inner = text[p + 2..q].trim();
+                if inner.is_empty() { return None; }
+                return Some((q + 2, inner.to_string(), true));
+            }
+            q += text[q..].chars().next()?.len_utf8();
+        }
+        return None;
+    }
+    let mut q = p + 1;
+    if text[q..].chars().next().is_none_or(|ch| ch.is_whitespace() || ch == '%') { return None; }
+    while q < text.len() {
+        if in_ranges(protected, q) { return None; }
+        let ch = text[q..].chars().next()?;
+        if ch == '\n' || ch == '\r' { return None; }
+        if ch == '\\' {
+            q += ch.len_utf8();
+            if q < text.len() { q += text[q..].chars().next()?.len_utf8(); }
+            continue;
+        }
+        if ch == '%' && !delim_escaped(text, q) {
+            if text[q..].starts_with("%%") { return None; }
+            if followed_by_alphanumeric(text, q + 1) { return None; }
+            if text[..q].chars().next_back().is_some_and(|prev| prev.is_whitespace()) { return None; }
+            let inner = &text[p + 1..q];
+            if inner.is_empty() { return None; }
+            return Some((q + 1, inner.to_string(), false));
+        }
+        q += ch.len_utf8();
+    }
+    None
+}
 fn text_of(node: &Node) -> String { node.value.clone().unwrap_or_else(|| node.children.iter().map(text_of).collect()) }
 fn inline_children(nodes: Vec<Node>) -> Vec<Node> { nodes.into_iter().flat_map(|node| if node.kind == "paragraph" { node.children } else { vec![node] }).collect() }
 fn attribute_end(text: &str, start: usize) -> Option<usize> {
@@ -605,6 +757,85 @@ mod tests {
         assert_eq!(docs.children[0].kind, "paragraph");
         assert_eq!(docs.children[1].kind, "code");
     }
+    #[test]
+    fn typst_math_delimiters_leave_percents_code_and_latex() {
+        let document = parse("See %x^2+y^2% and 50% of 20% but not % x %.\n\n%%\nsum_(i=1)^n i\n%% {#eq-sum}\n\n`%not math%`\n\n```\n%% raw %%\n```\n\n$a \\% b$\n");
+        let paragraph = &document.children[0];
+        let inline = paragraph.children.iter().find(|node| node.kind == "inlineMath").unwrap();
+        assert_eq!(inline.lang.as_deref(), Some("typst"));
+        assert_eq!(inline.value.as_deref(), Some("x^2+y^2"));
+        let prose: String = paragraph.children.iter().filter(|node| node.kind == "text").map(|node| node.value.clone().unwrap_or_default()).collect();
+        assert!(prose.contains("50%"));
+        assert!(prose.contains("20%"));
+        assert!(prose.contains("% x %"));
+        let display = document.children.iter().find_map(|node| node.children.iter().find(|child| child.kind == "math")).unwrap();
+        assert_eq!(display.lang.as_deref(), Some("typst"));
+        assert_eq!(display.value.as_deref(), Some("sum_(i=1)^n i"));
+        assert_eq!(display.props["id"], "eq-sum");
+        assert_eq!(document.children.iter().find(|node| node.kind == "paragraph" && node.children.iter().any(|child| child.kind == "inlineCode")).unwrap().children[0].value.as_deref(), Some("%not math%"));
+        assert!(document.children.iter().find(|node| node.kind == "code").unwrap().value.as_deref().unwrap().contains("%% raw %%"));
+        let latex = document.children.iter().find_map(|node| node.children.iter().find(|child| child.kind == "inlineMath" && child.lang.is_none())).unwrap();
+        assert_eq!(latex.value.as_deref(), Some("a \\% b"));
+        let one_line = parse("%% a^2 %% {#eq-a}\n");
+        let equation = one_line.children.iter().find_map(|node| node.children.iter().find(|child| child.kind == "math")).unwrap();
+        assert_eq!(equation.value.as_deref(), Some("a^2"));
+        assert_eq!(equation.props["id"], "eq-a");
+
+        let url_doc = parse("See https://en.wikipedia.org/wiki/Mojo_%28programming_language%29?utm_source=chatgpt.com \"Mojo (programming language)\" and [Mojo](https://fa.wikipedia.org/wiki/%D8%B3%D9%84%D8%A7%D9%85) and %x^2%.\n");
+        let math_nodes: Vec<_> = url_doc.children[0].children.iter().filter(|n| n.kind == "inlineMath").collect();
+        assert_eq!(math_nodes.len(), 1);
+        assert_eq!(math_nodes[0].value.as_deref(), Some("x^2"));
+    }
+    #[test]
+    fn bare_task_lists_support_tab_subtasks_and_braced_config() {
+        let source = "{color=green progress=true guides=line}\n[ ] Parent task\n\t[x] Done subtask\n\t\t[ ] Nested subtask\n[X] Second root\n\n```\n[ ] literal in code\n```\n";
+        let document = parse(source);
+        assert_eq!(document.children.len(), 2);
+        let list = &document.children[0];
+        assert_eq!(list.kind, "list");
+        assert_eq!(list.props["color"], "green");
+        assert_eq!(list.props["progress"], "true");
+        assert_eq!(list.props["guides"], "line");
+        assert_eq!(list.children.len(), 2);
+        assert_eq!(list.children[0].checked, Some(false));
+        assert_eq!(list.children[1].checked, Some(true));
+        let sub1 = list.children[0].children.iter().find(|n| n.kind == "list").unwrap();
+        assert_eq!(sub1.children.len(), 1);
+        assert_eq!(sub1.children[0].checked, Some(true));
+        let sub2 = sub1.children[0].children.iter().find(|n| n.kind == "list").unwrap();
+        assert_eq!(sub2.children.len(), 1);
+        assert_eq!(sub2.children[0].checked, Some(false));
+        assert_eq!(document.children[1].kind, "code");
+        assert_eq!(document.children[1].value.as_deref(), Some("[ ] literal in code\n"));
+    }
+    #[test]
+    fn unknown_tags_are_ignored_and_their_inner_markdown_renders_normally() {
+        let input = Input {
+            text: "<details> <summary><b>جواب‌ها</b></summary>\n\n1. اول **مهم**\n2. دوم\n\n</details>\n\n<box>\n\nمتن با <unknown attr=\"1\">درون</unknown> و <unclosed> عادی.\n\n</box>\n".into(),
+            schemas: serde_json::json!({"box":{"kind":"block"}}).as_object().unwrap().clone(),
+            ..Input::default()
+        };
+        let document = parse_document(input).unwrap();
+        assert_eq!(document.children[0].kind, "paragraph");
+        assert_eq!(text_of(&document.children[0]).trim(), "جواب‌ها");
+        assert_eq!(document.children[1].kind, "list");
+        assert_eq!(document.children[1].children.len(), 2);
+        let boxed = &document.children[2];
+        assert_eq!(boxed.name.as_deref(), Some("box"));
+        let box_text = text_of(boxed);
+        assert!(box_text.contains("درون"));
+        assert!(box_text.contains("عادی"));
+        assert!(!box_text.contains("<unknown"));
+    }
+    #[test]
+    fn bold_ending_with_punctuation_before_br_stays_bold() {
+        let doc = parse(" **Scripted UI Tests (کدنویسی سناریوی UI مثل سلنیوم):**<br><br>\n");
+        let p = &doc.children[0];
+        assert_eq!(p.kind, "paragraph");
+        assert_eq!(p.children[0].kind, "strong");
+        assert_eq!(text_of(&p.children[0]), "Scripted UI Tests (کدنویسی سناریوی UI مثل سلنیوم):");
+        assert_eq!(p.children.iter().filter(|n| n.name.as_deref() == Some("br")).count(), 2);
+    }
 }
 
 fn skip_fenced_code(text: &str, line_start: usize) -> Option<usize> {
@@ -663,23 +894,45 @@ fn digit(c: char) -> Option<char> {
     match c { '۰'..='۹' => char::from_u32('0' as u32 + c as u32 - '۰' as u32), '٠'..='٩' => char::from_u32('0' as u32 + c as u32 - '٠' as u32), '0'..='9' => Some(c), _ => None }
 }
 fn ordinal(text: &str) -> Option<u64> { text.trim_start().chars().take_while(|c| digit(*c).is_some()).filter_map(digit).collect::<String>().parse().ok() }
-fn normalize_list_markers(text: &str) -> (String, Vec<usize>) {
+fn is_bare_task_line(content: &str) -> bool {
+    let bytes = content.as_bytes();
+    bytes.len() >= 4
+        && bytes[0] == b'['
+        && matches!(bytes[1], b' ' | b'x' | b'X')
+        && bytes[2] == b']'
+        && matches!(bytes[3], b' ' | b'\t')
+}
+
+fn normalize_list_markers(text: &str, strip_ranges: &[std::ops::Range<usize>]) -> (String, Vec<usize>) {
     let protected: Vec<_> = Parser::new_ext(text, markdown_options()).into_offset_iter().filter_map(|(event, range)| matches!(event, Event::Start(Tag::CodeBlock(_))).then_some(range)).collect();
     let mut replace = BTreeMap::new();
+    let mut insert_bullet = BTreeSet::new();
     let mut offset = 0;
     for line in text.split_inclusive('\n') {
         let content = line.trim_start_matches([' ', '\t']);
         let start = offset + line.len() - content.len();
-        let digits = content.chars().take_while(|c| digit(*c).is_some()).collect::<String>();
-        let suffix = &content[digits.len()..];
-        if !digits.is_empty() && suffix.starts_with(['.', ')']) && suffix[1..].starts_with(char::is_whitespace) && !protected.iter().any(|range| range.contains(&start)) {
-            let mut at = start;
-            for c in digits.chars() { if !c.is_ascii() { replace.insert(at, digit(c).unwrap()); } at += c.len_utf8(); }
+        if !protected.iter().any(|range| range.contains(&start)) {
+            if is_bare_task_line(content) {
+                insert_bullet.insert(start);
+            } else {
+                let digits = content.chars().take_while(|c| digit(*c).is_some()).collect::<String>();
+                let suffix = &content[digits.len()..];
+                if !digits.is_empty() && suffix.starts_with(['.', ')']) && suffix[1..].starts_with(char::is_whitespace) {
+                    let mut at = start;
+                    for c in digits.chars() { if !c.is_ascii() { replace.insert(at, digit(c).unwrap()); } at += c.len_utf8(); }
+                }
+            }
         }
         offset += line.len();
     }
     let mut output = String::new(); let mut offsets = Vec::new();
     for (at, c) in text.char_indices() {
+        if in_ranges(strip_ranges, at) { continue; }
+        if insert_bullet.contains(&at) {
+            output.push_str("- ");
+            offsets.push(at);
+            offsets.push(at);
+        }
         if let Some(replacement) = replace.get(&at) { output.push(*replacement); offsets.push(at); }
         else { output.push(c); offsets.extend(at..at+c.len_utf8()); }
     }

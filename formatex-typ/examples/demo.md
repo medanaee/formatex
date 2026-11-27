@@ -4,7 +4,7 @@
 
 
 bibliography:
-  file: examples/references.bib
+  file: references.bib
   style: ieee # any Typst/CSL style: apa, chicago-author-date, ...
   title: "منابع"
   dir: auto # auto (each entry by its own language) | ltr | rtl
@@ -166,7 +166,7 @@ no language, no badge
 
 کد از فایل، فقط خطوط ۶ تا ۱۶، با خطوط هایلایت‌شده و کپشن (<ref to="code-fib"></ref>):
 
-<code src="examples/sample.py" lines="6-16" highlight="9-10,15" caption="فیبوناچی با کش" id="code-fib"></code>
+<code src="sample.py" lines="6-16" highlight="9-10,15" caption="فیبوناچی با کش" id="code-fib"></code>
 
 هایلایت روی یک بلوک کد معمولی:
 
@@ -438,12 +438,12 @@ hex + preset border
 ## شکل‌ها و چیدمان
 
 <fig id="fig-ocean" height="3cm" ratio="16/9">
-<img src="images/ocean.svg" alt="اقیانوس" radius="6">
+<img src="../images/ocean.svg" alt="اقیانوس" radius="6">
 <caption>نمای ساده‌ای از اقیانوس (برش ۱۶:۹).</caption>
 </fig>
 
 <fig id="fig-gqa" width="85%">
-<img src="images/gqa.svg" alt="GQA">
+<img src="../images/gqa.svg" alt="GQA">
 <caption>Grouped-query attention: each key/value head is shared by four query heads.</caption>
 </fig>
 
@@ -454,7 +454,7 @@ hex + preset border
 <item span="2">
 
 <fig align="center" height="2.5cm">
-<img src="images/ocean.svg" alt="ocean" radius="8">
+<img src="../images/ocean.svg" alt="ocean" radius="8">
 <caption>شکل داخل grid.</caption>
 </fig>
 
@@ -1034,9 +1034,9 @@ Let $a = 2m$ and $b = 2n$. Then $a + b = 2(m + n)$.
 
 <main>
 
-<l-img src="images/ocean.svg" height="2.2cm" />
+<l-img src="../images/ocean.svg" height="2.2cm" />
 
-<r-img src="images/header-mountains.jpg" height="2.2cm" />
+<r-img src="../images/header-mountains.jpg" height="2.2cm" />
 
 <title size="1">
 
@@ -1315,14 +1315,14 @@ const a = 2;
 
 ## picHeader
 
-<picHeader src="images/header-mountains.jpg" title="عنوان بزرگ" subtitle="زیرعنوان اختیاری" height="50mm" />
+<picHeader src="../images/header-mountains.jpg" title="عنوان بزرگ" subtitle="زیرعنوان اختیاری" height="50mm" />
 
 متن بعد از تصویر.
 
 
-<picHeader src="images/header-mountains.jpg" title="Full bleed" margin-x="false" height="45mm" />
+<picHeader src="../images/header-mountains.jpg" title="Full bleed" margin-x="false" height="45mm" />
 
-<picHeader src="images/header-mountains.jpg" title="تاپ تاپی" subtitle="اینطوریه که یک عکس فول سرتاسری داریم اختیاری" break="before" margin-x="true" margin-y="false" height="60mm" />
+<picHeader src="../images/header-mountains.jpg" title="تاپ تاپی" subtitle="اینطوریه که یک عکس فول سرتاسری داریم اختیاری" break="before" margin-x="true" margin-y="false" height="60mm" />
 
 
 تصویر تمام‌عرض سراسری با گرادیان و عنوان بزرگ:
@@ -1333,6 +1333,6 @@ const a = 2;
 - `margin-x` و `margin-y`: کنترل اشغال حاشیه‌های افقی و عمودی سند
 
 
-<picHeader src="images/header-mountains.jpg" title="تاپ تاپی" subtitle="زیرعنوان اختیاری" break="before" margin-x="false" margin-y="false" height="60mm" />
+<picHeader src="../images/header-mountains.jpg" title="تاپ تاپی" subtitle="زیرعنوان اختیاری" break="before" margin-x="false" margin-y="false" height="60mm" />
 
 متن بعد.

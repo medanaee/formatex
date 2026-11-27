@@ -1,7 +1,7 @@
 import { getValue } from "@/lib/editor/tomlEdit"
 import { record, type Settings } from "@formatex/core"
 
-export type HtmlOptionKey = "embedFonts" | "copyCode" | "toolbar" | "progress" | "outline" | "katexMath"
+export type HtmlOptionKey = "embedFonts" | "copyCode" | "toolbar" | "progress" | "outline" | "magnifier" | "katexMath"
 
 /** What the HTML output has: the `[html]` table of config.toml starts the live preview and the export dialog; the dialog can change it for one export. */
 export interface HtmlExportOptions {
@@ -17,8 +17,12 @@ export interface HtmlExportOptions {
   progress: boolean
   /** An outline of the headings in a sidebar on the right (a drawer on a phone). */
   outline: boolean
+  /** A fun magnifying glass button in the toolbar. */
+  magnifier: boolean
   /** Render math formulas with KaTeX (off: standard HTML/SVG math). */
   katexMath: boolean
+  /** Preview-only override for block Typst graphic width when toggled in the viewer toolbar. */
+  graphicWidth?: "narrow" | "standard" | "wide"
 }
 
 /** The `[html]` keys of config.toml, by boolean option. */
@@ -28,6 +32,7 @@ const KEYS: Record<Exclude<HtmlOptionKey, "katexMath">, string> = {
   toolbar: "toolbar",
   progress: "progress",
   outline: "outline",
+  magnifier: "magnifier",
 }
 
 export function htmlOptionsFromSettings(settings: Settings, fallback: HtmlExportOptions = DEFAULT_HTML_OPTIONS): HtmlExportOptions {
@@ -48,7 +53,8 @@ export const DEFAULT_HTML_OPTIONS: HtmlExportOptions = {
   toolbar: true,
   progress: true,
   outline: true,
-  katexMath: false,
+  magnifier: true,
+  katexMath: true,
 }
 
 /** The options `config.toml` sets in `[html]`; a key it does not set (or sets to something that is not true / false) has its default. */

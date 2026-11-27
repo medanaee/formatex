@@ -13,6 +13,7 @@ import { tagIcon } from "@/lib/editor/tagIcons"
 import { attrValue, withAttr } from "@/lib/editor/tagSyntax"
 import { fromConditional, isConditional, readVariables, toConditional } from "@/lib/editor/variables"
 import { cn } from "@/lib/utils"
+import { relativePath } from "@/lib/projects/paths"
 import { useEditorStore } from "@/stores/useEditorStore"
 import { useEditorViewStore } from "@/stores/useEditorViewStore"
 import { useSchemaStore } from "@/stores/useSchemaStore"
@@ -86,8 +87,9 @@ export function OptionsPopover({ request, onRequestChange }: OptionsPopoverProps
   const { t, i18n } = useTranslation()
   const schema = useSchemaStore((state) => state.schema)
   const files = useEditorStore((state) => state.files)
+  const activePath = useEditorStore((state) => state.activePath)
   const view = useEditorViewStore((state) => state.view)
-  const paths = useMemo(() => files.filter((entry) => entry.kind === "file").map((entry) => entry.path), [files])
+  const paths = useMemo(() => files.filter((entry) => entry.kind === "file").map((entry) => (activePath ? relativePath(activePath, entry.path) : entry.path)), [files, activePath])
 
   if (!request) return null
   const spec = request.kind === "tag" ? schema.tags[request.name] : schema.options[request.option]

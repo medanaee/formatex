@@ -39,8 +39,30 @@
 #let table-defaults = config.at("table", default: (:))
 #let table-option-keys = option-keys("table")
 
-// Columns get explicit sizes only when a full-width table is rebuilt.
+// Columns get explicit sizes only when a full-width table is rebuilt or `cols` is given.
 #let table-has-widths(it) = type(it.columns) == array and it.columns.len() > 0 and auto not in it.columns
+#let table-col-re = regex("^([0-9]+(?:\\.[0-9]+)?)(fr|%|pt|mm|cm|in|em|px)?$")
+#let parse-table-cols(raw, count, where) = {
+  assert(type(raw) == str and raw.trim() != "", message: where + "Table cols must be a comma-separated list of column widths (e.g. \"20%,50%,30%\" or \"1fr,2fr,auto\")")
+  let parts = raw.split(",").map(s => s.trim()).filter(s => s != "")
+  assert(parts.len() == count, message: where + "Table cols has " + str(parts.len()) + " widths, but the table has " + str(count) + " columns")
+  parts.map(part => {
+    if part == "auto" { return auto }
+    let m = part.match(table-col-re)
+    assert(m != none, message: where + "Invalid table column width " + repr(part) + "; use auto, %, fr, pt, mm, cm, in, em, px or a number")
+    let v = float(m.captures.at(0))
+    assert(v > 0, message: where + "Table column width must be positive, got " + repr(part))
+    let unit = m.captures.at(1)
+    if unit == none or unit == "fr" { v * 1fr }
+    else if unit == "%" { v * 1% }
+    else if unit == "mm" { v * 1mm }
+    else if unit == "cm" { v * 1cm }
+    else if unit == "in" { v * 1in }
+    else if unit == "em" { v * 1em }
+    else if unit == "px" { v * 0.75pt * zoom }
+    else { v * 1pt * zoom }
+  })
+}
 
 // Sizes columns the way browsers do: if everything fits, each column grows in proportion to
 // its natural width; otherwise narrow columns keep their width and wide ones share the rest.
@@ -151,7 +173,7 @@
   }
 
   show raw.where(block: true): it => {
-    set text(dir: ltr, size: 8pt * zoom, font: (code-font, persian-font), tracking: 0pt)
+    set text(dir: ltr, size: 8pt * zoom, font: (code-font, code-persian-font, persian-font), tracking: 0pt)
     // Code lines stay left-aligned inside a centered <align>.
     set align(left)
     set par(justify: false)
@@ -196,7 +218,7 @@
   }
 
   show raw.where(block: false): it => {
-    set text(dir: ltr, font: (code-font, persian-font), size: 9pt * zoom, tracking: 0pt)
+    set text(dir: ltr, font: (code-font, code-persian-font, persian-font), size: 9pt * zoom, tracking: 0pt)
     box(
       fill: theme.code-bg,
       stroke: 0.5pt * zoom + theme.code-stroke,
@@ -275,7 +297,12 @@
     assert(width in ("auto", "full"), message: where-of("width") + "Table width must be auto or full, got " + repr(width))
     let a = opts.at("align", default: inherited-align(table-defaults.at("align", default: "center")))
     assert(a in align-names, message: where-of("align") + "Table align must be one of " + align-names.keys().join(", ") + ", got " + repr(a))
-    let full = width == "full"
+    let has-cols = "cols" in opts
+    let cols-flex = has-cols and type(opts.cols) == str and opts.cols.split(",").any(s => {
+      let t = s.trim()
+      t.ends-with("%") or t.ends-with("fr") or t.match(regex("^[0-9]+(?:\\.[0-9]+)?$")) != none
+    })
+    let full = width == "full" or cols-flex
     // `head-align` / `body-align` set the text alignment of the header row / the other rows and win over the
     // column colons (`:---`, `---:`) of the Markdown separator row.
     let cell-align(key) = {
@@ -310,7 +337,7 @@
     let spanning = span == "all" and column-count > 1
     let float-wide(body) = place(auto, scope: "parent", float: true, clearance: 1.5em, body)
 
-    if full and not table-has-widths(it) {
+    if full and not has-cols and not table-has-widths(it) {
       let rebuilt = layout(region => table-full-width(it, region.width, inset-x.to-absolute()))
       if spanning { float-wide(rebuilt) } else { rebuilt }
     } else {
@@ -331,7 +358,7 @@
         block(width: if full { 100% } else { auto }, fig)
       }
       let aligned = align(align-names.at(a), placed)
-      if spanning and not (full and table-has-widths(it)) { float-wide(aligned) } else { aligned }
+      if spanning and not (full and not has-cols and table-has-widths(it)) { float-wide(aligned) } else { aligned }
       table-options.update((:))
     }
   }

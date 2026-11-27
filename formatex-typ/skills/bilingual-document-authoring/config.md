@@ -17,15 +17,17 @@ Contents: [HTML output language](#html-output-language) · [config.toml](#config
 
 ## HTML output language
 
-HTML math is selected with `[html] math = "native"` (default) or `"katex"`; `--input html-math=katex` overrides it for one build. KaTeX's renderer, CSS and WOFF2 fonts are embedded as a compressed offline bundle only when the document contains KaTeX math markers. No CDN or other network resource is needed. Rendering is asynchronous on initial load and after live content updates. The app's Export HTML dialog exposes the same choice.
+HTML math is selected with `[html] math = "katex"` (default) or `"native"`; `[html] width = "standard"` (default; `"narrow"`, `"standard"`, or `"wide"`) sets the reading column width; `--input html-math=native` overrides math for one build. KaTeX's rendered HTML, CSS and WOFF2 fonts are embedded offline only when the document contains KaTeX math markers. No CDN or other network resource is needed. Export HTML directly uses the `[html]` settings in `config.toml` and front matter.
 
 The independent HTML renderer receives `uiLanguage: "fa" | "en"` from its host. The app passes its current interface language for preview/export, independently of the document's language/direction. This controls viewer toolbar, menus, outline and copy controls. The former Typst `--input html-ui-lang`/`target=html` route is superseded; use the app export or the `formatex-html` API. `uiLanguage` is not a document configuration key.
 
 The app's live HTML preview reuses compilation and font data and updates the existing page when possible. This does not introduce a setting or a different document format: use the same Markdown, tags, front matter and `[html]` options for preview and export. The standalone Export command keeps font-subset embedding when `embed-fonts` is enabled.
 
-Native HTML blocks use the merged document `dir`: `auto` retains per-block detection, while `rtl` / `ltr` stay forced across main content, lists, tables, quotes and alerts. `[paragraph]` justification and line/letter/word spacing, table `head-align` / `body-align`, and heading look settings apply to HTML as well. Heading `max-level` is relative to the top outlined heading. Global `[list]` settings and local `{...}` list options share their numbering/marker behavior between PDF and HTML; unordered markers are text, while `guides` remain PDF-only drawings.
+Native HTML blocks use the merged document `dir`: `auto` retains per-block detection, while `rtl` / `ltr` stay forced across main content, lists, tables, quotes and alerts. `[paragraph]` justification and line/letter/word spacing, table `head-align` / `body-align`, and heading look settings apply to HTML as well. Heading `max-level` is relative to the top outlined heading. Global `[list]` settings and local `{...}` list options share their numbering/marker behavior between PDF and HTML; unordered markers are text, while `guides` remain PDF-only drawings. Task lists render as animated SVG checkboxes that are interactive when `editable=true` (updating any `progress=true` bar live), persisting per-file state in `localStorage` (`fx-tasks:v1:<pathname>`) in standalone HTML and in viewer state during live preview.
 
 `[html] toolbar = true` also provides the viewer's Find magnifier, reachable on a phone or with Ctrl / Cmd + F. It searches rendered document text literally and case-insensitively across text nodes, with previous/next and a localized count; Enter / Shift + Enter move between matches and Escape closes it. Script/style text and code-copy controls are excluded, and live content updates refresh the results. It does not replace source-editor find/replace. Native HTML word spacing uses percentages where supported, with an `em` fallback for older browsers.
+
+When `[html] toolbar = true`, `[html] magnifier = true` (default) also adds a magnifying glass (loupe) button to the HTML viewer toolbar. Clicking it shows a movable magnifying glass over the document (`Shift`/`Alt` + scroll wheel adjusts lens magnification; `Escape` exits). Set `magnifier = false` in `config.toml` or `html: { magnifier: false }` in front matter to hide/disable it.
 
 ## config.toml
 
@@ -69,10 +71,10 @@ columns = 1
 column-dir = "rtl"
 
 [font]
-# Leave out to use the feel's fonts. Any installed font name.
+# Leave out to use the feel's fonts. Any installed (or app-bundled) font name.
 # latin = "Lexend"            # English text
 # persian = "Vazirmatn"       # Persian text
-# code = "Anonymous Pro"      # code
+# code = "Anonymous Pro"      # code (default: Anonymous Pro in formal, Vazir Code in standard/friendly)
 
 [paragraph]
 justify = false        # true = lines flush on both sides
@@ -102,7 +104,7 @@ align = "center"       # where auto-width tables sit: center | left | right
 span = "column"        # multi-column documents: "column" or "all" (float across all columns)
 
 [equation]
-numbering = "labelled" # "labelled" = only $$...$$ {#id}, "all" = every display equation, "none"
+numbering = "labelled" # "labelled" = only $$ or %% with {#id}, "all" = every display equation, "none"
 
 [chat]
 style = "auto"         # auto (from the feel) | transcript | assistant | bubbles
@@ -157,8 +159,11 @@ width = "80%"          # widest bubble: % of the line or a length
 | `[chat] frame` | `true` / `false` | `true` | Frame around the whole chat. |
 | `[chat] width` | percent or length | `"80%"` | Widest a bubble gets. |
 | `[chat] title` / `dir` | as on `<chat>` | none / `auto` | Accepted too, but usually set per chat. Every `[chat]` key is overridden by the same attribute on a `<chat>` tag (components.md). |
+| `[html] math` | `katex`, `native` | `katex` | Pre-rendered KaTeX HTML vs native browser MathML. |
+| `[html] width` | `narrow`, `standard`, `wide` | `standard` | Reading column width (`42rem`, `54rem`, `72rem`). |
+| `[html] magnifier` | `true` / `false` | `true` | Magnifying glass (loupe) button in the HTML viewer toolbar (requires `[html] toolbar = true`; `Shift`/`Alt` + scroll wheel adjusts magnification, `Escape` exits). Set `html: { magnifier: false }` in front matter to disable per document. |
 
-Fonts per feel (used unless `[font]` sets them): `formal` New Computer Modern + XB Niloofar; `standard` Inter + IRANSans; `friendly` Lexend + Pelak. Code: Anonymous Pro. Only name fonts the user has installed. In the app's HTML embedding, an installed exact family such as `CMU Serif` wins over alias fallbacks. If an alias is needed because the family is missing, the fallback is registered under the requested CSS family name; this does not change the formal feel's default.
+Fonts per feel (used unless `[font]` sets them): `formal` New Computer Modern + XB Niloofar (code: `Anonymous Pro`); `standard` Inter + IRANSans (code: `Vazir Code`); `friendly` Lexend + Pelak (code: `Vazir Code`). `Vazir Code` is bundled in the app for both PDF and HTML, and Persian text inside inline code and code blocks automatically falls back to `Vazir Code` in every feel (including `formal` and custom `[font] code` overrides). Only name fonts the user has installed or that the app bundles. In the app's HTML embedding, an installed exact family such as `CMU Serif` wins over alias fallbacks. If an alias is needed because the family is missing, the fallback is registered under the requested CSS family name; this does not change the formal feel's default.
 
 HTML selects regular/bold faces by nearest weight per required style, including real CMU Serif regular faces at weight 500. Stock NewCM uses browser-compatible quadratic-outline copies only for HTML embedding, preserving metrics and shaping; the original PDF font selection remains unchanged. This requires no different authoring syntax or font setting.
 
@@ -267,7 +272,7 @@ A cover is body content, not a config/front-matter setting. Place `<cover ...></
 
 ```yaml
 bibliography:
-  file: examples/references.bib   # BibTeX file, path from the project root (this is the default)
+  file: examples/references.bib   # BibTeX file, relative to this .md file (start with / for project root; default: /examples/references.bib)
   style: ieee              # any CSL style name: ieee, apa, chicago-author-date, harvard-cite-them-right, ...
   title: "منابع"           # heading of the reference list ("References" for English)
   dir: auto                # auto = each entry in its own language's direction; ltr | rtl

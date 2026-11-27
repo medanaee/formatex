@@ -30,7 +30,8 @@ export function EditorMenus() {
   const view = useEditorViewStore((state) => state.view)
   const canUndo = useEditorViewStore((state) => state.canUndo)
   const canRedo = useEditorViewStore((state) => state.canRedo)
-  const exporting = useEditorStore((state) => state.exportStatus) === "working"
+  const exportingPdf = useEditorStore((state) => state.exportStatus) === "working"
+  const exportingHtml = useEditorStore((state) => state.exportHtmlStatus) === "working"
   const projectId = useEditorStore((state) => state.projectId)
   const kind = useEditorStore((state) => state.kind)
   const location = useLibraryStore((state) => state.documents.find((doc) => doc.id === projectId)?.location) ?? null
@@ -73,10 +74,10 @@ export function EditorMenus() {
               </DropdownMenuRadioGroup>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-          <DropdownMenuItem disabled={exporting} onSelect={() => void useEditorStore.getState().exportPdf()}>
+          <DropdownMenuItem disabled={exportingPdf} onSelect={() => void useEditorStore.getState().exportPdf()}>
             {t("editor.export")}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={exporting} onSelect={() => useWorkspaceStore.getState().set({ htmlDialog: true })}>
+          <DropdownMenuItem disabled={exportingHtml} onSelect={() => void useEditorStore.getState().exportHtml()}>
             {t("editor.exportHtml")}
           </DropdownMenuItem>
           {canUseFolders() && (
